@@ -16,7 +16,7 @@ pub mod musimanager {
 
     use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Tracker<S = Song, A = Album<Song>> {
         pub artists: Vec<Artist<S, A>>,
         pub auto_search_artists: Vec<Artist<S, A>>,
@@ -377,7 +377,7 @@ pub mod musimanager {
         }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+    #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
     pub struct EntityTracker {
         pub songs: Vec<Song<Option<SongInfo>>>,
         pub albums: Vec<Album<SongId>>,
@@ -387,20 +387,20 @@ pub mod musimanager {
         pub queues: Vec<SongProvider<SongId>>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct SongId(pub String);
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct AlbumId(pub String);
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct SongProvider<S> {
         pub name: String,
         pub data_list: Vec<S>,
         pub current_index: u32,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Album<S> {
         pub name: String,
         pub browse_id: String,
@@ -410,7 +410,7 @@ pub mod musimanager {
         pub artist_keys: Vec<String>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Artist<S, A> {
         pub name: String,
         pub keys: Vec<String>,
@@ -429,7 +429,7 @@ pub mod musimanager {
         pub unexplored_songs: Vec<S>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Song<I = SongInfo> {
         pub title: String, // NOTE: technically optional from python
         pub key: String,   // NOTE: technically optional from python
@@ -438,7 +438,7 @@ pub mod musimanager {
         pub last_known_path: Option<String>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+    #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
     pub struct SongInfo {
         pub titles: Vec<String>,
         pub video_id: String,
@@ -450,6 +450,34 @@ pub mod musimanager {
         pub channel_id: String,
         pub uploader_id: Option<String>,
     }
+
+    pub fn dump_types() -> anyhow::Result<()> {
+        let mut types = String::new();
+
+        let config = specta::ts::ExportConfiguration::default();
+
+        types += &specta::ts::export::<SongInfo>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Song>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SongId>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<AlbumId>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Artist<(), ()>>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Album<()>>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SongProvider<()>>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<EntityTracker>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Tracker>(&config)?;
+
+        println!("{}", types);
+        
+        Ok(())
+    }
 }
 
 mod covau_types {
@@ -457,23 +485,40 @@ mod covau_types {
 
     use serde::{Deserialize, Serialize};
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    #[serde(tag = "type", content = "content")]
     pub enum Source {
         File(PathBuf),
         YtId(String),
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Song {
         pub title: String,
         pub mbz_id: Option<String>,
         pub sources: Vec<Source>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Artist {
         pub name: String,
         // pub albums: Vec<AlbumId>,
+    }
+
+    pub fn dump_types() -> anyhow::Result<()> {
+        let mut types = String::new();
+
+        let config = specta::ts::ExportConfiguration::default();
+
+        types += &specta::ts::export::<Source>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Artist>(&config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Song>(&config)?;
+
+        println!("{}", types);
+        
+        Ok(())
     }
 }
 
@@ -524,8 +569,11 @@ async fn api_test() -> Result<()> {
 async fn main() -> Result<()> {
     init_logger("./")?;
 
-    parse_test().await?;
+    // parse_test().await?;
     // api_test().await?;
+
+    musimanager::dump_types()?;
+    covau_types::dump_types()?;
 
     Ok(())
 }
