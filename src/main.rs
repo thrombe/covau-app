@@ -473,6 +473,7 @@ pub mod musimanager {
         types += &specta::ts::export::<EntityTracker>(&config)?;
         types += ";\n";
         types += &specta::ts::export::<Tracker>(&config)?;
+        types += ";\n";
 
         println!("{}", types);
         
@@ -515,6 +516,7 @@ mod covau_types {
         types += &specta::ts::export::<Artist>(&config)?;
         types += ";\n";
         types += &specta::ts::export::<Song>(&config)?;
+        types += ";\n";
 
         println!("{}", types);
         
