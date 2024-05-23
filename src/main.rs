@@ -7,77 +7,293 @@ use musicbrainz_rs::{
 
 use anyhow::Result;
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    init_logger("./")?;
-
-    parse_test().await?;
-
-    Ok(())
-}
+// TODO:
+// create a nix style symlinked artist/songs, album/songs, artist/albums, etc
+// but store all songs in a single directory
 
 pub mod musimanager {
+    use std::collections::HashMap;
+
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Tracker {
-        artists: Vec<Artist>,
-        playlists: Vec<SongProvider>,
-        queues: Vec<SongProvider>,
+    pub struct Tracker<S = Song> {
+        pub artists: Vec<Artist<S>>,
+        pub auto_search_artists: Vec<Artist<S>>,
+        pub playlists: Vec<SongProvider<S>>,
+        pub queues: Vec<SongProvider<S>>,
+    }
+
+    impl<S> Default for Tracker<S> {
+        fn default() -> Self {
+            Tracker {
+                artists: Default::default(),
+                auto_search_artists: Default::default(),
+                playlists: Default::default(),
+                queues: Default::default(),
+            }
+        }
+    }
+
+    impl Tracker<Song> {
+        pub fn disambiguate(&self) -> EntityTracker {
+            let mut et = EntityTracker::default();
+
+            fn take_from(so: &mut Song, s: &Song) {
+                so.artist_name = so
+                    .artist_name
+                    .as_ref()
+                    .or(s.artist_name.as_ref())
+                    .map(|s| s.to_owned());
+                so.last_known_path = so
+                    .last_known_path
+                    .as_ref()
+                    .or(s.last_known_path.as_ref())
+                    .map(|s| s.to_owned());
+
+                let mut new_titles = Vec::new();
+                'first: for t in s.info.titles.iter() {
+                    for t2 in so.info.titles.iter() {
+                        if t == t2 || t.is_empty() {
+                            continue 'first;
+                        }
+                    }
+                    new_titles.push(t.clone());
+                }
+                so.info.titles.extend(new_titles);
+
+                so.info.duration = so.info.duration.or(s.info.duration);
+
+                let mut new_tags = Vec::new();
+                'first: for t in s.info.tags.iter() {
+                    for t2 in so.info.tags.iter() {
+                        if t == t2 || t.is_empty() {
+                            continue 'first;
+                        }
+                    }
+                    new_tags.push(t.clone());
+                }
+                so.info.tags.extend(new_tags);
+
+                if so.info.thumbnail_url.is_empty() {
+                    so.info.thumbnail_url = s.info.thumbnail_url.clone();
+                }
+                if so.info.video_id.is_empty() {
+                    so.info.video_id = s.info.video_id.clone();
+                }
+                if so.info.channel_id.is_empty() {
+                    so.info.channel_id = s.info.channel_id.clone();
+                }
+                so.info.uploader_id = so
+                    .info
+                    .uploader_id
+                    .as_ref()
+                    .or(s.info.uploader_id.as_ref())
+                    .map(|s| s.to_owned());
+                so.info.album = so
+                    .info
+                    .album
+                    .as_ref()
+                    .or(s.info.album.as_ref())
+                    .map(|s| s.to_owned());
+
+                let mut new_artist_names = Vec::new();
+                'first: for n in s.info.artist_names.iter() {
+                    for n2 in so.info.artist_names.iter() {
+                        if n == n2 || n.is_empty() {
+                            continue 'first;
+                        }
+                    }
+                    new_artist_names.push(n.clone());
+                }
+                so.info.artist_names.extend(new_artist_names);
+            }
+
+            let Tracker {
+                artists,
+                auto_search_artists,
+                playlists,
+                queues,
+            } = self;
+            let mut songs = HashMap::<String, Song>::new();
+            for a in artists {
+                for s in &a.songs {
+                    if let Some(so) = songs.get_mut(&s.key) {
+                        take_from(so, s);
+                    } else {
+                        songs.insert(s.key.clone(), s.clone());
+                    }
+                }
+                for al in a.known_albums.iter() {
+                    for s in al.songs.iter() {
+                        if let Some(so) = songs.get_mut(&s.key) {
+                            take_from(so, s);
+                        } else {
+                            songs.insert(s.key.clone(), s.clone());
+                        }
+                    }
+                }
+            }
+            for a in auto_search_artists {
+                for s in &a.songs {
+                    if let Some(so) = songs.get_mut(&s.key) {
+                        take_from(so, s);
+                    } else {
+                        songs.insert(s.key.clone(), s.clone());
+                    }
+                }
+                for al in a.known_albums.iter() {
+                    for s in al.songs.iter() {
+                        if let Some(so) = songs.get_mut(&s.key) {
+                            take_from(so, s);
+                        } else {
+                            songs.insert(s.key.clone(), s.clone());
+                        }
+                    }
+                }
+            }
+            for p in playlists {
+                for s in &p.data_list {
+                    if let Some(so) = songs.get_mut(&s.key) {
+                        take_from(so, s);
+                    } else {
+                        songs.insert(s.key.clone(), s.clone());
+                    }
+                }
+            }
+            for q in queues {
+                for s in &q.data_list {
+                    if let Some(so) = songs.get_mut(&s.key) {
+                        take_from(so, s);
+                    } else {
+                        songs.insert(s.key.clone(), s.clone());
+                    }
+                }
+            }
+            for (_, s) in songs.iter_mut() {
+                s.info.titles = s
+                    .info
+                    .titles
+                    .iter()
+                    .filter(|t| !t.is_empty())
+                    .cloned()
+                    .collect();
+                s.info.artist_names = s
+                    .info
+                    .artist_names
+                    .iter()
+                    .filter(|t| !t.is_empty())
+                    .cloned()
+                    .collect();
+                s.info.album = s.info.album.as_ref().filter(|a| !a.is_empty()).cloned();
+                s.info.uploader_id = s
+                    .info
+                    .uploader_id
+                    .as_ref()
+                    .filter(|a| !a.is_empty())
+                    .cloned();
+            }
+
+            for (_, s) in songs.into_iter() {
+                et.songs.push(Song {
+                    title: s.title,
+                    key: s.key,
+                    artist_name: s.artist_name,
+                    info: Some(s.info).filter(|i| !i.video_id.is_empty()),
+                    last_known_path: s.last_known_path,
+                });
+            }
+
+            et
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+    pub struct EntityTracker {
+        pub songs: Vec<Song<Option<SongInfo>>>,
+        pub tracker: Tracker<SongId>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct SongProvider {
-        name: String,
-        data_list: Vec<Song>,
-        current_index: u32,
+    pub struct SongId(pub String);
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct SongProvider<S> {
+        pub name: String,
+        pub data_list: Vec<S>,
+        pub current_index: u32,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Album {
-        name: String,
-        browse_id: String,
-        playlist_id: Option<String>,
-        songs: Vec<Song>,
-        artist_name: String,
-        artist_keys: Vec<String>,
+    pub struct Album<S> {
+        pub name: String,
+        pub browse_id: String,
+        pub playlist_id: Option<String>,
+        pub songs: Vec<S>,
+        pub artist_name: String,
+        pub artist_keys: Vec<String>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Artist {
-        name: String,
-        keys: Vec<String>,
-        check_stat: bool, // # TODO: not needed?
-        ignore_no_songs: bool, // # wont be removed from db even if no songs in it (only tracking for new albums)
-        name_confirmation_status: bool,
-        songs: Vec<Song>,
-        known_albums: Vec<Album>, // # to track what albums the user has listened to
-        keywords: Vec<String>, // # keywords for sort
-        non_keywords: Vec<String>, // # keywords/keys to specifically ignore
-        search_keywords: Vec<String>,
-        last_auto_search: Option<u32>,
+    pub struct Artist<S> {
+        pub name: String,
+        pub keys: Vec<String>,
+        pub check_stat: bool,      // # TODO: not needed?
+        pub ignore_no_songs: bool, // # wont be removed from db even if no songs in it (only tracking for new albums)
+        pub name_confirmation_status: bool,
+        pub songs: Vec<S>,
+        pub known_albums: Vec<Album<S>>, // # to track what albums the user has listened to
+        pub keywords: Vec<String>,       // # keywords for sort
+        pub non_keywords: Vec<String>,   // # keywords/keys to specifically ignore
+        pub search_keywords: Vec<String>,
+        pub last_auto_search: Option<u32>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Song {
-        title: Option<String>,
-        key: Option<String>,
-        artist_name: Option<String>,
-        info: SongInfo,
-        last_known_path: Option<String>,
+    pub struct Song<I = SongInfo> {
+        pub title: String, // NOTE: technically optional from python
+        pub key: String,   // NOTE: technically optional from python
+        pub artist_name: Option<String>,
+        pub info: I,
+        pub last_known_path: Option<String>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct SongInfo {
-        titles: Vec<String>,
-        video_id: String,
-        duration: Option<f32>, // # TODO: no need?
-        tags: Vec<String>,
-        thumbnail_url: String,
-        album: Option<String>,
-        artist_names: Vec<String>,
-        channel_id: String,
-        uploader_id: Option<String>,
+        pub titles: Vec<String>,
+        pub video_id: String,
+        pub duration: Option<f32>, // # TODO: no need?
+        pub tags: Vec<String>,
+        pub thumbnail_url: String,
+        pub album: Option<String>,
+        pub artist_names: Vec<String>,
+        pub channel_id: String,
+        pub uploader_id: Option<String>,
+    }
+}
+
+mod covau_types {
+    use std::path::PathBuf;
+
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub enum Source {
+        File(PathBuf),
+        YtId(String),
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Song {
+        pub title: String,
+        pub mbz_id: Option<String>,
+        pub sources: Vec<Source>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Artist {
+        pub name: String,
+        pub albums: Vec<AlbumId>,
     }
 }
 
@@ -88,19 +304,42 @@ async fn parse_test() -> Result<()> {
 
     let parsed = serde_json::from_str::<musimanager::Tracker>(&data)?;
 
-    dbg!(&parsed);
-    
+    // for a in parsed.artists.iter() {
+    //     for s in a
+    //         .songs
+    //         .iter()
+    //         .chain(parsed.playlists.iter().flat_map(|e| e.data_list.iter()))
+    //     {}
+    // }
+
+    dbg!(parsed.disambiguate());
+
     Ok(())
 }
 
 async fn api_test() -> Result<()> {
     // let r = Artist::search("query=red velvet".into()).with_releases().execute().await;
-    // let r = Recording::search("query=dildaara".into()).execute().await;
-    let r = Work::search("query=dildaara".into()).execute().await;
+    let r = Recording::search("method=indexed&query=carole and tuesday".into())
+        .execute()
+        .await?;
+    for e in r.entities {
+        dbg!(e.title);
+    }
+    // let r = Work::search("method=indexed&query=dildaara".into()).execute().await;
     // let r = Release::search("query=visions".into()).execute().await;
     // let r = Release::browse().execute().await;
 
-    dbg!(r);
+    // dbg!(r);
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    init_logger("./")?;
+
+    parse_test().await?;
+    // api_test().await?;
 
     Ok(())
 }
