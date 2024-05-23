@@ -40,6 +40,10 @@
         };
         src = pkgs.lib.cleanSource ./.;
 
+        buildInputs = with pkgs; [
+          openssl
+        ];
+
         nativeBuildInputs = with pkgs; [
           pkg-config
         ];
