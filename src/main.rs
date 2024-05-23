@@ -248,10 +248,10 @@ pub mod musimanager {
 
             let mut m_artists = HashMap::new();
             for a in artists.iter() {
-                m_artists.insert(a.name.clone(), (a.clone(), Vec::new()));
+                m_artists.insert(a.name.clone(), a.clone());
             }
             for a in auto_search_artists {
-                if let Some((ao, unex)) = m_artists.get_mut(&a.name) {
+                if let Some(ao) = m_artists.get_mut(&a.name) {
                     ao.keys.extend(b_minus_a(&ao.keys, &a.keys));
                     ao.search_keywords
                         .extend(b_minus_a(&ao.search_keywords, &a.search_keywords));
@@ -270,24 +270,25 @@ pub mod musimanager {
                     }
                     ao.known_albums = albums.into_values().collect();
 
-                    unex.extend(a.songs.iter().map(| s| SongId(s.key.clone())));
+                    ao.unexplored_songs = a.songs.clone();
                 } else {
                     let mut a = a.clone();
-                    let songs = a.songs.into_iter().map(|s| SongId(s.key)).collect();
+                    a.unexplored_songs = a.songs;
                     a.songs = Vec::new();
 
-                    m_artists.insert(a.name.clone(), (a.clone(), songs));
+                    m_artists.insert(a.name.clone(), a.clone());
                 }
             }
             et.artists = m_artists
                 .into_iter()
-                .map(|(_, (a, unex))| (Artist {
+                .map(|(_, a)| Artist {
                     name: a.name,
                     keys: a.keys,
                     check_stat: a.check_stat,
                     ignore_no_songs: a.ignore_no_songs,
                     name_confirmation_status: a.name_confirmation_status,
                     songs: a.songs.into_iter().map(|s| SongId(s.key)).collect(),
+                    unexplored_songs: Vec::new(),
                     known_albums: a
                         .known_albums
                         .into_iter()
@@ -297,7 +298,7 @@ pub mod musimanager {
                     non_keywords: a.non_keywords,
                     search_keywords: a.search_keywords,
                     last_auto_search: a.last_auto_search,
-                }, unex))
+                })
                 .collect();
 
             et
@@ -309,7 +310,7 @@ pub mod musimanager {
         pub songs: Vec<Song<Option<SongInfo>>>,
         pub albums: Vec<Album<SongId>>,
 
-        pub artists: Vec<(Artist<SongId, AlbumId>, Vec<SongId>)>,
+        pub artists: Vec<Artist<SongId, AlbumId>>,
         pub playlists: Vec<SongProvider<SongId>>,
         pub queues: Vec<SongProvider<SongId>>,
     }
@@ -350,6 +351,10 @@ pub mod musimanager {
         pub non_keywords: Vec<String>, // # keywords/keys to specifically ignore
         pub search_keywords: Vec<String>,
         pub last_auto_search: Option<u32>,
+
+        // not in python implementation
+        #[serde(default = "Vec::new")]
+        pub unexplored_songs: Vec<S>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
