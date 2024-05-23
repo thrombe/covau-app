@@ -17,14 +17,14 @@ pub mod musimanager {
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Tracker<S = Song> {
-        pub artists: Vec<Artist<S>>,
-        pub auto_search_artists: Vec<Artist<S>>,
+    pub struct Tracker<S = Song, A = Album<Song>> {
+        pub artists: Vec<Artist<S, A>>,
+        pub auto_search_artists: Vec<Artist<S, A>>,
         pub playlists: Vec<SongProvider<S>>,
         pub queues: Vec<SongProvider<S>>,
     }
 
-    impl<S> Default for Tracker<S> {
+    impl<S, A> Default for Tracker<S, A> {
         fn default() -> Self {
             Tracker {
                 artists: Default::default(),
@@ -39,6 +39,19 @@ pub mod musimanager {
         pub fn disambiguate(&self) -> EntityTracker {
             let mut et = EntityTracker::default();
 
+            fn b_minus_a(a: &Vec<String>, b: &Vec<String>) -> Vec<String> {
+                let mut unique = Vec::new();
+                'first: for t in b.iter() {
+                    for t2 in a.iter() {
+                        if t == t2 || t.is_empty() {
+                            continue 'first;
+                        }
+                    }
+                    unique.push(t.clone());
+                }
+                unique
+            }
+
             fn take_from(so: &mut Song, s: &Song) {
                 so.artist_name = so
                     .artist_name
@@ -51,29 +64,13 @@ pub mod musimanager {
                     .or(s.last_known_path.as_ref())
                     .map(|s| s.to_owned());
 
-                let mut new_titles = Vec::new();
-                'first: for t in s.info.titles.iter() {
-                    for t2 in so.info.titles.iter() {
-                        if t == t2 || t.is_empty() {
-                            continue 'first;
-                        }
-                    }
-                    new_titles.push(t.clone());
-                }
-                so.info.titles.extend(new_titles);
+                so.info
+                    .titles
+                    .extend(b_minus_a(&so.info.titles, &s.info.titles));
 
                 so.info.duration = so.info.duration.or(s.info.duration);
 
-                let mut new_tags = Vec::new();
-                'first: for t in s.info.tags.iter() {
-                    for t2 in so.info.tags.iter() {
-                        if t == t2 || t.is_empty() {
-                            continue 'first;
-                        }
-                    }
-                    new_tags.push(t.clone());
-                }
-                so.info.tags.extend(new_tags);
+                so.info.tags.extend(b_minus_a(&so.info.tags, &s.info.tags));
 
                 if so.info.thumbnail_url.is_empty() {
                     so.info.thumbnail_url = s.info.thumbnail_url.clone();
@@ -97,16 +94,9 @@ pub mod musimanager {
                     .or(s.info.album.as_ref())
                     .map(|s| s.to_owned());
 
-                let mut new_artist_names = Vec::new();
-                'first: for n in s.info.artist_names.iter() {
-                    for n2 in so.info.artist_names.iter() {
-                        if n == n2 || n.is_empty() {
-                            continue 'first;
-                        }
-                    }
-                    new_artist_names.push(n.clone());
-                }
-                so.info.artist_names.extend(new_artist_names);
+                so.info
+                    .artist_names
+                    .extend(b_minus_a(&so.info.artist_names, &s.info.artist_names));
             }
 
             let Tracker {
@@ -204,6 +194,112 @@ pub mod musimanager {
                 });
             }
 
+            let mut m_albums = HashMap::new();
+            for a in artists.iter() {
+                for al in a.known_albums.iter() {
+                    m_albums.insert(al.browse_id.clone(), al.clone());
+                }
+            }
+            for a in auto_search_artists.iter() {
+                for al in a.known_albums.iter() {
+                    if let Some(alo) = m_albums.get_mut(&al.browse_id) {
+                        alo.playlist_id = alo
+                            .playlist_id
+                            .as_ref()
+                            .or(al.playlist_id.as_ref())
+                            .cloned();
+
+                        let mut songs = HashMap::new();
+                        for s in alo.songs.iter() {
+                            songs.insert(s.key.clone(), s.clone());
+                        }
+                        for s in al.songs.iter() {
+                            if !songs.contains_key(&s.key) {
+                                songs.insert(s.key.clone(), s.clone());
+                            }
+                        }
+                        alo.songs = songs.into_values().collect();
+
+                        alo.artist_keys
+                            .extend(b_minus_a(&alo.artist_keys, &al.artist_keys));
+
+                        if alo.artist_name.is_empty() {
+                            alo.artist_name = al.artist_name.clone();
+                        }
+                        if alo.name.is_empty() {
+                            alo.name = al.name.clone();
+                        }
+                    } else {
+                        m_albums.insert(al.browse_id.clone(), al.clone());
+                    }
+                }
+            }
+            et.albums = m_albums
+                .into_values()
+                .map(|al| Album {
+                    name: al.name,
+                    browse_id: al.browse_id,
+                    playlist_id: al.playlist_id,
+                    songs: al.songs.into_iter().map(|s| SongId(s.key)).collect(),
+                    artist_name: al.artist_name,
+                    artist_keys: al.artist_keys,
+                })
+                .collect();
+
+            let mut m_artists = HashMap::new();
+            for a in artists.iter() {
+                m_artists.insert(a.name.clone(), (a.clone(), Vec::new()));
+            }
+            for a in auto_search_artists {
+                if let Some((ao, unex)) = m_artists.get_mut(&a.name) {
+                    ao.keys.extend(b_minus_a(&ao.keys, &a.keys));
+                    ao.search_keywords
+                        .extend(b_minus_a(&ao.search_keywords, &a.search_keywords));
+                    ao.non_keywords
+                        .extend(b_minus_a(&ao.non_keywords, &a.non_keywords));
+                    ao.keywords.extend(b_minus_a(&ao.keywords, &a.keywords));
+
+                    let mut albums = HashMap::new();
+                    for al in ao.known_albums.iter() {
+                        albums.insert(al.browse_id.clone(), al.clone());
+                    }
+                    for al in a.known_albums.iter() {
+                        if !albums.contains_key(&al.browse_id) {
+                            albums.insert(al.browse_id.clone(), al.clone());
+                        }
+                    }
+                    ao.known_albums = albums.into_values().collect();
+
+                    unex.extend(a.songs.iter().map(| s| SongId(s.key.clone())));
+                } else {
+                    let mut a = a.clone();
+                    let songs = a.songs.into_iter().map(|s| SongId(s.key)).collect();
+                    a.songs = Vec::new();
+
+                    m_artists.insert(a.name.clone(), (a.clone(), songs));
+                }
+            }
+            et.artists = m_artists
+                .into_iter()
+                .map(|(_, (a, unex))| (Artist {
+                    name: a.name,
+                    keys: a.keys,
+                    check_stat: a.check_stat,
+                    ignore_no_songs: a.ignore_no_songs,
+                    name_confirmation_status: a.name_confirmation_status,
+                    songs: a.songs.into_iter().map(|s| SongId(s.key)).collect(),
+                    known_albums: a
+                        .known_albums
+                        .into_iter()
+                        .map(|al| AlbumId(al.browse_id))
+                        .collect(),
+                    keywords: a.keywords,
+                    non_keywords: a.non_keywords,
+                    search_keywords: a.search_keywords,
+                    last_auto_search: a.last_auto_search,
+                }, unex))
+                .collect();
+
             et
         }
     }
@@ -211,11 +307,18 @@ pub mod musimanager {
     #[derive(Serialize, Deserialize, Clone, Debug, Default)]
     pub struct EntityTracker {
         pub songs: Vec<Song<Option<SongInfo>>>,
-        pub tracker: Tracker<SongId>,
+        pub albums: Vec<Album<SongId>>,
+
+        pub artists: Vec<(Artist<SongId, AlbumId>, Vec<SongId>)>,
+        pub playlists: Vec<SongProvider<SongId>>,
+        pub queues: Vec<SongProvider<SongId>>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct SongId(pub String);
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct AlbumId(pub String);
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct SongProvider<S> {
@@ -235,16 +338,16 @@ pub mod musimanager {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    pub struct Artist<S> {
+    pub struct Artist<S, A> {
         pub name: String,
         pub keys: Vec<String>,
         pub check_stat: bool,      // # TODO: not needed?
         pub ignore_no_songs: bool, // # wont be removed from db even if no songs in it (only tracking for new albums)
         pub name_confirmation_status: bool,
         pub songs: Vec<S>,
-        pub known_albums: Vec<Album<S>>, // # to track what albums the user has listened to
-        pub keywords: Vec<String>,       // # keywords for sort
-        pub non_keywords: Vec<String>,   // # keywords/keys to specifically ignore
+        pub known_albums: Vec<A>, // # to track what albums the user has listened to
+        pub keywords: Vec<String>, // # keywords for sort
+        pub non_keywords: Vec<String>, // # keywords/keys to specifically ignore
         pub search_keywords: Vec<String>,
         pub last_auto_search: Option<u32>,
     }
@@ -293,7 +396,7 @@ mod covau_types {
     #[derive(Serialize, Deserialize, Clone, Debug)]
     pub struct Artist {
         pub name: String,
-        pub albums: Vec<AlbumId>,
+        // pub albums: Vec<AlbumId>,
     }
 }
 
@@ -313,6 +416,11 @@ async fn parse_test() -> Result<()> {
     // }
 
     dbg!(parsed.disambiguate());
+    // dbg!(parsed
+    //     .artists
+    //     .iter()
+    //     .map(|a| a.known_albums.clone())
+    //     .collect::<Vec<_>>());
 
     Ok(())
 }
