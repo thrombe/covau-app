@@ -126,17 +126,6 @@ pub mod musimanager {
             }
             for a in auto_search_artists {
                 for s in &a.songs {
-                    let info = SongInfo {
-                        titles: Vec::new(),
-                        video_id: "".to_owned(),
-                        duration: None,
-                        tags: Vec::new(),
-                        thumbnail_url: "".to_owned(),
-                        album: None,
-                        artist_names: Vec::new(),
-                        channel_id: "".to_owned(),
-                        uploader_id: None,
-                    };
                     if s.title.contains("---") {
                         let key = "--------------";
                         songs.insert(
@@ -145,7 +134,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info,
+                                info: Default::default(),
                                 last_known_path: None,
                             },
                         );
@@ -157,7 +146,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info,
+                                info: Default::default(),
                                 last_known_path: None,
                             },
                         );
@@ -169,7 +158,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info,
+                                info: Default::default(),
                                 last_known_path: None,
                             },
                         );
@@ -320,6 +309,36 @@ pub mod musimanager {
                     ao.known_albums = albums.into_values().collect();
 
                     ao.unexplored_songs = a.songs.clone();
+                    ao.unexplored_songs.iter_mut().for_each(|s| {
+                        if s.title.contains("---") {
+                            let key = "--------------";
+                            *s = Song {
+                                title: key.to_owned(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: Default::default(),
+                                last_known_path: None,
+                            };
+                        } else if s.title.contains("___") {
+                            let key = "______________";
+                            *s = Song {
+                                title: key.to_owned(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: Default::default(),
+                                last_known_path: None,
+                            };
+                        } else if s.title.contains("===") {
+                            let key = "==============";
+                            *s = Song {
+                                title: key.to_owned(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: Default::default(),
+                                last_known_path: None,
+                            };
+                        }
+                    });
                 } else {
                     let mut a = a.clone();
                     a.unexplored_songs = a.songs;
@@ -337,7 +356,11 @@ pub mod musimanager {
                     ignore_no_songs: a.ignore_no_songs,
                     name_confirmation_status: a.name_confirmation_status,
                     songs: a.songs.into_iter().map(|s| SongId(s.key)).collect(),
-                    unexplored_songs: Vec::new(),
+                    unexplored_songs: a
+                        .unexplored_songs
+                        .into_iter()
+                        .map(|s| SongId(s.key))
+                        .collect(),
                     known_albums: a
                         .known_albums
                         .into_iter()
@@ -415,7 +438,7 @@ pub mod musimanager {
         pub last_known_path: Option<String>,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
     pub struct SongInfo {
         pub titles: Vec<String>,
         pub video_id: String,
