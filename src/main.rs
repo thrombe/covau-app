@@ -11,9 +11,87 @@ use anyhow::Result;
 async fn main() -> Result<()> {
     init_logger("./")?;
 
+    parse_test().await?;
+
     Ok(())
 }
 
+pub mod musimanager {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Tracker {
+        artists: Vec<Artist>,
+        playlists: Vec<SongProvider>,
+        queues: Vec<SongProvider>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct SongProvider {
+        name: String,
+        data_list: Vec<Song>,
+        current_index: u32,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Album {
+        name: String,
+        browse_id: String,
+        playlist_id: Option<String>,
+        songs: Vec<Song>,
+        artist_name: String,
+        artist_keys: Vec<String>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Artist {
+        name: String,
+        keys: Vec<String>,
+        check_stat: bool, // # TODO: not needed?
+        ignore_no_songs: bool, // # wont be removed from db even if no songs in it (only tracking for new albums)
+        name_confirmation_status: bool,
+        songs: Vec<Song>,
+        known_albums: Vec<Album>, // # to track what albums the user has listened to
+        keywords: Vec<String>, // # keywords for sort
+        non_keywords: Vec<String>, // # keywords/keys to specifically ignore
+        search_keywords: Vec<String>,
+        last_auto_search: Option<u32>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Song {
+        title: Option<String>,
+        key: Option<String>,
+        artist_name: Option<String>,
+        info: SongInfo,
+        last_known_path: Option<String>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct SongInfo {
+        titles: Vec<String>,
+        video_id: String,
+        duration: Option<f32>, // # TODO: no need?
+        tags: Vec<String>,
+        thumbnail_url: String,
+        album: Option<String>,
+        artist_names: Vec<String>,
+        channel_id: String,
+        uploader_id: Option<String>,
+    }
+}
+
+async fn parse_test() -> Result<()> {
+    let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+
+    let data = std::fs::read_to_string(path)?;
+
+    let parsed = serde_json::from_str::<musimanager::Tracker>(&data)?;
+
+    dbg!(&parsed);
+    
+    Ok(())
+}
 
 async fn api_test() -> Result<()> {
     // let r = Artist::search("query=red velvet".into()).with_releases().execute().await;
