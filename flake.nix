@@ -29,24 +29,23 @@
         license = licenses.mit;
         platforms = platforms.linux;
       };
-      # manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
-      # hyprkool-rs = pkgs.unstable.rustPlatform.buildRustPackage {
-      #   pname = manifest.name;
-      #   version = manifest.version;
-      #   cargoLock = {
-      #     lockFile = ./Cargo.lock;
-      #     outputHashes = {
-      #       "hyprland-0.4.0-alpha.2" = "sha256-7GRj0vxsQ4ORp0hSBAorjFYvWDy+edGU2IL3DhFDLvQ=";
-      #     };
-      #   };
-      #   src = pkgs.lib.cleanSource ./.;
+      manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
+      covau-app = pkgs.unstable.rustPlatform.buildRustPackage {
+        pname = manifest.name;
+        version = manifest.version;
+        cargoLock = {
+          lockFile = ./Cargo.lock;
+          outputHashes = {
+          };
+        };
+        src = pkgs.lib.cleanSource ./.;
 
-      #   nativeBuildInputs = with pkgs; [
-      #     pkg-config
-      #   ];
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+        ];
 
-      #   inherit meta;
-      # };
+        inherit meta;
+      };
       # plugin-manifest = (pkgs.lib.importTOML ./hyprpm.toml).repository;
       # hyprkool-plugin = stdenv.mkDerivation rec {
       #   pname = plugin-manifest.name;
@@ -125,7 +124,7 @@
         } {
           nativeBuildInputs = (env-packages pkgs) ++ [fhs];
           inputsFrom = [
-            # hyprkool-rs
+            covau-app
             # hyprkool-plugin
           ];
           shellHook = ''
