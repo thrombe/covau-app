@@ -126,10 +126,48 @@ pub mod musimanager {
             }
             for a in auto_search_artists {
                 for s in &a.songs {
-                    if let Some(so) = songs.get_mut(&s.key) {
-                        take_from(so, s);
+                    if s.title.contains("---") {
+                        let key = "--------------";
+                        songs.insert(
+                            key.to_owned(),
+                            Song {
+                                title: s.title.clone(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: None,
+                                last_known_path: None,
+                            },
+                        );
+                    } else if s.title.contains("___") {
+                        let key = "______________";
+                        songs.insert(
+                            key.to_owned(),
+                            Song {
+                                title: s.title.clone(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: None,
+                                last_known_path: None,
+                            },
+                        );
+                    } else if s.title.contains("===") {
+                        let key = "==============";
+                        songs.insert(
+                            key.to_owned(),
+                            Song {
+                                title: s.title.clone(),
+                                key: key.to_owned(),
+                                artist_name: None,
+                                info: None,
+                                last_known_path: None,
+                            },
+                        );
                     } else {
-                        songs.insert(s.key.clone(), s.clone());
+                        if let Some(so) = songs.get_mut(&s.key) {
+                            take_from(so, s);
+                        } else {
+                            songs.insert(s.key.clone(), s.clone());
+                        }
                     }
                 }
                 for al in a.known_albums.iter() {
@@ -420,7 +458,8 @@ async fn parse_test() -> Result<()> {
     //     {}
     // }
 
-    dbg!(parsed.disambiguate());
+    let dis = parsed.disambiguate();
+    // dbg!(dis);
     // dbg!(parsed
     //     .artists
     //     .iter()
