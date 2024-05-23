@@ -36,7 +36,7 @@ pub mod musimanager {
     }
 
     impl Tracker<Song> {
-        pub fn disambiguate(&self) -> EntityTracker {
+        pub fn clean(&self) -> EntityTracker {
             let mut et = EntityTracker::default();
 
             fn b_minus_a(a: &Vec<String>, b: &Vec<String>) -> Vec<String> {
@@ -492,7 +492,7 @@ async fn parse_test() -> Result<()> {
     //     {}
     // }
 
-    let dis = parsed.disambiguate();
+    let dis = parsed.clean();
     dbg!(dis);
     // dbg!(parsed
     //     .artists
