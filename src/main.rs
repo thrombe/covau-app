@@ -126,6 +126,17 @@ pub mod musimanager {
             }
             for a in auto_search_artists {
                 for s in &a.songs {
+                    let info = SongInfo {
+                        titles: Vec::new(),
+                        video_id: "".to_owned(),
+                        duration: None,
+                        tags: Vec::new(),
+                        thumbnail_url: "".to_owned(),
+                        album: None,
+                        artist_names: Vec::new(),
+                        channel_id: "".to_owned(),
+                        uploader_id: None,
+                    };
                     if s.title.contains("---") {
                         let key = "--------------";
                         songs.insert(
@@ -134,7 +145,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info: None,
+                                info,
                                 last_known_path: None,
                             },
                         );
@@ -146,7 +157,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info: None,
+                                info,
                                 last_known_path: None,
                             },
                         );
@@ -158,7 +169,7 @@ pub mod musimanager {
                                 title: s.title.clone(),
                                 key: key.to_owned(),
                                 artist_name: None,
-                                info: None,
+                                info,
                                 last_known_path: None,
                             },
                         );
@@ -459,7 +470,7 @@ async fn parse_test() -> Result<()> {
     // }
 
     let dis = parsed.disambiguate();
-    // dbg!(dis);
+    dbg!(dis);
     // dbg!(parsed
     //     .artists
     //     .iter()
