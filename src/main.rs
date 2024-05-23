@@ -440,13 +440,13 @@ pub mod musimanager {
 
     #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
     pub struct SongInfo {
-        pub titles: Vec<String>,
+        pub titles: Vec<String>, // track > alt_title > title
         pub video_id: String,
         pub duration: Option<f32>, // # TODO: no need?
         pub tags: Vec<String>,
         pub thumbnail_url: String,
         pub album: Option<String>,
-        pub artist_names: Vec<String>,
+        pub artist_names: Vec<String>, // artist > uploader > creator > channel
         pub channel_id: String,
         pub uploader_id: Option<String>,
     }
