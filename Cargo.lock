@@ -150,6 +150,7 @@ dependencies = [
  "serde_json",
  "specta",
  "tokio",
+ "webui-rs",
 ]
 
 [[package]]
@@ -1389,6 +1390,14 @@ checksum = "77afa9a11836342370f4817622a2f0f418b134426d91a82dfb48f532d2ec13ef"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webui-rs"
+version = "0.1.0"
+source = "git+https://github.com/webui-dev/rust-webui/?branch=main#5cd79d4dede52824aa24ad84022c5ba783b00cea"
+dependencies = [
+ "lazy_static",
 ]
 
 [[package]]

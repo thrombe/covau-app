@@ -41,6 +41,7 @@
         cargoLock = {
           lockFile = ./Cargo.lock;
           outputHashes = {
+           "webui-rs-0.1.0" = "";
           };
         };
         src = pkgs.lib.cleanSource ./.;
