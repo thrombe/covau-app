@@ -63,6 +63,10 @@
 
         inherit meta;
       };
+      covau-app-zig-packages = with pkgs; [
+        nodejs_21
+        deno
+      ];
       covau-app-zig = pkgs.stdenv.mkDerivation rec {
         name = manifest.name;
 
@@ -77,7 +81,7 @@
         nativeBuildInputs = with pkgs; [
           pkg-config
           unstable.zig_0_11.hook
-        ];
+        ] ++ covau-app-zig-packages;
       };
       webui = stdenv.mkDerivation {
         name = "webui";
@@ -179,7 +183,7 @@
         pkgs.mkShell.override {
           inherit stdenv;
         } {
-          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+          nativeBuildInputs = (env-packages pkgs) ++ [fhs] ++ covau-app-zig-packages;
           inputsFrom = [
             covau-app
             # hyprkool-plugin

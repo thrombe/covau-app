@@ -11,6 +11,15 @@ use anyhow::Result;
 // create a nix style symlinked artist/songs, album/songs, artist/albums, etc
 // but store all songs in a single directory
 
+// PLAN:
+// - ui
+//  - electron
+//  - qt stremio thing
+//  - webui zig api
+// - backend
+//  - database
+//  - interface with musicbrainz
+
 pub mod musimanager {
     use std::collections::HashMap;
 
@@ -476,7 +485,7 @@ pub mod musimanager {
         types += ";\n";
 
         println!("{}", types);
-        
+
         Ok(())
     }
 }
@@ -519,7 +528,7 @@ mod covau_types {
         types += ";\n";
 
         println!("{}", types);
-        
+
         Ok(())
     }
 }
