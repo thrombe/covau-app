@@ -580,13 +580,14 @@ use webui_rs::webui;
 
 pub async fn test_webui() -> Result<()> {
     let win = webui::Window::new();
-    win.show("<html><body><h1>Hello, World!</h1></body></html>");
+    // win.show("<html><head><script src=\"webui.js\"></script></head> Hello World ! </html>");
     // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
-    // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
+    win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
+    win.run_js("/webui.js");
 
     let a = win.run_js("console.log('hello')").data;
     dbg!(a);
-    let a = win.run_js("lmao land").data;
+    let a = win.run_js("console.log('a', b)").data;
     dbg!(a);
 
     tokio::task::spawn_blocking(|| {

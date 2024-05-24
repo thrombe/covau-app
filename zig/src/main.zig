@@ -3,10 +3,15 @@ const webui = @import("webui");
 
 pub fn main() !void {
     var nwin = webui.newWindow();
-    _ = nwin.show("<html><head><script src=\"webui.js\"></script></head> Hello World ! </html>");
-    // _ = nwin.show("https://covau.netlify.app");
+
+    nwin.setFileHandler(handle);
 
     nwin.setRuntime(webui.Runtimes.NodeJS);
+
+    _ = nwin.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
+    // _ = nwin.show("https://covau.netlify.app");
+    // _ = nwin.show("http://localhost:5173");
+
     var response: [64]u8 = std.mem.zeroes([64]u8);
     const a = nwin.script(
         \\ console.log('hello')
@@ -35,4 +40,9 @@ pub fn main() !void {
 
 fn events(e: webui.Event) void {
     std.debug.print("{?}\n", .{e});
+}
+
+fn handle(name: []const u8) ?[]u8 {
+    std.debug.print("{s}\n", .{name});
+    return null;
 }
