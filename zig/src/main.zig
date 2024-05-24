@@ -8,9 +8,9 @@ pub fn main() !void {
 
     nwin.setRuntime(webui.Runtimes.NodeJS);
 
-    _ = nwin.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
+    // _ = nwin.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
     // _ = nwin.show("https://covau.netlify.app");
-    // _ = nwin.show("http://localhost:5173");
+    _ = nwin.show("http://localhost:5173");
 
     var response: [64]u8 = std.mem.zeroes([64]u8);
     const a = nwin.script(

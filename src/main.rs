@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{borrow::Borrow, ffi::CStr, path::PathBuf};
 
 use musicbrainz_rs::{
     entity::{artist::Artist, recording::Recording, release::Release, work::Work},
@@ -578,17 +578,37 @@ async fn api_test() -> Result<()> {
 
 use webui_rs::webui;
 
+// returned pointer is only freed if allocated using webui_malloc
+// https://github.com/webui-dev/webui/blob/a3f3174c73b2414ea27bebb0fd62ccc0f180ad30/src/webui.c#L3150C1-L3150C23
+unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *mut i32) -> *const std::os::raw::c_void {
+    let name = CStr::from_ptr(name);
+    let res = handle(name.to_string_lossy().as_ref());
+    let res = res.into_boxed_str();
+    *length = res.len() as _;
+    let res = Box::leak(res);
+    let res: &str = res.borrow();
+    res.as_ptr() as _
+}
+
+fn handle(name: &str) -> String {
+    dbg!(name);
+    String::from(
+        "lol"
+    )
+}
+
 pub async fn test_webui() -> Result<()> {
     let win = webui::Window::new();
-    // win.show("<html><head><script src=\"webui.js\"></script></head> Hello World ! </html>");
+    win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
     // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
-    win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
+    // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
     win.run_js("/webui.js");
 
     let a = win.run_js("console.log('hello')").data;
     dbg!(a);
     let a = win.run_js("console.log('a', b)").data;
     dbg!(a);
+    win.set_file_handler(unsafe_handle);
 
     tokio::task::spawn_blocking(|| {
         webui::wait();
