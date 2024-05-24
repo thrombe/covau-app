@@ -54,7 +54,8 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": "nixpkgs-unstable",
+        "webui-git": "webui-git"
       }
     },
     "systems": {
@@ -69,6 +70,23 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "webui-git": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1701300464,
+        "narHash": "sha256-RcYEOXm6hZVAYUSB4R66WOVJcFWYIbKjKtFFtmgg120=",
+        "owner": "webui-dev",
+        "repo": "webui",
+        "rev": "ac4ea8cd7b11daf3d96c65db03e6c02e1e0bd6d2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "webui-dev",
+        "ref": "2.4.2",
+        "repo": "webui",
         "type": "github"
       }
     }

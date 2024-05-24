@@ -5,6 +5,11 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+
+    webui-git = {
+      url = "github:webui-dev/webui/2.4.2";
+      flake = false;
+    };
   };
 
   outputs = inputs:
@@ -42,6 +47,7 @@
 
         buildInputs = with pkgs; [
           openssl
+          webui
         ];
 
         nativeBuildInputs = with pkgs; [
@@ -49,6 +55,26 @@
         ];
 
         inherit meta;
+      };
+      webui = stdenv.mkDerivation {
+        name = "webui";
+        src = inputs.webui-git;
+
+        buildPhase = ''
+          make release
+        '';
+        installPhase = ''
+          mkdir -p $out/lib
+          mv ./dist/* $out/lib/.
+        '';
+
+        buildInputs = with pkgs; [
+          openssl
+        ];
+
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+        ];
       };
       # plugin-manifest = (pkgs.lib.importTOML ./hyprpm.toml).repository;
       # hyprkool-plugin = stdenv.mkDerivation rec {
@@ -114,8 +140,8 @@
           ]
           ++ (custom-commands pkgs);
 
-      stdenv = pkgs.clangStdenv;
-      # stdenv = pkgs.gccStdenv;
+      # stdenv = pkgs.clangStdenv;
+      stdenv = pkgs.gccStdenv;
     in {
       packages = {
         # default = hyprkool-rs;
