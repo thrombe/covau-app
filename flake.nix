@@ -168,6 +168,9 @@
             # (flakeDefaultPackage inputs.zls)
             unstable.zig_0_11
             zls
+
+            unstable.bun
+            unstable.electron_29
           ]
           ++ (custom-commands pkgs);
 
