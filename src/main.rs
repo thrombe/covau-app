@@ -576,7 +576,7 @@ async fn api_test() -> Result<()> {
     Ok(())
 }
 
-use webui_rs::webui;
+use webui_rs::webui::{self, bindgen::webui_malloc};
 
 // returned pointer is only freed if allocated using webui_malloc
 // https://github.com/webui-dev/webui/blob/a3f3174c73b2414ea27bebb0fd62ccc0f180ad30/src/webui.c#L3150C1-L3150C23
@@ -585,9 +585,9 @@ unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *m
     let res = handle(name.to_string_lossy().as_ref());
     let res = res.into_boxed_str();
     *length = res.len() as _;
-    let res = Box::leak(res);
-    let res: &str = res.borrow();
-    res.as_ptr() as _
+    let block = webui_malloc(res.len());
+    std::ptr::copy_nonoverlapping(res.as_ptr(), block as _, res.len());
+    block as _
 }
 
 fn handle(name: &str) -> String {
