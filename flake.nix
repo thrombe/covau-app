@@ -10,6 +10,12 @@
       url = "github:webui-dev/webui/2.4.2";
       flake = false;
     };
+    # zls = {
+    #   url = "github:zigtools/zls/0.12.0";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    #   inputs.flake-utils.follows = "flake-utils";
+    #   # inputs.zig-overlay.follows = "zig-overlay";
+    # };
   };
 
   outputs = inputs:
@@ -56,6 +62,22 @@
         ];
 
         inherit meta;
+      };
+      covau-app-zig = pkgs.stdenv.mkDerivation rec {
+        name = manifest.name;
+
+        src = pkgs.lib.cleanSource ./zig;
+
+        installPhase = ''
+        '';
+
+        buildInputs = [
+          webui
+        ];
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+          unstable.zig_0_11.hook
+        ];
       };
       webui = stdenv.mkDerivation {
         name = "webui";
@@ -138,6 +160,10 @@
             unstable.rustfmt
             unstable.clippy
             # unstable.rustup
+
+            # (flakeDefaultPackage inputs.zls)
+            unstable.zig_0_11
+            zls
           ]
           ++ (custom-commands pkgs);
 
