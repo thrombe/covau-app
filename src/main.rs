@@ -50,7 +50,7 @@ pub mod musimanager {
         pub fn clean(&self) -> EntityTracker {
             let mut et = EntityTracker::default();
 
-            fn b_minus_a(a: &Vec<String>, b: &Vec<String>) -> Vec<String> {
+            fn b_minus_a(a: &[String], b: &[String]) -> Vec<String> {
                 let mut unique = Vec::new();
                 'first: for t in b.iter() {
                     for t2 in a.iter() {
@@ -174,6 +174,7 @@ pub mod musimanager {
                             },
                         );
                     } else {
+                        #[allow(clippy::collapsible_else_if)]
                         if let Some(so) = songs.get_mut(&s.key) {
                             take_from(so, s);
                         } else {
@@ -210,20 +211,8 @@ pub mod musimanager {
                 }
             }
             for (_, s) in songs.iter_mut() {
-                s.info.titles = s
-                    .info
-                    .titles
-                    .iter()
-                    .filter(|t| !t.is_empty())
-                    .cloned()
-                    .collect();
-                s.info.artist_names = s
-                    .info
-                    .artist_names
-                    .iter()
-                    .filter(|t| !t.is_empty())
-                    .cloned()
-                    .collect();
+                s.info.titles.retain(|t| !t.is_empty());
+                s.info.artist_names.retain(|t| !t.is_empty());
                 s.info.album = s.info.album.as_ref().filter(|a| !a.is_empty()).cloned();
                 s.info.uploader_id = s
                     .info
@@ -359,8 +348,8 @@ pub mod musimanager {
                 }
             }
             et.artists = m_artists
-                .into_iter()
-                .map(|(_, a)| Artist {
+                .into_values()
+                .map(|a| Artist {
                     name: a.name,
                     keys: a.keys,
                     check_stat: a.check_stat,
@@ -671,7 +660,8 @@ mod server {
                 |fetch: bytes::Bytes, client: Arc<Mutex<reqwest::Client>>| async move {
                     dbg!(String::from_utf8_lossy(fetch.clone().to_vec().as_slice()));
                     let fetch = fetch.to_vec();
-                    if fetch.is_empty() { // OOF: for preflight requests. idk what else to do
+                    if fetch.is_empty() {
+                        // OOF: for preflight requests. idk what else to do
                         return warp::http::Response::builder()
                             .body(warp::hyper::Body::empty())
                             .map_err(custom_reject);
@@ -850,10 +840,18 @@ fn dump_types() -> Result<()> {
     let tsconfig = specta::ts::ExportConfiguration::default();
     let types_dir = PathBuf::from("./electron/src/types");
     let _ = std::fs::create_dir(&types_dir);
-    std::fs::write(types_dir.join("musimanager.ts"), musimanager::dump_types(&tsconfig)?)?;
-    std::fs::write(types_dir.join("covau.ts"), covau_types::dump_types(&tsconfig)?)?;
+    std::fs::write(
+        types_dir.join("musimanager.ts"),
+        musimanager::dump_types(&tsconfig)?,
+    )?;
+    std::fs::write(
+        types_dir.join("covau.ts"),
+        covau_types::dump_types(&tsconfig)?,
+    )?;
     std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
-    
+
+    Ok(())
+}
 
 fn player_test() -> Result<()> {
     let mut p = musiplayer::Player::new()?;
