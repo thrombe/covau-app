@@ -171,6 +171,11 @@
 
             unstable.bun
             unstable.electron_29
+
+            nodePackages_latest.svelte-language-server
+            nodePackages_latest.typescript-language-server
+            tailwindcss-language-server
+
           ]
           ++ (custom-commands pkgs);
 
