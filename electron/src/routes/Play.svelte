@@ -5,9 +5,32 @@
     import { onDestroy } from 'svelte';
     import { writable, type Writable } from 'svelte/store';
     import { firebase_config } from '../firebase_config';
+    import { new_innertube_instance } from '$lib/searcher/tube';
+    import { YT, YTNodes } from '$lib/searcher/song_tube';
+    import { Player as PL } from 'youtubei.js';
+    import { LocalPlayer } from "$lib/local_player.ts";
 
     export let params: { group?: string };
 
+    let lp = new LocalPlayer();
+
+    const dothis = async () => {
+        let p = await new_innertube_instance();
+        let res = await p.music.search("Aimer", { type: 'song' });
+        console.log(res)
+        let contents = res.contents!
+            .flatMap(e => e.contents?.filterType(YTNodes.MusicResponsiveListItem) ?? []);
+        let v = contents[0];
+        console.log(v)
+
+        let d = await p.getInfo(v.id!);
+        console.log(d)
+        let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+        let url = d.getStreamingInfo();
+        console.log(url, url, f, f.decipher(p.session.player))
+        p.download
+    };
+    
     let group: string;
     if (!params.group) {
         group = 'random-one';
@@ -38,6 +61,7 @@
     const on_yt_load = async () => {
         let p = await Player.new(db, group, 'video');
         player = writable(p);
+        await dothis();
         $player.on_update = () => {
             $tick += $player.synced_data.tick;
         };
@@ -81,6 +105,7 @@
 {#if player}
     {#key $tick}
         {#each queue as id, i (i)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <span
                 on:click={async () => {
                     await $player.play_index(i);
