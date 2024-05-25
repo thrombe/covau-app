@@ -1,6 +1,6 @@
 import Innertube, { MusicShelfContinuation, UniversalCache, YTMusic, YT, YTNodes } from "youtubei.js/web";
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
-import type { Keyed, RObject, RSearcher, ReturnType } from "./searcher";
+import type { Keyed, RObject, RSearcher } from "./searcher";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
