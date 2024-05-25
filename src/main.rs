@@ -649,8 +649,18 @@ mod server {
 
     pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
+    #[derive(Debug)]
+    struct CustomReject(anyhow::Error);
+
+    impl warp::reject::Reject for CustomReject {}
+
+    pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection {
+        warp::reject::custom(CustomReject(error.into()))
+    }
+
     pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
+        let client = std::sync::Arc::new(tokio::sync::Mutex::new(reqwest::Client::new()));
 
         let ws_route = warp::path("ws")
             .and(warp::ws())
@@ -660,16 +670,94 @@ mod server {
             });
         let ws_route = ws_route.with(warp::cors().allow_any_origin());
 
+        let c = client.clone();
         let cors_proxy = warp::path("fetch")
-            .and(warp::body::json())
-            .then(|fetch: FetchRequest| async move {
-                warp::reply::json(&fetch)
-            });
+            // .and(warp::post())
+            .and(warp::body::bytes())
+            .and(warp::any().map(move || c.clone()))
+            .and_then(
+                |fetch: bytes::Bytes, client: Arc<Mutex<reqwest::Client>>| async move {
+                    dbg!(String::from_utf8_lossy(fetch.clone().to_vec().as_slice()));
+                    let fetch = fetch.to_vec();
+                    if fetch.is_empty() { // OOF: for preflight requests. idk what else to do
+                        return warp::http::Response::builder()
+                            .body(warp::hyper::Body::empty())
+                            .map_err(custom_reject);
+                    }
+                    let fetch = serde_json::from_slice::<FetchRequest>(fetch.as_ref())
+                        .map_err(custom_reject)?;
+                    dbg!(&fetch);
+                    let headers: Vec<(String, String)> =
+                        serde_json::from_str(&fetch.headers).map_err(custom_reject)?;
+                    let c = client.lock().await;
+                    let url = reqwest::Url::parse(&fetch.url).map_err(custom_reject)?;
+                    let mut url = c.request(
+                        reqwest::Method::from_bytes(fetch.method.as_bytes())
+                            .map_err(custom_reject)?,
+                        url,
+                    );
+                    if let Some(body) = fetch.body {
+                        url = url.body(body);
+                    }
+                    for (k, v) in headers {
+                        url = url.header(k, v);
+                    }
+                    let res = c
+                        .execute(url.build().map_err(custom_reject)?)
+                        .await
+                        .map_err(custom_reject)?;
+                    let mut wres = warp::http::Response::builder();
+                    for (k, v) in res.headers().iter() {
+                        wres = wres.header(k, v);
+                    }
+                    let status = res.status();
+                    let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+                    wres.status(status).body(body).map_err(custom_reject)
+                },
+            );
+        // .map(|mut s: warp::http::Response<warp::hyper::Body>| {s.headers_mut().clear(); s});
         let cors_proxy = cors_proxy.with(warp::cors().allow_any_origin());
 
         println!("Starting server at {}:{}", ip_addr, port);
 
-        let all = ws_route.or(cors_proxy);
+        let c = client.clone();
+        let redirect = warp::any()
+            .and(warp::any().map(move || c.clone()))
+            .and(warp::method())
+            .and(warp::path::tail())
+            .and(warp::header::headers_cloned())
+            .and(warp::body::bytes())
+            .and_then(
+                |client: Arc<Mutex<reqwest::Client>>,
+                 m: warp::http::Method,
+                 p: warp::path::Tail,
+                 h: warp::http::HeaderMap,
+                 b: bytes::Bytes| async move {
+                    let c = client.lock().await;
+                    let url = String::from("http://localhost:5173/") + p.as_str();
+                    dbg!(&url);
+                    let mut req = c.request(m, url);
+                    for (k, v) in h.iter() {
+                        req = req.header(k, v);
+                    }
+                    req = req.body(b);
+                    let res = c
+                        .execute(req.build().map_err(custom_reject)?)
+                        .await
+                        .map_err(custom_reject)?;
+                    let mut wres = warp::http::Response::builder();
+                    for (k, v) in res.headers().iter() {
+                        wres = wres.header(k, v);
+                    }
+                    let status = res.status();
+                    let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+                    wres.status(status).body(body).map_err(custom_reject)
+                    // Ok::<_, warp::Rejection>(wres)
+                },
+            );
+
+        let all = ws_route.or(cors_proxy).or(redirect);
+        // let all = redirect;
 
         warp::serve(all).run((ip_addr, port)).await;
     }
@@ -726,8 +814,11 @@ mod server {
     #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
     pub struct FetchRequest {
         url: String,
-        body: String,
-        headers: HashMap<String, String>,
+        #[serde(default = "Default::default")]
+        body: Option<String>,
+        // headers: HashMap<String, String>,
+        headers: String,
+        method: String,
     }
 
     async fn client_msg(user_id: &str, msg: ws::Message, clients: &Clients) -> anyhow::Result<()> {

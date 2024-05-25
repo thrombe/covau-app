@@ -40,7 +40,8 @@ export async function new_innertube_instance() {
                 body: init?.body,
                 method: request.method
             };
-            let res = await fetch('/.netlify/functions/fetch', {
+            console.log(JSON.stringify(req));
+            let res = await fetch('http://localhost:10010/fetch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(req)
