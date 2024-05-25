@@ -176,6 +176,17 @@
             nodePackages_latest.typescript-language-server
             tailwindcss-language-server
 
+            gst_all_1.gstreamer
+            gst_all_1.gst-plugins-base
+            gst_all_1.gst-plugins-good
+            gst_all_1.gst-plugins-bad
+            gst_all_1.gst-plugins-ugly
+            # Plugins to reuse ffmpeg to play almost every video format
+            gst_all_1.gst-libav
+            # Support the Video Audio (Hardware) Acceleration API
+            gst_all_1.gst-vaapi
+
+            mpv
           ]
           ++ (custom-commands pkgs);
 

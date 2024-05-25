@@ -7,6 +7,8 @@ use musicbrainz_rs::{
 
 use anyhow::Result;
 
+mod musiplayer;
+
 // TODO:
 // create a nix style symlinked artist/songs, album/songs, artist/albums, etc
 // but store all songs in a single directory
@@ -852,6 +854,25 @@ fn dump_types() -> Result<()> {
     std::fs::write(types_dir.join("covau.ts"), covau_types::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
     
+
+fn player_test() -> Result<()> {
+    let mut p = musiplayer::Player::new()?;
+    // p.play("file:///home/issac/daata/phon-data/.musi/IsBac/Aimer/g44EmqlZ1Bs.m4a".into())?;
+    p.play("https://rr8---sn-ci5gup-2o9l.googlevideo.com/videoplayback?expire=1716696013&ei=bV9SZseZGO3krtoP_9qisAk&ip=2401%3A4900%3A1c8f%3A6398%3A6ec4%3Afcaa%3Ae9b4%3A6af2&id=o-AJ-RVPd2O4vusPSm_5wDRSf1ChX5S0VGUso3W2XbyXIP&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&mh=7Z&mm=31%2C29&mn=sn-ci5gup-2o9l%2Csn-ci5gup-cvhe7&ms=au%2Crdu&mv=m&mvi=8&pl=48&gcr=in&initcwndbps=2171250&bui=AWRWj2SpRYhbzlbuMTajRDtwZFP-iSrmOSvuFf0YrV6nC5tyRTMlZ6Ei7eqQ9zXxElEUiP00VBDHpmtF&spc=UWF9f3qhhBvNoXix8LHG6fnJIEcEIfKaOTH6dy7aAdwUyrMuYLhJnfhBvgZu&vprv=1&svpuc=1&mime=audio%2Fwebm&ns=NCQPOLyDXWwCELpDh2x_UFEQ&rqh=1&gir=yes&clen=2881812&dur=184.901&lmt=1714740634524644&mt=1716673959&fvip=1&keepalive=yes&c=WEB&sefc=1&txp=2318224&n=mVDrPpHbrUoCpA&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cgcr%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps&lsig=AHWaYeowRQIhALvKTj_yldZ8wJJw7GGcZcWe3ssxE1mpW-XMiL9o0hBgAiA1i1DRW7LUi5f-hB2OoJQNB7zkB4scInIJcgLblXCHow%3D%3D&sig=AJfQdSswRgIhAPMVmfIvEnuZuuDooKAGX3goxHkoXNXS08t-3t_7UDcuAiEA6bhkfk1rZm8Urg8gq-DWvkQBsfb1cUn49tNBQRHZmMk%3D&cver=2.20230622.06.00".into())?;
+
+    dbg!(p.progress());
+    std::thread::sleep(std::time::Duration::from_secs(5));
+    dbg!(p.progress());
+    p.seek(60.0);
+    dbg!(p.progress());
+    std::thread::sleep(std::time::Duration::from_secs(5));
+    dbg!(p.progress());
+    p.seek(-10.0);
+    dbg!(p.progress());
+    std::thread::sleep(std::time::Duration::from_secs(10));
+    dbg!(p.progress());
+    std::process::exit(1);
+
     Ok(())
 }
 
@@ -865,6 +886,8 @@ async fn main() -> Result<()> {
 
     // parse_test().await?;
     // api_test().await?;
+
+    // player_test()?;
 
     dump_types()?;
 

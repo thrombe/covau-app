@@ -22,3 +22,25 @@ ulid = { version = "1.1.2", features = ["serde"] }
 uuid = { version = "1.8.0", features = ["v4", "fast-rng"] }
 warp = "0.3.7"
 webui-rs = { git = "https://github.com/webui-dev/rust-webui/", branch = "main" }
+
+gstreamer = {version = "0.17", optional = true}
+gstreamer-player = {version = "0.17", optional = true}
+mpv = {version = "0.2.3", optional = true}
+# libmpv = {version = "2.0", optional = true}
+derivative = "2.2.0"
+
+[features]
+# default = ["player-gst", "force"]
+default = ["player-mpv", "force"]
+# default = ["player-libmpv", "force"]
+force = []
+player-mpv = ["mpv"]
+player-gst = ["gstreamer-player", "gstreamer"]
+# player-libmpv = ["libmpv"] # didn't impliment this one yet
+
+[target.'cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))'.dependencies]
+gstreamer = {version = "0.17"}
+gstreamer-player = {version = "0.17"}
+
+[target.'cfg(all(target_os = "android", target_arch = "aarch64"))'.dependencies]
+mpv = {version = "0.2.3"}
