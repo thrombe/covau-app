@@ -640,91 +640,48 @@ mod server {
     use warp::ws::{WebSocket};
 
     #[derive(Debug, Clone)]
-    /// Defines the structure for connected websocket client
     pub struct Client {
-        /// Unique identifier (ulid) for users who are using the client
         pub user_id: String,
-
-        /// Sender is used to send messages to the connected client (mpsc::UnboundedReceiver)
         pub sender: Option<mpsc::UnboundedSender<std::result::Result<Message, warp::Error>>>,
     }
 
-    /// Map of connection IDs for clients that can be safely passed across threads
     pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
-    /// Function to extract the "Clients" data and return a Filter matching any route.
-    pub fn with_clients(
-        clients: Clients,
-    ) -> impl Filter<Extract = (Clients,), Error = Infallible> + Clone {
-        warp::any().map(move || clients.clone())
-    }
-
-    /// Function to run the websocket server on given IP address and Port number
     pub async fn start(ip_addr: Ipv4Addr, port: u16) {
-        // Creating new instance of the "Clients" type
         let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
 
-        println!("Configuring websocket route");
-
-        // Creating the websocket route for the server
-        // 1) Define the path as "ws". So the full path for the client will become: <ip_addr>:<port>/ws
-        // 2) Add a WebSocket filter that yields a "Ws" object that will be used to upgrade the connection to a WebSocket connection.
-        // 3) Add new instance of "Clients" type
-        // 4) Configure the handler function that is called to handle this route.
         let ws_route = warp::path("ws")
             .and(warp::ws())
-            .and(with_clients(clients.clone()))
-            .and_then(ws_handler);
+            .and(warp::any().map(move || clients.clone()))
+            .then(|ws: Ws, clients: Clients| async move {
+                ws.on_upgrade(move |ws| client_connection(ws, clients))
+            });
 
-        // Adding a CORS filter that allows any origin
         let routes = ws_route.with(warp::cors().allow_any_origin());
 
-        println!("Starting server @ {}:{}", ip_addr, port);
+        println!("Starting server at {}:{}", ip_addr, port);
 
-        // Running the Warp server on given IP address and Port number
         warp::serve(routes).run((ip_addr, port)).await;
     }
 
-    /// Handler function to receive the HashMap of clients, and pass this to the client_connection function in the ws module
-    async fn ws_handler(ws: Ws, clients: Clients) -> Result<impl Reply, Rejection> {
-        // Websocket protocol upgrade for handling incoming communications
-        Ok(ws.on_upgrade(move |socket| client_connection(socket, clients)))
-    }
-
-    /// Establishes a websocket connection with given client
     pub async fn client_connection(ws: WebSocket, clients: Clients) {
-        println!("Establishing client connection... {:?}", ws);
-
-        // Splitting the WebSocket stream object into separate Sender and Receiver objects, for individual tasks ownership
         let (client_ws_sender, mut client_ws_receiver) = ws.split();
-
-        // Creating unbounded channel and splitting into sender and receiver streams
         let (client_sender, client_receiver) = mpsc::unbounded_channel();
-
-        // Defining the receiver stream for receiving messages from channel
         let client_receiver = UnboundedReceiverStream::new(client_receiver);
 
-        // Spawning separate thread for keeping the sender stream open until the client has disconnected
         tokio::task::spawn(client_receiver.forward(client_ws_sender).map(|result| {
             if let Err(e) = result {
                 eprintln!("Failed to send message using websocket - {}", e.to_string());
             }
         }));
 
-        // Generating unique identifier for the user
         let ulid: String = Ulid::new().to_string();
-
-        // Creating new "Client" struct instance for given user and sender stream
         let new_client: Client = Client {
             user_id: ulid.clone(),
             sender: Some(client_sender),
         };
-
-        // Acquiring lock on the client list and inserting the "new_client" object into the clients HashMap
         clients.lock().await.insert(ulid.clone(), new_client);
 
-        // Loop to handle the incoming messages from the client
-        // The loop will keep running until the client is disconnected.
         while let Some(result) = client_ws_receiver.next().await {
             let msg = match result {
                 Ok(msg) => msg,
@@ -767,13 +724,7 @@ mod server {
     }
 
     pub async fn test_server() -> anyhow::Result<()> {
-        // IP Address for websocket connection
-        let ip_addr: Ipv4Addr = "127.0.0.1".parse().unwrap();
-
-        // Default port for websocket connection
-        let port: u16 = 10010;
-
-        start(ip_addr, port).await;
+        start("127.0.0.1".parse().unwrap(), 10010).await;
 
         Ok(())
     }
