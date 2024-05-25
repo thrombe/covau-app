@@ -629,7 +629,9 @@ mod webui {
 }
 
 mod server {
+    use anyhow::Context;
     use futures::{FutureExt, StreamExt};
+    use serde::{Deserialize, Serialize};
     use std::net::Ipv4Addr;
     use std::{collections::HashMap, convert::Infallible, sync::Arc};
     use tokio::sync::{mpsc, Mutex};
@@ -637,12 +639,12 @@ mod server {
     use ulid::Ulid;
     use warp::ws::WebSocket;
     use warp::{reject::Rejection, reply::Reply, ws::Ws};
-    use warp::{ws::Message, Filter};
+    use warp::{ws, Filter};
 
     #[derive(Debug, Clone)]
     pub struct Client {
         pub user_id: String,
-        pub sender: Option<mpsc::UnboundedSender<std::result::Result<Message, warp::Error>>>,
+        pub sender: mpsc::UnboundedSender<std::result::Result<ws::Message, warp::Error>>,
     }
 
     pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
@@ -678,7 +680,7 @@ mod server {
         let ulid: String = Ulid::new().to_string();
         let new_client: Client = Client {
             user_id: ulid.clone(),
-            sender: Some(client_sender),
+            sender: client_sender,
         };
         clients.lock().await.insert(ulid.clone(), new_client);
 
@@ -693,34 +695,41 @@ mod server {
                     break;
                 }
             };
-            client_msg(&ulid, msg, &clients).await;
+
+            println!("Received message from {}: {:?}", &ulid, msg);
+            match client_msg(&ulid, msg, &clients).await {
+                Ok(_) => (),
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                },
+            }
         }
 
         clients.lock().await.remove(&ulid);
-        println!("Websocket disconnected.");
+        println!("Websocket disconnected: {}", &ulid);
     }
 
-    async fn client_msg(user_id: &str, msg: Message, clients: &Clients) {
-        println!("Received message from {}: {:?}", user_id, msg);
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum Message {
+        Ping,
+    }
 
-        let message: &str = match msg.to_str() {
-            Ok(v) => v,
-            Err(_) => return,
-        };
+    async fn client_msg(user_id: &str, msg: ws::Message, clients: &Clients) -> anyhow::Result<()> {
 
-        if message == "ping" || message == "ping\n" {
-            let locked = clients.lock().await;
-            match locked.get(user_id) {
-                Some(v) => {
-                    if let Some(sender) = &v.sender {
-                        println!("Sending pong");
-                        let _ = sender.send(Ok(Message::text("pong")));
-                    }
-                }
-                None => return,
-            }
-            return;
-        };
+        let message = msg.to_str().ok().context("message was not a string")?;
+        let message = serde_json::from_str::<Message>(message)?;
+
+        let clients = clients.lock().await;
+        let client = clients.get(user_id).context("Client not found")?;
+
+        match message {
+            Message::Ping => {
+                let _ = client.sender.send(Ok(ws::Message::text("pong")));
+            },
+        }
+
+        Ok(())
     }
 
     pub async fn test_server() -> anyhow::Result<()> {

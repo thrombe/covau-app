@@ -17,8 +17,8 @@
       console.log(message);
     });
     ws.addEventListener("open", (e) => {
-      ws.send("ping")
-      ws.send("ping")
+      ws.send(JSON.stringify({ type: 'Ping' }))
+      ws.send(JSON.stringify({ type: 'Ping' }))
     })
   };
   connect()
