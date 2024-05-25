@@ -3,8 +3,28 @@ import { resolve } from 'path'
 import { spawn, type ChildProcess } from 'child_process'
 import type { ViteDevServer } from 'vite'
 import { defineConfig, build } from 'vite'
-import { RollupWatcher } from 'rollup'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import * as path from 'path';
+import tsconfig from "./tsconfig.json";
+
+const tsconfigPathAliases = Object.fromEntries(
+  Object.entries(tsconfig.compilerOptions.paths).map(([key, values]) => {
+    let value = values[0];
+    if (key.endsWith("/*")) {
+      key = key.slice(0, -2);
+      value = value.slice(0, -2);
+    }
+
+    const nodeModulesPrefix = "node_modules/";
+    if (value.startsWith(nodeModulesPrefix)) {
+      value = value.replace(nodeModulesPrefix, "");
+    } else {
+      value = path.resolve(value);
+    }
+
+    return [key, value];
+  })
+);
 
 async function bundle(server: ViteDevServer) {
   const address = server.httpServer.address() as AddressInfo
@@ -79,6 +99,9 @@ async function bundle(server: ViteDevServer) {
 export default defineConfig((env) => ({
   // nice feature of vite as the mode can be set by the CLI
   base: env.mode === 'production' ? './' : '/',
+  resolve: {
+    alias: tsconfigPathAliases,
+  },
   plugins: [
     svelte(),
     {

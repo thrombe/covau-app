@@ -1,14 +1,65 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Svelte + TS</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script src="/webui.js"></script>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf8">
+  <link rel="icon" href="static/favicon.png" />
+  <link rel='stylesheet' href='./index.css'>
+  <meta name="viewport" content="width=device-width">
+
+  <!-- - [disable darkreader](https://github.com/darkreader/darkreader/blob/main/CONTRIBUTING.md#disabling-dark-reader-on-your-site) -->
+  <meta name="darkreader-lock">
+
+  <title>covau!</title>
+
+  <div class='h-0'>
+    <svg>
+        <filter id='grainy-turbulence'>
+            <feTurbulence
+                type='turbulance'
+                baseFrequency='0.55'
+            />
+        </filter>
+    </svg>
+    <svg>
+        <filter id='grainy-fractal'>
+            <feTurbulence
+                type='fractalNoise'
+                baseFrequency='0.45'
+            />
+        </filter>
+    </svg>
+  </div>
+
+  <style lang='postcss'>
+    .grainy {
+        @apply opacity-[35%];
+        filter: url(#grainy-fractal) blur(0.0px) contrast(200%);
+        mix-blend-mode: multiply;
+    }
+
+    .grainy-bg {
+        @apply absolute w-full h-full left-0 top-0;
+    }
+  </style>
+
+  <style>
+    body {
+      background: #282828;
+      color: #ffffff;
+    }
+    html,body {
+        overflow: hidden;
+        width: 100vw;
+        /* - [21 Awesome Web Features you’re not using yet - YouTube](https://www.youtube.com/watch?v=q1fsBWLpYW4) */
+        /* - [Improving mobile design with the latest CSS viewport units - LogRocket Blog](https://blog.logrocket.com/improving-mobile-design-latest-css-viewport-units/) */
+        height: 100svh;
+    }
+  </style>
+</head>
+
+<body>
+  <script defer type="module" src="src/main.ts"></script>
+</body>
+
 </html>
