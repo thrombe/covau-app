@@ -460,33 +460,28 @@ pub mod musimanager {
         pub uploader_id: Option<String>,
     }
 
-    pub fn dump_types() -> anyhow::Result<()> {
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
-
-        let config = specta::ts::ExportConfiguration::default();
-
-        types += &specta::ts::export::<SongInfo>(&config)?;
+        types += &specta::ts::export::<SongInfo>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Song>(&config)?;
+        types += &specta::ts::export::<Song>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<SongId>(&config)?;
+        types += &specta::ts::export::<SongId>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<AlbumId>(&config)?;
+        types += &specta::ts::export::<AlbumId>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Artist<(), ()>>(&config)?;
+        types += &specta::ts::export::<Artist<(), ()>>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Album<()>>(&config)?;
+        types += &specta::ts::export::<Album<()>>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<SongProvider<()>>(&config)?;
+        types += &specta::ts::export::<SongProvider<()>>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<EntityTracker>(&config)?;
+        types += &specta::ts::export::<EntityTracker>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Tracker>(&config)?;
+        types += &specta::ts::export::<Tracker>(config)?;
         types += ";\n";
 
-        println!("{}", types);
-
-        Ok(())
+        Ok(types)
     }
 
     async fn parse_test() -> anyhow::Result<()> {
@@ -541,21 +536,16 @@ mod covau_types {
         // pub albums: Vec<AlbumId>,
     }
 
-    pub fn dump_types() -> anyhow::Result<()> {
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
-
-        let config = specta::ts::ExportConfiguration::default();
-
-        types += &specta::ts::export::<Source>(&config)?;
+        types += &specta::ts::export::<Source>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Artist>(&config)?;
+        types += &specta::ts::export::<Artist>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Song>(&config)?;
+        types += &specta::ts::export::<Song>(config)?;
         types += ";\n";
 
-        println!("{}", types);
-
-        Ok(())
+        Ok(types)
     }
 }
 
@@ -837,11 +827,32 @@ mod server {
         Ok(())
     }
 
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
+        let mut types = String::new();
+        types += &specta::ts::export::<Message>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<FetchRequest>(config)?;
+        types += ";\n";
+
+        Ok(types)
+    }
+
     pub async fn test_server() -> anyhow::Result<()> {
         start("127.0.0.1".parse().unwrap(), 10010).await;
 
         Ok(())
     }
+}
+
+fn dump_types() -> Result<()> {
+    let tsconfig = specta::ts::ExportConfiguration::default();
+    let types_dir = PathBuf::from("./electron/src/types");
+    let _ = std::fs::create_dir(&types_dir);
+    std::fs::write(types_dir.join("musimanager.ts"), musimanager::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("covau.ts"), covau_types::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
+    
+    Ok(())
 }
 
 #[tokio::main]
@@ -855,8 +866,7 @@ async fn main() -> Result<()> {
     // parse_test().await?;
     // api_test().await?;
 
-    // musimanager::dump_types()?;
-    // covau_types::dump_types()?;
+    dump_types()?;
 
     server::test_server().await?;
 
