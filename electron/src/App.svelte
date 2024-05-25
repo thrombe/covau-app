@@ -7,6 +7,21 @@
   //   let a = await fetch("https://google.com");
   //   console.log(a.text())
   // })()
+
+  export const connect = () => {
+    // Create a new websocket
+    const ws = new WebSocket("ws://localhost:10010/ws");
+    ws.addEventListener("message", (message: any) => {
+      // Parse the incoming message here
+      // const data: Request = JSON.parse(message.data);
+      console.log(message);
+    });
+    ws.addEventListener("open", (e) => {
+      ws.send("ping")
+      ws.send("ping")
+    })
+  };
+  connect()
 </script>
 
 <main>
