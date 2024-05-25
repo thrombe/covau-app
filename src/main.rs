@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, ffi::CStr, path::PathBuf};
+use std::path::PathBuf;
 
 use musicbrainz_rs::{
     entity::{artist::Artist, recording::Recording, release::Release, work::Work},
@@ -488,6 +488,32 @@ pub mod musimanager {
 
         Ok(())
     }
+
+    async fn parse_test() -> anyhow::Result<()> {
+        let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+
+        let data = std::fs::read_to_string(path)?;
+
+        let parsed = serde_json::from_str::<Tracker>(&data)?;
+
+        // for a in parsed.artists.iter() {
+        //     for s in a
+        //         .songs
+        //         .iter()
+        //         .chain(parsed.playlists.iter().flat_map(|e| e.data_list.iter()))
+        //     {}
+        // }
+
+        let dis = parsed.clean();
+        dbg!(dis);
+        // dbg!(parsed
+        //     .artists
+        //     .iter()
+        //     .map(|a| a.known_albums.clone())
+        //     .collect::<Vec<_>>());
+
+        Ok(())
+    }
 }
 
 mod covau_types {
@@ -533,32 +559,6 @@ mod covau_types {
     }
 }
 
-async fn parse_test() -> Result<()> {
-    let path = "/home/issac/0Git/musimanager/db/musitracker.json";
-
-    let data = std::fs::read_to_string(path)?;
-
-    let parsed = serde_json::from_str::<musimanager::Tracker>(&data)?;
-
-    // for a in parsed.artists.iter() {
-    //     for s in a
-    //         .songs
-    //         .iter()
-    //         .chain(parsed.playlists.iter().flat_map(|e| e.data_list.iter()))
-    //     {}
-    // }
-
-    let dis = parsed.clean();
-    dbg!(dis);
-    // dbg!(parsed
-    //     .artists
-    //     .iter()
-    //     .map(|a| a.known_albums.clone())
-    //     .collect::<Vec<_>>());
-
-    Ok(())
-}
-
 async fn api_test() -> Result<()> {
     // let r = Artist::search("query=red velvet".into()).with_releases().execute().await;
     let r = Recording::search("method=indexed&query=carole and tuesday".into())
@@ -576,56 +576,59 @@ async fn api_test() -> Result<()> {
     Ok(())
 }
 
-use webui_rs::webui::{self, bindgen::webui_malloc};
+mod webui {
+    use std::{borrow::Borrow, ffi::CStr, path::PathBuf};
+    use webui_rs::webui::{self, bindgen::webui_malloc};
 
-// returned pointer is only freed if allocated using webui_malloc
-// https://github.com/webui-dev/webui/blob/a3f3174c73b2414ea27bebb0fd62ccc0f180ad30/src/webui.c#L3150C1-L3150C23
-unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *mut i32) -> *const std::os::raw::c_void {
-    let name = CStr::from_ptr(name);
-    let res = handle(name.to_string_lossy().as_ref());
-    let res = res.into_boxed_str();
-    *length = res.len() as _;
-    let block = webui_malloc(res.len());
-    std::ptr::copy_nonoverlapping(res.as_ptr(), block as _, res.len());
-    block as _
-}
+    // returned pointer is only freed if allocated using webui_malloc
+    // https://github.com/webui-dev/webui/blob/a3f3174c73b2414ea27bebb0fd62ccc0f180ad30/src/webui.c#L3150C1-L3150C23
+    unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *mut i32) -> *const std::os::raw::c_void {
+        let name = CStr::from_ptr(name);
+        let res = handle(name.to_string_lossy().as_ref());
+        let res = res.into_boxed_str();
+        *length = res.len() as _;
+        let block = webui_malloc(res.len());
+        std::ptr::copy_nonoverlapping(res.as_ptr(), block as _, res.len());
+        block as _
+    }
 
-fn handle(name: &str) -> String {
-    dbg!(name);
-    // let data = reqwest::blocking::get(String::from("http://localhost:5173") + name).unwrap().text().unwrap();
-    let data = std::fs::read_to_string(String::from("./electron/dist") + name).unwrap();
-    dbg!(&data);
-    data
-}
+    fn handle(name: &str) -> String {
+        dbg!(name);
+        // let data = reqwest::blocking::get(String::from("http://localhost:5173") + name).unwrap().text().unwrap();
+        let data = std::fs::read_to_string(String::from("./electron/dist") + name).unwrap();
+        dbg!(&data);
+        data
+    }
 
-pub async fn test_webui() -> Result<()> {
-    let win = webui::Window::new();
-    win.set_file_handler(unsafe_handle);
+    pub async fn test_webui() -> anyhow::Result<()> {
+        let win = webui::Window::new();
+        win.set_file_handler(unsafe_handle);
 
-    // win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
-    // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
-    // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
-    // win.run_js("/webui.js");
-    win.show("http://localhost:5173");
-    // win.show("/");
+        // win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
+        // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
+        // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
+        // win.run_js("/webui.js");
+        win.show("http://localhost:5173");
+        // win.show("/");
 
-    let a = win.run_js("console.log('hello')").data;
-    dbg!(a);
-    let a = win.run_js("console.log('a', b)").data;
-    dbg!(a);
+        let a = win.run_js("console.log('hello')").data;
+        dbg!(a);
+        let a = win.run_js("console.log('a', b)").data;
+        dbg!(a);
 
-    tokio::task::spawn_blocking(|| {
-        webui::wait();
-    }).await?;
+        tokio::task::spawn_blocking(|| {
+            webui::wait();
+        }).await?;
 
-    Ok(())
+        Ok(())
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger("./")?;
 
-    test_webui().await?;
+    // test_webui().await?;
 
     // parse_test().await?;
     // api_test().await?;
