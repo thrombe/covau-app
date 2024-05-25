@@ -658,12 +658,20 @@ mod server {
             .then(|ws: Ws, clients: Clients| async move {
                 ws.on_upgrade(move |ws| client_connection(ws, clients))
             });
+        let ws_route = ws_route.with(warp::cors().allow_any_origin());
 
-        let routes = ws_route.with(warp::cors().allow_any_origin());
+        let cors_proxy = warp::path("fetch")
+            .and(warp::body::json())
+            .then(|fetch: FetchRequest| async move {
+                warp::reply::json(&fetch)
+            });
+        let cors_proxy = cors_proxy.with(warp::cors().allow_any_origin());
 
         println!("Starting server at {}:{}", ip_addr, port);
 
-        warp::serve(routes).run((ip_addr, port)).await;
+        let all = ws_route.or(cors_proxy);
+
+        warp::serve(all).run((ip_addr, port)).await;
     }
 
     pub async fn client_connection(ws: WebSocket, clients: Clients) {
@@ -701,7 +709,7 @@ mod server {
                 Ok(_) => (),
                 Err(e) => {
                     eprintln!("Error: {}", e);
-                },
+                }
             }
         }
 
@@ -715,8 +723,14 @@ mod server {
         Ping,
     }
 
-    async fn client_msg(user_id: &str, msg: ws::Message, clients: &Clients) -> anyhow::Result<()> {
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    pub struct FetchRequest {
+        url: String,
+        body: String,
+        headers: HashMap<String, String>,
+    }
 
+    async fn client_msg(user_id: &str, msg: ws::Message, clients: &Clients) -> anyhow::Result<()> {
         let message = msg.to_str().ok().context("message was not a string")?;
         let message = serde_json::from_str::<Message>(message)?;
 
@@ -726,7 +740,7 @@ mod server {
         match message {
             Message::Ping => {
                 let _ = client.sender.send(Ok(ws::Message::text("pong")));
-            },
+            }
         }
 
         Ok(())
