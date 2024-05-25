@@ -3,10 +3,10 @@
   import viteLogo from '/vite.svg'
   import Counter from './lib/Counter.svelte'
 
-  (async () => {
-    let a = await fetch("https://google.com");
-    console.log(a.text())
-  })()
+  // (async () => {
+  //   let a = await fetch("https://google.com");
+  //   console.log(a.text())
+  // })()
 </script>
 
 <main>

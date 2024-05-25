@@ -7,9 +7,9 @@ function createWindow() {
     width: 800,
     height: 600,
     frame: false,
-    webPreferences: {
-      webSecurity: false,
-    },
+    // webPreferences: {
+    //   webSecurity: false,
+    // },
     useContentSize: true
   })
 
