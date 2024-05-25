@@ -584,16 +584,12 @@ mod webui {
         data
     }
 
-    pub async fn test_webui() -> anyhow::Result<()> {
+    pub async fn test_webui(url: &str) -> anyhow::Result<webui::Window> {
         let win = webui::Window::new();
         win.set_file_handler(unsafe_handle);
 
         // win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
-        // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
-        // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
-        // win.run_js("/webui.js");
-        win.show("http://localhost:5173");
-        // win.show("/");
+        win.show(url);
 
         let a = win.run_js("console.log('hello')").data;
         dbg!(a);
@@ -605,18 +601,20 @@ mod webui {
         })
         .await?;
 
-        Ok(())
+        Ok(win)
     }
 }
 
 mod server {
+    use crate::musiplayer::Player;
     use anyhow::Context;
+    use core::time;
     use futures::{FutureExt, StreamExt};
     use serde::{Deserialize, Serialize};
     use std::net::Ipv4Addr;
     use std::{collections::HashMap, convert::Infallible, sync::Arc};
     use tokio::sync::{mpsc, Mutex};
-    use tokio_stream::wrappers::UnboundedReceiverStream;
+    use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
     use ulid::Ulid;
     use warp::ws::WebSocket;
     use warp::{reject::Rejection, reply::Reply, ws::Ws};
@@ -639,9 +637,40 @@ mod server {
         warp::reject::custom(CustomReject(error.into()))
     }
 
+    async fn player_message_handler(
+        msg: ws::Message,
+        player: &Arc<Mutex<Player>>,
+    ) -> anyhow::Result<()> {
+        let message = msg.to_str().ok().context("message was not a string")?;
+        let message = serde_json::from_str::<PlayerMessage>(message)?;
+        match message {
+            PlayerMessage::Ping => todo!(),
+            PlayerMessage::Progress(_) => todo!(),
+            PlayerMessage::Stop => todo!(),
+            PlayerMessage::Pause => todo!(),
+            PlayerMessage::Play(url) => {
+                let mut p = player.lock().await;
+                p.play(url)?;
+            },
+        }
+        Ok(())
+    }
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum PlayerMessage {
+        Ping,
+        Progress(f32),
+        Stop,
+        Pause,
+        Play(String),
+    }
+
     pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
         let client = std::sync::Arc::new(tokio::sync::Mutex::new(reqwest::Client::new()));
+        let player = std::sync::Arc::new(tokio::sync::Mutex::new(
+            Player::new().expect("could not start player"),
+        ));
 
         let ws_route = warp::path("ws")
             .and(warp::ws())
@@ -650,6 +679,57 @@ mod server {
                 ws.on_upgrade(move |ws| client_connection(ws, clients))
             });
         let ws_route = ws_route.with(warp::cors().allow_any_origin());
+
+        let player_route = warp::path("player")
+            .and(warp::ws())
+            .and(warp::any().map(move || player.clone()))
+            .then(|ws: Ws, player| async move {
+                ws.on_upgrade(move |ws| async move {
+                    let (wstx, mut wsrx) = ws.split();
+
+                    let (tx, rx) = mpsc::channel::<Result<PlayerMessage, warp::Error>>(10);
+                    let rx = ReceiverStream::new(rx);
+
+                    let _ = tokio::task::spawn(
+                        rx.map(|e| {
+                            let e = e?;
+                            let e = ws::Message::text(serde_json::to_string(&e).unwrap());
+                            Ok(e)
+                        })
+                            .forward(wstx)
+                            .map(|result| {
+                                if let Err(e) = result {
+                                    eprintln!(
+                                        "Failed to send message using websocket - {}",
+                                        e.to_string()
+                                    );
+                                }
+                            }),
+                    );
+                    let _ = tokio::task::spawn(async move {
+                        let tx = tx.clone();
+                        loop {
+                            tokio::time::sleep(time::Duration::from_millis(300)).await;
+                            tx.send(Ok(PlayerMessage::Ping));
+                        }
+                    });
+
+                    while let Some(msg) = wsrx.next().await {
+                        match msg {
+                            Ok(msg) => match player_message_handler(msg, &player).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    eprintln!("Error: {}", e);
+                                }
+                            },
+                            Err(e) => {
+                                eprintln!("Error: {}", e);
+                            }
+                        }
+                    }
+                })
+            });
+        let player_route = player_route.with(warp::cors().allow_any_origin());
 
         let c = client.clone();
         let cors_proxy = warp::path("fetch")
@@ -738,7 +818,7 @@ mod server {
                 },
             );
 
-        let all = ws_route.or(cors_proxy).or(redirect);
+        let all = ws_route.or(player_route).or(cors_proxy).or(redirect);
         // let all = redirect;
 
         warp::serve(all).run((ip_addr, port)).await;
@@ -823,6 +903,8 @@ mod server {
         let mut types = String::new();
         types += &specta::ts::export::<Message>(config)?;
         types += ";\n";
+        types += &specta::ts::export::<PlayerMessage>(config)?;
+        types += ";\n";
         types += &specta::ts::export::<FetchRequest>(config)?;
         types += ";\n";
 
@@ -877,8 +959,6 @@ fn player_test() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger("./")?;
-
-    // test_webui().await?;
 
     // dbg!(ulid::Ulid::new().to_string());
 
