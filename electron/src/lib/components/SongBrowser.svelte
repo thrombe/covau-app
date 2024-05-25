@@ -140,6 +140,7 @@
                     let:item
                     let:selected
                 >
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <list-item
                         class:selected={selected}
                         draggable={true}

@@ -1,12 +1,15 @@
-import type Search from "youtubei.js/dist/src/parser/ytmusic/Search";
-import Innertube, { MusicShelfContinuation, UniversalCache, YTNodes } from "youtubei.js/web";
+import Innertube, { MusicShelfContinuation, UniversalCache, YTMusic, YT, YTNodes } from "youtubei.js/web";
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
-import type { Keyed, RObject, RSearcher } from "./searcher";
-import type { SearchContinuation } from "youtubei.js/dist/src/parser/ytmusic/Search";
-import type { Playlist } from "youtubei.js/dist/src/parser/ytmusic";
+import type { Keyed, RObject, RSearcher, ReturnType } from "./searcher";
+
+export { YT, YTNodes, YTMusic };
+export type Search = YTMusic.Search;
+export type Playlist = YTMusic.Playlist;
+export type SearchContinuation = Awaited<ReturnType<typeof YTMusic.Search.prototype.getContinuation>>;
+export type MusicResponsiveListItem = YTNodes.MusicResponsiveListItem;
+export type VideoInfo = YT.VideoInfo;
 
 // https://github.com/LuanRT/YouTube.js/issues/321
-export type MusicResponsiveListItem = YTNodes.MusicResponsiveListItem;
 export type Typ =  'song' | 'video' | 'album' | 'playlist' | 'artist';
 type SearchTyp =
     { type: 'search', search: Typ } |

@@ -14,10 +14,10 @@
     "sourceMap": true,
     "paths": {
       "$lib/*": [
-          "./src/lib/*"
+        "./src/lib/*"
       ],
       "$types/*": [
-          "./src/types/*"
+        "./src/types/*"
       ]
     },
     "isolatedModules": true

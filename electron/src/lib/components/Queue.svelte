@@ -4,7 +4,7 @@
     import AudioListItem from './AudioListItem.svelte';
     import InputBar from './InputBar.svelte';
     import VirtualScrollable from './VirtualScrollable.svelte';
-    import type { VideoInfo } from 'youtubei.js/dist/src/parser/youtube';
+    import type { VideoInfo } from '$lib/searcher/song_tube.ts';
     import { toast } from '$lib/toast/Toasts.svelte';
 
     export let items: Array<Unique<string, string>>;
@@ -43,6 +43,7 @@
     let end_is_visible = false;
     const end_reached = async () => {};
     const on_item_click = async (t: Unique<VideoInfo | string, unknown>) => {};
+    let t: VideoInfo | string;
     let selected_item: Unique<VideoInfo | string, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
@@ -168,7 +169,6 @@
 <div class='w-full h-full'>
     <VirtualScrollable
         bind:items={searched_items}
-        {gap}
         columns={1}
         {item_height}
         {on_item_click}
@@ -182,6 +182,7 @@
         let:selected
         let:index
     >
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
         <item class='w-full h-full block relative py-1 rounded-xl'
             draggable={index != items.length}
             on:dragstart={(event) => dragstart(event, index)}

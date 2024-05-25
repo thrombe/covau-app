@@ -1,7 +1,9 @@
 
-import { MusicResponsiveListItem, SongTube } from './song_tube';
+import { YTNodes, SongTube } from './song_tube';
 
-type ReturnType<Type> = Type extends (...args: never[]) => infer R ? R : never;
+type MusicResponsiveListItem = YTNodes.MusicResponsiveListItem;
+
+export type ReturnType<Type> = Type extends (...args: never[]) => infer R ? R : never;
 
 export type { MusicResponsiveListItem };
 export {};
