@@ -2,6 +2,11 @@
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from '/vite.svg'
   import Counter from './lib/Counter.svelte'
+
+  (async () => {
+    let a = await fetch("https://google.com");
+    console.log(a.text())
+  })()
 </script>
 
 <main>
@@ -13,7 +18,7 @@
       <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
     </a>
   </div>
-  <h1 class="">Vite + Svelte</h1>
+  <h1 class="text-red-400">Vite + Svelte</h1>
 
   <div class="card">
     <Counter />
