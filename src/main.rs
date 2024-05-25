@@ -582,7 +582,10 @@ mod webui {
 
     // returned pointer is only freed if allocated using webui_malloc
     // https://github.com/webui-dev/webui/blob/a3f3174c73b2414ea27bebb0fd62ccc0f180ad30/src/webui.c#L3150C1-L3150C23
-    unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *mut i32) -> *const std::os::raw::c_void {
+    unsafe extern "C" fn unsafe_handle(
+        name: *const std::os::raw::c_char,
+        length: *mut i32,
+    ) -> *const std::os::raw::c_void {
         let name = CStr::from_ptr(name);
         let res = handle(name.to_string_lossy().as_ref());
         let res = res.into_boxed_str();
@@ -618,26 +621,23 @@ mod webui {
 
         tokio::task::spawn_blocking(|| {
             webui::wait();
-        }).await?;
+        })
+        .await?;
 
         Ok(())
     }
 }
 
 mod server {
+    use futures::{FutureExt, StreamExt};
+    use std::net::Ipv4Addr;
     use std::{collections::HashMap, convert::Infallible, sync::Arc};
     use tokio::sync::{mpsc, Mutex};
-    use warp::{ws::Message, Filter};
-    use std::{net::Ipv4Addr};
-    use warp::{
-        reject::Rejection,
-        reply::Reply,
-        ws::{Ws},
-    };
-    use futures::{FutureExt, StreamExt};
     use tokio_stream::wrappers::UnboundedReceiverStream;
     use ulid::Ulid;
-    use warp::ws::{WebSocket};
+    use warp::ws::WebSocket;
+    use warp::{reject::Rejection, reply::Reply, ws::Ws};
+    use warp::{ws::Message, Filter};
 
     #[derive(Debug, Clone)]
     pub struct Client {
