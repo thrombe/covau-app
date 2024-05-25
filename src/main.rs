@@ -592,23 +592,27 @@ unsafe extern "C" fn unsafe_handle(name: *const std::os::raw::c_char, length: *m
 
 fn handle(name: &str) -> String {
     dbg!(name);
-    String::from(
-        "lol"
-    )
+    // let data = reqwest::blocking::get(String::from("http://localhost:5173") + name).unwrap().text().unwrap();
+    let data = std::fs::read_to_string(String::from("./electron/dist") + name).unwrap();
+    dbg!(&data);
+    data
 }
 
 pub async fn test_webui() -> Result<()> {
     let win = webui::Window::new();
-    win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
+    win.set_file_handler(unsafe_handle);
+
+    // win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
     // win.show_browser("https://covau.netlify.app/#/vibe/lotus", webui::WebUIBrowser::Chromium);
     // win.show_browser("https://youtube.com", webui::WebUIBrowser::Chromium);
-    win.run_js("/webui.js");
+    // win.run_js("/webui.js");
+    win.show("http://localhost:5173");
+    // win.show("/");
 
     let a = win.run_js("console.log('hello')").data;
     dbg!(a);
     let a = win.run_js("console.log('a', b)").data;
     dbg!(a);
-    win.set_file_handler(unsafe_handle);
 
     tokio::task::spawn_blocking(|| {
         webui::wait();

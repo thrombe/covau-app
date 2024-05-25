@@ -146,6 +146,7 @@ dependencies = [
  "fern",
  "log",
  "musicbrainz_rs",
+ "reqwest",
  "serde",
  "serde_json",
  "specta",
