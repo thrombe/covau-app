@@ -11,7 +11,7 @@ export type VideoInfo = YT.VideoInfo;
 
 // https://github.com/LuanRT/YouTube.js/issues/321
 export type Typ = 'song' | 'video' | 'album' | 'playlist' | 'artist';
-type SearchTyp =
+export type SearchTyp =
     { type: 'search', search: Typ } |
     { type: 'artist', id: string } |
     { type: 'album', id: string } |
