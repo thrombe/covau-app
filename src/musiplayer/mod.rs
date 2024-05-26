@@ -20,61 +20,10 @@ mod libmpv_player;
 #[cfg(feature = "player-libmpv")]
 use libmpv_player::{Player as InternalPlayer};
 
-pub mod dummy_player {
-    use anyhow::Result;
-    use std::time;
-    
-    #[derive(Debug)]
-    pub struct DummyPlayer {
-        start_time: time::Instant,
-        dur: f64,
-    }
-    impl super::MusiPlayer for DummyPlayer {
-        fn new() -> Result<Self> {
-            Ok(Self{
-                start_time: time::Instant::now(),
-                dur: 200.0,
-            })
-        }
-        fn duration(&mut self) -> Result<f64> {
-            Ok(self.dur)
-        }
-        fn is_finished(&mut self) -> Result<bool> {
-            let t = time::Instant::now().duration_since(self.start_time).as_secs_f64();
-            Ok(t > self.dur)
-        }
-        fn is_paused(&mut self) -> Result<bool> {
-            Ok(false) // eh
-        }
-        fn play(&mut self, _: String) -> Result<()> {
-            self.start_time = time::Instant::now();
-            Ok(())
-        }
-        fn position(&mut self) -> Result<f64> {
-            let t = time::Instant::now().duration_since(self.start_time).as_secs_f64();
-            Ok(t)
-        }
-        fn progress(&mut self) -> Result<f64> {
-            Ok(self.position()?/self.duration()?)
-        }
-        fn seek(&mut self, _: f64) -> Result<()> {
-            Ok(()) // eh
-        }
-        fn stop(&mut self) -> Result<()> {
-            Ok(()) // eh
-        }
-        fn toggle_pause(&mut self) -> Result<()> {
-            Ok(()) // eh
-        }
-    }
-}
-// use dummy_player::DummyPlayer as InternalPlayer;
-
 #[derive(Debug)]
 pub struct Player {
     internal_player: InternalPlayer,
 }
-
 
 impl Player {
     pub fn new() -> Result<Self> {
@@ -123,4 +72,3 @@ where Self:  Sized + 'static + Send + Sync
     fn position(&mut self) -> Result<f64>;
     fn duration(&mut self) -> Result<f64>;
 }
-
