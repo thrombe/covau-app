@@ -180,9 +180,9 @@ export class SongTube extends Unpaged<MusicResponsiveListItem> {
     }
 }
 
-const keyed = <T>(items: T[]): (T & Keyed)[] => {
-    return items.filter((e: unknown) => !!e.id).map((e: unknown) => {
-        let p = e as RObject<MusicResponsiveListItem>;
+const keyed = <T extends { id?: any }>(items: T[]): (T & Keyed)[] => {
+    let res =  items.filter((e: any) => !!e.id).map((e: any) => {
+        let p = e as T & Keyed;
         p.get_key = function() {
             if (!p.id) {
                 console.warn("item does not have an id :/", p);
@@ -191,4 +191,6 @@ const keyed = <T>(items: T[]): (T & Keyed)[] => {
         };
         return p;
     });
+
+    return res;
 }

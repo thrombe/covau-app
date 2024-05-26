@@ -58,7 +58,7 @@ export class LocalPlayer {
                     break;
             }
         });
-        this.ws.addEventListener('open', async (e) => {
+        this.ws.addEventListener('open', async (_e) => {
             let p = await new_innertube_instance();
             let res = await p.music.search("Imagine dragons", { type: 'song' });
             console.log(res)
