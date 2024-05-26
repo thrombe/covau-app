@@ -7,9 +7,8 @@
     import Video from '$lib/components/Video.svelte';
     import { Player } from '$lib/player.ts';
     import type { Unique } from '$lib/virtual.ts';
-    import type { VideoInfo } from 'youtubei.js/dist/src/parser/youtube';
     import { onMount } from 'svelte';
-    import type { Typ } from '$lib/searcher/song_tube.ts';
+    import type { Typ, VideoInfo } from '$lib/searcher/song_tube.ts';
     import Toasts, { toast } from '$lib/toast/Toasts.svelte';
     import BlobBg from '$lib/components/BlobBg.svelte';
 
