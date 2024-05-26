@@ -637,32 +637,84 @@ mod server {
         warp::reject::custom(CustomReject(error.into()))
     }
 
-    async fn player_message_handler(
+    async fn player_command_handler(
         msg: ws::Message,
         player: &Arc<Mutex<Player>>,
+        tx: tokio::sync::mpsc::Sender<Result<PlayerMessage, warp::Error>>,
     ) -> anyhow::Result<()> {
         let message = msg.to_str().ok().context("message was not a string")?;
-        let message = serde_json::from_str::<PlayerMessage>(message)?;
+        let message = serde_json::from_str::<PlayerCommand>(message)?;
+
+        let mut p = player.lock().await;
+        let timeout = tokio::time::Duration::from_millis(500);
         match message {
-            PlayerMessage::Ping => todo!(),
-            PlayerMessage::Progress(_) => todo!(),
-            PlayerMessage::Stop => todo!(),
-            PlayerMessage::Pause => todo!(),
-            PlayerMessage::Play(url) => {
-                let mut p = player.lock().await;
-                p.play(url)?;
+            PlayerCommand::Play(url) => {
+                p.play(url.clone())?;
+                tx.send_timeout(Ok(PlayerMessage::Playing(url)), timeout).await?;
+
+                let player = player.clone();
+                let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
+                    for i in 0..50 {
+                        tokio::time::sleep(timeout).await;
+                        let mut p = player.lock().await;
+                        let dur = p.duration()?;
+                        if dur > 0.5 {
+                            tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout).await?;
+                            break;
+                        }
+                    }
+                    Ok(())
+                });
+            },
+            PlayerCommand::Pause => {
+                p.pause()?;
+                tx.send_timeout(Ok(PlayerMessage::Paused), timeout).await?;
+            },
+            PlayerCommand::Unpause => {
+                p.unpause()?;
+                tx.send_timeout(Ok(PlayerMessage::Unpaused), timeout).await?;
+            },
+            PlayerCommand::SeekBy(t) => {
+                p.seek_by(t)?;
+            },
+            PlayerCommand::SeekToPerc(perc) => {
+                p.seek_to_perc(perc)?;
+            },
+            PlayerCommand::GetVolume => {
+                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout).await?;
+            },
+            PlayerCommand::SetVolume(v) => {
+                p.set_volume(v)?;
+                tokio::time::sleep(timeout).await;
+                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout).await?;
+            },
+            PlayerCommand::GetDuration => {
+                tx.send_timeout(Ok(PlayerMessage::Duration(p.duration()?)), timeout).await?;
             },
         }
         Ok(())
     }
     #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
     #[serde(tag = "type", content = "content")]
-    pub enum PlayerMessage {
-        Ping,
-        Progress(f32),
-        Stop,
+    pub enum PlayerCommand {
         Pause,
+        Unpause,
         Play(String),
+        SeekBy(f64),
+        SeekToPerc(f64),
+        GetVolume,
+        SetVolume(f64),
+        GetDuration,
+    }
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum PlayerMessage {
+        Paused,
+        Unpaused,
+        Playing(String),
+        ProgressPerc(f64),
+        Volume(f64),
+        Duration(f64),
     }
 
     pub async fn start(ip_addr: Ipv4Addr, port: u16) {
@@ -683,11 +735,11 @@ mod server {
         let player_route = warp::path("player")
             .and(warp::ws())
             .and(warp::any().map(move || player.clone()))
-            .then(|ws: Ws, player| async move {
+            .then(|ws: Ws, player: Arc<Mutex<Player>>| async move {
                 ws.on_upgrade(move |ws| async move {
                     let (wstx, mut wsrx) = ws.split();
 
-                    let (tx, rx) = mpsc::channel::<Result<PlayerMessage, warp::Error>>(10);
+                    let (tx, rx) = mpsc::channel::<Result<PlayerMessage, warp::Error>>(100);
                     let rx = ReceiverStream::new(rx);
 
                     let _ = tokio::task::spawn(
@@ -706,17 +758,20 @@ mod server {
                                 }
                             }),
                     );
-                    let _ = tokio::task::spawn(async move {
-                        let tx = tx.clone();
+                    let pl = player.clone();
+                    let txc = tx.clone();
+                    let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
+                        let timeout = tokio::time::Duration::from_millis(300);
                         loop {
-                            tokio::time::sleep(time::Duration::from_millis(300)).await;
-                            tx.send(Ok(PlayerMessage::Ping));
+                            tokio::time::sleep(timeout).await;
+                            let mut p = pl.lock().await;
+                            txc.send_timeout(Ok(PlayerMessage::ProgressPerc(p.progress()?)), timeout).await?;
                         }
                     });
 
                     while let Some(msg) = wsrx.next().await {
                         match msg {
-                            Ok(msg) => match player_message_handler(msg, &player).await {
+                            Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await {
                                 Ok(_) => (),
                                 Err(e) => {
                                     eprintln!("Error: {}", e);
@@ -738,7 +793,6 @@ mod server {
             .and(warp::any().map(move || c.clone()))
             .and_then(
                 |fetch: bytes::Bytes, client: Arc<Mutex<reqwest::Client>>| async move {
-                    dbg!(String::from_utf8_lossy(fetch.clone().to_vec().as_slice()));
                     let fetch = fetch.to_vec();
                     if fetch.is_empty() {
                         // OOF: for preflight requests. idk what else to do
@@ -748,7 +802,6 @@ mod server {
                     }
                     let fetch = serde_json::from_slice::<FetchRequest>(fetch.as_ref())
                         .map_err(custom_reject)?;
-                    dbg!(&fetch);
                     let headers: Vec<(String, String)> =
                         serde_json::from_str(&fetch.headers).map_err(custom_reject)?;
                     let c = client.lock().await;
@@ -902,6 +955,8 @@ mod server {
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
         types += &specta::ts::export::<Message>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<PlayerCommand>(config)?;
         types += ";\n";
         types += &specta::ts::export::<PlayerMessage>(config)?;
         types += ";\n";
