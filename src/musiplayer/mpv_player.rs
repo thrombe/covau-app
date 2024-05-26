@@ -218,6 +218,18 @@ impl Player {
             Ok(false)
         }
     }
+
+    pub fn get_volume(&mut self) -> Result<f64> {
+        self.clear_event_loop()?;
+        let vol = self.mpv.get_property::<f64>("volume")?;
+        Ok(vol / 100.0)
+    }
+
+    pub fn set_volume(&mut self, t: f64) -> Result<()> {
+        self.clear_event_loop()?;
+        self.mpv.set_property("volume", t.min(1.0).max(0.0) * 100.0)?;
+        Ok(())
+    }
 }
 
 impl MusiPlayer for Player {
@@ -242,7 +254,7 @@ impl MusiPlayer for Player {
     fn progress(&mut self) -> Result<f64> {
         Self::progress(self)
     }
-    fn seek(&mut self, t: f64) -> Result<()> {
+    fn seek_by(&mut self, t: f64) -> Result<()> {
         Self::seek(self, t)
     }
     fn stop(&mut self) -> Result<()> {
@@ -250,5 +262,17 @@ impl MusiPlayer for Player {
     }
     fn toggle_pause(&mut self) -> Result<()> {
         Self::toggle_pause(self)
+    }
+    fn pause(&mut self) -> Result<()> {
+        Self::pause(self)
+    }
+    fn unpause(&mut self) -> Result<()> {
+        Self::unpause(self)
+    }
+    fn get_volume(&mut self) -> Result<f64> {
+        Self::get_volume(self)
+    }
+    fn set_volume(&mut self, vol: f64) -> Result<()> {
+        Self::set_volume(self, vol)
     }
 }

@@ -179,6 +179,14 @@ impl Player {
         }
         (self.position() as f64)/(self.duration() as f64)
     }
+
+    pub fn get_volume(&self) -> f64 {
+        self.player.volume()
+    }
+
+    pub fn set_volume(&self, t: f64) {
+        self.player.set_volume(t);
+    }
 }
 
 
@@ -201,7 +209,7 @@ impl MusiPlayer for Player {
     fn progress(&mut self) -> Result<f64> {
         Ok(Self::progress(self))
     }
-    fn seek(&mut self, t: f64) -> Result<()> {
+    fn seek_by(&mut self, t: f64) -> Result<()> {
         Ok(Self::seek(self, t))
     }
     fn stop(&mut self) -> Result<()> {
@@ -212,5 +220,17 @@ impl MusiPlayer for Player {
     }
     fn is_paused(&mut self) -> Result<bool> {
         Ok(Self::is_paused(&self))
+    }
+    fn get_volume(&mut self) -> Result<f64> {
+        Ok(Self::get_volume(&self))
+    }
+    fn set_volume(&mut self, t: f64) -> Result<()> {
+        Ok(Self::set_volume(&self, t))
+    }
+    fn pause(&mut self) -> Result<()> {
+        Ok(Self::pause(self))
+    }
+    fn unpause(&mut self) -> Result<()> {
+        Ok(Self::unpause(self))
     }
 }
