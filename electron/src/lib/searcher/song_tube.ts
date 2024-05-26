@@ -228,12 +228,17 @@ export class SongTube extends Unpaged<MusicListItem> {
             if (this.cont === null) {
                 this.cont = await this.results.getContinuation();
             } else {
-                this.cont = await this.cont.getContinuation();
+                if (this.cont.has_continuation) {
+                    this.cont = await this.cont.getContinuation();
+                } else {
+                    this.cont = null;
+                }
             }
             console.log(this.cont)
 
             if (
-                !this.cont.contents
+                !this.cont
+                || !this.cont.contents
                 || !this.cont.contents.contents
                 || !(this.cont.contents.contents.length > 0)
             ) {
