@@ -650,47 +650,54 @@ mod server {
         match message {
             PlayerCommand::Play(url) => {
                 p.play(url.clone())?;
-                tx.send_timeout(Ok(PlayerMessage::Playing(url)), timeout).await?;
+                tx.send_timeout(Ok(PlayerMessage::Playing(url)), timeout)
+                    .await?;
 
                 let player = player.clone();
-                let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
-                    for i in 0..50 {
-                        tokio::time::sleep(timeout).await;
-                        let mut p = player.lock().await;
-                        let dur = p.duration()?;
-                        if dur > 0.5 {
-                            tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout).await?;
-                            break;
+                let _: tokio::task::JoinHandle<anyhow::Result<()>> =
+                    tokio::task::spawn(async move {
+                        for i in 0..50 {
+                            tokio::time::sleep(timeout).await;
+                            let mut p = player.lock().await;
+                            let dur = p.duration()?;
+                            if dur > 0.5 {
+                                tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout)
+                                    .await?;
+                                break;
+                            }
                         }
-                    }
-                    Ok(())
-                });
-            },
+                        Ok(())
+                    });
+            }
             PlayerCommand::Pause => {
                 p.pause()?;
                 tx.send_timeout(Ok(PlayerMessage::Paused), timeout).await?;
-            },
+            }
             PlayerCommand::Unpause => {
                 p.unpause()?;
-                tx.send_timeout(Ok(PlayerMessage::Unpaused), timeout).await?;
-            },
+                tx.send_timeout(Ok(PlayerMessage::Unpaused), timeout)
+                    .await?;
+            }
             PlayerCommand::SeekBy(t) => {
                 p.seek_by(t)?;
-            },
+            }
             PlayerCommand::SeekToPerc(perc) => {
                 p.seek_to_perc(perc)?;
-            },
+            }
             PlayerCommand::GetVolume => {
-                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout).await?;
-            },
+                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout)
+                    .await?;
+            }
             PlayerCommand::SetVolume(v) => {
                 p.set_volume(v)?;
                 tokio::time::sleep(timeout).await;
-                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout).await?;
-            },
+                tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout)
+                    .await?;
+            }
             PlayerCommand::GetDuration => {
-                tx.send_timeout(Ok(PlayerMessage::Duration(p.duration()?)), timeout).await?;
-            },
+                tx.send_timeout(Ok(PlayerMessage::Duration(p.duration()?)), timeout)
+                    .await?;
+            }
         }
         Ok(())
     }
@@ -748,15 +755,15 @@ mod server {
                             let e = ws::Message::text(serde_json::to_string(&e).unwrap());
                             Ok(e)
                         })
-                            .forward(wstx)
-                            .map(|result| {
-                                if let Err(e) = result {
-                                    eprintln!(
-                                        "Failed to send message using websocket - {}",
-                                        e.to_string()
-                                    );
-                                }
-                            }),
+                        .forward(wstx)
+                        .map(|result| {
+                            if let Err(e) = result {
+                                eprintln!(
+                                    "Failed to send message using websocket - {}",
+                                    e.to_string()
+                                );
+                            }
+                        }),
                     );
                     let pl = player.clone();
                     let txc = tx.clone();
@@ -771,7 +778,8 @@ mod server {
 
                     while let Some(msg) = wsrx.next().await {
                         match msg {
-                            Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await {
+                            Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await
+                            {
                                 Ok(_) => (),
                                 Err(e) => {
                                     eprintln!("Error: {}", e);
