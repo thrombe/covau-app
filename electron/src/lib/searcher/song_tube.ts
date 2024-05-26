@@ -164,11 +164,11 @@ export class SongTube extends Unpaged<MusicListItem> {
         let arr = a.filterType(YTNodes.MusicResponsiveListItem);
 
         let mli: MusicListItem[] = arr.map(p => ({
-            type: 'playlist',
+            type: 'song',
             id: p.id!,
             title: p.title?? null,
             thumbnail: this.get_thumbnail(p.thumbnail),
-            author: { name: p.author?.name ?? '', channel_id: p.author?.channel_id ?? null },
+            authors: p.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
         return keyed(mli);
     }
@@ -176,11 +176,11 @@ export class SongTube extends Unpaged<MusicListItem> {
         this.has_next_page = false;
         let a = await this.tube.music.getAlbum(album_id);
         let mli: MusicListItem[] = a.contents.map(a => ({
-            type: 'album',
+            type: 'song',
             id: a.id!,
             title: a.title?? null,
             thumbnail: this.get_thumbnail(a.thumbnail),
-            author: { name: a.author?.name ?? '', channel_id: a.author?.channel_id ?? null },
+            authors: a.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
         return keyed(mli);
     }
@@ -247,13 +247,35 @@ export class SongTube extends Unpaged<MusicListItem> {
         songs = songs.filter(e => !!e.id);
 
         
-        let mli: MusicListItem[] = songs.map(e => ({
-            type: 'song',
-            id: e.id!,
-            title: e.title ?? null,
-            thumbnail: this.get_thumbnail(e.thumbnail),
-            authors: e.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
-        }));
+        let mli: MusicListItem[] = songs.map(e => {
+            if (e.item_type === 'song' || e.item_type === 'video') {
+                return  {
+                    type: 'song',
+                    id: e.id!,
+                    title: e.title ?? null,
+                    thumbnail: this.get_thumbnail(e.thumbnail),
+                    authors: e.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                }
+            } else if (e.item_type === 'album' || e.item_type === 'playlist') {
+                return  {
+                    type: e.item_type,
+                    id: e.id!,
+                    title: e.title ?? null,
+                    thumbnail: this.get_thumbnail(e.thumbnail),
+                    author: e.author ? { name: e.author.name, channel_id: e.author?.channel_id ?? null } : null,
+                }
+            } else if (e.item_type === 'artist') {
+                return  {
+                    type: 'artist',
+                    id: e.id!,
+                    name: e.name ?? null,
+                    thumbnail: this.get_thumbnail(e.thumbnail),
+                    subscribers: e.subscribers ?? null,
+                }
+            } else {
+                throw "idk how to handle this";
+            }
+        });
         let k = keyed(mli);
 
         this.has_next_page = this.results.has_continuation;
