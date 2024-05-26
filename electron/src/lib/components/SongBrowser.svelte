@@ -144,7 +144,7 @@
                             {#if item.type == 'song' || item.type == 'video'}
                                 <AudioListItem
                                     title={item.title ?? ''}
-                                    title_sub={item.authors[0].name ?? ''}
+                                    title_sub={item.authors[0]?.name ?? ''}
                                     img_src={item.thumbnail ?? ''}
                                 />
                                 <button class='open-button'
