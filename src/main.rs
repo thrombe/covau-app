@@ -718,6 +718,7 @@ mod server {
     pub enum PlayerMessage {
         Paused,
         Unpaused,
+        Finished,
         Playing(String),
         ProgressPerc(f64),
         Volume(f64),
@@ -767,14 +768,36 @@ mod server {
                     );
                     let pl = player.clone();
                     let txc = tx.clone();
-                    let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
-                        let timeout = tokio::time::Duration::from_millis(300);
-                        loop {
-                            tokio::time::sleep(timeout).await;
-                            let mut p = pl.lock().await;
-                            txc.send_timeout(Ok(PlayerMessage::ProgressPerc(p.progress()?)), timeout).await?;
-                        }
-                    });
+                    let _: tokio::task::JoinHandle<anyhow::Result<()>> =
+                        tokio::task::spawn(async move {
+                            let timeout = tokio::time::Duration::from_millis(300);
+                            let mut finished = false;
+                            loop {
+                                tokio::time::sleep(timeout).await;
+                                let mut p = pl.lock().await;
+                                let prog = p.progress()?;
+
+                                if 1.0 - prog < 0.0001 {
+                                    if !finished {
+                                        finished = true;
+                                        txc.send_timeout(
+                                            Ok(PlayerMessage::ProgressPerc(1.0)),
+                                            timeout,
+                                        )
+                                        .await?;
+                                        txc.send_timeout(Ok(PlayerMessage::Finished), timeout)
+                                            .await?;
+                                    }
+                                } else {
+                                    finished = false;
+                                    txc.send_timeout(
+                                        Ok(PlayerMessage::ProgressPerc(prog)),
+                                        timeout,
+                                    )
+                                    .await?;
+                                }
+                            }
+                        });
 
                     while let Some(msg) = wsrx.next().await {
                         match msg {
