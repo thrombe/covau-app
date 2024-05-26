@@ -79,7 +79,7 @@ export class LocalPlayer {
         });
     }
 
-    set_message_listener(type: PlayerMessage['type'], handler: MessageHandler) {
+    add_message_listener(type: PlayerMessage['type'], handler: MessageHandler) {
         let handlers = this.listeners.get(type);
         if (handlers) {
             handlers.push(handler);
