@@ -197,7 +197,7 @@
 >
     <all-contents class='flex flex-row'>
         <search-area class='flex flex-col'>
-            <top-menubar class='w-full flex flex-row gap-2 py-2 px-6 justify-start text-gray-200 overflow-x-auto'>
+            <top-menubar class='w-full flex flex-row gap-2 py-2 px-6 justify-start text-gray-200 overflow-x-auto scrollbar-hide'>
                 {#each menubar_options as typ}
                     <button
                         class='flex-none rounded-xl p-2 font-bold bg-gray-200 {menubar_option == typ ? 'bg-opacity-30' : 'bg-opacity-10'}'
