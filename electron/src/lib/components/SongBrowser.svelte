@@ -2,11 +2,11 @@
     import { tick } from 'svelte';
     import { writable, type Writable } from 'svelte/store';
     import type { RObject, RSearcher } from '$lib/searcher/searcher.ts';
-    import { SongTube, type Typ, type MusicListItem } from '$lib/searcher/song_tube.ts';
+    import { SongTube, type Typ, type SearchTyp, type MusicListItem } from '$lib/searcher/song_tube.ts';
 
     let song_fac = writable(SongTube.factory(undefined as unknown as Innertube, '' as Typ));
     // OOF: cannot search anything if query is '' anyway
-    let song_searcher = writable(SongTube.new('', undefined as unknown as Innertube, '' as Typ));
+    let song_searcher = writable(SongTube.new('', undefined as unknown as Innertube, undefined as unknown as SearchTyp));
 </script>
 
 <script lang="ts">
@@ -24,7 +24,7 @@
     export let type: Typ;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    $song_searcher = SongTube.new('', tube, '' as Typ);
+    $song_searcher = SongTube.new('', tube, undefined as unknown as SearchTyp);
     $song_fac = SongTube.factory(tube, type);
     $: if ($song_searcher.type.type == 'search' && type != $song_searcher.type.search) {
         (async () => {
