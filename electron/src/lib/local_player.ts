@@ -20,7 +20,6 @@ export class LocalPlayer {
         this.ws = new WebSocket("ws://localhost:10010/player");
         this.ws.addEventListener('message', async (e) => {
             let message: PlayerMessage = JSON.parse(e.data);
-            console.log(message)
 
             let handlers = this.listeners.get(message.type);
             if (handlers) {

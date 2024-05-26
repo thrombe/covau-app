@@ -1,14 +1,8 @@
 
-import { YTNodes, SongTube } from './song_tube';
-
-type MusicResponsiveListItem = YTNodes.MusicResponsiveListItem;
-
-export type { MusicResponsiveListItem };
-export {};
-
+import { YTNodes, SongTube, type MusicListItem } from './song_tube';
 
 export type RObject<T> =
-    T extends MusicResponsiveListItem
+    T extends MusicListItem
     ? ReturnType<typeof SongTube.obj_type>
 
     // OOF:
@@ -16,7 +10,7 @@ export type RObject<T> =
 
 
 export type RSearcher<T> =
-    T extends MusicResponsiveListItem
+    T extends MusicListItem
     ? ReturnType<typeof SongTube.new>
 
     // OOF:
@@ -24,7 +18,7 @@ export type RSearcher<T> =
 
 
 export type RFactory<T> = 
-    T extends MusicResponsiveListItem
+    T extends MusicListItem
     ? ReturnType<typeof SongTube.factory>
 
     // OOF:
