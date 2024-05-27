@@ -145,6 +145,8 @@
         menubar_related_option.id = queue_items[queue_selected_item_index].id;
     } else if (queue_playing_vid_info) {
         menubar_related_option.id = queue_playing_vid_info.basic_info.id;
+    } else {
+        menubar_related_option.id = null;
     }
 
     $: if (menubar_option) {
@@ -232,6 +234,10 @@
                             ? 'bg-opacity-30'
                             : 'bg-opacity-10'}"
                         on:click={() => {
+                            if (typ.content_type === 'related-music' && menubar_related_option.id == null) {
+                                toast("no queue item selected", 'info');
+                                return;
+                            }
                             menubar_option = typ;
                         }}
                     >
