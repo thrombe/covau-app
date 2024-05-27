@@ -278,7 +278,13 @@ export class SongTube extends Unpaged<MusicListItem> {
                     subscribers: e.subscribers ?? null,
                 }
             } else {
-                throw "idk how to handle this";
+                return {
+                    type: 'video',
+                    id: e.id!,
+                    title: e.title ?? null,
+                    thumbnail: this.get_thumbnail(e.thumbnail),
+                    authors: [],
+                };
             }
         });
         let k = keyed(mli);
