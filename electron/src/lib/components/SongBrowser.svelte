@@ -174,13 +174,13 @@
                     let:selected
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item
-                        class:selected
-                        draggable={true}
-                        on:dragstart={(event) => dragstart(event, item)}
-                        on:dragend={queue_dragend}
-                    >
-                        <div class="item-bg">
+                    <list-item class:selected>
+                        <div
+                            draggable={true}
+                            on:dragstart={(event) => dragstart(event, item)}
+                            on:dragend={queue_dragend}
+                            class="item-bg"
+                        >
                             {#if item.type == "song" || item.type == "video"}
                                 <AudioListItem
                                     title={item.title ?? ""}
@@ -325,13 +325,13 @@
                     let:selected
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item
-                        class:selected
-                        draggable={true}
-                        on:dragstart={(event) => dragstart(event, item)}
-                        on:dragend={queue_dragend}
-                    >
-                        <div class="item-bg">
+                    <list-item class:selected>
+                        <div
+                            draggable={true}
+                            on:dragstart={(event) => dragstart(event, item)}
+                            on:dragend={queue_dragend}
+                            class="item-bg"
+                        >
                             {#if item.type == "song" || item.type == "video"}
                                 <AudioListItem
                                     title={item.title ?? ""}
