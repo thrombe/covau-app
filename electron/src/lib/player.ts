@@ -664,7 +664,7 @@ export class Player {
     dispatch_time_error_routine() {
         let threshold = 400;
         let min_yet: number | null = null;
-        let timeout: number;
+        let timeout: ReturnType<typeof setTimeout>;
         const one_iteration = async () => {
             let sync_start = Date.now();
             let added_doc = await addDoc(
