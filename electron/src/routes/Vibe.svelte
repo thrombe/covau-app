@@ -15,7 +15,7 @@
     import Queue from "$lib/components/Queue.svelte";
     import SongBrowser from "$lib/components/SongBrowser.svelte";
     import Video from "$lib/components/Video.svelte";
-    import { Player } from "$lib/player.ts";
+    import { SyncPlayer } from "$lib/player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
     import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
@@ -58,7 +58,7 @@
         window.location.reload();
     }
 
-    let player: Player;
+    let player: SyncPlayer;
     let playing_index: number | null = null;
     let on_player_tick = async () => {
         queue_items = player.synced_data.queue.map((e) => {

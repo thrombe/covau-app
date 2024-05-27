@@ -30,7 +30,7 @@ type PlayerSyncedData = {
     paused_started_at: number;
 };
 
-export class Player {
+export class SyncPlayer {
     db: Firestore;
 
     snapshot_unsub: Unsubscribe | null = null;
@@ -145,7 +145,7 @@ export class Player {
 
     static async new(db: Firestore, group: string, video_element_id: string) {
         let data_ref = doc(db, 'groups', group);
-        let player = new Player(db, video_element_id, data_ref);
+        let player = new SyncPlayer(db, video_element_id, data_ref);
 
         player.dispatch_time_error_routine();
 

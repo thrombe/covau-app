@@ -1,10 +1,10 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
-    import { Player } from '$lib/player.ts';
+    import { SyncPlayer } from '$lib/player.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
 
-    export let player: Player;
+    export let player: SyncPlayer;
     export let audio_info: { title: string; title_sub: string; img_src: string } | null;
     export let mobile = false;
     export let keyboard_control = true;

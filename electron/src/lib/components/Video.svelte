@@ -11,7 +11,7 @@
 </script>
 
 <script lang="ts">
-    import { Player } from '$lib/player.ts';
+    import { SyncPlayer } from '$lib/player.ts';
     import { initializeApp } from 'firebase/app';
     import { getFirestore } from 'firebase/firestore';
     import { onDestroy } from 'svelte';
@@ -21,7 +21,7 @@
     export let group: string;
 
     // OOF:
-    export let player: Player = undefined as unknown as Player;
+    export let player: SyncPlayer = undefined as unknown as SyncPlayer;
     export let video: HTMLElement = undefined as unknown as HTMLElement;
 
     export let on_tick = async () => {};
@@ -48,7 +48,7 @@
         if (player) {
             await player.destroy();
         }
-        let p = await Player.new(db, group, 'video');
+        let p = await SyncPlayer.new(db, group, 'video');
         player = p;
         player.on_update = () => {
             $tick += player.synced_data.tick;
