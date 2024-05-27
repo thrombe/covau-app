@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { SyncPlayer } from '../lib/player';
+    import { SyncPlayer } from '$lib/sync_player';
     import { initializeApp } from 'firebase/app';
     import { getFirestore } from 'firebase/firestore';
     import { onDestroy } from 'svelte';

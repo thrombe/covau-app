@@ -15,7 +15,7 @@
     import Queue from "$lib/components/Queue.svelte";
     import SongBrowser from "$lib/components/SongBrowser.svelte";
     import Video from "$lib/components/Video.svelte";
-    import { SyncPlayer } from "$lib/player.ts";
+    import { SyncPlayer } from "$lib/sync_player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
     import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
