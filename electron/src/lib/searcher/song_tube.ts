@@ -16,7 +16,8 @@ export type BrowseQuery =
     { type: 'artist', id: string } |
     { type: 'album', id: string } |
     { type: 'playlist', id: string } |
-    { type: 'up-next', id: string };
+    { type: 'up-next', id: string } |
+    { type: 'home-feed' };
 
 export type MusicListItemAuthor = { name: string, channel_id: string | null };
 export type MusicListItem = {
@@ -112,6 +113,9 @@ export class SongTube extends Unpaged<MusicListItem> {
         } else if (this.query.type == 'up-next') {
             let r = await this.next_page_up_next(this.query.id);
             return r;
+        } else if (this.query.type == 'home-feed') {
+            let r = await this.next_page_home_feed();
+            return r;
         }
 
         throw 'unreachable';
@@ -127,6 +131,20 @@ export class SongTube extends Unpaged<MusicListItem> {
             title: s.title.text ?? '',
             thumbnail: this.get_thumbnail(s.thumbnail),
             authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id?? null})) ?? [],
+        }));
+        return keyed(mli);
+    }
+    protected async next_page_home_feed() {
+        this.has_next_page = false;
+        let r = await this.tube.music.getHomeFeed();
+        let k = r.sections?.filterType(YTNodes.MusicCarouselShelf).flatMap(e => e.contents.filterType(YTNodes.MusicResponsiveListItem)) ?? [];
+
+        let mli: MusicListItem[] = k.map(s => ({
+            type: 'song',
+            id: s.id!,
+            title: s.title?? null,
+            thumbnail: this.get_thumbnail(s.thumbnail),
+            authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
         return keyed(mli);
     }
