@@ -16,7 +16,6 @@
     export let columns: number;
     export let item_height: number;
     export let search_query: string;
-    export let gap: number;
     export let end_is_visible = true;
     export let on_item_click: (t: Unique<RObject<T>, unknown>) => Promise<void>;
     export let try_scroll_selected_item_in_view: () => Promise<void>;
@@ -87,7 +86,6 @@
     <scrollable>
         <VirtualScrollable
             bind:items
-            {gap}
             {columns}
             {item_height}
             {on_item_click}

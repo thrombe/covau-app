@@ -18,7 +18,6 @@
 
     export let columns: number;
     export let item_height: number;
-    export let gap: number;
     export let tube: Innertube;
     export let queue_dragend: (e: DragEvent) => void = () => {};
     export let type: Typ;
@@ -97,9 +96,9 @@
         <browse-tab-bar class='flex flex-row overflow-x-auto gap-1 px-1 justify-center'>
             {#each tabs as tab}
                 <button 
-                    class='border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
+                    class="border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
                         {curr_tab == tab ? 'font-bold border-gray-200' : 'border-gray-600'}
-                    '
+                    "
                     style='max-width: 12rem;'
                     on:click={async () => {
                         curr_tab = tab;
@@ -112,8 +111,8 @@
     </bar-area>
 
     {#each tabs as tab (tab.name)}
-        <browse-area class='{curr_tab == tab ? '' : 'hidden'}'>
-            {#if tab.name == search_tab.name}
+        <browse-area class={curr_tab == tab ? "" : "hidden"}>
+            {#if tab.name == search_tab.name && browse_type == 'search'}
                 <Explorer
                     {t}
                     fac={song_fac}
@@ -126,7 +125,6 @@
                     bind:selected_item_index
                     bind:search_objects
                     bind:try_scroll_selected_item_in_view
-                    {gap}
                     on_item_click={async (t) => {
                         console.log(t);
                     }}
@@ -226,7 +224,6 @@
                     {selected_item_index}
                     {search_objects}
                     {try_scroll_selected_item_in_view}
-                    {gap}
                     on_item_click={async (t) => {
                         console.log(t);
                     }}

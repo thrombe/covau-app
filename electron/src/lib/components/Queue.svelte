@@ -8,7 +8,6 @@
     import { toast } from '$lib/toast/Toasts.svelte';
 
     export let items: Array<Unique<string, string>>;
-    export let gap: number;
     export let item_height: number;
     export let selected_item_index: number;
     export let playing: number | null;

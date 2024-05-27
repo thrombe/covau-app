@@ -255,7 +255,6 @@
                                         {#if player}
                                             <Queue
                                                 bind:items={queue_items}
-                                                gap={0}
                                                 bind:item_height
                                                 bind:selected_item_index={queue_selected_item_index}
                                                 bind:playing={playing_index}
@@ -305,7 +304,6 @@
                             <SongBrowser
                                 bind:item_height
                                 columns={browse_columns}
-                                gap={0}
                                 bind:tube
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
@@ -350,7 +348,6 @@
                         {#if player}
                             <Queue
                                 bind:items={queue_items}
-                                gap={0}
                                 bind:item_height
                                 bind:selected_item_index={queue_selected_item_index}
                                 bind:playing={playing_index}
