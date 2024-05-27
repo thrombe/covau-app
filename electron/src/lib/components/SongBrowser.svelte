@@ -111,7 +111,7 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar>
-            {#if browse_type.content_type === 'music'}
+            {#if browse_type.content_type === "music"}
                 <InputBar
                     placeholder={"Search"}
                     bind:value={search_query}
@@ -126,7 +126,9 @@
                 />
             {:else}
                 <div class="flex h-full items-center">
-                    <div class="w-full text-center text-xl">{browse_type.name}</div>
+                    <div class="w-full text-center text-xl">
+                        {browse_type.name}
+                    </div>
                 </div>
             {/if}
         </search-bar>

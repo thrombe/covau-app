@@ -134,7 +134,9 @@
     ];
     let menubar_home_option = menubar_options[1];
     let menubar_song_option = menubar_options[2];
-    let menubar_related_option = menubar_options[7] as unknown as { id: string | null };
+    let menubar_related_option = menubar_options[7] as unknown as {
+        id: string | null;
+    };
     let menubar_queue_option: MenubarOption = {
         name: "Queue",
         content_type: "queue",
@@ -144,7 +146,8 @@
     $: if (queue_selected_item_index > -1) {
         menubar_related_option.id = queue_items[queue_selected_item_index].id;
     } else if (queue_playing_vid_info) {
-        menubar_related_option.id = queue_playing_vid_info.basic_info.id ?? null;
+        menubar_related_option.id =
+            queue_playing_vid_info.basic_info.id ?? null;
     } else {
         menubar_related_option.id = null;
     }
@@ -234,8 +237,11 @@
                             ? 'bg-opacity-30'
                             : 'bg-opacity-10'}"
                         on:click={() => {
-                            if (typ.content_type === 'related-music' && menubar_related_option.id == null) {
-                                toast("no queue item selected", 'info');
+                            if (
+                                typ.content_type === "related-music" &&
+                                menubar_related_option.id == null
+                            ) {
+                                toast("no queue item selected", "info");
                                 return;
                             }
                             menubar_option = typ;
