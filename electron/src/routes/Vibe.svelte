@@ -1,3 +1,13 @@
+<script lang="ts" context="module">
+    export type MenubarOption = { name: string } & (
+        | { content_type: "music"; type: Typ }
+        | { content_type: "queue" }
+        | { content_type: "watch" }
+        | { content_type: "related-music"; id: string | null }
+        | { content_type: "home-feed" }
+    );
+</script>
+
 <script lang="ts">
     import type Innertube from "youtubei.js/web";
     import InputBar from "$lib/components/InputBar.svelte";
@@ -112,27 +122,30 @@
     let queue_dragend: (e: DragEvent) => void;
 
     let watching = false;
-    type MenubarOption = { name: string } & (
-        | { content_type: "music"; type: Typ }
-        | { content_type: "queue" }
-        | { content_type: "watch" }
-    );
-
     let menubar_options: MenubarOption[] = [
         { name: "Watch", content_type: "watch" },
+        { name: "Home", content_type: "home-feed" },
         { name: "Song", content_type: "music", type: "song" },
         { name: "Music Video", content_type: "music", type: "video" },
         { name: "Music Playlist", content_type: "music", type: "playlist" },
         { name: "Artist", content_type: "music", type: "artist" },
         { name: "Album", content_type: "music", type: "album" },
+        { name: "Related", content_type: "related-music", id: null },
     ];
-    let menubar_song_option = menubar_options[1];
+    let menubar_home_option = menubar_options[1];
+    let menubar_song_option = menubar_options[2];
+    let menubar_related_option = menubar_options[7];
     let menubar_queue_option: MenubarOption = {
         name: "Queue",
         content_type: "queue",
     };
-    let menubar_option: MenubarOption = menubar_song_option;
-    let music_search_type: Typ = "song";
+    let menubar_option: MenubarOption = menubar_home_option;
+
+    $: if (queue_selected_item_index > -1) {
+        menubar_related_option.id = queue_items[queue_selected_item_index].id;
+    } else if (queue_playing_vid_info) {
+        menubar_related_option.id = queue_playing_vid_info.basic_info.id;
+    }
 
     $: if (menubar_option) {
         if (menubar_option.content_type == "watch") {
@@ -220,9 +233,6 @@
                             : 'bg-opacity-10'}"
                         on:click={() => {
                             menubar_option = typ;
-                            if (menubar_option.content_type == "music") {
-                                music_search_type = menubar_option.type;
-                            }
                         }}
                     >
                         {typ.name}
@@ -363,7 +373,7 @@
                                 bind:tube
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
-                                type={music_search_type}
+                                browse_type={menubar_option}
                             />
                         </div>
                     </div>

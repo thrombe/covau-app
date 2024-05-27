@@ -68,6 +68,12 @@ export class SongTube extends Unpaged<MusicListItem> {
         return new SS(query, tube);
     }
 
+    static fused() {
+        let s = SongTube.new({ type: '' } as unknown as BrowseQuery, null as unknown as Innertube);
+        s.has_next_page = false;
+        return s;
+    }
+
     // TODO: type is only used for with_query
     static factory(tube: Innertube) {
         type R = RSearcher<MusicListItem>;

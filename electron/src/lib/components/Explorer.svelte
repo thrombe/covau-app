@@ -8,13 +8,11 @@
     // OOF: extra prop to fix T as svelte does not recognise T properly here
     // just pass a variable with the required T type (undefined is fine too) and ignore it
     export let t: T;
-    export let fac: Writable<RFactory<T> | null>;
     export let searcher: Writable<RSearcher<T>>;
     export let selected_item_index: number;
     export let selected_item: Unique<RObject<T>, unknown>;
     export let columns: number;
     export let item_height: number;
-    export let search_query: string;
     export let end_is_visible = true;
     export let on_item_click: (t: Unique<RObject<T>, unknown>) => Promise<void>;
     export let try_scroll_selected_item_in_view: () => Promise<void>;
@@ -54,20 +52,18 @@
         });
     };
     export const search_objects = async () => {
-        if ($fac) {
-            let s = await $fac.with_query(search_query);
-            if (!s) {
-                return;
-            }
-            $searcher = s as RSearcher<T>;
-        }
         await next_page();
         await tick();
         selected_item_index = 0;
         await try_scroll_selected_item_in_view();
         end_reached();
     };
-    search_objects();
+    searcher.subscribe(async (e) => {
+        items = [];
+        if (search_objects) {
+            await search_objects();
+        }
+    });
 
     let info_width = 0;
     let info_margin = 0;

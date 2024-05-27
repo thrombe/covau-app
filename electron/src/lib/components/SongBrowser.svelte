@@ -5,21 +5,15 @@
     import {
         SongTube,
         type Typ,
-        type SearchTyp,
+        type BrowseQuery,
         type MusicListItem,
     } from "$lib/searcher/song_tube.ts";
 
     let song_fac = writable(
-        SongTube.factory(undefined as unknown as Innertube, "" as Typ)
+        SongTube.factory(undefined as unknown as Innertube)
     );
     // OOF: cannot search anything if query is '' anyway
-    let song_searcher = writable(
-        SongTube.new(
-            "",
-            undefined as unknown as Innertube,
-            { type: "" } as unknown as SearchTyp
-        )
-    );
+    let song_searcher = writable(SongTube.fused());
 </script>
 
 <script lang="ts">
@@ -28,31 +22,47 @@
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
     import type Innertube from "youtubei.js/web";
+    import type { MenubarOption } from "../../routes/Vibe.svelte";
 
     export let columns: number;
     export let item_height: number;
     export let tube: Innertube;
     export let queue_dragend: (e: DragEvent) => void = () => {};
-    export let type: Typ;
+    export let browse_type: MenubarOption;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    $song_searcher = SongTube.new("", tube, {
-        type: "",
-    } as unknown as SearchTyp);
-    $song_fac = SongTube.factory(tube, type);
-    $: if (
-        $song_searcher.type.type == "search" &&
-        type != $song_searcher.type.search
-    ) {
+    $song_fac = SongTube.factory(tube);
+    $: if (browse_type) {
         (async () => {
-            $song_fac = SongTube.factory(tube, type);
-            await tick();
-            if (search_objects) {
-                search_objects();
+            let s;
+            switch (browse_type.content_type) {
+                case "music":
+                    s = await $song_fac.search_query({
+                        type: "search",
+                        query: search_query,
+                        search: browse_type.type,
+                    });
+                    break;
+                case "watch":
+                    break;
+                case "related-music":
+                    s = await $song_fac.search_query({
+                        type: "up-next",
+                        id: browse_type.id ?? "",
+                    });
+                    break;
+                case "queue":
+                    break;
+                case "home-feed":
+                    s = await $song_fac.search_query({ type: "home-feed" });
+                    break;
+                default:
+                    break;
+            }
+            if (s) {
+                $song_searcher = s;
             }
         })();
-        tabs = [tabs[0]];
-        curr_tab = tabs[0];
     }
 
     let search_query: string = "";
@@ -89,10 +99,12 @@
         thumbnail: string | null;
     };
 
-    let tabs: Tab[] = [
-        { name: "Results", searcher: song_searcher, thumbnail: null },
-    ];
-    let search_tab = tabs[0];
+    let search_tab: Tab = {
+        name: "Results",
+        searcher: song_searcher,
+        thumbnail: null,
+    };
+    let tabs: Tab[] = [search_tab];
     let curr_tab = search_tab;
 </script>
 
@@ -136,12 +148,10 @@
 
     {#each tabs as tab (tab.name)}
         <browse-area class={curr_tab == tab ? "" : "hidden"}>
-            {#if tab.name == search_tab.name && browse_type == "search"}
+            {#if tab.name == search_tab.name}
                 <Explorer
                     {t}
-                    fac={song_fac}
                     searcher={song_searcher}
-                    bind:search_query
                     bind:selected_item
                     {columns}
                     bind:item_height
@@ -197,28 +207,42 @@
                                         if (!item.id) {
                                             return;
                                         }
-                                        let new_tab;
+                                        let _new_tab;
                                         if (item.type == "album") {
-                                            new_tab = {
+                                            _new_tab = {
                                                 name: "Album: " + item.title,
-                                                searcher: writable(
-                                                    await $song_fac.browse_album(
-                                                        item.id
-                                                    )
-                                                ),
+                                                searcher:
+                                                    await $song_fac.search_query(
+                                                        {
+                                                            type: "album",
+                                                            id: item.id,
+                                                        }
+                                                    ),
                                                 thumbnail: item.thumbnail,
                                             };
                                         } else {
-                                            new_tab = {
+                                            _new_tab = {
                                                 name: "Playlist: " + item.title,
-                                                searcher: writable(
-                                                    await $song_fac.browse_playlist(
-                                                        item.id
-                                                    )
-                                                ),
+                                                searcher:
+                                                    await $song_fac.search_query(
+                                                        {
+                                                            type: "playlist",
+                                                            id: item.id,
+                                                        }
+                                                    ),
                                                 thumbnail: null,
                                             };
                                         }
+                                        if (!_new_tab.searcher) {
+                                            return;
+                                        }
+
+                                        let new_tab = {
+                                            ..._new_tab,
+                                            searcher: writable(
+                                                _new_tab.searcher
+                                            ),
+                                        };
                                         tabs = [tabs[0], new_tab];
                                         curr_tab = new_tab;
                                     }}
@@ -242,14 +266,24 @@
                                         if (!item.id) {
                                             return;
                                         }
-                                        let new_tab = {
+                                        let _new_tab = {
                                             name: "Artist: " + item.name,
-                                            searcher: writable(
-                                                await $song_fac.browse_artist_songs(
-                                                    item.id
-                                                )
-                                            ),
+                                            searcher:
+                                                await $song_fac.search_query({
+                                                    type: "artist",
+                                                    id: item.id,
+                                                }),
                                             thumbnail: null,
+                                        };
+                                        if (!_new_tab.searcher) {
+                                            return;
+                                        }
+
+                                        let new_tab = {
+                                            ..._new_tab,
+                                            searcher: writable(
+                                                _new_tab.searcher
+                                            ),
                                         };
                                         tabs = [tabs[0], new_tab];
                                         curr_tab = new_tab;
@@ -269,9 +303,7 @@
             {:else}
                 <Explorer
                     {t}
-                    fac={writable(null)}
                     searcher={tab.searcher}
-                    search_query={""}
                     {selected_item}
                     {columns}
                     {item_height}
