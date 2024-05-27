@@ -145,17 +145,24 @@
     let menubar_option: MenubarOption = menubar_home_option;
 
     $: if (queue_selected_item_index != null) {
+        let id: string | null | undefined;
         if (queue_selected_item_index > -1) {
-            menubar_related_option.id = queue_items[queue_selected_item_index].id;
+            id = queue_items[queue_selected_item_index].id;
         } else if (queue_playing_vid_info) {
-            menubar_related_option.id =
-                queue_playing_vid_info.basic_info.id ?? null;
+            id = queue_playing_vid_info.basic_info.id ?? null;
         } else {
-            menubar_related_option.id = null;
+            id = null;
         }
-        
-        if (menubar_related_option.id && menubar_option.content_type === 'related-music') {
+
+        if (
+            typeof id !== "undefined" &&
+            menubar_related_option.id != id &&
+            menubar_option.content_type === "related-music"
+        ) {
+            menubar_related_option.id = id;
             menubar_option = menubar_option;
+        } else {
+            menubar_related_option.id = id ?? null;
         }
     }
 
