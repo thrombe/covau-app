@@ -284,6 +284,7 @@
                                         >
                                             <img
                                                 class="w-full h-full opacity-75"
+                                                alt="copy"
                                                 src="/static/copy.svg"
                                             />
                                         </button>
@@ -404,6 +405,7 @@
                             >
                                 <img
                                     class="w-full h-full opacity-75"
+                                    alt="copy"
                                     src="/static/copy.svg"
                                 />
                             </button>
