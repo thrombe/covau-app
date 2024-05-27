@@ -204,17 +204,6 @@
         img_src = "";
     };
 
-    // $: if (img_src) {
-    //     (async () => {
-    //         let res = await fetch('/.netlify/functions/palette', {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ src: img_src })
-    //         });
-    //         console.log(res);
-    //     })();
-    // }
-
     const on_group_button_click = async () => {
         navigator.clipboard.writeText(window.location.toString());
     };
