@@ -96,6 +96,7 @@
             await toast("item already in queue");
         } else {
             await player.queue(id);
+            await toast("item added");
         }
     };
     let on_queue_item_move = async (from: number, to: number) => {
