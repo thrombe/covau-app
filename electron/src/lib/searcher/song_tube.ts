@@ -11,8 +11,8 @@ export type VideoInfo = YT.VideoInfo;
 
 // https://github.com/LuanRT/YouTube.js/issues/321
 export type Typ = 'song' | 'video' | 'album' | 'playlist' | 'artist';
-export type SearchTyp =
-    { type: 'search', search: Typ } |
+export type BrowseQuery =
+    { type: 'search', search: Typ, query: string } |
     { type: 'artist', id: string } |
     { type: 'album', id: string } |
     { type: 'playlist', id: string } |
@@ -53,50 +53,34 @@ export type MusicListItem = {
 
 export class SongTube extends Unpaged<MusicListItem> {
     tube: Innertube;
-    type: SearchTyp;
+    query: BrowseQuery;
 
-    constructor(q: string, tube: Innertube, type: SearchTyp) {
-        super(q);
+    constructor(query: BrowseQuery, tube: Innertube) {
+        super();
         this.tube = tube;
-        this.type = type;
+        this.query = query;
     }
 
-    static new(q: string, tube: Innertube, type: SearchTyp) {
+    static new(query: BrowseQuery, tube: Innertube) {
         const US = UniqueSearch<MusicListItem, typeof SongTube>(SongTube);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
-        return new SS(q, tube, type);
+        return new SS(query, tube);
     }
 
     // TODO: type is only used for with_query
-    static factory(tube: Innertube, type: Typ) {
+    static factory(tube: Innertube) {
         type R = RSearcher<MusicListItem>;
         class Fac {
             tube: Innertube;
             constructor(tube: Innertube) {
                 this.tube = tube;
             }
-            async with_query(q: string) {
-                let t = SongTube.new(q, this.tube, { type: 'search', search: type });
+            async search_query(query: BrowseQuery) {
+                let t = SongTube.new(query, this.tube);
                 return t as R | null;
             }
-            async browse_artist_songs(artist_id: string) {
-                let t = SongTube.new('', this.tube, { type: 'artist', id: artist_id });
-                return t;
-            }
-            async browse_album(album_id: string) {
-                let t = SongTube.new('', this.tube, { type: 'album', id: album_id });
-                return t;
-            }
-            async browse_playlist(playlist_id: string) {
-                let t = SongTube.new('', this.tube, { type: 'playlist', id: playlist_id });
-                return t;
-            }
-            async browse_up_next(song_id: string) {
-                let t = SongTube.new('', this.tube, { type: 'up-next', id: song_id });
-                return t;
-            }
         }
-        const SS = SlowSearch<R, typeof Fac>(Fac);
+        const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
         return new SS(tube);
     }
 
@@ -112,21 +96,21 @@ export class SongTube extends Unpaged<MusicListItem> {
         if (!this.has_next_page) {
             return [];
         }
-        console.log(this.type);
-        if (this.type.type == 'search') {
-            return await this.next_page_search(this.type.search);
-        } else if (this.type.type == 'artist') {
-            let r = await this.next_page_artist_songs(this.type.id);
+        console.log(this.query);
+        if (this.query.type == 'search') {
+            return await this.next_page_search(this.query.query, this.query.search);
+        } else if (this.query.type == 'artist') {
+            let r = await this.next_page_artist_songs(this.query.id);
             console.log(r);
             return r;
-        } else if (this.type.type == 'album') {
-            let r = await this.next_page_album(this.type.id);
+        } else if (this.query.type == 'album') {
+            let r = await this.next_page_album(this.query.id);
             return r;
-        } else if (this.type.type == 'playlist') {
-            let r = await this.next_page_playlist(this.type.id);
+        } else if (this.query.type == 'playlist') {
+            let r = await this.next_page_playlist(this.query.id);
             return r;
-        } else if (this.type.type == 'up-next') {
-            let r = await this.next_page_up_next(this.type.id);
+        } else if (this.query.type == 'up-next') {
+            let r = await this.next_page_up_next(this.query.id);
             return r;
         }
 
@@ -204,15 +188,15 @@ export class SongTube extends Unpaged<MusicListItem> {
         }));
         return keyed(mli);
     }
-    protected async next_page_search(type: Exclude<Typ, 'up-next'>) {
-        if (this.query.length == 0) {
+    protected async next_page_search(query: string, type: Typ) {
+        if (query.length == 0) {
             this.has_next_page = false;
             return [];
         }
 
         let songs: Array<MusicResponsiveListItem>;
         if (this.results === null) {
-            this.results = await this.tube.music.search(this.query, { type: type });
+            this.results = await this.tube.music.search(query, { type: type });
             console.log(this.results);
 
             if (!this.results.contents) {
