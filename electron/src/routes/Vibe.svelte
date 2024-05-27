@@ -143,13 +143,19 @@
     };
     let menubar_option: MenubarOption = menubar_home_option;
 
-    $: if (queue_selected_item_index > -1) {
-        menubar_related_option.id = queue_items[queue_selected_item_index].id;
-    } else if (queue_playing_vid_info) {
-        menubar_related_option.id =
-            queue_playing_vid_info.basic_info.id ?? null;
-    } else {
-        menubar_related_option.id = null;
+    $: if (queue_selected_item_index != null) {
+        if (queue_selected_item_index > -1) {
+            menubar_related_option.id = queue_items[queue_selected_item_index].id;
+        } else if (queue_playing_vid_info) {
+            menubar_related_option.id =
+                queue_playing_vid_info.basic_info.id ?? null;
+        } else {
+            menubar_related_option.id = null;
+        }
+        
+        if (menubar_related_option.id && menubar_option.content_type === 'related-music') {
+            menubar_option = menubar_option;
+        }
     }
 
     $: if (menubar_option) {
