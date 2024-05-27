@@ -32,38 +32,37 @@
     export let queue_item_add: (id: string) => Promise<void>;
 
     $song_fac = SongTube.factory(tube);
-    $: if (browse_type) {
-        (async () => {
-            let s;
-            switch (browse_type.content_type) {
-                case "music":
-                    s = await $song_fac.search_query({
-                        type: "search",
-                        query: search_query,
-                        search: browse_type.type,
-                    });
-                    break;
-                case "watch":
-                    break;
-                case "related-music":
-                    s = await $song_fac.search_query({
-                        type: "up-next",
-                        id: browse_type.id ?? "",
-                    });
-                    break;
-                case "queue":
-                    break;
-                case "home-feed":
-                    s = await $song_fac.search_query({ type: "home-feed" });
-                    break;
-                default:
-                    break;
-            }
-            if (s) {
-                $song_searcher = s;
-            }
-        })();
-    }
+    const refresh_searcher = async (browse_type: MenubarOption) => {
+        let s;
+        switch (browse_type.content_type) {
+            case "music":
+                s = await $song_fac.search_query({
+                    type: "search",
+                    query: search_query,
+                    search: browse_type.type,
+                });
+                break;
+            case "watch":
+                break;
+            case "related-music":
+                s = await $song_fac.search_query({
+                    type: "up-next",
+                    id: browse_type.id ?? "",
+                });
+                break;
+            case "queue":
+                break;
+            case "home-feed":
+                s = await $song_fac.search_query({ type: "home-feed" });
+                break;
+            default:
+                break;
+        }
+        if (s) {
+            $song_searcher = s;
+        }
+    };
+    $: refresh_searcher(browse_type);
 
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
@@ -117,6 +116,8 @@
                     bind:value={search_query}
                     bind:input_element={search_input_element}
                     on_enter={async (e) => {
+                        await refresh_searcher(browse_type);
+
                         e.preventDefault();
                         await search_objects();
 
