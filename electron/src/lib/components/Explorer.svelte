@@ -1,10 +1,9 @@
-
 <script lang="ts">
-    import VirtualScrollable from './VirtualScrollable.svelte';
-    import { tick } from 'svelte';
-    import type { Unique } from '../virtual.ts';
-    import type { Writable } from 'svelte/store';
-    import type { RFactory, RObject, RSearcher } from '../searcher/searcher.ts';
+    import VirtualScrollable from "./VirtualScrollable.svelte";
+    import { tick } from "svelte";
+    import type { Unique } from "../virtual.ts";
+    import type { Writable } from "svelte/store";
+    import type { RFactory, RObject, RSearcher } from "../searcher/searcher.ts";
 
     // OOF: extra prop to fix T as svelte does not recognise T properly here
     // just pass a variable with the required T type (undefined is fine too) and ignore it
@@ -44,7 +43,7 @@
             }
             await next_page();
             await tick();
-            await new Promise<void>(r => setTimeout(() => r(), 100));
+            await new Promise<void>((r) => setTimeout(() => r(), 100));
             await tick();
         }
     };
@@ -82,7 +81,10 @@
     }
 </script>
 
-<cl class="main" style="--info-width: {info_width}px; --info-margin: {info_margin}px;">
+<cl
+    class="main"
+    style="--info-width: {info_width}px; --info-margin: {info_margin}px;"
+>
     <scrollable>
         <VirtualScrollable
             bind:items

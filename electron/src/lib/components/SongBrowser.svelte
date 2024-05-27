@@ -1,20 +1,33 @@
 <script lang="ts" context="module">
-    import { tick } from 'svelte';
-    import { writable, type Writable } from 'svelte/store';
-    import type { RObject, RSearcher } from '$lib/searcher/searcher.ts';
-    import { SongTube, type Typ, type SearchTyp, type MusicListItem } from '$lib/searcher/song_tube.ts';
+    import { tick } from "svelte";
+    import { writable, type Writable } from "svelte/store";
+    import type { RObject, RSearcher } from "$lib/searcher/searcher.ts";
+    import {
+        SongTube,
+        type Typ,
+        type SearchTyp,
+        type MusicListItem,
+    } from "$lib/searcher/song_tube.ts";
 
-    let song_fac = writable(SongTube.factory(undefined as unknown as Innertube, '' as Typ));
+    let song_fac = writable(
+        SongTube.factory(undefined as unknown as Innertube, "" as Typ)
+    );
     // OOF: cannot search anything if query is '' anyway
-    let song_searcher = writable(SongTube.new('', undefined as unknown as Innertube, {type: '' } as unknown as SearchTyp));
+    let song_searcher = writable(
+        SongTube.new(
+            "",
+            undefined as unknown as Innertube,
+            { type: "" } as unknown as SearchTyp
+        )
+    );
 </script>
 
 <script lang="ts">
-    import { type Unique } from '../virtual.ts';
-    import AudioListItem from './AudioListItem.svelte';
-    import Explorer from '$lib/components/Explorer.svelte';
-    import InputBar from '$lib/components/InputBar.svelte';
-    import type Innertube from 'youtubei.js/web';
+    import { type Unique } from "../virtual.ts";
+    import AudioListItem from "./AudioListItem.svelte";
+    import Explorer from "$lib/components/Explorer.svelte";
+    import InputBar from "$lib/components/InputBar.svelte";
+    import type Innertube from "youtubei.js/web";
 
     export let columns: number;
     export let item_height: number;
@@ -23,9 +36,14 @@
     export let type: Typ;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    $song_searcher = SongTube.new('', tube, { type: '' } as unknown as SearchTyp);
+    $song_searcher = SongTube.new("", tube, {
+        type: "",
+    } as unknown as SearchTyp);
     $song_fac = SongTube.factory(tube, type);
-    $: if ($song_searcher.type.type == 'search' && type != $song_searcher.type.search) {
+    $: if (
+        $song_searcher.type.type == "search" &&
+        type != $song_searcher.type.search
+    ) {
         (async () => {
             $song_fac = SongTube.factory(tube, type);
             await tick();
@@ -37,7 +55,7 @@
         curr_tab = tabs[0];
     }
 
-    let search_query: string = '';
+    let search_query: string = "";
     let search_input_element: HTMLElement | null;
 
     let t: MusicListItem;
@@ -49,38 +67,40 @@
 
     let dragstart = (event: DragEvent, t: T) => {
         if (t.id) {
-            if (t.type == 'song' || t.type == 'video') {
-                event.dataTransfer!.effectAllowed = 'move';
-                event.dataTransfer!.dropEffect = 'move';
-                event.dataTransfer!.setData('covau/dragndropnew', t.id);
-                event.dataTransfer!.setData('text/plain', 'https://youtu.be/' + t.id);
-            } else if (t.type == 'artist') {
-
-            } else if (t.type == 'album') {
-
-            } else if (t.type == 'playlist') {
-
+            if (t.type == "song" || t.type == "video") {
+                event.dataTransfer!.effectAllowed = "move";
+                event.dataTransfer!.dropEffect = "move";
+                event.dataTransfer!.setData("covau/dragndropnew", t.id);
+                event.dataTransfer!.setData(
+                    "text/plain",
+                    "https://youtu.be/" + t.id
+                );
+            } else if (t.type == "artist") {
+            } else if (t.type == "album") {
+            } else if (t.type == "playlist") {
             }
         }
     };
 
     type Tab = {
-        name: string,
+        name: string;
         // fac: Writable<RFactory<T>>,
-        searcher: Writable<RSearcher<T>>,
-        thumbnail: string | null,
+        searcher: Writable<RSearcher<T>>;
+        thumbnail: string | null;
     };
 
-    let tabs: Tab[] = [{ name: 'Results', searcher: song_searcher, thumbnail: null }];
+    let tabs: Tab[] = [
+        { name: "Results", searcher: song_searcher, thumbnail: null },
+    ];
     let search_tab = tabs[0];
     let curr_tab = search_tab;
 </script>
 
-<div class='w-full h-full flex flex-col'>
-    <bar-area class='flex flex-col bg-gray-900 bg-opacity-30'>
-        <search-bar class=''>
+<div class="w-full h-full flex flex-col">
+    <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
+        <search-bar class="">
             <InputBar
-                placeholder={'Search'}
+                placeholder={"Search"}
                 bind:value={search_query}
                 bind:input_element={search_input_element}
                 on_enter={async (e) => {
@@ -93,13 +113,17 @@
             />
         </search-bar>
 
-        <browse-tab-bar class='flex flex-row overflow-x-auto gap-1 px-1 justify-center'>
+        <browse-tab-bar
+            class="flex flex-row overflow-x-auto gap-1 px-1 justify-center"
+        >
             {#each tabs as tab}
-                <button 
+                <button
                     class="border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
-                        {curr_tab == tab ? 'font-bold border-gray-200' : 'border-gray-600'}
+                        {curr_tab == tab
+                        ? 'font-bold border-gray-200'
+                        : 'border-gray-600'}
                     "
-                    style='max-width: 12rem;'
+                    style="max-width: 12rem;"
                     on:click={async () => {
                         curr_tab = tab;
                     }}
@@ -112,7 +136,7 @@
 
     {#each tabs as tab (tab.name)}
         <browse-area class={curr_tab == tab ? "" : "hidden"}>
-            {#if tab.name == search_tab.name && browse_type == 'search'}
+            {#if tab.name == search_tab.name && browse_type == "search"}
                 <Explorer
                     {t}
                     fac={song_fac}
@@ -133,19 +157,20 @@
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <list-item
-                        class:selected={selected}
+                        class:selected
                         draggable={true}
                         on:dragstart={(event) => dragstart(event, item)}
                         on:dragend={queue_dragend}
                     >
-                        <div class='item-bg'>
-                            {#if item.type == 'song' || item.type == 'video'}
+                        <div class="item-bg">
+                            {#if item.type == "song" || item.type == "video"}
                                 <AudioListItem
-                                    title={item.title ?? ''}
-                                    title_sub={item.authors[0]?.name ?? ''}
-                                    img_src={item.thumbnail ?? ''}
+                                    title={item.title ?? ""}
+                                    title_sub={item.authors[0]?.name ?? ""}
+                                    img_src={item.thumbnail ?? ""}
                                 />
-                                <button class='open-button'
+                                <button
+                                    class="open-button"
                                     on:click={async () => {
                                         if (!item.id) {
                                             return;
@@ -153,30 +178,43 @@
                                         await queue_item_add(item.id);
                                     }}
                                 >
-                                    <img draggable={false} class='h-3' src='/static/add.svg'>
+                                    <img
+                                        draggable={false}
+                                        class="h-3"
+                                        src="/static/add.svg"
+                                    />
                                 </button>
-                            {:else if item.type == 'album' || item.type == 'playlist'}
+                            {:else if item.type == "album" || item.type == "playlist"}
                                 <AudioListItem
-                                    title={item.title ?? ''}
-                                    title_sub={item.author?.name ?? ''}
-                                    img_src={item.thumbnail ?? ''}
+                                    title={item.title ?? ""}
+                                    title_sub={item.author?.name ?? ""}
+                                    img_src={item.thumbnail ?? ""}
                                 />
-                                <button class='open-button'
+                                <button
+                                    class="open-button"
                                     on:click={async () => {
                                         if (!item.id) {
                                             return;
                                         }
                                         let new_tab;
-                                        if (item.type == 'album') {
+                                        if (item.type == "album") {
                                             new_tab = {
-                                                name: 'Album: ' + item.title,
-                                                searcher: writable(await $song_fac.browse_album(item.id)),
+                                                name: "Album: " + item.title,
+                                                searcher: writable(
+                                                    await $song_fac.browse_album(
+                                                        item.id
+                                                    )
+                                                ),
                                                 thumbnail: item.thumbnail,
                                             };
                                         } else {
                                             new_tab = {
-                                                name: 'Playlist: ' + item.title,
-                                                searcher: writable(await $song_fac.browse_playlist(item.id)),
+                                                name: "Playlist: " + item.title,
+                                                searcher: writable(
+                                                    await $song_fac.browse_playlist(
+                                                        item.id
+                                                    )
+                                                ),
                                                 thumbnail: null,
                                             };
                                         }
@@ -184,29 +222,42 @@
                                         curr_tab = new_tab;
                                     }}
                                 >
-                                    <img draggable={false} class='h-3' src='/static/open-new-tab.svg'>
+                                    <img
+                                        draggable={false}
+                                        class="h-3"
+                                        src="/static/open-new-tab.svg"
+                                    />
                                 </button>
-                            {:else if item.type == 'artist'}
+                            {:else if item.type == "artist"}
                                 <AudioListItem
-                                    title={item.name ?? ''}
-                                    title_sub={item.subscribers ?? ''}
-                                    img_src={item.thumbnail ?? ''}
+                                    title={item.name ?? ""}
+                                    title_sub={item.subscribers ?? ""}
+                                    img_src={item.thumbnail ?? ""}
                                 />
-                                <button class='open-button'
+                                <button
+                                    class="open-button"
                                     on:click={async () => {
                                         if (!item.id) {
                                             return;
                                         }
                                         let new_tab = {
-                                            name: 'Artist: ' + item.name,
-                                            searcher: writable(await $song_fac.browse_artist_songs(item.id)),
+                                            name: "Artist: " + item.name,
+                                            searcher: writable(
+                                                await $song_fac.browse_artist_songs(
+                                                    item.id
+                                                )
+                                            ),
                                             thumbnail: null,
                                         };
                                         tabs = [tabs[0], new_tab];
                                         curr_tab = new_tab;
                                     }}
                                 >
-                                    <img draggable={false} class='h-3' src='/static/open-new-tab.svg'>
+                                    <img
+                                        draggable={false}
+                                        class="h-3"
+                                        src="/static/open-new-tab.svg"
+                                    />
                                 </button>
                             {/if}
                         </div>
@@ -232,19 +283,22 @@
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <list-item
-                        class:selected={selected}
+                        class:selected
                         draggable={true}
                         on:dragstart={(event) => dragstart(event, item)}
                         on:dragend={queue_dragend}
                     >
-                        <div class='item-bg'>
-                            {#if item.type == 'song' || item.type == 'video'}
+                        <div class="item-bg">
+                            {#if item.type == "song" || item.type == "video"}
                                 <AudioListItem
-                                    title={item.title ?? ''}
-                                    title_sub={item.authors[0]?.name ?? ''}
-                                    img_src={item.thumbnail ?? curr_tab.thumbnail ?? ''}
+                                    title={item.title ?? ""}
+                                    title_sub={item.authors[0]?.name ?? ""}
+                                    img_src={item.thumbnail ??
+                                        curr_tab.thumbnail ??
+                                        ""}
                                 />
-                                <button class='open-button'
+                                <button
+                                    class="open-button"
                                     on:click={async () => {
                                         if (!item.id) {
                                             return;
@@ -252,13 +306,17 @@
                                         await queue_item_add(item.id);
                                     }}
                                 >
-                                    <img draggable={false} class='h-3' src='/static/add.svg'>
+                                    <img
+                                        draggable={false}
+                                        class="h-3"
+                                        src="/static/add.svg"
+                                    />
                                 </button>
                             {:else}
                                 <AudioListItem
-                                    title={'unknown item'}
-                                    title_sub={''}
-                                    img_src={''}
+                                    title={"unknown item"}
+                                    title_sub={""}
+                                    img_src={""}
                                 />
                             {/if}
                         </div>
@@ -269,7 +327,7 @@
     {/each}
 </div>
 
-<style lang='postcss'>
+<style lang="postcss">
     bar-area {
         height: calc(var(--search-bar-height) + var(--browse-tab-bar-height));
     }
@@ -282,7 +340,9 @@
     }
 
     browse-area {
-        height: calc(100% - var(--browse-tab-bar-height) - var(--search-bar-height));
+        height: calc(
+            100% - var(--browse-tab-bar-height) - var(--search-bar-height)
+        );
     }
 
     list-item {
@@ -298,11 +358,13 @@
         @apply hidden;
     }
 
-    list-item:hover .open-button, .selected .open-button {
+    list-item:hover .open-button,
+    .selected .open-button {
         @apply block;
     }
 
-    list-item:hover .item-bg, .selected .item-bg {
+    list-item:hover .item-bg,
+    .selected .item-bg {
         @apply bg-gray-200 bg-opacity-10 rounded-xl;
     }
 </style>
