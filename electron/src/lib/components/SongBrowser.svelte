@@ -181,6 +181,7 @@
                                     <img
                                         draggable={false}
                                         class="h-3"
+                                        alt="add"
                                         src="/static/add.svg"
                                     />
                                 </button>
@@ -225,6 +226,7 @@
                                     <img
                                         draggable={false}
                                         class="h-3"
+                                        alt="new-tab"
                                         src="/static/open-new-tab.svg"
                                     />
                                 </button>
@@ -256,6 +258,7 @@
                                     <img
                                         draggable={false}
                                         class="h-3"
+                                        alt="new-tab"
                                         src="/static/open-new-tab.svg"
                                     />
                                 </button>
@@ -309,6 +312,7 @@
                                     <img
                                         draggable={false}
                                         class="h-3"
+                                        alt="add"
                                         src="/static/add.svg"
                                     />
                                 </button>
