@@ -125,6 +125,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
     let player = Arc::new(Mutex::new(Player::new().expect("could not start player")));
 
     let route = warp::path("player")
+        .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || player.clone()))
         .then(|ws: Ws, player: Arc<Mutex<Player>>| async move {
@@ -198,6 +199,7 @@ fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
     let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
 
     let ws_route = warp::path("ws")
+        .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || clients.clone()))
         .then(|ws: Ws, clients: Clients| async move {
@@ -209,6 +211,7 @@ fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
 
 fn cors_proxy_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
     let cors_proxy = warp::path("fetch")
+        .and(warp::path::end())
         // .and(warp::post())
         .and(warp::body::bytes())
         .and(warp::any().map(move || c.clone()))
@@ -295,6 +298,7 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
 fn search_route<T: DbAble + Send>(db: Arc<Db>, path: &'static str) -> BoxedFilter<(impl Reply,)> {
     let search = warp::path("search")
         .and(warp::path(path))
+        .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Arc<Db>, query: crate::db::SearchQuery| async move {
@@ -312,6 +316,7 @@ fn search_by_refid_route<T: DbAble + Send>(
     let search = warp::path("search")
         .and(warp::path(path))
         .and(warp::path("refid"))
+        .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Arc<Db>, query: String| async move {
