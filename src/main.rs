@@ -381,6 +381,17 @@ mod db {
                 .map(|e| e.parsed_assume());
             Ok(e)
         }
+
+        async fn insert<T: DbAble>(&self, t: T) -> anyhow::Result<()> {
+            let am = ActiveModel {
+                id: sea_orm::ActiveValue::NotSet,
+                data: sea_orm::ActiveValue::Set(t.to_json()),
+                typ: sea_orm::ActiveValue::Set(T::typ()),
+                ref_id: sea_orm::ActiveValue::Set(t.ref_id()),
+            };
+            Entity::insert(am).exec(&self.db).await?;
+            Ok(())
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
