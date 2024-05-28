@@ -2,12 +2,14 @@ use anyhow::Context;
 use core::time;
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::net::Ipv4Addr;
 use std::{collections::HashMap, convert::Infallible, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
 use ulid::Ulid;
+use warp::filters::BoxedFilter;
 use warp::ws::WebSocket;
 use warp::{reject::Rejection, reply::Reply, ws::Ws};
 use warp::{ws, Filter};
@@ -118,20 +120,10 @@ pub enum PlayerMessage {
     Duration(f64),
 }
 
-pub async fn start(ip_addr: Ipv4Addr, port: u16) {
-    let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
-    let client = Arc::new(Mutex::new(reqwest::Client::new()));
+fn player_route() -> BoxedFilter<(impl Reply,)> {
     let player = Arc::new(Mutex::new(Player::new().expect("could not start player")));
 
-    let ws_route = warp::path("ws")
-        .and(warp::ws())
-        .and(warp::any().map(move || clients.clone()))
-        .then(|ws: Ws, clients: Clients| async move {
-            ws.on_upgrade(move |ws| client_connection(ws, clients))
-        });
-    let ws_route = ws_route.with(warp::cors().allow_any_origin());
-
-    let player_route = warp::path("player")
+    let route = warp::path("player")
         .and(warp::ws())
         .and(warp::any().map(move || player.clone()))
         .then(|ws: Ws, player: Arc<Mutex<Player>>| async move {
@@ -196,9 +188,25 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 }
             })
         });
-    let player_route = player_route.with(warp::cors().allow_any_origin());
+    let route = route.with(warp::cors().allow_any_origin());
 
-    let c = client.clone();
+    route.boxed()
+}
+
+fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
+    let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
+
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .and(warp::any().map(move || clients.clone()))
+        .then(|ws: Ws, clients: Clients| async move {
+            ws.on_upgrade(move |ws| client_connection(ws, clients))
+        });
+    let ws_route = ws_route.with(warp::cors().allow_any_origin());
+    ws_route.boxed()
+}
+
+fn cors_proxy_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
     let cors_proxy = warp::path("fetch")
         // .and(warp::post())
         .and(warp::body::bytes())
@@ -241,12 +249,11 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 wres.status(status).body(body).map_err(custom_reject)
             },
         );
-    // .map(|mut s: warp::http::Response<warp::hyper::Body>| {s.headers_mut().clear(); s});
     let cors_proxy = cors_proxy.with(warp::cors().allow_any_origin());
+    cors_proxy.boxed()
+}
 
-    println!("Starting server at {}:{}", ip_addr, port);
-
-    let c = client.clone();
+fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
     let redirect = warp::any()
         .and(warp::any().map(move || c.clone()))
         .and(warp::method())
@@ -281,9 +288,18 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 // Ok::<_, warp::Rejection>(wres)
             },
         );
+    redirect.boxed()
+}
 
-    let all = ws_route.or(player_route).or(cors_proxy).or(redirect);
-    // let all = redirect;
+pub async fn start(ip_addr: Ipv4Addr, port: u16) {
+    let client = Arc::new(Mutex::new(reqwest::Client::new()));
+
+    let all = client_ws_route()
+        .or(player_route())
+        .or(cors_proxy_route(client.clone()));
+    let all = all.or(redirect_route(client.clone()));
+
+    println!("Starting server at {}:{}", ip_addr, port);
 
     warp::serve(all).run((ip_addr, port)).await;
 }
