@@ -10,7 +10,7 @@
     import { Player as PL } from "youtubei.js";
     import { LocalPlayer } from "$lib/local_player.ts";
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
-    import type { Song, SongInfo } from "$types/musimanager.ts";
+    import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
 
     export let params: { group?: string };
 
@@ -41,12 +41,12 @@
         let q: SearchQuery = {
             type: "Query",
             content: {
-                query: "arjit",
+                query: "",
                 page_size: 10,
             },
         };
         let res = await fetch(
-            "http://localhost:10010/musimanager/search/songs",
+            "http://localhost:10010/musimanager/search/artists",
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -54,8 +54,19 @@
             }
         );
         let body = await res.text();
-        let matches: SearchMatches<Song<SongInfo>> = JSON.parse(body);
+        let matches: SearchMatches<Artist<SongId, AlbumId>> = JSON.parse(body);
         console.log(matches);
+        let res2 = await fetch(
+            "http://localhost:10010/musimanager/search/songs/refid",
+            {
+                method: "POST",
+                body: JSON.stringify(matches.items[0].songs),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        let body2 = await res2.text();
+        let matches2: SearchMatches<Song<SongInfo>> = JSON.parse(body2);
+        console.log(matches2)
     };
 
     let group: string;
