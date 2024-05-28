@@ -138,11 +138,11 @@ mod db {
 
     pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
         fn to_json(&self) -> String;
-        fn typ() -> DbObjectType;
+        fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
     }
     pub trait AutoDbAble {
-        fn typ() -> DbObjectType;
+        fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
     }
     impl<T> DbAble for T
@@ -152,7 +152,7 @@ mod db {
         fn to_json(&self) -> String {
             serde_json::to_string(self).expect("won't fail")
         }
-        fn typ() -> DbObjectType {
+        fn typ() -> Typ {
             <Self as AutoDbAble>::typ()
         }
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -167,8 +167,8 @@ mod db {
         f2: u32,
     }
     impl AutoDbAble for DemoObject {
-        fn typ() -> DbObjectType {
-            DbObjectType::DemoObject
+        fn typ() -> Typ {
+            Typ::DemoObject
         }
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
             [self.f1.as_str()]
@@ -176,8 +176,8 @@ mod db {
     }
 
     impl AutoDbAble for crate::musimanager::Song<Option<crate::musimanager::SongInfo>> {
-        fn typ() -> DbObjectType {
-            DbObjectType::MusimanagerSong
+        fn typ() -> Typ {
+            Typ::MusimanagerSong
         }
 
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -191,9 +191,19 @@ mod db {
         }
     }
 
-    #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+    #[derive(
+        Clone,
+        Debug,
+        PartialEq,
+        Eq,
+        EnumIter,
+        DeriveActiveEnum,
+        Serialize,
+        Deserialize,
+        specta::Type,
+    )]
     #[sea_orm(rs_type = "i32", db_type = "Integer")]
-    enum DbObjectType {
+    enum Typ {
         #[sea_orm(num_value = 0)]
         DemoObject,
         #[sea_orm(num_value = 1)]
@@ -206,7 +216,7 @@ mod db {
         #[sea_orm(primary_key)]
         pub id: i32,
         pub data: String,
-        pub typ: DbObjectType,
+        pub typ: Typ,
     }
     impl Model {
         fn parsed_assume<T: for<'de> Deserialize<'de>>(&self) -> T {
@@ -241,10 +251,29 @@ mod db {
             Ok(a)
         }
 
-        // TODO: have this be paged
-        async fn search<T: DbAble>(&self, needle: &str) -> anyhow::Result<SearchMatches<T>> {
+        async fn search<T: DbAble>(&self, query: SearchQuery) -> anyhow::Result<SearchMatches<T>> {
+            let (needle, page_size, cont) = match query {
+                SearchQuery::Query { page_size, query } => (query, page_size, None),
+                SearchQuery::Continuation(c) => {
+                    if c.typ != T::typ() {
+                        return Err(anyhow::anyhow!("continuation typ vs search typ mismatch"));
+                    }
+                    (c.query, c.page_size, Some(c.cont))
+                }
+            };
+
+            let cont = cont
+                .as_deref()
+                .map(|c| c.split_once('|'))
+                .flatten()
+                .map(|(s, id)| -> anyhow::Result<(_, _)> {
+                    let (s, id) = (s.parse::<isize>()?, id.parse::<i32>()?);
+                    Ok((s, id))
+                })
+                .transpose()?;
+
             let mut tree = intrusive_collections::RBTree::new(BAdapter::<T>::new());
-            let cap = 20;
+            let cap = page_size;
 
             let mut it = self.stream_models::<T>().await?;
 
@@ -256,19 +285,19 @@ mod db {
                     .haystack()
                     .into_iter()
                     .map(|h| {
-                        let s = sublime_fuzzy::best_match(needle, h)
+                        let s = sublime_fuzzy::best_match(needle.as_str(), h)
                             .map(|m| m.score())
                             .unwrap_or(0);
                         s
                     })
                     .sum();
 
-                // dbg!(&m, &t, score);
-
                 // check if this element should be in the tree
                 // eject any elements if needed
                 // insert a Node<T> into tree
-                if len < cap {
+                if cont.map(|c| c < (score, m.id)).unwrap_or(false) {
+                    // ignore
+                } else if len < cap {
                     tree.insert(Box::new(Node {
                         link: Default::default(),
                         val: t,
@@ -291,12 +320,22 @@ mod db {
                 }
             }
 
-            let continuation = tree.front().get().map(|n| (n.score, n.id));
+            let cont = tree
+                .front()
+                .get()
+                .map(|n| (n.score, n.id))
+                .map(|(s, id)| s.to_string() + "|" + &id.to_string())
+                .map(|cont| SearchContinuation {
+                    typ: T::typ(),
+                    page_size,
+                    query: needle,
+                    cont,
+                });
             let matches = tree.into_iter().map(|n| n.val).rev().collect();
 
             Ok(SearchMatches {
                 items: matches,
-                continuation,
+                continuation: (len == cap).then(|| cont).flatten(),
             })
         }
     }
@@ -304,7 +343,21 @@ mod db {
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct SearchMatches<T> {
         items: Vec<T>,
-        continuation: Option<(isize, i32)>, // score and id of last element
+        continuation: Option<SearchContinuation>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct SearchContinuation {
+        typ: Typ,
+        page_size: u32,
+        query: String,
+        cont: String, // score + id
+    }
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum SearchQuery {
+        Query { page_size: u32, query: String },
+        Continuation(SearchContinuation),
     }
 
     struct Node<T> {
@@ -332,6 +385,12 @@ mod db {
         let mut types = String::new();
         types += &specta::ts::export::<SearchMatches<()>>(config)?;
         types += ";\n";
+        types += &specta::ts::export::<Typ>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SearchQuery>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SearchContinuation>(config)?;
+        types += ";\n";
 
         Ok(types)
     }
@@ -343,7 +402,18 @@ mod db {
         };
 
         let matches = db
-            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>("arjit")
+            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+                SearchQuery::Query {
+                    page_size: 10,
+                    query: "arjit".into(),
+                },
+            )
+            .await?;
+        dbg!(&matches);
+        let matches = db
+            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+                SearchQuery::Continuation(matches.continuation.unwrap()),
+            )
             .await?;
         dbg!(matches);
 
@@ -352,8 +422,7 @@ mod db {
 }
 
 fn dump_types() -> Result<()> {
-    let tsconfig =
-        specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);
+    let tsconfig = specta::ts::ExportConfiguration::default();
     let types_dir = PathBuf::from("./electron/src/types");
     let _ = std::fs::create_dir(&types_dir);
     std::fs::write(
