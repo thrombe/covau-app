@@ -14,6 +14,7 @@ use warp::ws::WebSocket;
 use warp::{reject::Rejection, reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
+use crate::db::{Db, DbAble};
 use crate::musiplayer::Player;
 
 #[derive(Debug, Clone)]
@@ -291,12 +292,70 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
     redirect.boxed()
 }
 
+fn search_route<T: DbAble + Send>(db: Arc<Db>, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Arc<Db>, query: crate::db::SearchQuery| async move {
+            let res = db.search::<T>(query).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
+fn search_by_refid_route<T: DbAble + Send>(
+    db: Arc<Db>,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("refid"))
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Arc<Db>, query: String| async move {
+            let res = db
+                .search_by_ref_id::<T>(query)
+                .await
+                .map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
+    let db = Arc::new(
+        Db::new("sqlite:./test.db?mode=rwc")
+            .await
+            .expect("cannot connect to database"),
+    );
+
+    let musimanager_search_routes = {
+        use crate::musimanager::*;
+
+        warp::path("musimanager").and(
+            search_route::<Song<Option<SongInfo>>>(db.clone(), "songs")
+                .or(search_by_refid_route::<Song<Option<SongInfo>>>(
+                    db.clone(),
+                    "songs",
+                ))
+                .or(search_route::<Album<SongId>>(db.clone(), "albums"))
+                .or(search_route::<Artist<SongId, AlbumId>>(
+                    db.clone(),
+                    "artists",
+                ))
+                .or(search_route::<Playlist<SongId>>(db.clone(), "playlists"))
+                .or(search_route::<Queue<SongId>>(db.clone(), "queues")),
+        )
+    };
 
     let all = client_ws_route()
         .or(player_route())
-        .or(cors_proxy_route(client.clone()));
+        .or(cors_proxy_route(client.clone()))
+        .or(musimanager_search_routes);
     let all = all.or(redirect_route(client.clone()));
 
     println!("Starting server at {}:{}", ip_addr, port);
