@@ -39,7 +39,7 @@ where
 mod musimanager {
     use super::*;
     use crate::musimanager::*;
-    
+
     impl AutoDbAble for Song<Option<SongInfo>> {
         fn typ() -> Typ {
             Typ::MusimanagerSong
@@ -230,7 +230,7 @@ impl Db {
                 })
                 .sum();
 
-            if score <= 0 {
+            if score <= 0 && !needle.is_empty() {
                 continue;
             }
 
