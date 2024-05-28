@@ -244,6 +244,14 @@ mod db {
         pub db: sea_orm::DatabaseConnection,
     }
     impl Db {
+        async fn init_tables(&self) -> anyhow::Result<()> {
+            let builder = self.db.get_database_backend();
+            let schema = Schema::new(builder);
+            let s = builder.build(&schema.create_table_from_entity(Entity));
+            let _ = self.db.execute(s).await?;
+            Ok(())
+        }
+
         async fn stream_models<T: DbAble>(
             &self,
         ) -> anyhow::Result<impl futures::Stream<Item = Result<Model, DbErr>> + '_> {
