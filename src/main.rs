@@ -244,6 +244,13 @@ mod db {
         pub db: sea_orm::DatabaseConnection,
     }
     impl Db {
+        async fn new(path: impl AsRef<str>) -> anyhow::Result<Self> {
+            let db = Db {
+                db: sea_orm::Database::connect(path.as_ref()).await?,
+            };
+            Ok(db)
+        }
+
         async fn init_tables(&self) -> anyhow::Result<()> {
             let builder = self.db.get_database_backend();
             let schema = Schema::new(builder);
@@ -441,7 +448,11 @@ mod db {
             )
             .await?;
         dbg!(&matches);
-        let m = db.search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(matches.items[0].key.clone()).await?;
+        let m = db
+            .search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+                matches.items[0].key.clone(),
+            )
+            .await?;
         dbg!(m);
 
         Ok(())
