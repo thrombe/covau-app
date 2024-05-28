@@ -319,9 +319,9 @@ fn search_by_refid_route<T: DbAble + Send>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Arc<Db>, query: String| async move {
+        .and_then(|db: Arc<Db>, query: Vec<String>| async move {
             let res = db
-                .search_by_ref_id::<T>(query)
+                .search_many_by_ref_id::<T>(query)
                 .await
                 .map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply::json(&res))

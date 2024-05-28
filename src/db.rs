@@ -1,6 +1,6 @@
 use derivative::Derivative;
 use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
-use sea_orm::DeriveEntityModel;
+use sea_orm::{Condition, DeriveEntityModel};
 use sea_orm::{entity::prelude::*, Schema};
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
@@ -176,6 +176,15 @@ impl Db {
         let schema = Schema::new(builder);
         let s = builder.build(&schema.create_table_from_entity(Entity));
         let _ = self.db.execute(s).await?;
+        let s = builder.build(
+            &sea_orm::sea_query::Index::create()
+                .name("refid_index")
+                .table(Entity)
+                .col(Column::RefId)
+                .to_owned(),
+        );
+        let _ = self.db.execute(s).await?;
+
         Ok(())
     }
 
@@ -288,6 +297,22 @@ impl Db {
             .one(&self.db)
             .await?
             .map(|e| e.parsed_assume());
+        Ok(e)
+    }
+
+    pub async fn search_many_by_ref_id<T: DbAble>(&self, ref_ids: Vec<String>) -> anyhow::Result<Vec<T>> {
+        let mut condition = Condition::any();
+        for id in ref_ids {
+            condition = condition.add(Column::RefId.eq(id));
+        }
+        let e = Entity::find()
+            .filter(Column::Typ.eq(T::typ().to_value().to_string()))
+            .filter(condition)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|e| e.parsed_assume())
+            .collect();
         Ok(e)
     }
 
