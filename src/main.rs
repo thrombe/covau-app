@@ -295,6 +295,10 @@ mod db {
                     })
                     .sum();
 
+                if score <= 0 {
+                    continue;
+                }
+
                 // check if this element should be in the tree
                 // eject any elements if needed
                 // insert a Node<T> into tree
