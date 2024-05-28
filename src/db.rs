@@ -75,7 +75,7 @@ impl AutoDbAble for crate::musimanager::Song<Option<crate::musimanager::SongInfo
     Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, specta::Type,
 )]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
-enum Typ {
+pub enum Typ {
     #[sea_orm(num_value = 0)]
     DemoObject,
     #[sea_orm(num_value = 1)]
@@ -116,14 +116,14 @@ pub struct Db {
     pub db: sea_orm::DatabaseConnection,
 }
 impl Db {
-    async fn new(path: impl AsRef<str>) -> anyhow::Result<Self> {
+    pub async fn new(path: impl AsRef<str>) -> anyhow::Result<Self> {
         let db = Db {
             db: sea_orm::Database::connect(path.as_ref()).await?,
         };
         Ok(db)
     }
 
-    async fn init_tables(&self) -> anyhow::Result<()> {
+    pub async fn init_tables(&self) -> anyhow::Result<()> {
         let builder = self.db.get_database_backend();
         let schema = Schema::new(builder);
         let s = builder.build(&schema.create_table_from_entity(Entity));
@@ -131,7 +131,7 @@ impl Db {
         Ok(())
     }
 
-    async fn stream_models<T: DbAble>(
+    pub async fn stream_models<T: DbAble>(
         &self,
     ) -> anyhow::Result<impl futures::Stream<Item = Result<Model, DbErr>> + '_> {
         let a = Entity::find()
@@ -141,7 +141,7 @@ impl Db {
         Ok(a)
     }
 
-    async fn search<T: DbAble>(&self, query: SearchQuery) -> anyhow::Result<SearchMatches<T>> {
+    pub async fn search<T: DbAble>(&self, query: SearchQuery) -> anyhow::Result<SearchMatches<T>> {
         let (needle, page_size, cont) = match query {
             SearchQuery::Query { page_size, query } => (query, page_size, None),
             SearchQuery::Continuation(c) => {
@@ -233,7 +233,7 @@ impl Db {
         })
     }
 
-    async fn search_by_ref_id<T: DbAble>(&self, ref_id: String) -> anyhow::Result<Option<T>> {
+    pub async fn search_by_ref_id<T: DbAble>(&self, ref_id: String) -> anyhow::Result<Option<T>> {
         let e = Entity::find()
             .filter(Column::Typ.eq(T::typ().to_value().to_string()))
             .filter(Column::RefId.eq(ref_id))
@@ -243,7 +243,7 @@ impl Db {
         Ok(e)
     }
 
-    async fn insert<T: DbAble>(&self, t: &T) -> anyhow::Result<()> {
+    pub async fn insert<T: DbAble>(&self, t: &T) -> anyhow::Result<()> {
         let am = ActiveModel {
             id: sea_orm::ActiveValue::NotSet,
             data: sea_orm::ActiveValue::Set(t.to_json()),
@@ -257,16 +257,16 @@ impl Db {
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct SearchMatches<T> {
-    items: Vec<T>,
-    continuation: Option<SearchContinuation>,
+    pub items: Vec<T>,
+    pub continuation: Option<SearchContinuation>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct SearchContinuation {
-    typ: Typ,
-    page_size: u32,
-    query: String,
-    cont: String, // score + id
+    pub typ: Typ,
+    pub page_size: u32,
+    pub query: String,
+    pub cont: String, // score + id
 }
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 #[serde(tag = "type", content = "content")]
