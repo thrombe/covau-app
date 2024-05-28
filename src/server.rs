@@ -348,6 +348,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     "songs",
                 ))
                 .or(search_route::<Album<SongId>>(db.clone(), "albums"))
+                .or(search_by_refid_route::<Album<SongId>>(db.clone(), "albums"))
                 .or(search_route::<Artist<SongId, AlbumId>>(
                     db.clone(),
                     "artists",
