@@ -217,6 +217,9 @@ mod db {
         pub id: i32,
         pub data: String,
         pub typ: Typ,
+        /// any other kind of id that we might need to match on
+        /// for example SongId -> Song
+        pub ref_id: Option<String>,
     }
     impl Model {
         fn parsed_assume<T: for<'de> Deserialize<'de>>(&self) -> T {
@@ -245,7 +248,7 @@ mod db {
             &self,
         ) -> anyhow::Result<impl futures::Stream<Item = Result<Model, DbErr>> + '_> {
             let a = Entity::find()
-                .filter(Column::Typ.contains(T::typ().to_value().to_string()))
+                .filter(Column::Typ.eq(T::typ().to_value().to_string()))
                 .stream(&self.db)
                 .await?;
             Ok(a)
@@ -338,6 +341,16 @@ mod db {
                 continuation: (len == cap).then(|| cont).flatten(),
             })
         }
+
+        async fn search_by_ref_id<T: DbAble>(&self, ref_id: String) -> anyhow::Result<Option<T>> {
+            let e = Entity::find()
+                .filter(Column::Typ.eq(T::typ().to_value().to_string()))
+                .filter(Column::RefId.eq(ref_id))
+                .one(&self.db)
+                .await?
+                .map(|e| e.parsed_assume());
+            Ok(e)
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -415,7 +428,9 @@ mod db {
                 SearchQuery::Continuation(matches.continuation.unwrap()),
             )
             .await?;
-        dbg!(matches);
+        dbg!(&matches);
+        let m = db.search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(matches.items[0].key.clone()).await?;
+        dbg!(m);
 
         Ok(())
     }
