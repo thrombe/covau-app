@@ -348,6 +348,7 @@ impl Tracker<Song> {
             })
             .collect();
 
+        // TODO: playlists and queues
         et
     }
 }
@@ -358,9 +359,15 @@ pub struct EntityTracker {
     pub albums: Vec<Album<SongId>>,
 
     pub artists: Vec<Artist<SongId, AlbumId>>,
-    pub playlists: Vec<SongProvider<SongId>>,
-    pub queues: Vec<SongProvider<SongId>>,
+    pub playlists: Vec<Playlist<SongId>>,
+    pub queues: Vec<Queue<SongId>>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Playlist<S>(pub SongProvider<S>);
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Queue<S>(pub SongProvider<S>);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct SongId(pub String);
@@ -445,6 +452,10 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<EntityTracker>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Tracker>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Playlist<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Queue<()>>(config)?;
     types += ";\n";
 
     Ok(types)
