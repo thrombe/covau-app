@@ -382,7 +382,7 @@ mod db {
             Ok(e)
         }
 
-        async fn insert<T: DbAble>(&self, t: T) -> anyhow::Result<()> {
+        async fn insert<T: DbAble>(&self, t: &T) -> anyhow::Result<()> {
             let am = ActiveModel {
                 id: sea_orm::ActiveValue::NotSet,
                 data: sea_orm::ActiveValue::Set(t.to_json()),
@@ -454,6 +454,15 @@ mod db {
         let db = Db {
             db: sea_orm::Database::connect("sqlite:./test.db?mode=rwc").await?,
         };
+
+        // let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+
+        // let data = std::fs::read_to_string(path)?;
+
+        // let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
+        // for (i, s) in tracker.songs.iter().enumerate() {
+        //     db.insert(s).await?;
+        // }
 
         let matches = db
             .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
