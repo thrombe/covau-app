@@ -1,48 +1,77 @@
 <script lang="ts">
-    import { SyncPlayer } from '$lib/sync_player';
-    import { initializeApp } from 'firebase/app';
-    import { getFirestore } from 'firebase/firestore';
-    import { onDestroy } from 'svelte';
-    import { writable, type Writable } from 'svelte/store';
-    import { firebase_config } from '../firebase_config';
-    import { new_innertube_instance } from '$lib/searcher/tube';
-    import { YT, YTNodes } from '$lib/searcher/song_tube';
-    import { Player as PL } from 'youtubei.js';
+    import { SyncPlayer } from "$lib/sync_player";
+    import { initializeApp } from "firebase/app";
+    import { getFirestore } from "firebase/firestore";
+    import { onDestroy } from "svelte";
+    import { writable, type Writable } from "svelte/store";
+    import { firebase_config } from "../firebase_config";
+    import { new_innertube_instance } from "$lib/searcher/tube";
+    import { SongTube, YT, YTNodes } from "$lib/searcher/song_tube";
+    import { Player as PL } from "youtubei.js";
     import { LocalPlayer } from "$lib/local_player.ts";
+    import type { SearchQuery, SearchMatches } from "$types/db.ts";
+    import type { Song, SongInfo } from "$types/musimanager.ts";
 
     export let params: { group?: string };
 
-    let lp = new LocalPlayer();
-
     const dothis = async () => {
-        let p = await new_innertube_instance();
-        let res = await p.music.search("Aimer", { type: 'song' });
-        console.log(res)
-        let contents = res.contents!
-            .flatMap(e => e.contents?.filterType(YTNodes.MusicResponsiveListItem) ?? []);
-        let v = contents[0];
-        console.log(v)
+        // let p = await new_innertube_instance();
+        // let res = await p.music.search("Aimer", { type: 'song' });
+        // console.log(res)
+        // let contents = res.contents!
+        //     .flatMap(e => e.contents?.filterType(YTNodes.MusicResponsiveListItem) ?? []);
+        // let v = contents[0];
+        // console.log(v)
 
-        let d = await p.getInfo(v.id!);
-        console.log(d)
-        let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
-        let url = d.getStreamingInfo();
-        console.log(url, url, f, f.decipher(p.session.player))
-        p.download
+        // let d = await p.getInfo(v.id!);
+        // console.log(d)
+        // let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+        // let url = d.getStreamingInfo();
+        // console.log(url, url, f, f.decipher(p.session.player))
+
+        // let lp = new LocalPlayer();
+
+        // let itube = await new_innertube_instance();
+        // let fac = SongTube.factory(itube);
+        // let ntube = await fac.search_query({ type: 'home-feed' });
+        // let tube = ntube!;
+        // console.log(await tube.next_page())
+        // tube.test();
+
+        let q: SearchQuery = {
+            type: "Query",
+            content: {
+                query: "arjit",
+                page_size: 10,
+            },
+        };
+        let res = await fetch(
+            "http://localhost:10010/musimanager/search/songs",
+            {
+                method: "POST",
+                body: JSON.stringify(q),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        let body = await res.text();
+        let matches: SearchMatches<Song<SongInfo>> = JSON.parse(body);
+        console.log(matches);
     };
-    
+
     let group: string;
     if (!params.group) {
-        group = 'random-one';
+        group = "random-one";
         params.group = group;
-        window.history.pushState({}, '', '#/play/' + group);
+        window.history.pushState({}, "", "#/play/" + group);
     } else {
         group = params.group;
     }
 
     $: if (group != params.group) {
-        let url_without_hash =  window.location.toString().replace(window.location.hash, '');
-        let new_url = url_without_hash + '#/play/' + params.group;
+        let url_without_hash = window.location
+            .toString()
+            .replace(window.location.hash, "");
+        let new_url = url_without_hash + "#/play/" + params.group;
         window.location.replace(new_url);
         window.location.reload();
     }
@@ -59,7 +88,7 @@
 
     let tick = writable(0);
     const on_yt_load = async () => {
-        let p = await SyncPlayer.new(db, group, 'video');
+        let p = await SyncPlayer.new(db, group, "video");
         player = writable(p);
         await dothis();
         $player.on_update = () => {
