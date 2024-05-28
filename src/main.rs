@@ -140,10 +140,14 @@ mod db {
         fn to_json(&self) -> String;
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
+        fn ref_id(&self) -> Option<String>;
     }
     pub trait AutoDbAble {
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
+        fn ref_id(&self) -> Option<String> {
+            None
+        }
     }
     impl<T> DbAble for T
     where
@@ -157,6 +161,9 @@ mod db {
         }
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
             <Self as AutoDbAble>::haystack(self)
+        }
+        fn ref_id(&self) -> Option<String> {
+            <Self as AutoDbAble>::ref_id(self)
         }
     }
 
@@ -188,6 +195,10 @@ mod db {
             });
 
             hs
+        }
+
+        fn ref_id(&self) -> Option<String> {
+            Some(self.key.clone())
         }
     }
 
