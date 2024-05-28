@@ -1,4 +1,3 @@
-use crate::musiplayer::Player;
 use anyhow::Context;
 use core::time;
 use futures::{FutureExt, StreamExt};
@@ -6,11 +5,14 @@ use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::{collections::HashMap, convert::Infallible, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
+use tokio::time::Duration;
 use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
 use ulid::Ulid;
 use warp::ws::WebSocket;
 use warp::{reject::Rejection, reply::Reply, ws::Ws};
 use warp::{ws, Filter};
+
+use crate::musiplayer::Player;
 
 #[derive(Debug, Clone)]
 pub struct Client {
@@ -38,7 +40,7 @@ async fn player_command_handler(
     let message = serde_json::from_str::<PlayerCommand>(message)?;
 
     let mut p = player.lock().await;
-    let timeout = tokio::time::Duration::from_millis(500);
+    let timeout = Duration::from_millis(500);
     match message {
         PlayerCommand::Play(url) => {
             p.play(url.clone())?;
@@ -118,10 +120,8 @@ pub enum PlayerMessage {
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
-    let client = std::sync::Arc::new(tokio::sync::Mutex::new(reqwest::Client::new()));
-    let player = std::sync::Arc::new(tokio::sync::Mutex::new(
-        Player::new().expect("could not start player"),
-    ));
+    let client = Arc::new(Mutex::new(reqwest::Client::new()));
+    let player = Arc::new(Mutex::new(Player::new().expect("could not start player")));
 
     let ws_route = warp::path("ws")
         .and(warp::ws())
@@ -158,7 +158,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 let txc = tx.clone();
                 let _: tokio::task::JoinHandle<anyhow::Result<()>> =
                     tokio::task::spawn(async move {
-                        let timeout = tokio::time::Duration::from_millis(300);
+                        let timeout = Duration::from_millis(300);
                         let mut finished = false;
                         loop {
                             tokio::time::sleep(timeout).await;
