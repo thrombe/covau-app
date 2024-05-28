@@ -36,38 +36,80 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Derivative, specta::Type)]
-#[derivative(PartialEq)]
-struct DemoObject {
-    f1: String,
-    f2: u32,
-}
-impl AutoDbAble for DemoObject {
-    fn typ() -> Typ {
-        Typ::DemoObject
+mod musimanager {
+    use super::*;
+    use crate::musimanager::*;
+    
+    impl AutoDbAble for Song<Option<SongInfo>> {
+        fn typ() -> Typ {
+            Typ::MusimanagerSong
+        }
+
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            let mut hs = vec![self.title.as_str()];
+
+            self.artist_name.as_deref().map(|a| {
+                hs.push(a);
+            });
+
+            hs
+        }
+
+        fn ref_id(&self) -> Option<String> {
+            Some(self.key.clone())
+        }
     }
-    fn haystack(&self) -> impl IntoIterator<Item = &str> {
-        [self.f1.as_str()]
+    impl AutoDbAble for Album<SongId> {
+        fn typ() -> Typ {
+            Typ::MusimanagerAlbum
+        }
+
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            let mut hs = vec![self.name.as_str()];
+
+            // self.artist_name.as_deref().map(|a| {
+            //     hs.push(a);
+            // });
+
+            hs
+        }
+
+        fn ref_id(&self) -> Option<String> {
+            Some(self.browse_id.clone())
+        }
     }
-}
+    impl AutoDbAble for Artist<SongId, AlbumId> {
+        fn typ() -> Typ {
+            Typ::MusimanagerArtist
+        }
 
-impl AutoDbAble for crate::musimanager::Song<Option<crate::musimanager::SongInfo>> {
-    fn typ() -> Typ {
-        Typ::MusimanagerSong
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            let mut hs = vec![self.name.as_str()];
+
+            // self.artist_name.as_deref().map(|a| {
+            //     hs.push(a);
+            // });
+
+            hs
+        }
     }
+    impl AutoDbAble for Playlist<SongId> {
+        fn typ() -> Typ {
+            Typ::MusimanagerPlaylist
+        }
 
-    fn haystack(&self) -> impl IntoIterator<Item = &str> {
-        let mut hs = vec![self.title.as_str()];
-
-        self.artist_name.as_deref().map(|a| {
-            hs.push(a);
-        });
-
-        hs
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            [self.0.name.as_str()]
+        }
     }
+    impl AutoDbAble for Queue<SongId> {
+        fn typ() -> Typ {
+            Typ::MusimanagerQueue
+        }
 
-    fn ref_id(&self) -> Option<String> {
-        Some(self.key.clone())
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            [self.0.name.as_str()]
+        }
     }
 }
 
@@ -76,10 +118,16 @@ impl AutoDbAble for crate::musimanager::Song<Option<crate::musimanager::SongInfo
 )]
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum Typ {
-    #[sea_orm(num_value = 0)]
-    DemoObject,
     #[sea_orm(num_value = 1)]
     MusimanagerSong,
+    #[sea_orm(num_value = 2)]
+    MusimanagerAlbum,
+    #[sea_orm(num_value = 3)]
+    MusimanagerArtist,
+    #[sea_orm(num_value = 4)]
+    MusimanagerPlaylist,
+    #[sea_orm(num_value = 5)]
+    MusimanagerQueue,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
