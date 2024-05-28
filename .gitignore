@@ -3,4 +3,5 @@
 .direnv
 /result
 /log.log
+/test.db
 

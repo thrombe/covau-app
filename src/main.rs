@@ -128,8 +128,232 @@ mod webui {
     }
 }
 
+mod db {
+    use derivative::Derivative;
+    use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
+    use sea_orm::DeriveEntityModel;
+    use sea_orm::{entity::prelude::*, Schema};
+    use serde::{Deserialize, Serialize};
+    use tokio_stream::StreamExt;
+
+    pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
+        fn to_json(&self) -> String;
+        fn typ() -> DbObjectType;
+        fn haystack(&self) -> impl IntoIterator<Item = &str>;
+    }
+    pub trait AutoDbAble {
+        fn typ() -> DbObjectType;
+        fn haystack(&self) -> impl IntoIterator<Item = &str>;
+    }
+    impl<T> DbAble for T
+    where
+        T: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone + AutoDbAble,
+    {
+        fn to_json(&self) -> String {
+            serde_json::to_string(self).expect("won't fail")
+        }
+        fn typ() -> DbObjectType {
+            <Self as AutoDbAble>::typ()
+        }
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            <Self as AutoDbAble>::haystack(self)
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, Derivative, specta::Type)]
+    #[derivative(PartialEq)]
+    struct DemoObject {
+        f1: String,
+        f2: u32,
+    }
+    impl AutoDbAble for DemoObject {
+        fn typ() -> DbObjectType {
+            DbObjectType::DemoObject
+        }
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            [self.f1.as_str()]
+        }
+    }
+
+    impl AutoDbAble for crate::musimanager::Song<Option<crate::musimanager::SongInfo>> {
+        fn typ() -> DbObjectType {
+            DbObjectType::MusimanagerSong
+        }
+
+        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            let mut hs = vec![self.title.as_str()];
+
+            self.artist_name.as_deref().map(|a| {
+                hs.push(a);
+            });
+
+            hs
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+    #[sea_orm(rs_type = "i32", db_type = "Integer")]
+    enum DbObjectType {
+        #[sea_orm(num_value = 0)]
+        DemoObject,
+        #[sea_orm(num_value = 1)]
+        MusimanagerSong,
+    }
+
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[sea_orm(table_name = "covau_objects")]
+    pub struct Model {
+        #[sea_orm(primary_key)]
+        pub id: i32,
+        pub data: String,
+        pub typ: DbObjectType,
+    }
+    impl Model {
+        fn parsed_assume<T: for<'de> Deserialize<'de>>(&self) -> T {
+            let t: T = serde_json::from_str(&self.data).expect("parsing Model json failed");
+            t
+        }
+        fn parsed<T: DbAble>(&self) -> anyhow::Result<T> {
+            if T::typ() != self.typ {
+                return Err(anyhow::anyhow!("model type mismatch"));
+            }
+            let t: T = serde_json::from_str(&self.data)?;
+            Ok(t)
+        }
+    }
+
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {}
+
+    impl ActiveModelBehavior for ActiveModel {}
+
+    pub struct Db {
+        pub db: sea_orm::DatabaseConnection,
+    }
+    impl Db {
+        async fn stream_models<T: DbAble>(
+            &self,
+        ) -> anyhow::Result<impl futures::Stream<Item = Result<Model, DbErr>> + '_> {
+            let a = Entity::find()
+                .filter(Column::Typ.contains(T::typ().to_value().to_string()))
+                .stream(&self.db)
+                .await?;
+            Ok(a)
+        }
+
+        // TODO: have this be paged
+        async fn search<T: DbAble>(&self, needle: &str) -> anyhow::Result<SearchMatches<T>> {
+            let mut tree = intrusive_collections::RBTree::new(BAdapter::<T>::new());
+            let cap = 20;
+
+            let mut it = self.stream_models::<T>().await?;
+
+            let mut len = 0;
+            while let Some(m) = it.next().await {
+                let m = m?;
+                let t: T = m.parsed_assume();
+                let score: isize = t
+                    .haystack()
+                    .into_iter()
+                    .map(|h| {
+                        let s = sublime_fuzzy::best_match(needle, h)
+                            .map(|m| m.score())
+                            .unwrap_or(0);
+                        s
+                    })
+                    .sum();
+
+                // dbg!(&m, &t, score);
+
+                // check if this element should be in the tree
+                // eject any elements if needed
+                // insert a Node<T> into tree
+                if len < cap {
+                    tree.insert(Box::new(Node {
+                        link: Default::default(),
+                        val: t,
+                        id: m.id,
+                        score,
+                    }));
+                    len += 1;
+                } else {
+                    let mut front = tree.front_mut();
+                    let node = front.get().unwrap();
+                    if (node.score, node.id) < (score, m.id) {
+                        let _ = front.remove().expect("must not fail");
+                        tree.insert(Box::new(Node {
+                            link: Default::default(),
+                            val: t,
+                            id: m.id,
+                            score,
+                        }));
+                    }
+                }
+            }
+
+            let continuation = tree.front().get().map(|n| (n.score, n.id));
+            let matches = tree.into_iter().map(|n| n.val).rev().collect();
+
+            Ok(SearchMatches {
+                items: matches,
+                continuation,
+            })
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct SearchMatches<T> {
+        items: Vec<T>,
+        continuation: Option<(isize, i32)>, // score and id of last element
+    }
+
+    struct Node<T> {
+        link: RBTreeLink,
+        val: T,
+        id: i32,
+        score: isize,
+    }
+    intrusive_adapter!(BAdapter<T> = Box<Node<T>>: Node<T> { link: RBTreeLink } where T: ?Sized + Clone);
+    impl<'a, T> KeyAdapter<'a> for BAdapter<T>
+    where
+        T: Clone,
+    {
+        type Key = (isize, i32);
+
+        fn get_key(
+            &self,
+            value: &'a <Self::PointerOps as intrusive_collections::PointerOps>::Value,
+        ) -> Self::Key {
+            (value.score, value.id)
+        }
+    }
+
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
+        let mut types = String::new();
+        types += &specta::ts::export::<SearchMatches<()>>(config)?;
+        types += ";\n";
+
+        Ok(types)
+    }
+
+    pub async fn db_test() -> anyhow::Result<()> {
+        // let db = Db { db: sea_orm::Database::connect("sqlite::memory:").await? };
+        let db = Db {
+            db: sea_orm::Database::connect("sqlite:./test.db?mode=rwc").await?,
+        };
+
+        let matches = db
+            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>("arjit")
+            .await?;
+        dbg!(matches);
+
+        Ok(())
+    }
+}
+
 fn dump_types() -> Result<()> {
-    let tsconfig = specta::ts::ExportConfiguration::default();
+    let tsconfig =
+        specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);
     let types_dir = PathBuf::from("./electron/src/types");
     let _ = std::fs::create_dir(&types_dir);
     std::fs::write(
@@ -141,6 +365,7 @@ fn dump_types() -> Result<()> {
         covau_types::dump_types(&tsconfig)?,
     )?;
     std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
 
     Ok(())
 }

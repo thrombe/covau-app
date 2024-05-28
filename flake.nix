@@ -187,6 +187,8 @@
             gst_all_1.gst-vaapi
 
             mpv
+
+            sqlite
           ]
           ++ (custom-commands pkgs);
 
