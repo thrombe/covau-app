@@ -224,7 +224,7 @@ mod db {
     #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
     #[sea_orm(table_name = "covau_objects")]
     pub struct Model {
-        #[sea_orm(primary_key)]
+        #[sea_orm(primary_key, auto_increment = true)]
         pub id: i32,
         pub data: String,
         pub typ: Typ,
