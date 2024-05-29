@@ -4,7 +4,7 @@ import type { PlayerMessage, PlayerCommand } from "$types/server";
 
 type MessageHandler = ((msg: PlayerMessage) => Promise<void>) | ((msg: PlayerMessage) => void);
 
-export class LocalPlayer {
+export class Musiplayer {
 
     ws: WebSocket;
     playing: string = '';
