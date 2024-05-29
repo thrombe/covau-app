@@ -4,11 +4,11 @@
     import { getFirestore } from "firebase/firestore";
     import { onDestroy } from "svelte";
     import { writable, type Writable } from "svelte/store";
-    import { firebase_config } from "../firebase_config";
+    import { firebase_config } from "../../firebase_config";
     import { new_innertube_instance } from "$lib/searcher/tube";
     import { SongTube, YT, YTNodes } from "$lib/searcher/song_tube";
     import { Player as PL } from "youtubei.js";
-    import { LocalPlayer } from "$lib/local_player.ts";
+    import { Musiplayer } from "$lib/musiplayer.ts";
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
     import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
     import  * as Db from "$lib/searcher/db.ts";
