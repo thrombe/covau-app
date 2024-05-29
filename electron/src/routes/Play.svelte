@@ -11,6 +11,8 @@
     import { LocalPlayer } from "$lib/local_player.ts";
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
     import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
+    import  * as Db from "$lib/searcher/db.ts";
+    import type { ForceDb } from "$lib/searcher/searcher.ts";
 
     export let params: { group?: string };
 
@@ -38,35 +40,19 @@
         // console.log(await tube.next_page())
         // tube.test();
 
-        let q: SearchQuery = {
-            type: "Query",
-            content: {
-                query: "",
-                page_size: 10,
-            },
-        };
-        let res = await fetch(
-            "http://localhost:10010/musimanager/search/artists",
-            {
-                method: "POST",
-                body: JSON.stringify(q),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body = await res.text();
-        let matches: SearchMatches<Artist<SongId, AlbumId>> = JSON.parse(body);
-        console.log(matches);
-        let res2 = await fetch(
-            "http://localhost:10010/musimanager/search/songs/refid",
-            {
-                method: "POST",
-                body: JSON.stringify(matches.items[0].songs),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body2 = await res2.text();
-        let matches2: SearchMatches<Song<SongInfo>> = JSON.parse(body2);
-        console.log(matches2)
+        let db_fac = Db.Db.factory();
+        let adb = await db_fac.search_query<Db.Album>({ browse_type: "search", type: "MusimanagerAlbum", query: "" });
+        if (!adb) {
+            return;
+        }
+
+        let a = await adb.next_page();
+        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].songs });
+        if (!sdb) {
+            return;
+        }
+        let s = await sdb.next_page();
+        console.log(s);
     };
 
     let group: string;

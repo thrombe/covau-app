@@ -74,7 +74,6 @@ export class SongTube extends Unpaged<MusicListItem> {
         return s;
     }
 
-    // TODO: type is only used for with_query
     static factory(tube: Innertube) {
         type R = RSearcher<MusicListItem>;
         class Fac {
