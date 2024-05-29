@@ -100,6 +100,34 @@ export class LocalPlayer {
             this.send_message({type: 'Play', content: uri });
         }
     }
+
+    pause() {
+        this.send_message({ type: 'Pause' });
+    }
+
+    unpause() {
+        this.send_message({ type: 'Unpause' });
+    }
+
+    seek_to_perc(t: number) {
+        this.send_message({ type: 'SeekToPerc', content: t });
+    }
+
+    seek_by(s: number) {
+        this.send_message({ type: 'SeekBy', content: s });
+    }
+
+    set_volume(v: number) {
+        this.send_message({ type: 'SetVolume', content: v });
+    }
+
+    update_volume_async() {
+        this.send_message({ type: 'GetVolume' });
+    }
+
+    update_duration_async() {
+        this.send_message({ type: 'GetDuration' });
+    }
 }
 
 
