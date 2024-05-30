@@ -7,7 +7,13 @@ import NotFound from '$lib/components/NotFound.svelte'
 export default {
     '/': Home,
 
-    '/play/:group?': wrap({
+    '/local': wrap({
+        asyncComponent: () => import('$lib/local/VibeWrap.svelte'),
+        loadingComponent: Loading,
+        loadingParams: {},
+    }),
+
+    '/play': wrap({
         asyncComponent: () => import('$lib/local/Play.svelte'),
         loadingComponent: Loading,
         loadingParams: {},
