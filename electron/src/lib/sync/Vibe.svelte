@@ -11,11 +11,11 @@
 <script lang="ts">
     import type Innertube from "youtubei.js/web";
     import InputBar from "$lib/components/InputBar.svelte";
-    import PlayBar from "$lib/sync/PlayBar.svelte";
-    import Queue from "$lib/sync/Queue.svelte";
-    import SongBrowser from "$lib/sync/SongBrowser.svelte";
-    import Video from "$lib/sync/Video.svelte";
-    import { SyncPlayer } from "$lib/sync/player.ts";
+    import PlayBar from "./PlayBar.svelte";
+    import Queue from "./Queue.svelte";
+    import SongBrowser from "./SongBrowser.svelte";
+    import Video from "./Video.svelte";
+    import { SyncPlayer } from "./player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
     import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
