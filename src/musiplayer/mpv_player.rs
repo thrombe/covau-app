@@ -230,6 +230,24 @@ impl Player {
         self.mpv.set_property("volume", t.min(1.0).max(0.0) * 100.0)?;
         Ok(())
     }
+
+    pub fn mute(&mut self) -> Result<()> {
+        self.clear_event_loop()?;
+        self.mpv.set_property("mute", true)?;
+        Ok(())
+    }
+
+    pub fn unmute(&mut self) -> Result<()> {
+        self.clear_event_loop()?;
+        self.mpv.set_property("mute", false)?;
+        Ok(())
+    }
+
+    pub fn is_muted(&mut self) -> Result<bool> {
+        self.clear_event_loop()?;
+        let mute = self.mpv.get_property::<bool>("mute")?;
+        Ok(mute)
+    }
 }
 
 impl MusiPlayer for Player {
@@ -274,5 +292,14 @@ impl MusiPlayer for Player {
     }
     fn set_volume(&mut self, vol: f64) -> Result<()> {
         Self::set_volume(self, vol)
+    }
+    fn mute(&mut self) -> Result<()> {
+        Self::mute(self)
+    }
+    fn unmute(&mut self) -> Result<()> {
+        Self::unmute(self)
+    }
+    fn is_muted(&mut self) -> Result<bool> {
+        Self::is_muted(self)
     }
 }

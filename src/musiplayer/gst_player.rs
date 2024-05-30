@@ -233,4 +233,13 @@ impl MusiPlayer for Player {
     fn unpause(&mut self) -> Result<()> {
         Ok(Self::unpause(self))
     }
+    fn mute(&mut self) -> Result<()> {
+        todo!()
+    }
+    fn unmute(&mut self) -> Result<()> {
+        todo!()
+    }
+    fn is_muted(&mut self) -> Result<bool> {
+        todo!()
+    }
 }

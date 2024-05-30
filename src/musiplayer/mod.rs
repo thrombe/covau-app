@@ -75,6 +75,15 @@ impl Player {
     pub fn seek_to(&mut self, t: f64) -> Result<()> {
         MusiPlayer::seek_to(&mut self.internal_player, t)
     }
+    pub fn mute(&mut self) -> Result<()> {
+        MusiPlayer::mute(&mut self.internal_player)
+    }
+    pub fn unmute(&mut self) -> Result<()> {
+        MusiPlayer::unmute(&mut self.internal_player)
+    }
+    pub fn is_muted(&mut self) -> Result<bool> {
+        MusiPlayer::is_muted(&mut self.internal_player)
+    }
 }
 
 pub trait MusiPlayer
@@ -111,5 +120,8 @@ where Self:  Sized + 'static + Send + Sync
         let pos = t - pos;
         self.seek_by(pos.max(0.0).min(dur))
     }
+    fn mute(&mut self) -> Result<()>;
+    fn unmute(&mut self) -> Result<()>;
+    fn is_muted(&mut self) -> Result<bool>;
 }
 

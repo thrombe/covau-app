@@ -94,6 +94,22 @@ async fn player_command_handler(
             tx.send_timeout(Ok(PlayerMessage::Duration(p.duration()?)), timeout)
                 .await?;
         }
+        PlayerCommand::Mute => {
+            p.mute()?;
+            tokio::time::sleep(timeout).await;
+            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+                .await?;
+        }
+        PlayerCommand::Unmute => {
+            p.unmute()?;
+            tokio::time::sleep(timeout).await;
+            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+                .await?;
+        }
+        PlayerCommand::IsMuted => {
+            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+                .await?;
+        }
     }
     Ok(())
 }
@@ -105,6 +121,9 @@ pub enum PlayerCommand {
     Play(String),
     SeekBy(f64),
     SeekToPerc(f64),
+    Mute,
+    Unmute,
+    IsMuted,
     GetVolume,
     SetVolume(f64),
     GetDuration,
@@ -119,6 +138,7 @@ pub enum PlayerMessage {
     ProgressPerc(f64),
     Volume(f64),
     Duration(f64),
+    Mute(bool),
 }
 
 fn player_route() -> BoxedFilter<(impl Reply,)> {
