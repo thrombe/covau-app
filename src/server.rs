@@ -378,11 +378,19 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         )
     };
 
+    let options_route = warp::any().and(warp::options()).map(warp::reply).with(
+        warp::cors()
+            .allow_any_origin()
+            .allow_header("content-type")
+            .allow_methods(["POST", "GET"]),
+    );
+
     let all = client_ws_route()
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
-        .or(musimanager_search_routes);
-    let all = all.or(redirect_route(client.clone()));
+        .or(musimanager_search_routes)
+        .or(options_route);
+    // let all = all.or(redirect_route(client.clone()));
 
     println!("Starting server at {}:{}", ip_addr, port);
 
