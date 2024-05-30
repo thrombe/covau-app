@@ -1,9 +1,9 @@
 <script lang="ts">
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
-    import AudioListItem from './AudioListItem.svelte';
-    import InputBar from './InputBar.svelte';
-    import VirtualScrollable from './VirtualScrollable.svelte';
+    import AudioListItem from '$lib/components/AudioListItem.svelte';
+    import InputBar from '$lib/components/InputBar.svelte';
+    import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import type { VideoInfo } from '$lib/searcher/song_tube.ts';
     import { toast } from '$lib/toast/Toasts.svelte';
 

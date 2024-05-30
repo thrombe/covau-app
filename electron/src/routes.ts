@@ -8,13 +8,13 @@ export default {
     '/': Home,
 
     '/play/:group?': wrap({
-        asyncComponent: () => import('$lib/components/Play.svelte'),
+        asyncComponent: () => import('$lib/local/Play.svelte'),
         loadingComponent: Loading,
         loadingParams: {},
     }),
 
     '/vibe/:group?': wrap({
-        asyncComponent: () => import('$lib/components/VibeWrap.svelte'),
+        asyncComponent: () => import('$lib/sync/VibeWrap.svelte'),
         loadingComponent: Loading,
         loadingParams: {},
     }),

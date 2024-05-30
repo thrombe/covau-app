@@ -1,14 +1,7 @@
 <script lang="ts">
-    import { SyncPlayer } from "$lib/sync_player";
-    import { initializeApp } from "firebase/app";
-    import { getFirestore } from "firebase/firestore";
-    import { onDestroy } from "svelte";
-    import { writable, type Writable } from "svelte/store";
-    import { firebase_config } from "../../firebase_config";
     import { new_innertube_instance } from "$lib/searcher/tube";
     import { SongTube, YT, YTNodes } from "$lib/searcher/song_tube";
-    import { Player as PL } from "youtubei.js";
-    import { Musiplayer } from "$lib/musiplayer.ts";
+    import { Musiplayer } from "$lib/local/player";
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
     import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
     import  * as Db from "$lib/searcher/db.ts";
@@ -33,27 +26,47 @@
 
         // let lp = new LocalPlayer();
 
-        // let itube = await new_innertube_instance();
-        // let fac = SongTube.factory(itube);
-        // let ntube = await fac.search_query({ type: 'home-feed' });
-        // let tube = ntube!;
+        let itube = await new_innertube_instance();
+        let fac = SongTube.factory(itube);
+        let ntube = await fac.search_query({ type: 'home-feed' });
+        let tube = ntube!;
         // console.log(await tube.next_page())
         // tube.test();
 
         let db_fac = Db.Db.factory();
-        let adb = await db_fac.search_query<Db.Album>({ browse_type: "search", type: "MusimanagerAlbum", query: "" });
+        let adb = await db_fac.search_query<Db.Artist>({ browse_type: "search", type: "MusimanagerArtist", query: "sanam" });
         if (!adb) {
             return;
         }
 
         let a = await adb.next_page();
-        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].songs });
+        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].unexplored_songs ?? [] });
         if (!sdb) {
             return;
         }
         let s = await sdb.next_page();
         console.log(s);
+
+        let player = new Musiplayer();
+        let i = 0;
+        const play_next = async () => {
+            if (i >= s.length) {
+                return;
+            }
+
+            let d = await itube.getInfo(s[i].key);
+            console.log(d)
+            let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+            let url = d.getStreamingInfo();
+            let uri = f.decipher(itube.session.player);
+            player.play(uri);
+
+            i += 1;
+        };
+        player.add_message_listener('Finished', play_next);
+        await play_next();
     };
+    dothis();
 
     let group: string;
     if (!params.group) {
@@ -72,106 +85,4 @@
         window.location.replace(new_url);
         window.location.reload();
     }
-
-    let app = initializeApp(firebase_config);
-    let db = getFirestore(app);
-    let player: Writable<SyncPlayer>;
-
-    onDestroy(async () => {
-        if (player) {
-            await $player.destroy();
-        }
-    });
-
-    let tick = writable(0);
-    const on_yt_load = async () => {
-        let p = await SyncPlayer.new(db, group, "video");
-        player = writable(p);
-        await dothis();
-        $player.on_update = () => {
-            $tick += $player.synced_data.tick;
-        };
-    };
-
-    (window as any).onYouTubeIframeAPIReady = on_yt_load;
-
-    let id_input_val: string;
-
-    let video: any;
-    let queue = new Array<string>();
-    $: if ($tick) {
-        console.log($player.synced_data);
-        queue = $player.synced_data.queue;
-        console.log(queue);
-    }
-
-    let now_time = 0;
-    setInterval(() => {
-        now_time = Date.now();
-    }, 300);
 </script>
-
-<svelte:head>
-    <script src="https://www.youtube.com/iframe_api"></script>
-</svelte:head>
-
-<input bind:value={id_input_val} />
-<button
-    on:click={async () => {
-        await $player.queue(id_input_val);
-    }}>queue</button
->
-<button on:click={() => $player.play()}>play</button>
-<button on:click={() => $player.play_next()}>next</button>
-<button on:click={() => $player.toggle_pause()}>toggle pause</button>
-<button on:click={() => $player.recalculate_time_error()}>resync</button>
-<button on:click={() => on_yt_load()}>reload player</button>
-
-<span>{now_time.toString().slice(8, 10)}</span>
-{#if player}
-    {#key $tick}
-        {#each queue as id, i (i)}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <span
-                on:click={async () => {
-                    await $player.play_index(i);
-                }}
-                on:keydown={() => {}}>{id}</span
-            >
-        {/each}
-    {/key}
-{/if}
-
-<div class="video-parent">
-    <div class="video" bind:this={video} id="video" />
-    <div class="video-sibling" />
-</div>
-
-<style>
-    .video {
-        display: block;
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
-    .video-sibling {
-        display: block;
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 100%;
-        height: 100%;
-        background-color: #00ff0000;
-        z-index: 2;
-    }
-
-    .video-parent {
-        position: fixed;
-        right: 0px;
-        bottom: 0px;
-
-        width: 300px;
-        height: 150px;
-    }
-</style>

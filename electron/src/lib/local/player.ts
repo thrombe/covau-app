@@ -1,5 +1,5 @@
-import { YTNodes } from "./searcher/song_tube";
-import { new_innertube_instance } from "./searcher/tube";
+import { YTNodes } from "$lib/searcher/song_tube";
+import { new_innertube_instance } from "$lib/searcher/tube";
 import type { PlayerMessage, PlayerCommand } from "$types/server";
 
 type MessageHandler = ((msg: PlayerMessage) => Promise<void>) | ((msg: PlayerMessage) => void);

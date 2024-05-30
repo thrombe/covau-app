@@ -18,11 +18,11 @@
 
 <script lang="ts">
     import { type Unique } from "../virtual.ts";
-    import AudioListItem from "./AudioListItem.svelte";
+    import AudioListItem from "$lib/components/AudioListItem.svelte";
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
     import type Innertube from "youtubei.js/web";
-    import type { MenubarOption } from "../../routes/Vibe.svelte";
+    import type { MenubarOption } from "./Vibe.svelte";
 
     export let columns: number;
     export let item_height: number;
