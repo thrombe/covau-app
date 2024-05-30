@@ -14,6 +14,7 @@ export class Musiplayer {
     duration: number = 0.0;
     volume: number = 1.0;
     listeners: Map<string, MessageHandler[]>;
+    muted: boolean = false;
 
     constructor() {
         this.listeners = new Map();
@@ -52,6 +53,9 @@ export class Musiplayer {
                 case 'Finished':
                     this.finished = true;
                     break;
+                case 'Mute':
+                    this.muted = message.content;
+                    break
                 default:
                     console.warn("unhandled message: " + e.data);
                     break;
@@ -75,8 +79,9 @@ export class Musiplayer {
 
             // this.send_message({ type: 'Play', content: uri });
 
-            this.send_message({ type: 'SetVolume', content: 1.0 });
-            this.send_message({ type: 'Pause' });
+            this.set_volume(1.0);
+            this.pause();
+            this.unmute();
         });
     }
 
@@ -95,9 +100,33 @@ export class Musiplayer {
 
     play(uri: string | null = null) {
         if (uri === null) {
-            this.send_message({ type: 'Unpause' });
+            this.unpause();
         } else {
             this.send_message({type: 'Play', content: uri });
+        }
+    }
+
+    toggle_pause() {
+        if (this.paused) {
+            this.unpause();
+        } else {
+            this.pause();
+        }
+    }
+
+    mute() {
+        this.send_message({ type: 'Mute' });
+    }
+
+    unmute() {
+        this.send_message({ type: 'Unmute' });
+    }
+
+    toggle_mute() {
+        if (this.muted) {
+            this.unmute();
+        } else {
+            this.mute();
         }
     }
 
