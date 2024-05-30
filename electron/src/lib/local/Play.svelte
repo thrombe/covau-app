@@ -64,7 +64,7 @@
             i += 1;
         };
         player.add_message_listener('Finished', play_next);
-        await play_next();
+        // await play_next();
     };
     dothis();
 
