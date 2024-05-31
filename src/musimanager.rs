@@ -348,7 +348,22 @@ impl Tracker<Song> {
             })
             .collect();
 
-        // TODO: playlists and queues
+        for pl in playlists.iter() {
+            et.playlists.push(Playlist(SongProvider {
+                name: pl.name.to_string(),
+                data_list: pl.data_list.iter().map(|s| SongId(s.key.to_string())).collect(),
+                current_index: pl.current_index,
+            }));
+        }
+
+        for q in queues.iter() {
+            et.queues.push(Queue(SongProvider {
+                name: q.name.to_string(),
+                data_list: q.data_list.iter().map(|s| SongId(s.key.to_string())).collect(),
+                current_index: q.current_index,
+            }));
+        }
+
         et
     }
 }
