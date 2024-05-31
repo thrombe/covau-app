@@ -1,17 +1,15 @@
 use anyhow::Context;
-use core::time;
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::borrow::Borrow;
 use std::net::Ipv4Addr;
-use std::{collections::HashMap, convert::Infallible, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
 use ulid::Ulid;
 use warp::filters::BoxedFilter;
 use warp::ws::WebSocket;
-use warp::{reject::Rejection, reply::Reply, ws::Ws};
+use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
 use crate::db::{Db, DbAble};
@@ -52,7 +50,7 @@ async fn player_command_handler(
 
             let player = player.clone();
             let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
-                for i in 0..50 {
+                for _ in 0..50 {
                     tokio::time::sleep(timeout).await;
                     let mut p = player.lock().await;
                     let dur = p.duration()?;

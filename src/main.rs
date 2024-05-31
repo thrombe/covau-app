@@ -1,8 +1,10 @@
+#![allow(dead_code)]
+
 use std::path::PathBuf;
 
 use musicbrainz_rs::{
-    entity::{artist::Artist, recording::Recording, release::Release, work::Work},
-    Browse, Fetch, Search,
+    entity::recording::Recording,
+    Search,
 };
 
 use anyhow::Result;
@@ -82,7 +84,7 @@ async fn api_test() -> Result<()> {
 }
 
 mod webui {
-    use std::{borrow::Borrow, ffi::CStr, path::PathBuf};
+    use std::ffi::CStr;
     use webui_rs::webui::{self, bindgen::webui_malloc};
 
     // returned pointer is only freed if allocated using webui_malloc

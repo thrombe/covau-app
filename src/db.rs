@@ -1,4 +1,3 @@
-use derivative::Derivative;
 use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
 use sea_orm::{Condition, DeriveEntityModel};
 use sea_orm::{entity::prelude::*, Schema};
