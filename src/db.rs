@@ -1,6 +1,7 @@
 use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
-use sea_orm::{Condition, DeriveEntityModel};
+use sea_orm::RelationTrait;
 use sea_orm::{entity::prelude::*, Schema};
+use sea_orm::{Condition, DeriveEntityModel, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
@@ -8,13 +9,13 @@ pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clon
     fn to_json(&self) -> String;
     fn typ() -> Typ;
     fn haystack(&self) -> impl IntoIterator<Item = &str>;
-    fn ref_id(&self) -> Option<String>;
+    fn refids(&self) -> impl IntoIterator<Item = &str>;
 }
 pub trait AutoDbAble {
     fn typ() -> Typ;
     fn haystack(&self) -> impl IntoIterator<Item = &str>;
-    fn ref_id(&self) -> Option<String> {
-        None
+    fn refids(&self) -> impl IntoIterator<Item = &str> {
+        []
     }
 }
 impl<T> DbAble for T
@@ -30,8 +31,8 @@ where
     fn haystack(&self) -> impl IntoIterator<Item = &str> {
         <Self as AutoDbAble>::haystack(self)
     }
-    fn ref_id(&self) -> Option<String> {
-        <Self as AutoDbAble>::ref_id(self)
+    fn refids(&self) -> impl IntoIterator<Item = &str> {
+        <Self as AutoDbAble>::refids(self)
     }
 }
 
@@ -54,8 +55,8 @@ mod musimanager {
             hs
         }
 
-        fn ref_id(&self) -> Option<String> {
-            Some(self.key.clone())
+        fn refids(&self) -> impl IntoIterator<Item = &str> {
+            [self.key.as_str()]
         }
     }
     impl AutoDbAble for Album<SongId> {
@@ -73,8 +74,8 @@ mod musimanager {
             hs
         }
 
-        fn ref_id(&self) -> Option<String> {
-            Some(self.browse_id.clone())
+        fn refids(&self) -> impl IntoIterator<Item = &str> {
+            [self.browse_id.as_str()]
         }
     }
     impl AutoDbAble for Artist<SongId, AlbumId> {
@@ -129,35 +130,95 @@ pub enum Typ {
     MusimanagerQueue,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
-#[sea_orm(table_name = "covau_objects")]
-pub struct Model {
-    #[sea_orm(primary_key, auto_increment = true)]
-    pub id: i32,
-    pub data: String,
-    pub typ: Typ,
+mod object {
+    use super::*;
+
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[sea_orm(table_name = "covau_objects")]
+    pub struct Model {
+        #[sea_orm(primary_key, auto_increment = true)]
+        pub id: i32,
+        pub data: String,
+        pub typ: Typ,
+    }
+    impl Model {
+        pub fn parsed_assume<T: for<'de> Deserialize<'de>>(&self) -> T {
+            let t: T = serde_json::from_str(&self.data).expect("parsing Model json failed");
+            t
+        }
+        pub fn parsed<T: DbAble>(&self) -> anyhow::Result<T> {
+            if T::typ() != self.typ {
+                return Err(anyhow::anyhow!("model type mismatch"));
+            }
+            let t: T = serde_json::from_str(&self.data)?;
+            Ok(t)
+        }
+    }
+
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {
+        #[sea_orm(has_one = "super::refid::Entity")]
+        RefId,
+    }
+    impl Related<super::refid::Entity> for Entity {
+        fn to() -> RelationDef {
+            Relation::RefId.def()
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ActiveModelBehavior for ActiveModel {
+        async fn after_delete<C>(self, db: &C) -> Result<Self, DbErr>
+        where
+            C: ConnectionTrait,
+        {
+            super::refid::Entity::delete_many()
+                .filter(
+                    super::refid::Column::Typ
+                        .contains(self.typ.clone().unwrap().to_value().to_string()),
+                )
+                .filter(
+                    super::refid::Column::ObjectId.contains(self.id.clone().unwrap().to_string()),
+                )
+                .exec(db)
+                .await?;
+            Ok(self)
+        }
+    }
+}
+mod refid {
+    use super::*;
+
     /// any other kind of id that we might need to match on
     /// for example SongId -> Song
-    pub ref_id: Option<String>,
-}
-impl Model {
-    fn parsed_assume<T: for<'de> Deserialize<'de>>(&self) -> T {
-        let t: T = serde_json::from_str(&self.data).expect("parsing Model json failed");
-        t
+
+    #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+    #[sea_orm(table_name = "ref_ids")]
+    pub struct Model {
+        #[sea_orm(primary_key)]
+        pub refid: String,
+        #[sea_orm(primary_key)]
+        pub typ: Typ,
+        pub object_id: i32,
     }
-    fn parsed<T: DbAble>(&self) -> anyhow::Result<T> {
-        if T::typ() != self.typ {
-            return Err(anyhow::anyhow!("model type mismatch"));
+
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {
+        #[sea_orm(
+            belongs_to = "super::object::Entity",
+            from = "Column::ObjectId",
+            to = "super::object::Column::Id"
+        )]
+        Object,
+    }
+    impl Related<super::object::Entity> for Entity {
+        fn to() -> RelationDef {
+            Relation::Object.def()
         }
-        let t: T = serde_json::from_str(&self.data)?;
-        Ok(t)
     }
+
+    impl ActiveModelBehavior for ActiveModel {}
 }
-
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
-
-impl ActiveModelBehavior for ActiveModel {}
 
 pub struct Db {
     pub db: sea_orm::DatabaseConnection,
@@ -173,13 +234,15 @@ impl Db {
     pub async fn init_tables(&self) -> anyhow::Result<()> {
         let builder = self.db.get_database_backend();
         let schema = Schema::new(builder);
-        let s = builder.build(&schema.create_table_from_entity(Entity));
+        let s = builder.build(&schema.create_table_from_entity(object::Entity));
+        let _ = self.db.execute(s).await?;
+        let s = builder.build(&schema.create_table_from_entity(refid::Entity));
         let _ = self.db.execute(s).await?;
         let s = builder.build(
             &sea_orm::sea_query::Index::create()
                 .name("refid_index")
-                .table(Entity)
-                .col(Column::RefId)
+                .table(refid::Entity)
+                .col(refid::Column::Refid)
                 .to_owned(),
         );
         let _ = self.db.execute(s).await?;
@@ -189,9 +252,9 @@ impl Db {
 
     pub async fn stream_models<T: DbAble>(
         &self,
-    ) -> anyhow::Result<impl futures::Stream<Item = Result<Model, DbErr>> + '_> {
-        let a = Entity::find()
-            .filter(Column::Typ.eq(T::typ().to_value().to_string()))
+    ) -> anyhow::Result<impl futures::Stream<Item = Result<object::Model, DbErr>> + '_> {
+        let a = object::Entity::find()
+            .filter(object::Column::Typ.eq(T::typ().to_value().to_string()))
             .stream(&self.db)
             .await?;
         Ok(a)
@@ -290,39 +353,56 @@ impl Db {
     }
 
     pub async fn search_by_ref_id<T: DbAble>(&self, ref_id: String) -> anyhow::Result<Option<T>> {
-        let e = Entity::find()
-            .filter(Column::Typ.eq(T::typ().to_value().to_string()))
-            .filter(Column::RefId.eq(ref_id))
+        let e = refid::Entity::find()
+            .filter(refid::Column::Typ.eq(T::typ().to_value().to_string()))
+            .filter(refid::Column::Refid.eq(ref_id))
+            .find_also_related(object::Entity)
             .one(&self.db)
             .await?
+            .map(|(_refid, obj)| obj)
+            .flatten()
             .map(|e| e.parsed_assume());
         Ok(e)
     }
 
-    pub async fn search_many_by_ref_id<T: DbAble>(&self, ref_ids: Vec<String>) -> anyhow::Result<Vec<T>> {
+    pub async fn search_many_by_ref_id<T: DbAble>(
+        &self,
+        ref_ids: Vec<String>,
+    ) -> anyhow::Result<Vec<T>> {
         let mut condition = Condition::any();
         for id in ref_ids {
-            condition = condition.add(Column::RefId.eq(id));
+            condition = condition.add(refid::Column::Refid.eq(id));
         }
-        let e = Entity::find()
-            .filter(Column::Typ.eq(T::typ().to_value().to_string()))
+        let e = refid::Entity::find()
+            .filter(refid::Column::Typ.eq(T::typ().to_value().to_string()))
             .filter(condition)
+            .find_also_related(object::Entity)
             .all(&self.db)
             .await?
             .into_iter()
+            .map(|(_refid, obj)| obj)
+            .flatten()
             .map(|e| e.parsed_assume())
             .collect();
         Ok(e)
     }
 
     pub async fn insert<T: DbAble>(&self, t: &T) -> anyhow::Result<()> {
-        let am = ActiveModel {
+        let am = object::ActiveModel {
             id: sea_orm::ActiveValue::NotSet,
             data: sea_orm::ActiveValue::Set(t.to_json()),
             typ: sea_orm::ActiveValue::Set(T::typ()),
-            ref_id: sea_orm::ActiveValue::Set(t.ref_id()),
         };
-        Entity::insert(am).exec(&self.db).await?;
+        let obj = object::Entity::insert(am).exec(&self.db).await?;
+
+        for rid in t.refids() {
+            let id = refid::ActiveModel {
+                refid: sea_orm::ActiveValue::Set(rid.to_string()),
+                typ: sea_orm::ActiveValue::Set(T::typ()),
+                object_id: sea_orm::ActiveValue::Set(obj.last_insert_id),
+            };
+            refid::Entity::insert(id).exec(&self.db).await?;
+        }
         Ok(())
     }
 }
