@@ -2,12 +2,6 @@
     import { tick } from "svelte";
     import { writable, type Writable } from "svelte/store";
     import type { WrappedDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
-    import {
-        SongTube,
-        type Typ,
-        type BrowseQuery,
-        type MusicListItem,
-    } from "$lib/searcher/song_tube.ts";
 
     let song_fac = writable(Db.Db.factory());
     let song_searcher = writable(Db.Db.fused<WrappedDb<Db.Song>>());
@@ -21,6 +15,7 @@
     import type Innertube from "youtubei.js/web";
     import type { MenubarOption } from "./Vibe.svelte";
     import * as Db from "$lib/searcher/db.ts";
+    import type { MusicListItem } from "$lib/searcher/db.ts";
 
     export let columns: number;
     export let item_height: number;
@@ -179,19 +174,19 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.typ == "song" || item.typ == "video"}
+                            {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem
                                     title={item.data.title ?? ""}
-                                    title_sub={item.data.authors[0]?.name ?? ""}
-                                    img_src={item.data.thumbnail ?? ""}
+                                    title_sub={item.data.artist_name ?? ""}
+                                    img_src={item.data.info?.thumbnail_url ?? ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.data.id) {
-                                            return;
-                                        }
-                                        await queue_item_add(item.data.id);
+                                        // if (!item.data.id) {
+                                        //     return;
+                                        // }
+                                        // await queue_item_add(item.data.id);
                                     }}
                                 >
                                     <img
@@ -201,9 +196,9 @@
                                         src="/static/add.svg"
                                     />
                                 </button>
-                            {:else if item.typ == "album" || item.typ == "playlist"}
+                            {:else if item.typ == "MusimanagerAlbum" || item.typ == "MusimanagerPlaylist"}
                                 <AudioListItem
-                                    title={item.data.title ?? ""}
+                                    title={item.data.name ?? ""}
                                     title_sub={item.data.author?.name ?? ""}
                                     img_src={item.data.thumbnail ?? ""}
                                 />
@@ -260,7 +255,7 @@
                                         src="/static/open-new-tab.svg"
                                     />
                                 </button>
-                            {:else if item.typ == "artist"}
+                            {:else if item.typ == "MusimanagerArtist"}
                                 <AudioListItem
                                     title={item.data.name ?? ""}
                                     title_sub={item.data.subscribers ?? ""}
@@ -330,21 +325,21 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.typ == "song" || item.typ == "video"}
+                            {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem
                                     title={item.data.title ?? ""}
-                                    title_sub={item.data.authors[0]?.name ?? ""}
-                                    img_src={item.data.thumbnail ??
+                                    title_sub={item.data.artist_name ?? ""}
+                                    img_src={item.data.info?.thumbnail_url ??
                                         curr_tab.thumbnail ??
                                         ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.data.id) {
-                                            return;
-                                        }
-                                        await queue_item.data_add(item.data.id);
+                                        // if (!item.data.id) {
+                                        //     return;
+                                        // }
+                                        // await queue_item.data_add(item.data.id);
                                     }}
                                 >
                                     <img
