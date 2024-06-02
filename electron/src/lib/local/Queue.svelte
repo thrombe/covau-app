@@ -13,7 +13,7 @@
     export let item_height: number;
     export let selected_item_index: number;
     export let playing: number | null;
-    export let playing_video_info: T | null = null;
+    export let playing_video_info: RObject<T> | null = null;
     export let on_item_add: (id: string) => Promise<void>;
     export let tube: Innertube;
     export let dragend = (e: DragEvent) => {
@@ -44,12 +44,12 @@
     type T = $$Generic;
     interface $$Slots {
         default: {
-            item: T;
+            item: RObject<T>;
         };
         infobox: {};
     }
 
-    export let items: Unique<T, string>[] = [];
+    export let items: Unique<RObject<T>, string>[] = [];
 
     let end_is_visible = false;
     const end_reached = async () => {
@@ -80,8 +80,8 @@
             await search_objects();
         }
     });
-    const on_item_click = async (t: Unique<T, unknown>) => {};
-    let selected_item: Unique<T, unknown>;
+    const on_item_click = async (t: Unique<RObject<T>, unknown>) => {};
+    let selected_item: Unique<RObject<T>, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
     let hovering: number | null = null;
