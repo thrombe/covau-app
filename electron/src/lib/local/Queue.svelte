@@ -2,14 +2,14 @@
     import type { Writable } from 'svelte/store';
     import { tick } from 'svelte';
 
-    import { type ForceDb, type RObject, type RSearcher } from '$lib/searcher/searcher';
+    import { type ForceDb, type RObject, type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
 
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import { toast } from '$lib/toast/Toasts.svelte';
 
-    export let searcher: Writable<RSearcher<ForceDb<T>>>;
+    export let searcher: Writable<RSearcher<UnwrappedDb<T>>>;
     export let item_height: number;
     export let selected_item_index: number;
     export let playing: number | null;
@@ -65,7 +65,7 @@
     };
     const next_page = async () => {
         let r = await $searcher.next_page();
-        items = r.map(e => ({ id: e.get_key(), data: e }));
+        items = r.map(e => ({ id: e.get_key(), data: e })) as typeof items;
     };
     export const search_objects = async () => {
         await next_page();
