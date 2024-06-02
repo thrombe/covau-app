@@ -11,8 +11,8 @@ export type Queue = Musi.Queue<Musi.SongId>;
 
 export type Typ = DB.Typ;
 export type BrowseQuery =
-    { browse_type: 'search', type: Typ, query: string } |
-    { browse_type: 'songs', ids: string[] };
+    { query_type: 'search', type: Typ, query: string } |
+    { query_type: 'songs', ids: string[] };
 
 export class Db<T> extends Unpaged<T> {
     query: BrowseQuery;
@@ -98,7 +98,7 @@ export class Db<T> extends Unpaged<T> {
             return [];
         }
 
-        if (this.query.browse_type === 'search') {
+        if (this.query.query_type === 'search') {
             let items;
             if (this.cont) {
                 let q: DB.SearchQuery = {
@@ -140,7 +140,7 @@ export class Db<T> extends Unpaged<T> {
             }
 
             return k as RObject<T>[];
-        } else if (this.query.browse_type === 'songs') {
+        } else if (this.query.query_type === 'songs') {
             let ids = this.query.ids.slice(
                 this.page_end_index,
                 Math.min(
