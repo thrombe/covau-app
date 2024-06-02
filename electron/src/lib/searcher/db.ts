@@ -30,8 +30,8 @@ function UnionTypeWrapper<D extends {
     query: BrowseQuery;
     next_page(): Promise<RObject<unknown>[]>;
 }>(d: D) {
-    return class implements IUnionTypeWrapper<D> {
-        inner = d;
+    return {
+        inner: d,
 
         async next_page(): Promise<MusicListItem[]> {
             let res = await d.next_page();
