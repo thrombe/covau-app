@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
     import { tick } from "svelte";
     import { writable, type Writable } from "svelte/store";
-    import type { RObject, RSearcher } from "$lib/searcher/searcher.ts";
+    import type { ForceDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
     import {
         SongTube,
         type Typ,
@@ -9,11 +9,8 @@
         type MusicListItem,
     } from "$lib/searcher/song_tube.ts";
 
-    let song_fac = writable(
-        SongTube.factory(undefined as unknown as Innertube)
-    );
-    // OOF: cannot search anything if query is '' anyway
-    let song_searcher = writable(SongTube.fused());
+    let song_fac = writable(Db.Db.factory());
+    let song_searcher = writable(Db.Db.fused<ForceDb<Db.Song>>());
 </script>
 
 <script lang="ts">
@@ -23,6 +20,7 @@
     import InputBar from "$lib/components/InputBar.svelte";
     import type Innertube from "youtubei.js/web";
     import type { MenubarOption } from "./Vibe.svelte";
+    import * as Db from "$lib/searcher/db.ts";
 
     export let columns: number;
     export let item_height: number;
@@ -31,29 +29,28 @@
     export let browse_type: MenubarOption;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    $song_fac = SongTube.factory(tube);
     const refresh_searcher = async (browse_type: MenubarOption) => {
         let s;
         switch (browse_type.content_type) {
             case "music":
-                s = await $song_fac.search_query({
-                    type: "search",
+                s = await $song_fac.search_query<Db.Song>({
+                    browse_type: "search",
                     query: search_query,
-                    search: browse_type.type,
+                    type: browse_type.type,
                 });
-                break;
-            case "watch":
                 break;
             case "related-music":
-                s = await $song_fac.search_query({
-                    type: "up-next",
-                    id: browse_type.id ?? "",
-                });
+                // s = await $song_fac.search_query({
+                //     type: "up-next",
+                //     id: browse_type.id ?? "",
+                // });
+                throw "unimplemented";
                 break;
             case "queue":
                 break;
             case "home-feed":
-                s = await $song_fac.search_query({ type: "home-feed" });
+                // s = await $song_fac.search_query({ type: "home-feed" });
+                throw "unimplemented";
                 break;
             default:
                 break;

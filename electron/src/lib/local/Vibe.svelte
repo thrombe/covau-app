@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
     export type MenubarOption = { name: string } & (
-        | { content_type: "music"; type: Typ }
+        | { content_type: "music"; type: Db.Typ }
         | { content_type: "queue" }
         | { content_type: "watch" }
         | { content_type: "related-music"; id: string | null }
@@ -15,14 +15,12 @@
 
 <script lang="ts">
     import type Innertube from "youtubei.js/web";
-    import InputBar from "$lib/components/InputBar.svelte";
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
     import { Musiplayer } from "./player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
-    import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
     import Toasts, { toast } from "$lib/toast/Toasts.svelte";
     import BlobBg from "$lib/components/BlobBg.svelte";
     import AudioListItem from "$lib/components/AudioListItem.svelte";
@@ -90,9 +88,7 @@
 
     let queue_dragend: (e: DragEvent) => void;
 
-    let watching = false;
     let menubar_options: MenubarOption[] = [
-        { name: "Watch", content_type: "watch" },
         { name: "Home", content_type: "home-feed" },
         { name: "Song", content_type: "music", type: "song" },
         { name: "Music Video", content_type: "music", type: "video" },
@@ -101,9 +97,9 @@
         { name: "Album", content_type: "music", type: "album" },
         { name: "Related", content_type: "related-music", id: null },
     ];
-    let menubar_home_option = menubar_options[1];
-    let menubar_song_option = menubar_options[2];
-    let menubar_related_option = menubar_options[7] as unknown as {
+    let menubar_home_option = menubar_options[0];
+    let menubar_song_option = menubar_options[1];
+    let menubar_related_option = menubar_options[6] as unknown as {
         id: string | null;
     };
     let menubar_queue_option: MenubarOption = {
@@ -133,14 +129,6 @@
     //         menubar_related_option.id = id ?? null;
     //     }
     // }
-
-    $: if (menubar_option) {
-        if (menubar_option.content_type == "watch") {
-            watching = true;
-        } else {
-            watching = false;
-        }
-    }
 
     let width: number;
     let mobile = false;
@@ -225,9 +213,7 @@
                     bind:clientWidth={browse_width}
                 >
                     <div
-                        class="relative w-full h-full {watching
-                            ? 'hidden'
-                            : ''}"
+                        class="relative w-full h-full"
                         bind:clientWidth={img_w}
                         bind:clientHeight={img_h}
                     >
@@ -324,9 +310,7 @@
                 <queue
                     bind:this={queue_element}
                     class="flex flex-col overflow-y-auto"
-                    style="height: {watching
-                        ? '100%'
-                        : 'calc(100%)'};"
+                    style="height: calc(100%);"
                 >
                     <queue-content class="">
                         {#if player}
