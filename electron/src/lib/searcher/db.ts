@@ -96,6 +96,7 @@ export class Db<T> extends Unpaged<T> {
 
     cont: DB.SearchContinuation | null = null;
     route: string = '';
+    page_end_index: number = 0;
     async next_page(): Promise<RObject<T>[]> {
         if (!this.has_next_page) {
             return [];
@@ -124,7 +125,7 @@ export class Db<T> extends Unpaged<T> {
                 }
                 items = matches.items;
             } else {
-                    items = await this.fetch(this.query.type, this.query.query);
+                items = await this.fetch(this.query.type, this.query.query);
             }
 
             let k;
@@ -144,17 +145,28 @@ export class Db<T> extends Unpaged<T> {
 
             return k as RObject<T>[];
         } else if (this.query.browse_type === 'songs') {
+            let ids = this.query.ids.slice(
+                this.page_end_index,
+                Math.min(
+                    this.page_end_index + this.page_size,
+                    this.query.ids.length,
+                ),
+            );
+            this.page_end_index += ids.length;
+            if (this.page_end_index >= this.query.ids.length) {
+                this.has_next_page = false;
+            }
+
             let res = await fetch(
                 "http://localhost:10010/musimanager/search/songs/refid",
                 {
                     method: "POST",
-                    body: JSON.stringify(this.query.ids),
+                    body: JSON.stringify(ids),
                     headers: { "Content-Type": "application/json" },
                 }
             );
             let body = await res.text();
             let matches: T[] = JSON.parse(body);
-            this.has_next_page = false;
             return keyed(matches, "key") as RObject<T>[];
         } else {
             throw "unreachable";
