@@ -7,6 +7,9 @@ import type { Unique } from '$lib/virtual';
 export interface ForceDb<_> {
     force: null;
 }
+export interface UnwrappedDb<_> {
+    unwrapped: null;
+}
 
 export type Keyed = { get_key(): unknown };
 
@@ -14,11 +17,17 @@ export type RObject<T> =
     T extends ForceDb<infer E>
     ? E & Keyed
 
+    : T extends UnwrappedDb<infer E>
+    ? E & Keyed
+
     : T & Keyed;
 
 export type RSearcher<T> =
     T extends ForceDb<infer E>
     ? ReturnType<typeof Db.new<T>>
+
+    : T extends UnwrappedDb<infer E>
+    ? ReturnType<typeof Db.unwrapped<E>>
 
     : T extends MusicListItem
     ? ReturnType<typeof SongTube.new>
