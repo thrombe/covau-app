@@ -34,7 +34,7 @@
         switch (browse_type.content_type) {
             case "music":
                 s = await $song_fac.search_query<Db.Song>({
-                    browse_type: "search",
+                    query_type: "search",
                     query: search_query,
                     type: browse_type.type,
                 });
@@ -50,7 +50,7 @@
                 break;
             case "home-feed":
                 // s = await $song_fac.search_query({ type: "home-feed" });
-                throw "unimplemented";
+                // throw "unimplemented";
                 break;
             default:
                 break;
@@ -72,18 +72,18 @@
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
     let dragstart = (event: DragEvent, t: T) => {
-        if (t.id) {
-            if (t.type == "song" || t.type == "video") {
+        if (t.data.id) {
+            if (t.typ == "song" || t.typ == "video") {
                 event.dataTransfer!.effectAllowed = "move";
                 event.dataTransfer!.dropEffect = "move";
-                event.dataTransfer!.setData("covau/dragndropnew", t.id);
+                event.dataTransfer!.setData("covau/dragndropnew", t.data.id);
                 event.dataTransfer!.setData(
                     "text/plain",
-                    "https://youtu.be/" + t.id
+                    "https://youtu.be/" + t.data.id
                 );
-            } else if (t.type == "artist") {
-            } else if (t.type == "album") {
-            } else if (t.type == "playlist") {
+            } else if (t.typ == "artist") {
+            } else if (t.typ == "album") {
+            } else if (t.typ == "playlist") {
             }
         }
     };
@@ -91,7 +91,7 @@
     type Tab = {
         name: string;
         // fac: Writable<RFactory<T>>,
-        searcher: Writable<RSearcher<T>>;
+        searcher: Writable<RSearcher<ForceDb<T>>>;
         thumbnail: string | null;
     };
 
@@ -179,19 +179,19 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.type == "song" || item.type == "video"}
+                            {#if item.typ == "song" || item.typ == "video"}
                                 <AudioListItem
-                                    title={item.title ?? ""}
-                                    title_sub={item.authors[0]?.name ?? ""}
-                                    img_src={item.thumbnail ?? ""}
+                                    title={item.data.title ?? ""}
+                                    title_sub={item.data.authors[0]?.name ?? ""}
+                                    img_src={item.data.thumbnail ?? ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.id) {
+                                        if (!item.data.id) {
                                             return;
                                         }
-                                        await queue_item_add(item.id);
+                                        await queue_item_add(item.data.id);
                                     }}
                                 >
                                     <img
@@ -201,39 +201,39 @@
                                         src="/static/add.svg"
                                     />
                                 </button>
-                            {:else if item.type == "album" || item.type == "playlist"}
+                            {:else if item.typ == "album" || item.typ == "playlist"}
                                 <AudioListItem
-                                    title={item.title ?? ""}
-                                    title_sub={item.author?.name ?? ""}
-                                    img_src={item.thumbnail ?? ""}
+                                    title={item.data.title ?? ""}
+                                    title_sub={item.data.author?.name ?? ""}
+                                    img_src={item.data.thumbnail ?? ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.id) {
+                                        if (!item.data.id) {
                                             return;
                                         }
                                         let _new_tab;
-                                        if (item.type == "album") {
+                                        if (item.typ == "album") {
                                             _new_tab = {
-                                                name: "Album: " + item.title,
+                                                name: "Album: " + item.data.title,
                                                 searcher:
                                                     await $song_fac.search_query(
                                                         {
-                                                            type: "album",
-                                                            id: item.id,
+                                                            query_type: "album",
+                                                            id: item.data.id,
                                                         }
                                                     ),
-                                                thumbnail: item.thumbnail,
+                                                thumbnail: item.data.thumbnail,
                                             };
                                         } else {
                                             _new_tab = {
-                                                name: "Playlist: " + item.title,
+                                                name: "Playlist: " + item.data.title,
                                                 searcher:
                                                     await $song_fac.search_query(
                                                         {
-                                                            type: "playlist",
-                                                            id: item.id,
+                                                            query_type: "playlist",
+                                                            id: item.data.id,
                                                         }
                                                     ),
                                                 thumbnail: null,
@@ -260,24 +260,24 @@
                                         src="/static/open-new-tab.svg"
                                     />
                                 </button>
-                            {:else if item.type == "artist"}
+                            {:else if item.typ == "artist"}
                                 <AudioListItem
-                                    title={item.name ?? ""}
-                                    title_sub={item.subscribers ?? ""}
-                                    img_src={item.thumbnail ?? ""}
+                                    title={item.data.name ?? ""}
+                                    title_sub={item.data.subscribers ?? ""}
+                                    img_src={item.data.thumbnail ?? ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.id) {
+                                        if (!item.data.id) {
                                             return;
                                         }
                                         let _new_tab = {
-                                            name: "Artist: " + item.name,
+                                            name: "Artist: " + item.data.name,
                                             searcher:
                                                 await $song_fac.search_query({
-                                                    type: "artist",
-                                                    id: item.id,
+                                                    query_type: "artist",
+                                                    id: item.data.id,
                                                 }),
                                             thumbnail: null,
                                         };
@@ -330,21 +330,21 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.type == "song" || item.type == "video"}
+                            {#if item.typ == "song" || item.typ == "video"}
                                 <AudioListItem
-                                    title={item.title ?? ""}
-                                    title_sub={item.authors[0]?.name ?? ""}
-                                    img_src={item.thumbnail ??
+                                    title={item.data.title ?? ""}
+                                    title_sub={item.data.authors[0]?.name ?? ""}
+                                    img_src={item.data.thumbnail ??
                                         curr_tab.thumbnail ??
                                         ""}
                                 />
                                 <button
                                     class="open-button"
                                     on:click={async () => {
-                                        if (!item.id) {
+                                        if (!item.data.id) {
                                             return;
                                         }
-                                        await queue_item_add(item.id);
+                                        await queue_item.data_add(item.data.id);
                                     }}
                                 >
                                     <img
