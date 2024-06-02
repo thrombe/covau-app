@@ -30,8 +30,8 @@ export class Db<T> extends Unpaged<T> {
         return new SS(query, page_size);
     }
 
-    static fused() {
-        let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
+    static fused<T>() {
+        let s = Db.new<T>({ type: '' } as unknown as BrowseQuery, 1);
         s.has_next_page = false;
         return s;
     }
