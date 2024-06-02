@@ -23,6 +23,7 @@ pub struct Client {
 
 pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
+// [Rejection and anyhow](https://github.com/seanmonstar/warp/issues/307#issuecomment-570833388)
 #[derive(Debug)]
 struct CustomReject(anyhow::Error);
 

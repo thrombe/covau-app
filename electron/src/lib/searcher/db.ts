@@ -171,7 +171,7 @@ export class Db<T> extends Unpaged<T> {
 }
 
 let globally_unique_key: number = 0;
-export const keyed = <T>(items: T[], field: string | null): (T & Keyed)[] => {
+const keyed = <T>(items: T[], field: string | null): (T & Keyed)[] => {
     let res = items.map((e: any) => {
         let key = field ? e[field] : globally_unique_key++;
         let p = e as T & Keyed;
