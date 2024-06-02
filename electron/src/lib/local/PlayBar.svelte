@@ -1,10 +1,10 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
-    import { SyncPlayer } from '$lib/sync/player.ts';
+    import { Musiplayer } from './player.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
 
-    export let player: SyncPlayer;
+    export let player: Musiplayer = new Musiplayer();
     export let audio_info: { title: string; title_sub: string; img_src: string } | null;
     export let mobile = false;
     export let keyboard_control = true;
@@ -18,14 +18,14 @@
     let volume = 1;
     let interval = setInterval(async () => {
         if (player) {
-            video_pos = await player.get_player_pos();
-            has_prev = player.has_prev();
-            has_next = player.has_next();
-            is_playing = player.is_playing();
-            let dur = player.get_duration();
-            audio_duration = dur ? dur : 0;
-            is_muted = await player.is_muted();
-            volume = await player.get_volume();
+            // video_pos = await player.get_player_pos();
+            // has_prev = player.has_prev();
+            // has_next = player.has_next();
+            // is_playing = player.is_playing();
+            // let dur = player.get_duration();
+            // audio_duration = dur ? dur : 0;
+            // is_muted = await player.is_muted();
+            // volume = await player.get_volume();
         }
     }, 300);
 
@@ -34,12 +34,12 @@
     });
 
     const on_seek = async (p: number) => {
-        await player.seek_perc(p);
+        player.seek_to_perc(p);
     };
 
     const on_volume_change = async (v: number) => {
-        await player.set_volume(v);
-        volume = await player.get_volume();
+        player.set_volume(v);
+        volume = v;
     };
 
     const fmt_time = (t: number) => {
@@ -75,23 +75,23 @@
         }
 
         if (event.key == ' ') {
-            if (player.is_playing()) {
-                await player.toggle_pause();
+            if (player.paused) {
+                player.unpause();
             } else {
-                await player.play();
+                player.play(todo);
             }
         } else if (event.key == 'ArrowLeft' || event.key == 'h') {
             let pos = Math.max(0, video_pos - 10/audio_duration);
-            await player.seek_perc(pos);
+            player.seek_to_perc(pos);
         } else if (event.key == 'ArrowRight' || event.key == 'l') {
             let pos = Math.min(1, video_pos + 10/audio_duration);
-            await player.seek_perc(pos);
+            player.seek_to_perc(pos);
         } else if (event.key == 'ArrowDown' || event.key == 'j') {
-            await player.play_next();
+            // await player.play_next();
         } else if (event.key == 'ArrowUp' || event.key == 'k') {
-            await player.play_prev();
+            // await player.play_prev();
         } else if (event.key == 'm') {
-            await player.toggle_mute();
+            player.toggle_mute();
         }
     };
 </script>
@@ -115,7 +115,7 @@
         target='_blank'
         class='h-full flex justify-center items-center aspect-square bg-gray-200 bg-opacity-10 rounded-md p-1 scale-[90%]'
     >
-        <img src='/static/github.svg' class='h-9 aspect-square' >
+        <img alt='github' src='/static/github.svg' class='h-9 aspect-square' >
     </a>
     <audio-controls>
         <div class='flex flex-row items-center h-1/3 w-full py-1'>
@@ -136,32 +136,32 @@
         <div class='flex flex-row gap-2 justify-center h-2/3'>
             <button
                 on:click={async () => {
-                    await player.play_prev();
+                    // await player.play_prev();
                 }}
             >
-                <img class='h-3' src='/static/prev.svg'>
+                <img alt='prev' class='h-3' src='/static/prev.svg'>
             </button>
             <button
                 on:click={async () => {
-                    await player.toggle_pause();
-                    is_playing = player.is_playing();
+                    player.toggle_pause();
+                    is_playing = !player.paused
                 }}
             >
-                <img class='h-3' src='/static/{is_playing ? 'pause' : 'play'}.svg'>
+                <img alt='play pause' class='h-3' src='/static/{is_playing ? 'pause' : 'play'}.svg'>
             </button>
             <button
                 on:click={async () => {
-                    await player.play_next();
+                    // await player.play_next();
                 }}
             >
-                <img class='h-3' src='/static/next.svg'>
+                <img alt='next' class='h-3' src='/static/next.svg'>
             </button>
         </div>
     </audio-controls>
 
     <volume-control class='relative flex flex-row justify-center items-center pb-1'>
         <button class='volume-button p-2'>
-            <img class='h-6 {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
+            <img alt='volume icon' class='h-6 {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
             <div 
                 class='volume-box absolute flex flex-row gap-4 right-0 bottom-10 h-16 px-6 py-4 mr-2 bg-gray-200 bg-opacity-10 rounded-xl backdrop-blur-md {dragging_volume ? 'z-10' : '-z-40 opacity-0'}'
             >
@@ -180,10 +180,10 @@
                 <button
                     class='p-2'
                     on:click={async () => {
-                        await player.toggle_mute();
+                        player.toggle_mute();
                     }}
                 >
-                    <img class='h-full w-6 aspect-square {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
+                    <img alt='volume icon' class='h-full w-6 aspect-square {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
                 </button>
             </div>
         </button>

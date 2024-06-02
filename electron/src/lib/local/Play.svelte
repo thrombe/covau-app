@@ -7,7 +7,7 @@
     import  * as Db from "$lib/searcher/db.ts";
     import type { ForceDb } from "$lib/searcher/searcher.ts";
 
-    export let params: { group?: string };
+    let params: { group?: string } = {};
 
     const dothis = async () => {
         // let p = await new_innertube_instance();
@@ -34,13 +34,14 @@
         // tube.test();
 
         let db_fac = Db.Db.factory();
-        let adb = await db_fac.search_query<Db.Artist>({ browse_type: "search", type: "MusimanagerArtist", query: "sanam" });
+        let adb = await db_fac.search_query<Db.Artist>({ browse_type: "search", type: "MusimanagerArtist", query: "arjit" });
         if (!adb) {
             return;
         }
 
         let a = await adb.next_page();
-        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].unexplored_songs ?? [] });
+        console.log(a);
+        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].unexplored_songs?.slice(0, 100) ?? [] });
         if (!sdb) {
             return;
         }
@@ -48,7 +49,7 @@
         console.log(s);
 
         let player = new Musiplayer();
-        let i = 0;
+        let i = 5;
         const play_next = async () => {
             if (i >= s.length) {
                 return;
@@ -64,7 +65,7 @@
             i += 1;
         };
         player.add_message_listener('Finished', play_next);
-        // await play_next();
+        await play_next();
     };
     dothis();
 
@@ -72,7 +73,6 @@
     if (!params.group) {
         group = "random-one";
         params.group = group;
-        window.history.pushState({}, "", "#/play/" + group);
     } else {
         group = params.group;
     }
@@ -82,7 +82,7 @@
             .toString()
             .replace(window.location.hash, "");
         let new_url = url_without_hash + "#/play/" + params.group;
-        window.location.replace(new_url);
-        window.location.reload();
     }
 </script>
+
+<div> lmao </div>

@@ -1,17 +1,19 @@
 <script lang="ts">
+    import type { Writable } from 'svelte/store';
+    import { tick } from 'svelte';
+
+    import { type ForceDb, type RObject, type RSearcher } from '$lib/searcher/searcher';
+
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
-    import AudioListItem from '$lib/components/AudioListItem.svelte';
-    import InputBar from '$lib/components/InputBar.svelte';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
-    import type { VideoInfo } from '$lib/searcher/song_tube.ts';
     import { toast } from '$lib/toast/Toasts.svelte';
 
-    export let items: Array<Unique<string, string>>;
+    export let searcher: Writable<RSearcher<ForceDb<T>>>;
     export let item_height: number;
     export let selected_item_index: number;
     export let playing: number | null;
-    export let playing_video_info: VideoInfo | null = null;
+    export let playing_video_info: T | null = null;
     export let on_item_add: (id: string) => Promise<void>;
     export let tube: Innertube;
     export let dragend = (e: DragEvent) => {
@@ -29,95 +31,58 @@
     }
 
     const update_playing_vid_info = () => {
-        if (
-            playing !== null &&
-            (playing_video_info === null ||
-                playing_video_info.basic_info.id !== items[playing].data)
-        ) {
-            let vid = searched_item_map.get(items[playing].data);
-            playing_video_info = vid ? vid : null;
-        }
+        // if (
+        //     playing !== null &&
+        //     (playing_video_info === null || (playing_video_info &&
+        //         playing_video_info.id !== items[playing].data))
+        // ) {
+        //     let vid = searched_item_map.get(items[playing].data);
+        //     playing_video_info = vid ?? null;
+        // }
     };
+
+    type T = $$Generic;
+    interface $$Slots {
+        default: {
+            item: T;
+        };
+        infobox: {};
+    }
+
+    export let items: Unique<T, string>[] = [];
 
     let end_is_visible = false;
-    const end_reached = async () => {};
-    const on_item_click = async (t: Unique<VideoInfo | string, unknown>) => {};
-    let t: VideoInfo | string;
-    let selected_item: Unique<VideoInfo | string, unknown>;
+    const end_reached = async () => {
+        while (true) {
+            if (!end_is_visible || !$searcher.has_next_page) {
+                break;
+            }
+            await next_page();
+            await tick();
+            await new Promise<void>((r) => setTimeout(() => r(), 100));
+            await tick();
+        }
+    };
+    const next_page = async () => {
+        let r = await $searcher.next_page();
+        items = r.map(e => ({ id: e.get_key(), data: e }));
+    };
+    export const search_objects = async () => {
+        await next_page();
+        await tick();
+        selected_item_index = 0;
+        await try_scroll_selected_item_in_view();
+        end_reached();
+    };
+    searcher.subscribe(async (e) => {
+        items = [];
+        if (search_objects) {
+            await search_objects();
+        }
+    });
+    const on_item_click = async (t: Unique<T, unknown>) => {};
+    let selected_item: Unique<T, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
-
-    let searched_item_map = new Map<string, VideoInfo>();
-    export let searched_items: Array<Unique<VideoInfo | string, unknown>> = [];
-    const fetch_info = async (items: Unique<string, unknown>[]) => {
-        let wait_for = items.map(id => {
-            if (searched_item_map.has(id.data)) {
-                return Promise.resolve();
-            } else {
-                return tube.getBasicInfo(id.data).then((info) => {
-                    // console.log(info);
-                    searched_item_map.set(id.data, info);
-                }).catch(e => {
-                    searched_item_map.set(id.data, { basic_info: { title: id.data, author: '' }})
-                });
-            }
-        })
-
-        for (const prom of wait_for) {
-            await prom;
-        }
-
-        searched_items = items.map((e) => {
-            let info = searched_item_map.get(e.data);
-            if (!info) {
-                throw 'never';
-            }
-            return { data: info, id: e.data };
-        });
-        searched_items.push({ data: 'add-new', id: 'add-new' });
-
-        update_playing_vid_info();
-    };
-    // TODO:
-    // make these fetches paged or something
-    // like - a queue with many items should not make all users fetch absolutely every vid
-    // but this is not a prolem usually
-    $: if (items) {
-        fetch_info(items);
-    }
-    let get_verified_id = async (id_or_url: string): Promise<string | null> => {
-        if (id_or_url.startsWith('https://')) {
-            let url = await tube.resolveURL(id_or_url);
-            if (!url.payload.videoId && url.payload.url) {
-                url = await tube.resolveURL(id_or_url);
-            }
-            if (!url.payload.videoId) {
-                return null;
-            }
-            return url.payload.videoId;
-        } else {
-            try {
-                let r = await tube.getBasicInfo(id_or_url);
-                searched_item_map.set(id_or_url, r);
-            } catch {
-                return null;
-            }
-
-            return id_or_url;
-        }
-    };
-
-    const on_enter = async (e: KeyboardEvent) => {
-        let id = await get_verified_id(new_queue_item);
-        new_queue_item = '';
-        if (id) {
-            await on_item_add(id);
-        } else {
-            await toast('could not add to queue', 'error');
-        }
-    };
-
-    let new_queue_item = '';
-    let new_item_input: HTMLElement;
 
     let hovering: number | null = null;
     let dragging_index: number | null = null;
@@ -133,13 +98,6 @@
             let new_id = event.dataTransfer.getData('covau/dragndropnew');
 
             await insert_item(target, new_id);
-        } else if (event.dataTransfer?.getData('text/plain')) {
-            let maybe_url = event.dataTransfer.getData('text/plain');
-
-            let id = await get_verified_id(maybe_url);
-            if (id) {
-                await insert_item(target, id);
-            }
         }
     };
 
@@ -149,7 +107,6 @@
         event.dataTransfer!.dropEffect = 'move';
         dragging_index = i;
         event.dataTransfer!.setData('covau/dragndrop', i.toString());
-        event.dataTransfer!.setData('text/plain', 'https://youtu.be/' + items[i].data);
     };
 
     const dragenter = (e: DragEvent, index: number) => {
@@ -167,7 +124,7 @@
 
 <div class='w-full h-full'>
     <VirtualScrollable
-        bind:items={searched_items}
+        bind:items={items}
         columns={1}
         {item_height}
         {on_item_click}
@@ -194,42 +151,28 @@
             class:is-playing={index === playing}
             class:is-selected={selected}
         >
-            {#if typeof item === 'string'}
-                <InputBar
-                    placeholder="Add Video"
-                    bind:input_element={new_item_input}
-                    bind:value={new_queue_item}
-                    {on_enter}
-                    focus_on_create={selected}
-                />
-            {:else}
-                <AudioListItem
-                    title={item.basic_info.title ? item.basic_info.title : ''}
-                    title_sub={item.basic_info.author ? item.basic_info.author : ''}
-                    img_src={item.basic_info.thumbnail
-                        ? item.basic_info.thumbnail[item.basic_info.thumbnail.length - 1].url
-                        : ''}
-                />
+            <slot
+                {item}
+            />
+            <button
+                class='pop-button'
+                on:click={async () => {
+                    // await delete_item(index, items[index].data);
+                }}
+            >
+                <img alt="remove" draggable={false} class='h-3 opacity-50' src='/static/remove.svg'>
+            </button>
+            <div class='absolute h-full flex flex-col justify-center left-0 top-0'>
                 <button
-                    class='pop-button'
+                    class='queue-button'
+                    class:play-button={true}
                     on:click={async () => {
-                        await delete_item(index, items[index].data);
+                        await play_item(index);
                     }}
                 >
-                    <img draggable={false} class='h-3 opacity-50' src='/static/remove.svg'>
+                    <img alt="play" draggable={false} class='scale-[50%]' src='/static/play.svg'>
                 </button>
-                <div class='absolute h-full flex flex-col justify-center left-0 top-0'>
-                    <button
-                        class='queue-button'
-                        class:play-button={true}
-                        on:click={async () => {
-                            await play_item(index);
-                        }}
-                    >
-                        <img draggable={false} class='scale-[50%]' src='/static/play.svg'>
-                    </button>
-                </div>
-            {/if}
+            </div>
         </item>
     </VirtualScrollable>
 </div>
