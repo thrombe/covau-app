@@ -25,16 +25,22 @@ export type BrowseQuery =
 interface IUnionTypeWrapper<D> {
     next_page(): Promise<MusicListItem[]>;
     inner: D;
+    has_next_page: boolean;
 };
 function UnionTypeWrapper<D extends {
     query: BrowseQuery;
     next_page(): Promise<RObject<unknown>[]>;
+    has_next_page: boolean;
 }>(d: D) {
     return {
         inner: d,
+        has_next_page: d.has_next_page,
 
         async next_page(): Promise<MusicListItem[]> {
             let res = await d.next_page();
+
+            let self = this as unknown as IUnionTypeWrapper<D>;
+            self.has_next_page = d.has_next_page;
 
             switch (d.query.query_type) {
                 case "search":
