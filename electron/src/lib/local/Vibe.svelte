@@ -7,9 +7,9 @@
         | { content_type: "home-feed" }
     );
 
-    export let queue_searcher = writable(Db.Db.new<ForceDb<Db.Song>>(
+    export let queue_searcher = writable(Db.Db.unwrapped<ForceDb<Db.Song>>(
     // { browse_type: "songs", ids: [] },
-    { browse_type: "search", query: "milet", type: "MusimanagerSong" },
+    { query_type: "search", query: "milet", type: "MusimanagerSong" },
     10));
 </script>
 
@@ -90,11 +90,11 @@
 
     let menubar_options: MenubarOption[] = [
         { name: "Home", content_type: "home-feed" },
-        { name: "Song", content_type: "music", type: "song" },
-        { name: "Music Video", content_type: "music", type: "video" },
-        { name: "Music Playlist", content_type: "music", type: "playlist" },
-        { name: "Artist", content_type: "music", type: "artist" },
-        { name: "Album", content_type: "music", type: "album" },
+        { name: "Song", content_type: "music", type: "MusimanagerSong" },
+        { name: "Queues", content_type: "music", type: "MusimanagerQueue" },
+        { name: "Playlists", content_type: "music", type: "MusimanagerPlaylist" },
+        { name: "Artist", content_type: "music", type: "MusimanagerArtist" },
+        { name: "Album", content_type: "music", type: "MusimanagerAlbum" },
         { name: "Related", content_type: "related-music", id: null },
     ];
     let menubar_home_option = menubar_options[0];
