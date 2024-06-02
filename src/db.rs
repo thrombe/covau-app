@@ -247,6 +247,29 @@ impl Db {
         );
         let _ = self.db.execute(s).await?;
 
+        {
+            let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+
+            let data = std::fs::read_to_string(path)?;
+
+            let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
+            for s in tracker.songs.iter() {
+                self.insert(s).await?;
+            }
+            for a in tracker.artists.iter() {
+                self.insert(a).await?;
+            }
+            for a in tracker.albums.iter() {
+                self.insert(a).await?;
+            }
+            for p in tracker.playlists.iter() {
+                self.insert(p).await?;
+            }
+            for q in tracker.queues.iter() {
+                self.insert(q).await?;
+            }
+        }
+
         Ok(())
     }
 
