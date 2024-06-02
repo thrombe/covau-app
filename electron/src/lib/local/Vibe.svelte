@@ -169,12 +169,12 @@
     let img_w: number;
     let img_squared = false;
 
-    $: if (queue_playing_vid_info) {
-        let q = queue_playing_vid_info.basic_info;
-        if (q.thumbnail && q.thumbnail.length > 0) {
-            img_src = q.thumbnail[0].url;
-        }
-    }
+    // $: if (queue_playing_vid_info) {
+    //     let q = queue_playing_vid_info.basic_info;
+    //     if (q.thumbnail && q.thumbnail.length > 0) {
+    //         img_src = q.thumbnail[0].url;
+    //     }
+    // }
 
     const on_img_err = async () => {
         img_src = "";
@@ -326,7 +326,7 @@
                     class="flex flex-col overflow-y-auto"
                     style="height: {watching
                         ? '100%'
-                        : 'calc(100% - var(--video-height))'};"
+                        : 'calc(100%)'};"
                 >
                     <queue-content class="">
                         {#if player}
@@ -397,10 +397,8 @@
     * {
         --play-bar-height: 70px;
         --top-menubar-height: 50px;
-        --name-bar-height: 60px;
         --search-bar-height: 50px;
         --browse-tab-bar-height: 25px;
-        --video-height: calc(var(--queue-area-width) * 9 / 16);
         --scrollbar-width: 8px;
 
         font-family: monospace;
@@ -429,12 +427,8 @@
     queue {
     }
 
-    queue-name {
-        height: var(--name-bar-height);
-    }
-
     queue-content {
-        height: calc(100% - var(--name-bar-height));
+        height: calc(100%);
     }
 
     video-box {
