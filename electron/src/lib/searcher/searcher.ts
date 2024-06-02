@@ -10,7 +10,11 @@ export interface ForceDb<_> {
 
 export type Keyed = { get_key(): unknown };
 
-export type RObject<T> = T & Keyed;
+export type RObject<T> =
+    T extends ForceDb<infer E>
+    ? E & Keyed
+
+    : T & Keyed;
 
 export type RSearcher<T> =
     T extends ForceDb<infer E>
