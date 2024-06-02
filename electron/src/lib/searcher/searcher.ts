@@ -4,8 +4,8 @@ import { Db, type Song } from "./db";
 import type { Unique } from '$lib/virtual';
 
 // this should onlybe used for the type parameter in the types below
-export interface ForceDb<_> {
-    force: null;
+export interface WrappedDb<_> {
+    wrapped: null;
 }
 export interface UnwrappedDb<_> {
     unwrapped: null;
@@ -14,7 +14,7 @@ export interface UnwrappedDb<_> {
 export type Keyed = { get_key(): unknown };
 
 export type RObject<T> =
-    T extends ForceDb<infer E>
+    T extends WrappedDb<infer E>
     ? E & Keyed
 
     : T extends UnwrappedDb<infer E>
@@ -23,7 +23,7 @@ export type RObject<T> =
     : T & Keyed;
 
 export type RSearcher<T> =
-    T extends ForceDb<infer E>
+    T extends WrappedDb<infer E>
     ? ReturnType<typeof Db.new<T>>
 
     : T extends UnwrappedDb<infer E>
@@ -36,7 +36,7 @@ export type RSearcher<T> =
     : ReturnType<typeof SongTube.new>;
 
 export type RFactory<T> = 
-    T extends ForceDb<infer E>
+    T extends WrappedDb<infer E>
     ? ReturnType<typeof Db.factory>
 
     : T extends MusicListItem

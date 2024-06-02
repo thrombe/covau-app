@@ -1,5 +1,5 @@
 import { SavedSearch, UniqueSearch, Unpaged } from "./mixins";
-import { type ForceDb, type Keyed, type RObject, type RSearcher } from "./searcher";
+import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./searcher";
 import * as Musi from "$types/musimanager";
 import * as DB from "$types/db";
 
@@ -89,8 +89,8 @@ export class Db<T> extends Unpaged<T> {
             constructor() {
             }
             async search_query<T>(query: BrowseQuery) {
-                type R = RSearcher<ForceDb<T>>;
-                let t = Db.new<ForceDb<T>>(query, this.page_size);
+                type R = RSearcher<WrappedDb<T>>;
+                let t = Db.new<WrappedDb<T>>(query, this.page_size);
                 return t as R | null;
             }
         }

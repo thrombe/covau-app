@@ -2,7 +2,7 @@
     import type { Writable } from 'svelte/store';
     import { tick } from 'svelte';
 
-    import { type ForceDb, type RObject, type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
+    import { type RObject, type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
 
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';

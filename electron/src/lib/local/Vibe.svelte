@@ -7,7 +7,7 @@
         | { content_type: "home-feed" }
     );
 
-    export let queue_searcher = writable(Db.Db.unwrapped<ForceDb<Db.Song>>(
+    export let queue_searcher = writable(Db.Db.unwrapped<WrappedDb<Db.Song>>(
     // { browse_type: "songs", ids: [] },
     { query_type: "search", query: "milet", type: "MusimanagerSong" },
     10));
@@ -26,7 +26,7 @@
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import { writable } from "svelte/store";
     import * as Db from "$lib/searcher/db.ts";
-    import type { ForceDb, RObject } from "$lib/searcher/searcher.ts";
+    import type { WrappedDb, RObject } from "$lib/searcher/searcher.ts";
 
     export let tube: Innertube;
 

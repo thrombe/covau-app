@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
     import { tick } from "svelte";
     import { writable, type Writable } from "svelte/store";
-    import type { ForceDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
+    import type { WrappedDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
     import {
         SongTube,
         type Typ,
@@ -10,7 +10,7 @@
     } from "$lib/searcher/song_tube.ts";
 
     let song_fac = writable(Db.Db.factory());
-    let song_searcher = writable(Db.Db.fused<ForceDb<Db.Song>>());
+    let song_searcher = writable(Db.Db.fused<WrappedDb<Db.Song>>());
 </script>
 
 <script lang="ts">
@@ -91,7 +91,7 @@
     type Tab = {
         name: string;
         // fac: Writable<RFactory<T>>,
-        searcher: Writable<RSearcher<ForceDb<T>>>;
+        searcher: Writable<RSearcher<WrappedDb<T>>>;
         thumbnail: string | null;
     };
 

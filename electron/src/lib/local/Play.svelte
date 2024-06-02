@@ -5,7 +5,7 @@
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
     import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
     import  * as Db from "$lib/searcher/db.ts";
-    import type { ForceDb } from "$lib/searcher/searcher.ts";
+    import type { WrappedDb } from "$lib/searcher/searcher.ts";
 
     let params: { group?: string } = {};
 
@@ -28,20 +28,19 @@
 
         let itube = await new_innertube_instance();
         let fac = SongTube.factory(itube);
-        let ntube = await fac.search_query({ type: 'home-feed' });
+        let ntube = await fac.search_query({ query_type: 'home-feed' });
         let tube = ntube!;
         // console.log(await tube.next_page())
         // tube.test();
 
-        let db_fac = Db.Db.factory();
-        let adb = await db_fac.search_query<Db.Artist>({ browse_type: "search", type: "MusimanagerArtist", query: "arjit" });
+        let adb = Db.Db.unwrapped<Db.Artist>({ query_type: "search", type: "MusimanagerArtist", query: "arjit" }, 10);
         if (!adb) {
             return;
         }
 
         let a = await adb.next_page();
         console.log(a);
-        let sdb = await db_fac.search_query<Db.Song>({ browse_type: "songs", ids: a[0].unexplored_songs?.slice(0, 100) ?? [] });
+        let sdb = Db.Db.unwrapped<Db.Song>({ query_type: "songs", ids: a[0].unexplored_songs ?? [] }, 10);
         if (!sdb) {
             return;
         }
