@@ -9,10 +9,53 @@ export type Artist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
 export type Playlist = Musi.Playlist<Musi.SongId>;
 export type Queue = Musi.Queue<Musi.SongId>;
 
+export type MusicListItem = Keyed & { data: Keyed } & (
+    { typ: "MusimanagerSong", data: Song } |
+    { typ: "MusimanagerAlbum", data: Album } |
+    { typ: "MusimanagerArtist", data: Artist } |
+    { typ: "MusimanagerPlaylist", data: Playlist } |
+    { typ: "MusimanagerQueue", data: Queue }
+);
+
 export type Typ = DB.Typ;
 export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
     { query_type: 'songs', ids: string[] };
+
+interface IUnionTypeWrapper<D> {
+    next_page(): Promise<MusicListItem[]>;
+    inner: D;
+};
+function UnionTypeWrapper<D extends {
+    query: BrowseQuery;
+    next_page(): Promise<RObject<unknown>[]>;
+}>(d: D) {
+    return class implements IUnionTypeWrapper<D> {
+        inner = d;
+
+        async next_page(): Promise<MusicListItem[]> {
+            let res = await d.next_page();
+
+            switch (d.query.query_type) {
+                case "search":
+                    let typ = d.query.type;
+                    return res.map(data => ({
+                        typ: typ,
+                        data: data,
+                        get_key: data.get_key,
+                    })) as unknown as MusicListItem[];
+                case "songs":
+                    return res.map(data => ({
+                        typ: "MusimanagerSong",
+                        data: data,
+                        get_key: data.get_key,
+                    })) as unknown as MusicListItem[];
+                default:
+                    throw "unimplemented";
+            }
+        }
+    } as unknown as IUnionTypeWrapper<D>;
+}
 
 export class Db<T> extends Unpaged<T> {
     query: BrowseQuery;
@@ -25,6 +68,10 @@ export class Db<T> extends Unpaged<T> {
     }
 
     static new<T>(query: BrowseQuery, page_size: number) {
+        return UnionTypeWrapper(Db.unwrapped<T>(query, page_size));
+    }
+
+    static unwrapped<T>(query: BrowseQuery, page_size: number) {
         const US = UniqueSearch<T, typeof Db<T>>(Db);
         const SS = SavedSearch<T, typeof US>(US);
         return new SS(query, page_size);
@@ -32,7 +79,7 @@ export class Db<T> extends Unpaged<T> {
 
     static fused<T>() {
         let s = Db.new<T>({ type: '' } as unknown as BrowseQuery, 1);
-        s.has_next_page = false;
+        s.inner.has_next_page = false;
         return s;
     }
 
