@@ -51,10 +51,6 @@ export class Db<T> extends Unpaged<T> {
         return new Fac();
     }
 
-    static obj_type<T>() {
-        return null as unknown as T & Keyed;
-    }
-
     async fetch(type: Typ, query: string): Promise<T[]> {
         if (type == 'MusimanagerSong') {
             this.route = "musimanager/search/songs";
@@ -172,13 +168,6 @@ export class Db<T> extends Unpaged<T> {
             throw "unreachable";
         }
     }
-
-    get_key(t: RObject<T>) {
-        return t.get_key();
-    }
-
-    async test() {
-    };
 }
 
 let globally_unique_key: number = 0;

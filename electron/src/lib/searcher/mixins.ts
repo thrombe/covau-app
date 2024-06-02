@@ -81,7 +81,6 @@ export interface IUnique<T> {
 }
 export function UniqueSearch<T, S extends Constructor<{
     next_page(): Promise<RObject<T>[]>;
-    get_key(t: RObject<T>): any;
 }>>(s: S) {
     return class extends s implements IUnique<T> {
         uniq: Set<T>;
@@ -93,7 +92,7 @@ export function UniqueSearch<T, S extends Constructor<{
         async next_page() {
             let r = await super.next_page();
             let items = r.filter((item) => {
-                let k = this.get_key(item);
+                let k: any = item.get_key();
                 if (this.uniq.has(k)) {
                     return false;
                 } else {
@@ -136,7 +135,6 @@ export abstract class Unpaged<T> {
     has_next_page: boolean = true;
 
     abstract next_page(): Promise<RObject<T>[]>;
-    abstract get_key(t: RObject<T>): unknown;
 }
 
 
