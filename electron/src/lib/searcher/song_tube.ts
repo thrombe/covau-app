@@ -137,7 +137,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             thumbnail: this.get_thumbnail(s.thumbnail),
             authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id?? null})) ?? [],
         }));
-        return keyed(mli);
+        return keyed(mli) as RObject<MusicListItem>[];
     }
     protected async next_page_home_feed() {
         this.has_next_page = false;
@@ -151,7 +151,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             thumbnail: this.get_thumbnail(s.thumbnail),
             authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
-        return keyed(mli);
+        return keyed(mli) as RObject<MusicListItem>[];
     }
     playlist: Playlist | null = null;
     protected async next_page_playlist(playlist_id: string) {
@@ -177,7 +177,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             thumbnail: this.get_thumbnail(p.thumbnail),
             authors: p.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
-        return keyed(mli);
+        return keyed(mli) as RObject<MusicListItem>[];
     }
     protected async next_page_album(album_id: string) {
         this.has_next_page = false;
@@ -189,7 +189,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             thumbnail: this.get_thumbnail(a.thumbnail),
             authors: a.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
-        return keyed(mli);
+        return keyed(mli) as RObject<MusicListItem>[];
     }
     protected async next_page_artist_songs(artist_id: string) {
         this.has_next_page = false;
@@ -209,7 +209,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             thumbnail: this.get_thumbnail(e.thumbnail),
             authors: e.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
         }));
-        return keyed(mli);
+        return keyed(mli) as RObject<MusicListItem>[];
     }
     protected async next_page_search(query: string, type: Typ) {
         if (query.length == 0) {
@@ -298,7 +298,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         this.has_next_page = this.results.has_continuation;
         console.log(k.map(e => e.id))
-        return k;
+        return k as RObject<MusicListItem>[];
     }
 
     get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['thumbnail'] | null {
