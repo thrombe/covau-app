@@ -90,11 +90,6 @@ export class SongTube extends Unpaged<MusicListItem> {
         return new SS(tube);
     }
 
-    static obj_type() {
-        return null as unknown as MusicListItem & Keyed;
-    }
-
-
     results: Search | null = null;
     cont: SearchContinuation | null = null;
     pages: Array<MusicShelfContinuation> = new Array();
@@ -314,13 +309,6 @@ export class SongTube extends Unpaged<MusicListItem> {
         }
 
         return [...t, null][0];
-    }
-
-    get_key(t: RObject<MusicListItem>) {
-        if (!t.id) {
-            console.warn("item does not have an id :/", t);
-        }
-        return t.id;
     }
 }
 

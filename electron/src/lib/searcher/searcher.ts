@@ -10,20 +10,7 @@ export interface ForceDb<_> {
 
 export type Keyed = { get_key(): unknown };
 
-export type RObject<T> =
-    // a hacky way to force match this
-    T extends ForceDb<infer E>
-    // ? ReturnType<typeof Db.obj_type<E>>
-    // ? Unique<E, string>
-    ? T & Keyed
-
-    : T extends MusicListItem
-    ? ReturnType<typeof SongTube.obj_type>
-
-    // OOF:
-    : T & Keyed;
-
-type Obj = RObject<ForceDb<Song>>;
+export type RObject<T> = T & Keyed;
 
 export type RSearcher<T> =
     T extends ForceDb<infer E>
