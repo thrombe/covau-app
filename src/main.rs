@@ -44,15 +44,15 @@ mod covau_types {
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct UpdateItem<T> {
-        done: bool,
-        points: u32,
-        item: T,
+        pub done: bool,
+        pub points: u32,
+        pub item: T,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct ListenQueue<T> {
-        queue: T,
-        current_index: u32,
+        pub queue: T,
+        pub current_index: u32,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -231,10 +231,10 @@ pub mod mbz {
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Url {
-        id: String,
-        url: String,
+        pub id: String,
+        pub url: String,
         #[serde(rename = "type")]
-        typ: String,
+        pub typ: String,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
