@@ -66,21 +66,137 @@ mod covau_types {
     }
 }
 
-async fn api_test() -> Result<()> {
-    // let r = Artist::search("query=red velvet".into()).with_releases().execute().await;
-    let r = Recording::search("method=indexed&query=carole and tuesday".into())
-        .execute()
-        .await?;
-    for e in r.entities {
-        dbg!(e.title);
+pub mod mbz {
+    use musicbrainz_rs::{
+        entity::{artist, recording, release, release_group, work::Work},
+        Search,
+    };
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Recording {
+        pub title: String,
+        pub id: String,
+        pub releases: Vec<Release>,
     }
-    // let r = Work::search("method=indexed&query=dildaara".into()).execute().await;
-    // let r = Release::search("query=visions".into()).execute().await;
-    // let r = Release::browse().execute().await;
 
-    // dbg!(r);
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ReleaseGroup {
+        pub id: String,
+        pub title: String,
+        pub primary_type: String,
+        pub secondary_types: Vec<String>,
+        pub disambiguation: String,
+    }
 
-    Ok(())
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ReleaseGroupWithInfo {
+        #[serde(flatten)]
+        pub group: ReleaseGroup,
+        pub releases: Vec<Release>,
+        pub credit: Vec<Artist>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ReleaseMedia {
+      pub track_count: u32,
+      pub format: Option<String>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Release {
+        pub id: String,
+        pub title: String,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ReleaseWithInfo {
+        #[serde(flatten)]
+        pub release: Release,
+        pub release_group: Option<ReleaseGroup>,
+        pub media: Vec<ReleaseMedia>,
+        pub credit: Vec<Artist>,
+    }
+
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct WithUrlRels<T> {
+        pub item: T,
+        pub urls: Vec<Url>,
+    }
+    
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Artist {
+        pub name: String,
+        pub id: String,
+        pub aliases: Vec<Alias>,
+        pub disambiguation: String,
+        #[serde(rename = "type")]
+        pub typ: Option<String>,
+        pub area: Option<Area>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Url {
+        id: String,
+        url: String,
+        #[serde(rename = "type")]
+        typ: String,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Area {
+        pub name: String,
+        pub id: String,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Alias {
+        pub name: String,
+        #[serde(rename = "type")]
+        pub typ: String,
+    }
+
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
+        let mut types = String::new();
+        types += &specta::ts::export::<Recording>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<ReleaseGroup>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<ReleaseGroupWithInfo>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<ReleaseMedia>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Release>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<ReleaseWithInfo>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Artist>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Area>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Alias>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Url>(config)?;
+        types += ";\n";
+
+        Ok(types)
+    }
+
+    pub async fn api_test() -> anyhow::Result<()> {
+        let r = artist::Artist::search("query=aimer&inc=url-rels".into()).execute().await?;
+        // let r = recording::Recording::search("method=indexed&query=rejuvenation queen bee".into())
+        //     .execute()
+        //     .await?;
+        // let r = Work::search("method=indexed&query=violence".into()).execute().await?;
+        // let r = release::Release::search("query=visions".into()).execute().await?;
+        // let r = release_group::ReleaseGroup::search("query=visions milet".into()).execute().await?;
+        // let r = Release::browse().execute().await;
+
+        println!("{}", serde_json::to_string_pretty(&r)?);
+
+        Ok(())
+    }
 }
 
 mod webui {
@@ -145,6 +261,7 @@ fn dump_types() -> Result<()> {
     )?;
     std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
 
     Ok(())
 }
