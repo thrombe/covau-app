@@ -2,11 +2,6 @@
 
 use std::path::PathBuf;
 
-use musicbrainz_rs::{
-    entity::recording::Recording,
-    Search,
-};
-
 use anyhow::Result;
 
 mod musiplayer;
@@ -14,15 +9,6 @@ mod musiplayer;
 // TODO:
 // create a nix style symlinked artist/songs, album/songs, artist/albums, etc
 // but store all songs in a single directory
-
-// PLAN:
-// - ui
-//  - electron
-//  - qt stremio thing
-//  - webui zig api
-// - backend
-//  - database
-//  - interface with musicbrainz
 
 pub mod musimanager;
 pub mod server;
@@ -33,33 +19,140 @@ mod covau_types {
 
     use serde::{Deserialize, Serialize};
 
+    use super::{mbz, yt};
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     #[serde(tag = "type", content = "content")]
-    pub enum Source {
+    pub enum PlaySource {
         File(PathBuf),
         YtId(String),
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum InfoSource {
+        YtId(String),
+        MbzId(String),
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Song {
         pub title: String,
         pub mbz_id: Option<String>,
-        pub sources: Vec<Source>,
+        pub sources: Vec<PlaySource>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-    pub struct Artist {
-        pub name: String,
-        // pub albums: Vec<AlbumId>,
+    pub struct UpdateItem<T> {
+        done: bool,
+        points: u32,
+        item: T,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ListenQueue<T> {
+        queue: T,
+        current_index: u32,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum UpdateSource {
+        Mbz {
+            // artist -> release groups -> releases -> recordings
+            // artist -> releases -> recordings
+            artist_id: String,
+            release_groups: Vec<UpdateItem<mbz::ReleaseGroupWithInfo>>,
+            releases: Vec<UpdateItem<mbz::ReleaseWithInfo>>,
+            recordings: ListenQueue<Vec<UpdateItem<mbz::Recording>>>,
+        },
+        YtSearch {
+            // search words -> albums -> filter match any key -> songs
+            search_words: Vec<String>,
+            artist_keys: Vec<String>,
+            non_search_words: Vec<String>,
+            known_albums: Vec<UpdateItem<yt::Album>>,
+            songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Updater {
+        pub title: String,
+        pub source: UpdateSource,
+        pub last_update_ts: u32,
+        pub enabled: bool,
     }
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
-        types += &specta::ts::export::<Source>(config)?;
-        types += ";\n";
-        types += &specta::ts::export::<Artist>(config)?;
+        types += "import type { ReleaseGroupWithInfo, ReleaseWithInfo, Recording } from '$types/mbz.ts';\n";
+        types += "import type { Album, Video } from '$types/yt.ts';\n";
+        types += "\n";
+        types += &specta::ts::export::<PlaySource>(config)?;
         types += ";\n";
         types += &specta::ts::export::<Song>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<UpdateItem<()>>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<ListenQueue<()>>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<UpdateSource>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Updater>(config)?;
+        types += ";\n";
+
+        Ok(types)
+    }
+}
+
+pub mod yt {
+    use serde::{Deserialize, Serialize};
+    
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Video {
+        pub title: String,
+        pub id: String,
+        pub album: Option<Album>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct VideoWithInfo {
+        #[serde(flatten)]
+        pub song: Video,
+
+        pub titles: Vec<String>, // track > alt_title > title
+        pub thumbnail_url: String,
+        pub album_name: Option<String>,
+        pub artist_names: Vec<String>,
+        pub channel_id: String,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct Album {
+        pub name: String,
+        pub browse_id: String,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct AlbumWithInfo {
+        #[serde(flatten)]
+        pub album: Album,
+        pub playlist_id: String,
+        pub songs: Vec<Video>,
+        pub artist_name: String,
+        pub artist_keys: Vec<String>,
+    }
+
+    pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
+        let mut types = String::new();
+        types += &specta::ts::export::<Video>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<VideoWithInfo>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<Album>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<AlbumWithInfo>(config)?;
         types += ";\n";
 
         Ok(types)
@@ -262,6 +355,7 @@ fn dump_types() -> Result<()> {
     std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
 
     Ok(())
 }
