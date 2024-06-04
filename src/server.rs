@@ -13,6 +13,7 @@ use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
 use crate::db::{Db, DbAble};
+use crate::mbz::{self, IdSearch, PagedSearch};
 use crate::musiplayer::Player;
 
 #[derive(Debug, Clone)]
@@ -349,6 +350,33 @@ fn search_by_refid_route<T: DbAble + Send>(
     search.boxed()
 }
 
+fn paged_search<T: PagedSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path::end())
+        .and(warp::body::json())
+        .and_then(|query: mbz::SearchQuery| async move {
+            let res = T::search(query).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
+fn id_search<T: IdSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("id"))
+        .and(warp::path::end())
+        .and(warp::body::json())
+        .and_then(|query: String| async move {
+            let res = T::get(&query).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
     let db = Arc::new(
@@ -356,6 +384,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
             .await
             .expect("cannot connect to database"),
     );
+    // db.init_tables().await.expect("could not init database");
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -377,6 +406,17 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         )
     };
 
+    let mbz_search_routes = {
+        use crate::mbz::*;
+
+        warp::path("mbz").and(
+            paged_search::<ReleaseWithInfo>("releases")
+            .or(paged_search::<ReleaseGroupWithInfo>("release_groups"))
+            .or(paged_search::<Artist>("artists"))
+            .or(id_search::<WithUrlRels<Artist>>("artists"))
+        )
+    };
+
     let options_route = warp::any().and(warp::options()).map(warp::reply).with(
         warp::cors()
             .allow_any_origin()
@@ -388,6 +428,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
+        .or(mbz_search_routes)
         .or(options_route);
     // let all = all.or(redirect_route(client.clone()));
 
