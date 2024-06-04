@@ -42,22 +42,12 @@ export type Artist = {
     subscribers: string | null,
     thumbnail: string | null,
 };
-export type MusicListItem = {
-    typ: 'song',
-    data: Song,
-} | {
-    typ: 'video',
-    data: Video,
-} | {
-    typ: 'album',
-    data: Album,
-} | {
-    typ: 'playlist',
-    data: Playlist,
-} | {
-    typ: 'artist',
-    data: Artist,
-};
+export type MusicListItem =
+    { typ: 'song', data: Song } |
+    { typ: 'video', data: Video } |
+    { typ: 'album', data: Album } |
+    { typ: 'playlist', data: Playlist } |
+    { typ: 'artist', data: Artist };
 
 export class SongTube extends Unpaged<MusicListItem> {
     tube: Innertube;
