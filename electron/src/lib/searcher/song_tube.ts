@@ -337,7 +337,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 }
 
 const keyed = <T extends { data: { id?: any } }>(items: T[]): (T & Keyed)[] => {
-    let res = items.filter((e: any) => !!e.id).map((e: any) => {
+    let res = items.filter((e) => !!e.data.id).map((e) => {
         let p = e as T & Keyed;
         p.get_key = function() {
             if (!p.data.id) {
