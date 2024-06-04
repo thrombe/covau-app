@@ -8,7 +8,10 @@ use musicbrainz_rs::{
 use serde::{Deserialize, Serialize};
 
 fn type_to_string<S: Serialize>(s: S) -> String {
-    serde_json::to_string(&s).unwrap()
+    let s = serde_json::to_string(&s).unwrap();
+    let s1 = s.strip_prefix("\"").unwrap_or(&s);
+    let s2 = s1.strip_suffix("\"").unwrap_or(s1);
+    s2.into()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
