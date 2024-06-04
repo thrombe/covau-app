@@ -21,6 +21,16 @@ pub struct Recording {
     pub releases: Vec<Release>,
 }
 
+impl From<recording::Recording> for Recording {
+    fn from(r: recording::Recording) -> Self {
+        Self {
+            title: r.title,
+            id: r.id,
+            releases: r.releases.into_iter().flatten().map(Into::into).collect(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct ReleaseGroup {
     pub id: String,
@@ -271,6 +281,37 @@ where
 }
 
 #[sea_orm::prelude::async_trait::async_trait]
+impl PagedSearch for Recording {
+    async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+        let (query, page_size, offset) = match query {
+            SearchQuery::Search { query, page_size } => (query, page_size, 0),
+            SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+        };
+
+        let r = recording::Recording::search(format!(
+            "limit={}&offset={}&query={}",
+            page_size, offset, query
+        ))
+        .execute()
+        .await?;
+
+        // TODO: cover art
+        let offset = r.offset + r.entities.len() as i32;
+        let items = r.entities.into_iter().map(Into::into).collect();
+        let res = SearchResults {
+            continuation: (offset < r.count).then_some(SearchContinuation {
+                query,
+                offset,
+                count: r.count,
+                page_size,
+            }),
+            items,
+        };
+        Ok(res)
+    }
+}
+
+#[sea_orm::prelude::async_trait::async_trait]
 impl PagedSearch for ReleaseWithInfo {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
         let (query, page_size, offset) = match query {
@@ -368,6 +409,54 @@ impl IdSearch for WithUrlRels<Artist> {
         let r = artist::Artist::fetch()
             .id(id)
             .with_url_relations()
+            .execute()
+            .await?;
+        let res = r.into();
+        Ok(res)
+    }
+}
+
+#[sea_orm::prelude::async_trait::async_trait]
+impl IdSearch for Artist {
+    async fn get(id: &str) -> anyhow::Result<Self> {
+        let r = artist::Artist::fetch()
+            .id(id)
+            .execute()
+            .await?;
+        let res = r.into();
+        Ok(res)
+    }
+}
+
+#[sea_orm::prelude::async_trait::async_trait]
+impl IdSearch for ReleaseWithInfo {
+    async fn get(id: &str) -> anyhow::Result<Self> {
+        let r = release::Release::fetch()
+            .id(id)
+            .execute()
+            .await?;
+        let res = r.into();
+        Ok(res)
+    }
+}
+
+#[sea_orm::prelude::async_trait::async_trait]
+impl IdSearch for ReleaseGroupWithInfo {
+    async fn get(id: &str) -> anyhow::Result<Self> {
+        let r = release_group::ReleaseGroup::fetch()
+            .id(id)
+            .execute()
+            .await?;
+        let res = r.into();
+        Ok(res)
+    }
+}
+
+#[sea_orm::prelude::async_trait::async_trait]
+impl IdSearch for Recording {
+    async fn get(id: &str) -> anyhow::Result<Self> {
+        let r = recording::Recording::fetch()
+            .id(id)
             .execute()
             .await?;
         let res = r.into();
