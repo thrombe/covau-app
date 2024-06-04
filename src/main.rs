@@ -392,6 +392,42 @@ pub mod mbz {
             }
         }
     }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum SearchQuery {
+        Search { query: String, page_size: i32 },
+        Continuation(SearchContinuation),
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct SearchContinuation {
+        pub query: String,
+        pub offset: i32,
+        pub count: i32,
+        pub page_size: i32,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct SearchResults<T> {
+        pub items: Vec<T>,
+        pub continuation: Option<SearchContinuation>,
+    }
+
+    #[sea_orm::prelude::async_trait::async_trait]
+    pub trait PagedSearch
+    where
+        Self: Sized,
+    {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>>;
+    }
+    #[sea_orm::prelude::async_trait::async_trait]
+    pub trait IdSearch
+    where
+        Self: Sized,
+    {
+        async fn get(id: &str) -> anyhow::Result<Self>;
+    }
     }
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
@@ -415,6 +451,12 @@ pub mod mbz {
         types += &specta::ts::export::<Alias>(config)?;
         types += ";\n";
         types += &specta::ts::export::<Url>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SearchQuery>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SearchContinuation>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<SearchResults<()>>(config)?;
         types += ";\n";
 
         Ok(types)
