@@ -419,10 +419,7 @@ impl IdSearch for WithUrlRels<Artist> {
 #[sea_orm::prelude::async_trait::async_trait]
 impl IdSearch for Artist {
     async fn get(id: &str) -> anyhow::Result<Self> {
-        let r = artist::Artist::fetch()
-            .id(id)
-            .execute()
-            .await?;
+        let r = artist::Artist::fetch().id(id).execute().await?;
         let res = r.into();
         Ok(res)
     }
@@ -431,10 +428,7 @@ impl IdSearch for Artist {
 #[sea_orm::prelude::async_trait::async_trait]
 impl IdSearch for ReleaseWithInfo {
     async fn get(id: &str) -> anyhow::Result<Self> {
-        let r = release::Release::fetch()
-            .id(id)
-            .execute()
-            .await?;
+        let r = release::Release::fetch().id(id).execute().await?;
         let res = r.into();
         Ok(res)
     }
@@ -455,10 +449,7 @@ impl IdSearch for ReleaseGroupWithInfo {
 #[sea_orm::prelude::async_trait::async_trait]
 impl IdSearch for Recording {
     async fn get(id: &str) -> anyhow::Result<Self> {
-        let r = recording::Recording::fetch()
-            .id(id)
-            .execute()
-            .await?;
+        let r = recording::Recording::fetch().id(id).execute().await?;
         let res = r.into();
         Ok(res)
     }
