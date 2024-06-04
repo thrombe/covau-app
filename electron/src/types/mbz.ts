@@ -8,6 +8,7 @@ export type Artist = { name: string; id: string; aliases: Alias[]; disambiguatio
 export type Area = { name: string; id: string };
 export type Alias = { name: string; type: string | null };
 export type Url = { id: string; url: string; type: string };
+export type WithUrlRels<T> = { item: T; urls: Url[] };
 export type SearchQuery = { type: "Search"; content: { query: string; page_size: number } } | { type: "Continuation"; content: SearchContinuation };
 export type SearchContinuation = { query: string; offset: number; count: number; page_size: number };
 export type SearchResults<T> = { items: T[]; continuation: SearchContinuation | null };

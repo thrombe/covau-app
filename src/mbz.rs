@@ -394,6 +394,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += ";\n";
     types += &specta::ts::export::<Url>(config)?;
     types += ";\n";
+    types += &specta::ts::export::<WithUrlRels<()>>(config)?;
+    types += ";\n";
     types += &specta::ts::export::<SearchQuery>(config)?;
     types += ";\n";
     types += &specta::ts::export::<SearchContinuation>(config)?;
