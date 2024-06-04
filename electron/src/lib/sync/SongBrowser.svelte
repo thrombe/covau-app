@@ -59,6 +59,8 @@
                 break;
         }
         if (s) {
+            tabs = [tabs[0]];
+            curr_tab = tabs[0]
             $song_searcher = s;
         }
     };
