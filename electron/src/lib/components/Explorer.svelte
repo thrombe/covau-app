@@ -3,7 +3,7 @@
     import { tick } from "svelte";
     import type { Unique } from "../virtual.ts";
     import type { Writable } from "svelte/store";
-    import type { RFactory, RObject, RSearcher } from "../searcher/searcher.ts";
+    import type { Keyed, RFactory, RObject, RSearcher } from "../searcher/searcher.ts";
 
     // OOF: extra prop to fix T as svelte does not recognise T properly here
     // just pass a variable with the required T type (undefined is fine too) and ignore it
@@ -47,7 +47,7 @@
     };
     const next_page = async () => {
         let r = await $searcher.next_page();
-        items = r.map((e: RObject<T>) => {
+        items = r.map((e: Keyed) => {
             return { id: e.get_key(), data: e } as Unique<RObject<T>, number>;
         });
     };
