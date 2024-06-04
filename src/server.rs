@@ -411,9 +411,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
 
         warp::path("mbz").and(
             paged_search::<ReleaseWithInfo>("releases")
+            .or(id_search::<ReleaseWithInfo>("releases"))
             .or(paged_search::<ReleaseGroupWithInfo>("release_groups"))
+            .or(id_search::<ReleaseGroupWithInfo>("release_groups"))
             .or(paged_search::<Artist>("artists"))
-            .or(id_search::<WithUrlRels<Artist>>("artists"))
+            .or(id_search::<Artist>("artists"))
+            .or(id_search::<WithUrlRels<Artist>>("artists_with_urls"))
+            .or(paged_search::<Recording>("recordings"))
+            .or(id_search::<Recording>("recordings"))
         )
     };
 
