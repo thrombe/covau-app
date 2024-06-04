@@ -315,7 +315,10 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
     redirect.boxed()
 }
 
-fn search_route<T: DbAble + Send>(db: Arc<Db>, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+fn db_search_route<T: DbAble + Send>(
+    db: Arc<Db>,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
     let search = warp::path("search")
         .and(warp::path(path))
         .and(warp::path::end())
@@ -329,7 +332,7 @@ fn search_route<T: DbAble + Send>(db: Arc<Db>, path: &'static str) -> BoxedFilte
     search.boxed()
 }
 
-fn search_by_refid_route<T: DbAble + Send>(
+fn db_search_by_refid_route<T: DbAble + Send>(
     db: Arc<Db>,
     path: &'static str,
 ) -> BoxedFilter<(impl Reply,)> {
@@ -350,7 +353,9 @@ fn search_by_refid_route<T: DbAble + Send>(
     search.boxed()
 }
 
-fn paged_search<T: PagedSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<(impl Reply,)> {
+fn paged_search<T: PagedSearch + Serialize + Send>(
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
     let search = warp::path("search")
         .and(warp::path(path))
         .and(warp::path::end())
@@ -390,19 +395,22 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         use crate::musimanager::*;
 
         warp::path("musimanager").and(
-            search_route::<Song<Option<SongInfo>>>(db.clone(), "songs")
-                .or(search_by_refid_route::<Song<Option<SongInfo>>>(
+            db_search_route::<Song<Option<SongInfo>>>(db.clone(), "songs")
+                .or(db_search_by_refid_route::<Song<Option<SongInfo>>>(
                     db.clone(),
                     "songs",
                 ))
-                .or(search_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(search_by_refid_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(search_route::<Artist<SongId, AlbumId>>(
+                .or(db_search_route::<Album<SongId>>(db.clone(), "albums"))
+                .or(db_search_by_refid_route::<Album<SongId>>(
+                    db.clone(),
+                    "albums",
+                ))
+                .or(db_search_route::<Artist<SongId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(search_route::<Playlist<SongId>>(db.clone(), "playlists"))
-                .or(search_route::<Queue<SongId>>(db.clone(), "queues")),
+                .or(db_search_route::<Playlist<SongId>>(db.clone(), "playlists"))
+                .or(db_search_route::<Queue<SongId>>(db.clone(), "queues")),
         )
     };
 
@@ -411,14 +419,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
 
         warp::path("mbz").and(
             paged_search::<ReleaseWithInfo>("releases")
-            .or(id_search::<ReleaseWithInfo>("releases"))
-            .or(paged_search::<ReleaseGroupWithInfo>("release_groups"))
-            .or(id_search::<ReleaseGroupWithInfo>("release_groups"))
-            .or(paged_search::<Artist>("artists"))
-            .or(id_search::<Artist>("artists"))
-            .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
-            .or(paged_search::<Recording>("recordings"))
-            .or(id_search::<Recording>("recordings"))
+                .or(id_search::<ReleaseWithInfo>("releases"))
+                .or(paged_search::<ReleaseGroupWithInfo>("release_groups"))
+                .or(id_search::<ReleaseGroupWithInfo>("release_groups"))
+                .or(paged_search::<Artist>("artists"))
+                .or(id_search::<Artist>("artists"))
+                .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
+                .or(paged_search::<Recording>("recordings"))
+                .or(id_search::<Recording>("recordings")),
         )
     };
 
