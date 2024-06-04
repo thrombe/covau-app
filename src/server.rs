@@ -416,7 +416,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
             .or(id_search::<ReleaseGroupWithInfo>("release_groups"))
             .or(paged_search::<Artist>("artists"))
             .or(id_search::<Artist>("artists"))
-            .or(id_search::<WithUrlRels<Artist>>("artists_with_urls"))
+            .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
             .or(paged_search::<Recording>("recordings"))
             .or(id_search::<Recording>("recordings"))
         )
