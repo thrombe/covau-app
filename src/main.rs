@@ -161,10 +161,17 @@ pub mod yt {
 
 pub mod mbz {
     use musicbrainz_rs::{
-        entity::{artist, recording, release, release_group, work::Work},
-        Search,
+        entity::{
+            alias, area, artist, artist_credit, coverart, recording, relations, release,
+            release_group, work::Work,
+        },
+        FetchCoverart, Search,
     };
     use serde::{Deserialize, Serialize};
+
+    fn type_to_string<S: Serialize>(s: S) -> String {
+        serde_json::to_string(&s).unwrap()
+    }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Recording {
@@ -177,9 +184,21 @@ pub mod mbz {
     pub struct ReleaseGroup {
         pub id: String,
         pub title: String,
-        pub primary_type: String,
+        pub primary_type: Option<String>,
         pub secondary_types: Vec<String>,
         pub disambiguation: String,
+    }
+
+    impl From<release_group::ReleaseGroup> for ReleaseGroup {
+        fn from(g: release_group::ReleaseGroup) -> Self {
+            Self {
+                id: g.id,
+                title: g.title,
+                primary_type: g.primary_type.map(type_to_string),
+                secondary_types: g.secondary_types.into_iter().map(type_to_string).collect(),
+                disambiguation: g.disambiguation,
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -188,18 +207,61 @@ pub mod mbz {
         pub group: ReleaseGroup,
         pub releases: Vec<Release>,
         pub credit: Vec<Artist>,
+
+        pub cover_art: Option<String>,
+    }
+
+    impl From<release_group::ReleaseGroup> for ReleaseGroupWithInfo {
+        fn from(mut g: release_group::ReleaseGroup) -> Self {
+            Self {
+                releases: g
+                    .releases
+                    .take()
+                    .into_iter()
+                    .flatten()
+                    .map(Into::into)
+                    .collect(),
+                credit: g
+                    .artist_credit
+                    .take()
+                    .into_iter()
+                    .flatten()
+                    .map(Into::into)
+                    .collect(),
+                cover_art: None,
+                group: g.into(),
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct ReleaseMedia {
-      pub track_count: u32,
-      pub format: Option<String>,
+        pub track_count: u32,
+        pub format: Option<String>,
+    }
+
+    impl From<release::Media> for ReleaseMedia {
+        fn from(m: release::Media) -> Self {
+            Self {
+                track_count: m.track_count,
+                format: m.format,
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Release {
         pub id: String,
         pub title: String,
+    }
+
+    impl From<release::Release> for Release {
+        fn from(r: release::Release) -> Self {
+            Self {
+                id: r.id,
+                title: r.title,
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -209,15 +271,30 @@ pub mod mbz {
         pub release_group: Option<ReleaseGroup>,
         pub media: Vec<ReleaseMedia>,
         pub credit: Vec<Artist>,
+
+        pub cover_art: Option<String>,
     }
 
-
-    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-    pub struct WithUrlRels<T> {
-        pub item: T,
-        pub urls: Vec<Url>,
+    impl From<release::Release> for ReleaseWithInfo {
+        fn from(r: release::Release) -> Self {
+            Self {
+                release: Release {
+                    id: r.id,
+                    title: r.title,
+                },
+                release_group: r.release_group.map(Into::into),
+                media: r.media.into_iter().flatten().map(Into::into).collect(),
+                credit: r
+                    .artist_credit
+                    .into_iter()
+                    .flatten()
+                    .map(Into::into)
+                    .collect(),
+                cover_art: None,
+            }
+        }
     }
-    
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Artist {
         pub name: String,
@@ -227,6 +304,54 @@ pub mod mbz {
         #[serde(rename = "type")]
         pub typ: Option<String>,
         pub area: Option<Area>,
+    }
+
+    impl From<artist_credit::ArtistCredit> for Artist {
+        fn from(c: artist_credit::ArtistCredit) -> Self {
+            c.artist.into()
+        }
+    }
+
+    impl From<artist::Artist> for Artist {
+        fn from(a: artist::Artist) -> Self {
+            Self {
+                name: a.name,
+                id: a.id,
+                aliases: a.aliases.into_iter().flatten().map(Into::into).collect(),
+                disambiguation: a.disambiguation,
+                typ: a.artist_type.map(type_to_string),
+                area: a.area.map(Into::into),
+            }
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct WithUrlRels<T> {
+        pub item: T,
+        pub urls: Vec<Url>,
+    }
+
+    impl From<artist::Artist> for WithUrlRels<Artist> {
+        fn from(mut a: artist::Artist) -> Self {
+            let urls = a
+                .relations
+                .take()
+                .into_iter()
+                .flatten()
+                .filter_map(|r| match r.content {
+                    relations::RelationContent::Url(u) => Some(Url {
+                        id: u.id,
+                        url: u.resource,
+                        typ: r.relation_type,
+                    }),
+                    _ => None,
+                })
+                .collect();
+            Self {
+                item: a.into(),
+                urls,
+            }
+        }
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -243,11 +368,30 @@ pub mod mbz {
         pub id: String,
     }
 
+    impl From<area::Area> for Area {
+        fn from(a: area::Area) -> Self {
+            Self {
+                name: a.name,
+                id: a.id,
+            }
+        }
+    }
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Alias {
         pub name: String,
         #[serde(rename = "type")]
-        pub typ: String,
+        pub typ: Option<String>,
+    }
+
+    impl From<alias::Alias> for Alias {
+        fn from(a: alias::Alias) -> Self {
+            Self {
+                name: a.name,
+                typ: a.alias_type.map(type_to_string),
+            }
+        }
+    }
     }
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
