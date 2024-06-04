@@ -289,7 +289,7 @@ impl PagedSearch for Recording {
         };
 
         let r = recording::Recording::search(format!(
-            "limit={}&offset={}&query={}",
+            "method=advanced&limit={}&offset={}&query={}",
             page_size, offset, query
         ))
         .execute()
@@ -320,7 +320,7 @@ impl PagedSearch for ReleaseWithInfo {
         };
 
         let r = release::Release::search(format!(
-            "limit={}&offset={}&query={}",
+            "method=advanced&limit={}&offset={}&query={}",
             page_size, offset, query
         ))
         .execute()
@@ -351,7 +351,7 @@ impl PagedSearch for ReleaseGroupWithInfo {
         };
 
         let r = release_group::ReleaseGroup::search(format!(
-            "limit={}&offset={}&query={}",
+            "method=advanced&limit={}&offset={}&query={}",
             page_size, offset, query
         ))
         .execute()
@@ -382,7 +382,7 @@ impl PagedSearch for Artist {
         };
 
         let r = artist::Artist::search(format!(
-            "limit={}&offset={}&query={}",
+            "method=advanced&limit={}&offset={}&query={}",
             page_size, offset, query
         ))
         .execute()
