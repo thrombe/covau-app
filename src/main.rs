@@ -165,7 +165,7 @@ pub mod mbz {
             alias, area, artist, artist_credit, coverart, recording, relations, release,
             release_group, work::Work,
         },
-        FetchCoverart, Search,
+        Fetch, FetchCoverart, Search,
     };
     use serde::{Deserialize, Serialize};
 
@@ -428,6 +428,110 @@ pub mod mbz {
     {
         async fn get(id: &str) -> anyhow::Result<Self>;
     }
+
+    #[sea_orm::prelude::async_trait::async_trait]
+    impl PagedSearch for ReleaseWithInfo {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+
+            let r = release::Release::search(format!(
+                "limit={}&offset={}&query={}",
+                page_size, offset, query
+            ))
+            .execute()
+            .await?;
+
+            // TODO: cover art
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+
+    #[sea_orm::prelude::async_trait::async_trait]
+    impl PagedSearch for ReleaseGroupWithInfo {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+
+            let r = release_group::ReleaseGroup::search(format!(
+                "limit={}&offset={}&query={}",
+                page_size, offset, query
+            ))
+            .execute()
+            .await?;
+
+            // TODO: cover art
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+
+    #[sea_orm::prelude::async_trait::async_trait]
+    impl PagedSearch for Artist {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+
+            let r = artist::Artist::search(format!(
+                "limit={}&offset={}&query={}",
+                page_size, offset, query
+            ))
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+
+    #[sea_orm::prelude::async_trait::async_trait]
+    impl IdSearch for WithUrlRels<Artist> {
+        async fn get(id: &str) -> anyhow::Result<Self> {
+            let r = artist::Artist::fetch()
+                .id(id)
+                .with_url_relations()
+                .execute()
+                .await?;
+            let res = r.into();
+            Ok(res)
+        }
     }
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
@@ -463,16 +567,36 @@ pub mod mbz {
     }
 
     pub async fn api_test() -> anyhow::Result<()> {
-        let r = artist::Artist::search("query=aimer&inc=url-rels".into()).execute().await?;
+        // limit=
+        // offset=
+        // let r = artist::Artist::search("query=aimer&inc=url-rels".into()).execute().await?;
         // let r = recording::Recording::search("method=indexed&query=rejuvenation queen bee".into())
         //     .execute()
         //     .await?;
         // let r = Work::search("method=indexed&query=violence".into()).execute().await?;
-        // let r = release::Release::search("query=visions".into()).execute().await?;
-        // let r = release_group::ReleaseGroup::search("query=visions milet".into()).execute().await?;
+        // let r = release::Release::search("query=visions milet".into()).execute().await?;
+        // let r = release_group::ReleaseGroup::search("query=visions milet".into())
+        //     .execute()
+        //     .await?;
         // let r = Release::browse().execute().await;
+        // println!("{}", serde_json::to_string_pretty(&r)?);
+        // let r = release_group::ReleaseGroup::fetch_coverart()
+        //     .id(&r.entities[0].id)
+        //     .execute()
+        //     .await?;
 
-        println!("{}", serde_json::to_string_pretty(&r)?);
+        // println!("{}", serde_json::to_string_pretty(&r)?);
+
+        let r = Artist::search(SearchQuery::Search {
+            query: "aimer".into(),
+            page_size: 10,
+        })
+        .await?;
+        dbg!(&r);
+        let r2 = Artist::search(SearchQuery::Continuation(r.continuation.unwrap())).await?;
+        dbg!(&r2);
+        let r3 = WithUrlRels::<Artist>::get(&r.items[0].id).await?;
+        dbg!(&r3);
 
         Ok(())
     }
