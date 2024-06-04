@@ -10,9 +10,9 @@ mod musiplayer;
 // create a nix style symlinked artist/songs, album/songs, artist/albums, etc
 // but store all songs in a single directory
 
+pub mod db;
 pub mod musimanager;
 pub mod server;
-pub mod db;
 
 mod covau_types {
     use std::path::PathBuf;
@@ -73,7 +73,7 @@ mod covau_types {
             non_search_words: Vec<String>,
             known_albums: Vec<UpdateItem<yt::Album>>,
             songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
-        }
+        },
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -108,7 +108,7 @@ mod covau_types {
 
 pub mod yt {
     use serde::{Deserialize, Serialize};
-    
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Video {
         pub title: String,
