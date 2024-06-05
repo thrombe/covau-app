@@ -5,6 +5,7 @@ import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
 import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
+import { Musiplayer } from "$lib/local/player.ts";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
@@ -74,9 +75,16 @@ export let searcher = derived(
 
 export let queue_searcher: Writable<Searcher> = writable(fused_searcher);
 
+// TODO: also allow sync/player
+export let player: Writable<Musiplayer> = writable();
+(async () => {
+    let musiplayer = await import("$lib/local/player.ts");
+    let pl = new musiplayer.Musiplayer();
+    player.set(pl);
+})()
+
 // NOTE: initialized in wrap components
 export let tube: Writable<Innertube> = writable();
-
 
 
 selected_menubar_option.subscribe(async (option) => {
@@ -99,19 +107,13 @@ selected_menubar_option.subscribe(async (option) => {
         case "related-music":
             break
         case "home-feed":
-            try {
-                tabs.set([{
-                    name: "Results",
-                    searcher: St.SongTube.new({ query_type: "home-feed" }, get(tube)),
-                    thumbnail: null,
-                }]);
-            } catch (e) {
-                if (e instanceof ReferenceError) {
-                    // ignore
-                } else {
-                    throw e;
-                }
-            }
+            let st = await import("$lib/searcher/song_tube.ts");
+            let s = st.SongTube.new({ query_type: "home-feed" }, get(tube));
+            tabs.set([{
+                name: "Results",
+                searcher: s,
+                thumbnail: null,
+            }]);
             break
         default:
             exhausted(option);
