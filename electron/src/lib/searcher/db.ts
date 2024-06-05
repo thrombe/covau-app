@@ -4,6 +4,7 @@ import * as Musi from "$types/musimanager.ts";
 import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
+import { toast } from "$lib/toast/toast.ts"; 
 // import * as stores from "$lib/local/stores.ts";
 
 export type Song = Musi.Song<Musi.SongInfo | null>;
@@ -143,7 +144,9 @@ export class DbListItem extends ListItem {
                                 icon: "/static/add.svg",
                                 location: "Pos1",
                                 tooltip: "add to queue",
-                                onlick: () => { },
+                                onclick: () => {
+                                    toast("add onclick");
+                                },
                             },
                         ];
                     case "MusimanagerAlbum":
@@ -162,7 +165,7 @@ export class DbListItem extends ListItem {
                                 icon: "/static/add.svg",
                                 location: "Pos1",
                                 tooltip: "add to queue",
-                                onlick: () => { },
+                                onclick: () => { },
                             },
                         ];
                     case "MusimanagerAlbum":

@@ -19,6 +19,7 @@
     import { SongTube } from "$lib/searcher/song_tube.ts";
     import * as stores from "$lib/stores.ts";
     import { get } from "svelte/store";
+    import type { ListItem } from "$lib/searcher/item.ts";
 
     export let columns: number;
     export let item_height: number;
@@ -63,7 +64,7 @@
 
     let t: MusicListItem;
     type T = typeof t;
-    let selected_item: Unique<Db.ListItem, string>;
+    let selected_item: Unique<ListItem, string>;
     let selected_item_index = 0;
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
@@ -177,9 +178,8 @@
                             class="item-bg"
                         >
                             <AudioListItem
-                                title={item.title()}
-                                title_sub={item.title_sub() ?? ''}
-                                img_src={item.thumbnail() ?? item.default_thumbnail()}
+                                item={item}
+                                ctx="Browser"
                             />
                             <!-- {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem
@@ -333,9 +333,8 @@
                             class="item-bg"
                         >
                             <AudioListItem
-                                title={item.title()}
-                                title_sub={item.title_sub() ?? ''}
-                                img_src={item.thumbnail() ?? item.default_thumbnail()}
+                                item={item}
+                                ctx="Browser"
                             />
                             <!-- {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem

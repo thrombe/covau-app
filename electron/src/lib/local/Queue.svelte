@@ -1,5 +1,7 @@
 <script lang="ts">
-    import type { ListItem } from '$lib/searcher/db';
+    import AudioListItem from '$lib/components/AudioListItem.svelte';
+
+    import type { ListItem } from '$lib/searcher/item.ts';
 
     import type { Writable } from 'svelte/store';
     import { onDestroy, tick } from 'svelte';
@@ -42,14 +44,6 @@
         //     playing_video_info = vid ?? null;
         // }
     };
-
-    type T = $$Generic;
-    interface $$Slots {
-        default: {
-            item: ListItem;
-        };
-        infobox: {};
-    }
 
     export let items: Unique<ListItem, string>[] = [];
 
@@ -144,7 +138,7 @@
         let:index
     >
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <item class='w-full h-full block relative py-1 rounded-xl'
+        <item class='w-full h-full block relative rounded-xl'
             draggable={index != items.length}
             on:dragstart={(event) => dragstart(event, index)}
             on:drop|preventDefault={(event) => drop(event, index)}
@@ -156,10 +150,11 @@
             class:is-playing={index === playing}
             class:is-selected={selected}
         >
-            <slot
-                {item}
+            <AudioListItem
+                item={item}
+                ctx="Queue"
             />
-            <button
+            <!-- <button
                 class='pop-button'
                 on:click={async () => {
                     // await delete_item(index, items[index].data);
@@ -177,7 +172,7 @@
                 >
                     <img alt="play" draggable={false} class='scale-[50%]' src='/static/play.svg'>
                 </button>
-            </div>
+            </div> -->
         </item>
     </VirtualScrollable>
 </div>

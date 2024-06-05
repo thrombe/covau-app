@@ -249,13 +249,7 @@
                                                 move_item={on_queue_item_move}
                                                 delete_item={on_queue_item_delete}
                                                 play_item={on_queue_item_play}
-                                                let:item
                                             >
-                                                <AudioListItem
-                                                    title={item.title()}
-                                                    title_sub={item.title_sub() ?? ''}
-                                                    img_src={item.thumbnail() ?? item.default_thumbnail()}
-                                                />
                                             </Queue>
                                         {/if}
                                     </div>
@@ -329,13 +323,7 @@
                                 move_item={on_queue_item_move}
                                 delete_item={on_queue_item_delete}
                                 play_item={on_queue_item_play}
-                                let:item
                             >
-                                <AudioListItem
-                                    title={item.title()}
-                                    title_sub={item.title_sub() ?? ''}
-                                    img_src={item.thumbnail() ?? item.default_thumbnail()}
-                                />
                             </Queue>
                         {/if}
                     </queue-content>
