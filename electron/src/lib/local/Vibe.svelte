@@ -15,7 +15,8 @@
     import { Musiplayer } from "./player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
-    import Toasts, { toast } from "$lib/toast/Toasts.svelte";
+    import Toasts from "$lib/toast/Toasts.svelte";
+    import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import { writable } from "svelte/store";

@@ -1,28 +1,8 @@
 <script context='module' lang="ts">
-    import { writable } from "svelte/store";
-    import { Toaster } from "./toast.ts";
+    import { toaster } from "./toast.ts";
     import { fly, slide, fade } from "svelte/transition";
     import { flip } from "svelte/animate";
     import { quintOut } from "svelte/easing";
-
-    // export let toasts = writable([]);
-    export let toaster: Toaster = new Toaster();
-
-    export let toast = async (message: string, level: 'info' | 'error' = 'info') => {
-        let color: string;
-        if (level == 'error') {
-            color = 'bg-red-400';
-        } else if (level == 'info') {
-            color = 'bg-blue-400';
-        } else {
-            color = 'bg-gray-400';
-        }
-        await toaster.toast({
-            message,
-            classes: `whitespace-nowrap block ${color} bg-opacity-90 font-bold text-gray-900 rounded-lg p-2 text-sm`,
-            timeout: 1000,
-        });
-    };
     
     let toasts = toaster.active;
 </script>

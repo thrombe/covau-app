@@ -19,7 +19,8 @@
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
     import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
-    import Toasts, { toast } from "$lib/toast/Toasts.svelte";
+    import Toasts from "$lib/toast/Toasts.svelte";
+    import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
 
     export let params: { group?: string };

@@ -31,3 +31,20 @@ export class Toaster {
         this.active.update(s => s.filter(e => e.id != te.id));
     }
 }
+
+export let toaster = new Toaster();
+export let toast = async (message: string, level: 'info' | 'error' = 'info') => {
+    let color: string;
+    if (level == 'error') {
+        color = 'bg-red-400';
+    } else if (level == 'info') {
+        color = 'bg-blue-400';
+    } else {
+        color = 'bg-gray-400';
+    }
+    await toaster.toast({
+        message,
+        classes: `whitespace-nowrap block ${color} bg-opacity-90 font-bold text-gray-900 rounded-lg p-2 text-sm`,
+        timeout: 1000,
+    });
+};

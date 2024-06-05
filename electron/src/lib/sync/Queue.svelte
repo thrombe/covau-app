@@ -5,7 +5,7 @@
     import InputBar from '$lib/components/InputBar.svelte';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import type { VideoInfo } from '$lib/searcher/song_tube.ts';
-    import { toast } from '$lib/toast/Toasts.svelte';
+    import { toast } from '$lib/toast/toast.ts';
 
     export let items: Array<Unique<string, string>>;
     export let item_height: number;

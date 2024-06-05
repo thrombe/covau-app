@@ -9,7 +9,7 @@
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
-    import { toast } from '$lib/toast/Toasts.svelte';
+    import { toast } from '$lib/toast/toast.ts';
     import { queue_searcher } from '$lib/stores.ts';
 
     export let item_height: number;
