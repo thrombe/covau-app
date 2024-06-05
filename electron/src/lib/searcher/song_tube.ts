@@ -128,8 +128,8 @@ export class StListItem extends ListItem {
                     case "video":
                         return [
                             {
-                                icon: "/static/add.svg",
-                                location: "Pos1",
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
                                 tooltip: "add to queue",
                                 onlick: () => { },
                             },
@@ -147,7 +147,7 @@ export class StListItem extends ListItem {
                         return [
                             {
                                 icon: "/static/add.svg",
-                                location: "Pos1",
+                                location: "TopRight",
                                 tooltip: "add to queue",
                                 onlick: () => { },
                             },
