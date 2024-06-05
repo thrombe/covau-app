@@ -33,7 +33,7 @@
     onMount(() => {
     });
 
-    let player: Musiplayer;
+    let player: Musiplayer = new Musiplayer();
     let playing_index: number | null = null;
 
     let item_height: number = 75;
