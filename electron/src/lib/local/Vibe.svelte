@@ -348,22 +348,7 @@
         <PlayBar
             bind:player
             {mobile}
-            audio_info={queue_playing_vid_info
-                ? {
-                      title: queue_playing_vid_info.basic_info.title
-                          ? queue_playing_vid_info.basic_info.title
-                          : "",
-                      title_sub: queue_playing_vid_info.basic_info.author
-                          ? queue_playing_vid_info.basic_info.author
-                          : "",
-                      img_src: queue_playing_vid_info.basic_info.thumbnail
-                          ? queue_playing_vid_info.basic_info.thumbnail[
-                                queue_playing_vid_info.basic_info.thumbnail
-                                    .length - 1
-                            ].url
-                          : "",
-                  }
-                : null}
+            audio_info={null}
         />
     </play-bar>
 
