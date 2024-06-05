@@ -159,14 +159,7 @@ export class StListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let itube = get(stores.tube);
-                                    let d = await itube.getInfo(song.id);
-                                    console.log(d);
-                                    let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
-                                    // let url = d.getStreamingInfo();
-                                    let uri = f.decipher(itube.session.player);
-                                    console.log(uri)
-                                    get(stores.player).play(uri);
+                                    get(stores.player).play(await get_uri(song.id));
                                 },
                             },
                         ];
@@ -503,4 +496,15 @@ const keyed = <T extends { data: { id?: any } }>(items: T[]): (T & Keyed)[] => {
     });
 
     return res;
+}
+
+export async function get_uri(id: string) {
+    let itube = get(stores.tube);
+    let d = await itube.getInfo(id);
+    console.log(d);
+    let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+    // let url = d.getStreamingInfo();
+    let uri = f.decipher(itube.session.player);
+    console.log(uri)
+    return uri;
 }

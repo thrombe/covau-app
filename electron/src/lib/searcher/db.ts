@@ -5,7 +5,9 @@ import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts"; 
-// import * as stores from "$lib/local/stores.ts";
+import * as stores from "$lib/stores.ts";
+import { get } from "svelte/store";
+import { get_uri } from "./song_tube.ts";
 
 export type Song = Musi.Song<Musi.SongInfo | null>;
 export type Album = Musi.Album<Musi.SongId>;
@@ -139,6 +141,7 @@ export class DbListItem extends ListItem {
             case "Queue":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
+                        let song = this.data.data;
                         return [
                             {
                                 icon: "/static/remove.svg",
@@ -151,7 +154,12 @@ export class DbListItem extends ListItem {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
                                 tooltip: "play",
-                                onclick: () => {
+                                onclick: async () => {
+                                    if (song.last_known_path) {
+                                        get(stores.player).play("file://" + song.last_known_path);
+                                    } else {
+                                        get(stores.player).play(await get_uri(song.key));
+                                    }
                                 },
                             },
                         ];
@@ -166,12 +174,25 @@ export class DbListItem extends ListItem {
             case "Browser":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
+                        let song = this.data.data;
                         return [
                             {
                                 icon: "/static/add.svg",
-                                location: "Pos1",
+                                location: "TopRight",
                                 tooltip: "add to queue",
                                 onclick: () => { },
+                            },
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    if (song.last_known_path) {
+                                        get(stores.player).play("file://" + song.last_known_path);
+                                    } else {
+                                        get(stores.player).play(await get_uri(song.key));
+                                    }
+                                },
                             },
                         ];
                     case "MusimanagerAlbum":
