@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
-    import { Musiplayer } from './player.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
     import * as stores from "$lib/stores.ts";

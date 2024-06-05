@@ -1,7 +1,5 @@
 <script lang="ts" context="module">
-    import { tick } from "svelte";
     import { writable, type Writable } from "svelte/store";
-    import type { WrappedDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
 
     let song_fac = writable(Db.Db.factory());
     let song_searcher: Writable<stores.Searcher> = writable(stores.fused_searcher);
@@ -15,7 +13,6 @@
     import type Innertube from "youtubei.js/web";
     import type { MenubarOption } from "./Vibe.svelte";
     import * as Db from "$lib/searcher/db.ts";
-    import type { MusicListItem } from "$lib/searcher/db.ts";
     import { SongTube } from "$lib/searcher/song_tube.ts";
     import * as stores from "$lib/stores.ts";
     import { get } from "svelte/store";
@@ -62,14 +59,12 @@
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
 
-    let t: MusicListItem;
-    type T = typeof t;
     let selected_item: Unique<ListItem, string>;
     let selected_item_index = 0;
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
-    let dragstart = (event: DragEvent, t: T) => {
+    let dragstart = (event: DragEvent, t: ListItem) => {
         // if (t.data.id) {
         //     if (t.typ == "song" || t.typ == "video") {
         //         event.dataTransfer!.effectAllowed = "move";
@@ -88,8 +83,7 @@
 
     type Tab = {
         name: string;
-        // fac: Writable<RFactory<T>>,
-        searcher: Writable<RSearcher<WrappedDb<T>>>;
+        searcher: Writable<stores.Searcher>;
         thumbnail: string | null;
     };
 
@@ -154,7 +148,6 @@
         <browse-area class={curr_tab == tab ? "" : "hidden"}>
             {#if tab.name == search_tab.name}
                 <Explorer
-                    {t}
                     searcher={song_searcher}
                     bind:selected_item
                     {columns}
@@ -310,7 +303,6 @@
                 </Explorer>
             {:else}
                 <Explorer
-                    {t}
                     searcher={tab.searcher}
                     {selected_item}
                     {columns}

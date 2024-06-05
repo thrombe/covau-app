@@ -12,16 +12,12 @@
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
-    import { Musiplayer } from "./player.ts";
     import type { Unique } from "$lib/virtual.ts";
     import { onMount } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
-    import AudioListItem from "$lib/components/AudioListItem.svelte";
-    import { writable } from "svelte/store";
     import * as Db from "$lib/searcher/db.ts";
-    import type { WrappedDb, RObject } from "$lib/searcher/searcher.ts";
     import { tube } from "$lib/stores.ts";
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";

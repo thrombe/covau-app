@@ -1,16 +1,11 @@
 <script lang="ts">
-    import type { ListItem } from "$lib/searcher/db.ts";
-
+    import type { ListItem } from "$lib/searcher/item.ts";
     import VirtualScrollable from "./VirtualScrollable.svelte";
     import { tick } from "svelte";
     import type { Unique } from "../virtual.ts";
     import type { Writable } from "svelte/store";
-    import type { Keyed, RFactory, RObject, RSearcher } from "../searcher/searcher.ts";
     import * as stores from "$lib/stores.ts";
 
-    // OOF: extra prop to fix T as svelte does not recognise T properly here
-    // just pass a variable with the required T type (undefined is fine too) and ignore it
-    export let t: T;
     export let searcher: Writable<stores.Searcher>;
     export let selected_item_index: number;
     export let selected_item: Unique<ListItem, unknown>;
@@ -21,7 +16,6 @@
     export let try_scroll_selected_item_in_view: () => Promise<void>;
     export let keyboard_control = true;
 
-    type T = $$Generic;
     interface $$Slots {
         default: {
             item: ListItem;
@@ -61,7 +55,7 @@
         await try_scroll_selected_item_in_view();
         end_reached();
     };
-    searcher.subscribe(async (e) => {
+    searcher.subscribe(async (_) => {
         items = [];
         if (search_objects) {
             await search_objects();

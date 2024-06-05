@@ -53,7 +53,7 @@
         </info>
     </div>
 
-    {#each options as option, i}
+    {#each options as option}
         {#if option.location == "TopRight"}
             <button
                 class='pop-button'
@@ -80,7 +80,7 @@
         @apply w-full text-ellipsis whitespace-nowrap overflow-hidden select-none;
     }
 
-    item:hover button, .is-selected button {
+    item:hover button {
         display: block;
     }
 

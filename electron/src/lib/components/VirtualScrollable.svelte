@@ -1,6 +1,4 @@
 <script lang="ts">
-    import type { RObject } from '../searcher/searcher.ts';
-
     import Observer from './Observer.svelte';
     import { tick } from 'svelte';
     import type { Unique } from '../virtual.ts';

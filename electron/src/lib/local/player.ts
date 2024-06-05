@@ -1,12 +1,9 @@
-import { YTNodes } from "$lib/searcher/song_tube";
-import { new_innertube_instance } from "$lib/searcher/tube";
 import { exhausted } from "$lib/virtual";
 import type { PlayerMessage, PlayerCommand } from "$types/server";
 
 type MessageHandler = ((msg: PlayerMessage) => Promise<void>) | ((msg: PlayerMessage) => void);
 
 export class Musiplayer {
-
     ws: WebSocket;
     playing: string = '';
     paused: boolean = false;
