@@ -4,6 +4,7 @@
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
     import * as stores from "$lib/stores.ts";
+    import { exhausted } from '$lib/virtual.ts';
 
     export let audio_info: { title: string; title_sub: string; img_src: string } | null;
     export let mobile = false;
@@ -18,21 +19,38 @@
     let audio_duration = 0;
     let is_muted = false;
     let volume = 1;
-    let interval = setInterval(async () => {
-        if (player) {
-            // video_pos = await player.get_player_pos();
-            // has_prev = player.has_prev();
-            // has_next = player.has_next();
-            // is_playing = player.is_playing();
-            // let dur = player.get_duration();
-            // audio_duration = dur ? dur : 0;
-            // is_muted = await player.is_muted();
-            // volume = await player.get_volume();
+    $player.add_message_listener("any", (m) => {
+        switch (m.type) {
+            case 'Paused':
+                is_playing = false;
+                break;
+            case 'Unpaused':
+                is_playing = true;
+                break;
+            case 'Finished':
+                is_playing = false;
+                break;
+            case 'Playing':
+                is_playing = true;
+                break;
+            case 'ProgressPerc':
+                break;
+            case 'Volume':
+                volume = m.content;
+                break;
+            case 'Duration':
+                audio_duration = m.content;
+                break;
+            case 'Mute':
+                is_muted = m.content;
+                break;
+            default:
+                throw exhausted(m);
         }
-    }, 300);
-
-    onDestroy(async () => {
-        clearInterval(interval);
+        if (m.type != "ProgressPerc") {
+            return;
+        }
+        video_pos = m.content;
     });
 
     const on_seek = async (p: number) => {
