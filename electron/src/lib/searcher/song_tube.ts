@@ -4,6 +4,7 @@ import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
+import { get } from "svelte/store";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -131,7 +132,7 @@ export class StListItem extends ListItem {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onlick: () => { },
+                                onclick: () => { },
                             },
                         ];
                     case "album":
@@ -144,16 +145,31 @@ export class StListItem extends ListItem {
             case "Browser":
                 switch (this.data.typ) {
                     case "song":
+                    case "video":
+                        let song = this.data.data;
                         return [
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onlick: () => { },
+                                onclick: () => { },
+                            },
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    let itube = get(stores.tube);
+                                    let d = await itube.getInfo(song.id);
+                                    console.log(d);
+                                    let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+                                    // let url = d.getStreamingInfo();
+                                    let uri = f.decipher(itube.session.player);
+                                    console.log(uri)
+                                    get(stores.player).play(uri);
+                                },
                             },
                         ];
-                    case "video":
-                        return [];
                     case "album":
                         return [];
                     case "playlist":
