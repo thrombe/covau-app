@@ -6,7 +6,7 @@
 
     // TODO: somehow setup retrying and see if images load more reliably
 
-    $: img_src = item?.thumbnail() ?? '';
+    $: img_src = item?.thumbnail() ?? item?.default_thumbnail() ?? "";
     $: options = item?.options(ctx) ?? [];
 
     let hide_border = true;
