@@ -14,7 +14,7 @@ export class Musiplayer {
     progress: number = 0.0;
     duration: number = 0.0;
     volume: number = 1.0;
-    listeners: Map<string, MessageHandler[]>;
+    listeners: Map<string, { enabled: boolean, callback: MessageHandler }[]>;
     muted: boolean = false;
 
     constructor() {
@@ -26,13 +26,17 @@ export class Musiplayer {
             let handlers = this.listeners.get(message.type);
             if (handlers) {
                 for (let handler of handlers) {
-                    handler(message);
+                    if (handler.enabled) {
+                        handler.callback(message);
+                    }
                 }
             }
             handlers = this.listeners.get("any");
             if (handlers) {
                 for (let handler of handlers) {
-                    handler(message);
+                    if (handler.enabled) {
+                        handler.callback(message);
+                    }
                 }
             }
 
@@ -91,13 +95,26 @@ export class Musiplayer {
         });
     }
 
-    add_message_listener(type: PlayerMessage['type'] | "any", handler: MessageHandler) {
+    add_message_listener(type: PlayerMessage['type'] | "any", callback: MessageHandler) {
         let handlers = this.listeners.get(type);
+
+        let handler = {
+            enabled: true,
+            callback,
+        };
+
+        // TODO: remove these from handlers instead of just disabling
+        let disable = () => {
+            handler.enabled = false;
+        };
+
         if (handlers) {
             handlers.push(handler);
         } else {
             this.listeners.set(type, [handler]);
         }
+
+        return disable;
     }
 
     send_message(msg: PlayerCommand) {
