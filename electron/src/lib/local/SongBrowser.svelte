@@ -4,7 +4,7 @@
     import type { WrappedDb, RObject, RSearcher } from "$lib/searcher/searcher.ts";
 
     let song_fac = writable(Db.Db.factory());
-    let song_searcher = writable(Db.Db.fused<WrappedDb<Db.Song>>());
+    let song_searcher: Writable<stores.Searcher> = writable(stores.fused_searcher);
 </script>
 
 <script lang="ts">
@@ -16,6 +16,9 @@
     import type { MenubarOption } from "./Vibe.svelte";
     import * as Db from "$lib/searcher/db.ts";
     import type { MusicListItem } from "$lib/searcher/db.ts";
+    import { SongTube } from "$lib/searcher/song_tube.ts";
+    import * as stores from "$lib/stores.ts";
+    import { get } from "svelte/store";
 
     export let columns: number;
     export let item_height: number;
@@ -44,8 +47,7 @@
             case "queue":
                 break;
             case "home-feed":
-                // s = await $song_fac.search_query({ type: "home-feed" });
-                // throw "unimplemented";
+                s = SongTube.new({ query_type: "home-feed" }, get(stores.tube));
                 break;
             default:
                 break;
@@ -61,26 +63,26 @@
 
     let t: MusicListItem;
     type T = typeof t;
-    let selected_item: Unique<RObject<T>, string>;
+    let selected_item: Unique<Db.ListItem, string>;
     let selected_item_index = 0;
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
     let dragstart = (event: DragEvent, t: T) => {
-        if (t.data.id) {
-            if (t.typ == "song" || t.typ == "video") {
-                event.dataTransfer!.effectAllowed = "move";
-                event.dataTransfer!.dropEffect = "move";
-                event.dataTransfer!.setData("covau/dragndropnew", t.data.id);
-                event.dataTransfer!.setData(
-                    "text/plain",
-                    "https://youtu.be/" + t.data.id
-                );
-            } else if (t.typ == "artist") {
-            } else if (t.typ == "album") {
-            } else if (t.typ == "playlist") {
-            }
-        }
+        // if (t.data.id) {
+        //     if (t.typ == "song" || t.typ == "video") {
+        //         event.dataTransfer!.effectAllowed = "move";
+        //         event.dataTransfer!.dropEffect = "move";
+        //         event.dataTransfer!.setData("covau/dragndropnew", t.data.id);
+        //         event.dataTransfer!.setData(
+        //             "text/plain",
+        //             "https://youtu.be/" + t.data.id
+        //         );
+        //     } else if (t.typ == "artist") {
+        //     } else if (t.typ == "album") {
+        //     } else if (t.typ == "playlist") {
+        //     }
+        // }
     };
 
     type Tab = {
@@ -174,7 +176,12 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.typ == "MusimanagerSong"}
+                            <AudioListItem
+                                title={item.title()}
+                                title_sub={item.title_sub() ?? ''}
+                                img_src={item.thumbnail() ?? item.default_thumbnail()}
+                            />
+                            <!-- {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem
                                     title={item.data.title ?? ""}
                                     title_sub={item.data.artist_name ?? ""}
@@ -297,7 +304,7 @@
                                         src="/static/open-new-tab.svg"
                                     />
                                 </button>
-                            {/if}
+                            {/if} -->
                         </div>
                     </list-item>
                 </Explorer>
@@ -325,7 +332,12 @@
                             on:dragend={queue_dragend}
                             class="item-bg"
                         >
-                            {#if item.typ == "MusimanagerSong"}
+                            <AudioListItem
+                                title={item.title()}
+                                title_sub={item.title_sub() ?? ''}
+                                img_src={item.thumbnail() ?? item.default_thumbnail()}
+                            />
+                            <!-- {#if item.typ == "MusimanagerSong"}
                                 <AudioListItem
                                     title={item.data.title ?? ""}
                                     title_sub={item.data.artist_name ?? ""}
@@ -355,7 +367,7 @@
                                     title_sub={""}
                                     img_src={""}
                                 />
-                            {/if}
+                            {/if} -->
                         </div>
                     </list-item>
                 </Explorer>

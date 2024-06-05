@@ -1,19 +1,21 @@
 <script lang="ts">
-    import type { Writable } from 'svelte/store';
-    import { tick } from 'svelte';
+    import type { ListItem } from '$lib/searcher/db';
 
-    import { type RObject, type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
+    import type { Writable } from 'svelte/store';
+    import { onDestroy, tick } from 'svelte';
+
+    import { type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
 
     import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import { toast } from '$lib/toast/Toasts.svelte';
+    import { queue_searcher } from '$lib/stores.ts';
 
-    export let searcher: Writable<RSearcher<UnwrappedDb<T>>>;
     export let item_height: number;
     export let selected_item_index: number;
     export let playing: number | null;
-    export let playing_video_info: RObject<T> | null = null;
+    export let playing_video_info: ListItem | null = null;
     export let on_item_add: (id: string) => Promise<void>;
     export let tube: Innertube;
     export let dragend = (e: DragEvent) => {
@@ -44,17 +46,17 @@
     type T = $$Generic;
     interface $$Slots {
         default: {
-            item: RObject<T>;
+            item: ListItem;
         };
         infobox: {};
     }
 
-    export let items: Unique<RObject<T>, string>[] = [];
+    export let items: Unique<ListItem, string>[] = [];
 
     let end_is_visible = false;
     const end_reached = async () => {
         while (true) {
-            if (!end_is_visible || !$searcher.has_next_page) {
+            if (!end_is_visible || !$queue_searcher.has_next_page) {
                 break;
             }
             await next_page();
@@ -64,8 +66,8 @@
         }
     };
     const next_page = async () => {
-        let r = await $searcher.next_page();
-        items = r.map(e => ({ id: e.get_key(), data: e })) as typeof items;
+        let r = await $queue_searcher.next_page();
+        items = r.map(e => ({ id: e.key(), data: e })) as typeof items;
     };
     export const search_objects = async () => {
         await next_page();
@@ -74,14 +76,17 @@
         await try_scroll_selected_item_in_view();
         end_reached();
     };
-    searcher.subscribe(async (e) => {
+
+    let unsub = queue_searcher.subscribe(async (e) => {
         items = [];
         if (search_objects) {
             await search_objects();
         }
     });
-    const on_item_click = async (t: Unique<RObject<T>, unknown>) => {};
-    let selected_item: Unique<RObject<T>, unknown>;
+    onDestroy(unsub);
+
+    const on_item_click = async (t: Unique<ListItem, unknown>) => {};
+    let selected_item: Unique<ListItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
     let hovering: number | null = null;

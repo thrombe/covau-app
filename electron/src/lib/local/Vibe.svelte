@@ -6,15 +6,9 @@
         | { content_type: "related-music"; id: string | null }
         | { content_type: "home-feed" }
     );
-
-    export let queue_searcher = writable(Db.Db.unwrapped<WrappedDb<Db.Song>>(
-    // { browse_type: "songs", ids: [] },
-    { query_type: "search", query: "milet", type: "MusimanagerSong" },
-    10));
 </script>
 
 <script lang="ts">
-    import type Innertube from "youtubei.js/web";
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
@@ -27,11 +21,17 @@
     import { writable } from "svelte/store";
     import * as Db from "$lib/searcher/db.ts";
     import type { WrappedDb, RObject } from "$lib/searcher/searcher.ts";
-
-    export let tube: Innertube;
+    import { tube } from "$lib/stores.ts";
+    import * as stores from "$lib/stores.ts";
 
     onMount(() => {
     });
+
+    stores.queue_searcher.set(Db.Db.new({
+        query_type: "search",
+        type: "MusimanagerSong",
+        query: "milet",
+    }, 30));
 
     let player: Musiplayer = new Musiplayer();
     let playing_index: number | null = null;
@@ -51,9 +51,9 @@
     }
 
     let queue_element: HTMLElement;
-    let queue_items: Unique<RObject<Db.Song>, string>[] = [];
+    let queue_items: Unique<Db.ListItem, string>[] = [];
     let queue_selected_item_index: number = -1; // -1 avoids selecting input bar in queue when nothing is in queue
-    let queue_playing_vid_info: RObject<Db.Song> | null;
+    let queue_playing_vid_info: Db.ListItem | null;
     let on_queue_item_add = async (id: string) => {
         // if (player.synced_data.queue.filter((t) => t == id).length > 0) {
         //     await toast("item already in queue");
@@ -80,9 +80,9 @@
         // }
     };
     let on_queue_item_play = async (index: number) => {
-        let path = queue_items[index].data.last_known_path;
-        let uri = "file://" + path ?? null;
-        player.play(uri);
+        // let path = queue_items[index].data.last_known_path;
+        // let uri = "file://" + path ?? null;
+        // player.play(uri);
         // await player.play_index(index);
     };
 
@@ -234,13 +234,12 @@
                                     >
                                         {#if player}
                                             <Queue
-                                                searcher={queue_searcher}
                                                 bind:items={queue_items}
                                                 bind:item_height
                                                 bind:selected_item_index={queue_selected_item_index}
                                                 bind:playing={playing_index}
                                                 bind:on_item_add={on_queue_item_add}
-                                                bind:tube
+                                                bind:tube={$tube}
                                                 bind:dragend={queue_dragend}
                                                 bind:playing_video_info={queue_playing_vid_info}
                                                 {mobile}
@@ -251,9 +250,9 @@
                                                 let:item
                                             >
                                                 <AudioListItem
-                                                    title={item.title}
-                                                    title_sub={item.artist_name ?? ''}
-                                                    img_src={item.info?.thumbnail_url ?? ''}
+                                                    title={item.title()}
+                                                    title_sub={item.title_sub() ?? ''}
+                                                    img_src={item.thumbnail() ?? item.default_thumbnail()}
                                                 />
                                             </Queue>
                                         {/if}
@@ -294,7 +293,7 @@
                             <SongBrowser
                                 bind:item_height
                                 columns={browse_columns}
-                                bind:tube
+                                bind:tube={$tube}
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
                                 browse_type={menubar_option}
@@ -315,13 +314,12 @@
                     <queue-content class="">
                         {#if player}
                             <Queue
-                                searcher={queue_searcher}
                                 bind:items={queue_items}
                                 bind:item_height
                                 bind:selected_item_index={queue_selected_item_index}
                                 bind:playing={playing_index}
                                 bind:on_item_add={on_queue_item_add}
-                                bind:tube
+                                bind:tube={$tube}
                                 bind:dragend={queue_dragend}
                                 bind:playing_video_info={queue_playing_vid_info}
                                 {mobile}
@@ -332,9 +330,9 @@
                                 let:item
                             >
                                 <AudioListItem
-                                    title={item.title}
-                                    title_sub={item.artist_name ?? ''}
-                                    img_src={item.info?.thumbnail_url ?? ''}
+                                    title={item.title()}
+                                    title_sub={item.title_sub() ?? ''}
+                                    img_src={item.thumbnail() ?? item.default_thumbnail()}
                                 />
                             </Queue>
                         {/if}

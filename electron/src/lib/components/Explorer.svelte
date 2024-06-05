@@ -1,27 +1,30 @@
 <script lang="ts">
+    import type { ListItem } from "$lib/searcher/db.ts";
+
     import VirtualScrollable from "./VirtualScrollable.svelte";
     import { tick } from "svelte";
     import type { Unique } from "../virtual.ts";
     import type { Writable } from "svelte/store";
     import type { Keyed, RFactory, RObject, RSearcher } from "../searcher/searcher.ts";
+    import * as stores from "$lib/stores.ts";
 
     // OOF: extra prop to fix T as svelte does not recognise T properly here
     // just pass a variable with the required T type (undefined is fine too) and ignore it
     export let t: T;
-    export let searcher: Writable<RSearcher<T>>;
+    export let searcher: Writable<stores.Searcher>;
     export let selected_item_index: number;
-    export let selected_item: Unique<RObject<T>, unknown>;
+    export let selected_item: Unique<ListItem, unknown>;
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
-    export let on_item_click: (t: Unique<RObject<T>, unknown>) => Promise<void>;
+    export let on_item_click: (t: Unique<ListItem, unknown>) => Promise<void>;
     export let try_scroll_selected_item_in_view: () => Promise<void>;
     export let keyboard_control = true;
 
     type T = $$Generic;
     interface $$Slots {
         default: {
-            item: RObject<T>;
+            item: ListItem;
             item_width: number;
             item_height: number;
             selected: boolean;
@@ -32,7 +35,7 @@
         infobox: {};
     }
 
-    let items = new Array<Unique<RObject<T>, number>>();
+    let items = new Array<Unique<ListItem, number>>();
 
     const end_reached = async () => {
         while (true) {
@@ -47,8 +50,8 @@
     };
     const next_page = async () => {
         let r = await $searcher.next_page();
-        items = r.map((e: Keyed) => {
-            return { id: e.get_key(), data: e } as Unique<RObject<T>, number>;
+        items = r.map((e) => {
+            return { id: e.key(), data: e } as Unique<ListItem, number>;
         });
     };
     export const search_objects = async () => {

@@ -1,7 +1,8 @@
-import Innertube, { MusicShelfContinuation, UniversalCache, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
+import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
 import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
+import { ListItem, type Option } from "./item.ts"; 
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -50,6 +51,116 @@ export type MusicListItem =
     { typ: 'playlist', data: Playlist } |
     { typ: 'artist', data: Artist };
 
+export class StListItem extends ListItem {
+    data: MusicListItem;
+
+    constructor(data: MusicListItem) {
+        super();
+        this.data = data;
+    }
+
+    key(): unknown {
+        return this.data.get_key();
+    }
+
+    title(): string {
+        switch (this.data.typ) {
+            case "song":
+            case "video":
+            case "album":
+            case "playlist":
+                return this.data.data.title ?? this.data.data.id;
+            case "artist":
+                return this.data.data.name ?? this.data.data.id;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    thumbnail(): string | null {
+        switch (this.data.typ) {
+            case "song":
+            case "video":
+            case "album":
+            case "playlist":
+            case "artist":
+                return this.data.data.thumbnail;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    default_thumbnail(): string {
+        return "/static/default-music-icon.svg";
+    }
+
+    title_sub(): string | null {
+        switch (this.data.typ) {
+            case "song":
+            case "video":
+                return this.data.data.authors
+                    .map(a => a.name)
+                    .reduce((p, c) => p + ", " + c, '');
+            case "album":
+            case "playlist":
+                return this.data.data.author.name;
+            case "artist":
+                return this.data.data.subscribers;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    options(): Option[] {
+        switch (this.data.typ) {
+            case "song":
+                return [
+                    {
+                        icon: "/static/add.svg",
+                        location: "Pos1",
+                        tooltip: "add to queue",
+                        onlick: () => { },
+                    },
+                ];
+            case "video":
+                return [];
+            case "album":
+                return [];
+            case "playlist":
+                return [];
+            case "artist":
+                return [];
+            default:
+                throw exhausted(this.data)
+        }
+    }
+}
+
+interface IClassTypeWrapper<D> {
+    next_page(): Promise<DbListItem[]>;
+    inner: D;
+    has_next_page: boolean;
+};
+function ClassTypeWrapper<D extends {
+    query: BrowseQuery;
+    next_page(): Promise<MusicListItem[]>;
+    has_next_page: boolean;
+}>(d: D) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+
+        async next_page(): Promise<DbListItem[]> {
+            let res = await d.next_page();
+
+            let self = this as unknown as IUnionTypeWrapper<D>;
+            self.has_next_page = d.has_next_page;
+
+            return res.map(m => new StListItem(m));
+        }
+    } as unknown as IClassTypeWrapper<D>;
+}
+
 export class SongTube extends Unpaged<MusicListItem> {
     tube: Innertube;
     query: BrowseQuery;
@@ -61,6 +172,10 @@ export class SongTube extends Unpaged<MusicListItem> {
     }
 
     static new(query: BrowseQuery, tube: Innertube) {
+        return ClassTypeWrapper(SongTube.unwrapped(query, tube));
+    }
+
+    static unwrapped(query: BrowseQuery, tube: Innertube) {
         const US = UniqueSearch<MusicListItem, typeof SongTube>(SongTube);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
         return new SS(query, tube);
@@ -95,7 +210,6 @@ export class SongTube extends Unpaged<MusicListItem> {
         if (!this.has_next_page) {
             return [];
         }
-        console.log(this.query);
         if (this.query.query_type == 'search') {
             return await this.next_page_search(this.query.query, this.query.search);
         } else if (this.query.query_type == 'artist') {
