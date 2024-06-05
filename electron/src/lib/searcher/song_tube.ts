@@ -2,7 +2,7 @@ import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "y
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
 import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
-import { ListItem, type Option } from "./item.ts";
+import { ListItem, type Option, type RenderContext } from "./item.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -119,27 +119,51 @@ export class StListItem extends ListItem {
         }
     }
 
-    options(): Option[] {
-        switch (this.data.typ) {
-            case "song":
-                return [
-                    {
-                        icon: "/static/add.svg",
-                        location: "Pos1",
-                        tooltip: "add to queue",
-                        onlick: () => { },
-                    },
-                ];
-            case "video":
-                return [];
-            case "album":
-                return [];
-            case "playlist":
-                return [];
-            case "artist":
-                return [];
+    options(ctx: RenderContext): Option[] {
+        switch (ctx) {
+            case "Queue":
+                switch (this.data.typ) {
+                    case "song":
+                    case "video":
+                        return [
+                            {
+                                icon: "/static/add.svg",
+                                location: "Pos1",
+                                tooltip: "add to queue",
+                                onlick: () => { },
+                            },
+                        ];
+                    case "album":
+                    case "playlist":
+                    case "artist":
+                        throw new Error("cannot render " + this.data.typ + " in " + ctx + " context");
+                    default:
+                        throw exhausted(this.data)
+                }
+            case "Browser":
+                switch (this.data.typ) {
+                    case "song":
+                        return [
+                            {
+                                icon: "/static/add.svg",
+                                location: "Pos1",
+                                tooltip: "add to queue",
+                                onlick: () => { },
+                            },
+                        ];
+                    case "video":
+                        return [];
+                    case "album":
+                        return [];
+                    case "playlist":
+                        return [];
+                    case "artist":
+                        return [];
+                    default:
+                        throw exhausted(this.data)
+                }
             default:
-                throw exhausted(this.data)
+                throw exhausted(ctx);
         }
     }
 }

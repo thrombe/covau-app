@@ -3,7 +3,7 @@ import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./sear
 import * as Musi from "$types/musimanager.ts";
 import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
-import { type Option, ListItem } from "./item.ts";
+import { type Option, ListItem, type RenderContext } from "./item.ts";
 // import * as stores from "$lib/local/stores.ts";
 
 export type Song = Musi.Song<Musi.SongInfo | null>;
@@ -133,27 +133,51 @@ export class DbListItem extends ListItem {
         }
     }
 
-    options(): Option[] {
-        switch (this.data.typ) {
-            case "MusimanagerSong":
-                return [
-                    {
-                        icon: "/static/add.svg",
-                        location: "Pos1",
-                        tooltip: "add to queue",
-                        onlick: () => { },
-                    },
-                ];
-            case "MusimanagerAlbum":
-                return [];
-            case "MusimanagerArtist":
-                return [];
-            case "MusimanagerPlaylist":
-                return [];
-            case "MusimanagerQueue":
-                return [];
+    options(ctx: RenderContext): Option[] {
+        switch (ctx) {
+            case "Queue":
+                switch (this.data.typ) {
+                    case "MusimanagerSong":
+                        return [
+                            {
+                                icon: "/static/add.svg",
+                                location: "Pos1",
+                                tooltip: "add to queue",
+                                onlick: () => { },
+                            },
+                        ];
+                    case "MusimanagerAlbum":
+                    case "MusimanagerArtist":
+                    case "MusimanagerPlaylist":
+                    case "MusimanagerQueue":
+                        throw new Error("cannot render " + this.data.typ + " in " + ctx + " context");
+                    default:
+                        throw exhausted(this.data)
+                }
+            case "Browser":
+                switch (this.data.typ) {
+                    case "MusimanagerSong":
+                        return [
+                            {
+                                icon: "/static/add.svg",
+                                location: "Pos1",
+                                tooltip: "add to queue",
+                                onlick: () => { },
+                            },
+                        ];
+                    case "MusimanagerAlbum":
+                        return [];
+                    case "MusimanagerArtist":
+                        return [];
+                    case "MusimanagerPlaylist":
+                        return [];
+                    case "MusimanagerQueue":
+                        return [];
+                    default:
+                        throw exhausted(this.data)
+                }
             default:
-                throw exhausted(this.data)
+                throw exhausted(ctx);
         }
     }
 }
