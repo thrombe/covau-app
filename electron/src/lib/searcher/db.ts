@@ -2,6 +2,7 @@ import { SavedSearch, UniqueSearch, Unpaged } from "./mixins";
 import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./searcher";
 import * as Musi from "$types/musimanager";
 import * as DB from "$types/db";
+import { exhausted } from "$lib/virtual";
 
 export type Song = Musi.Song<Musi.SongInfo | null>;
 export type Album = Musi.Album<Musi.SongId>;
@@ -57,7 +58,7 @@ function UnionTypeWrapper<D extends {
                         get_key: data.get_key,
                     })) as unknown as MusicListItem[];
                 default:
-                    throw "unimplemented";
+                    throw exhausted(d.query);
             }
         }
     } as unknown as IUnionTypeWrapper<D>;
@@ -116,7 +117,7 @@ export class Db<T> extends Unpaged<T> {
         } else if (type == 'MusimanagerQueue') {
             this.route = "musimanager/search/queues";
         } else {
-            throw 'unreachable';
+            throw exhausted(type)
         }
 
         let q: DB.SearchQuery = {
@@ -189,7 +190,7 @@ export class Db<T> extends Unpaged<T> {
             } else if (this.query.type == 'MusimanagerQueue') {
                 k = keyed(items, null);
             } else {
-                throw 'unreachable';
+                throw exhausted(this.query.type);
             }
 
             return k as RObject<T>[];
@@ -218,7 +219,7 @@ export class Db<T> extends Unpaged<T> {
             let matches: T[] = JSON.parse(body);
             return keyed(matches, "key") as RObject<T>[];
         } else {
-            throw "unreachable";
+            throw exhausted(this.query);
         }
     }
 }

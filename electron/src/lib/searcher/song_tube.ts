@@ -1,6 +1,7 @@
 import Innertube, { MusicShelfContinuation, UniversalCache, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
 import type { Keyed, RObject, RSearcher } from "./searcher";
+import { exhausted } from "$lib/virtual";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -113,9 +114,9 @@ export class SongTube extends Unpaged<MusicListItem> {
         } else if (this.query.query_type == 'home-feed') {
             let r = await this.next_page_home_feed();
             return r;
+        } else {
+            throw exhausted(this.query);
         }
-
-        throw 'unreachable';
     }
     protected async next_page_up_next(video_id: string) {
         this.has_next_page = false;

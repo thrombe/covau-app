@@ -4,4 +4,7 @@ export interface Unique<T, K> {
     id: K;
 }
 
+export function exhausted(_: never) {
+    throw "unreachable";
+}
 
