@@ -1,5 +1,6 @@
 import { YTNodes } from "$lib/searcher/song_tube";
 import { new_innertube_instance } from "$lib/searcher/tube";
+import { exhausted } from "$lib/virtual";
 import type { PlayerMessage, PlayerCommand } from "$types/server";
 
 type MessageHandler = ((msg: PlayerMessage) => Promise<void>) | ((msg: PlayerMessage) => void);
@@ -23,6 +24,12 @@ export class Musiplayer {
             let message: PlayerMessage = JSON.parse(e.data);
 
             let handlers = this.listeners.get(message.type);
+            if (handlers) {
+                for (let handler of handlers) {
+                    handler(message);
+                }
+            }
+            handlers = this.listeners.get("any");
             if (handlers) {
                 for (let handler of handlers) {
                     handler(message);
@@ -57,8 +64,7 @@ export class Musiplayer {
                     this.muted = message.content;
                     break
                 default:
-                    console.warn("unhandled message: " + e.data);
-                    break;
+                    throw exhausted(message);
             }
         });
         this.ws.addEventListener('open', async (_e) => {
@@ -85,7 +91,7 @@ export class Musiplayer {
         });
     }
 
-    add_message_listener(type: PlayerMessage['type'], handler: MessageHandler) {
+    add_message_listener(type: PlayerMessage['type'] | "any", handler: MessageHandler) {
         let handlers = this.listeners.get(type);
         if (handlers) {
             handlers.push(handler);
