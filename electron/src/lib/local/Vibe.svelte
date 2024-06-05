@@ -35,7 +35,6 @@
         query: "milet",
     }, 30));
 
-    let player: Musiplayer = new Musiplayer();
     let playing_index: number | null = null;
 
     let item_height: number = 75;
@@ -234,24 +233,22 @@
                                         class="pl-2"
                                         style="height: calc(100% - 3.5rem);"
                                     >
-                                        {#if player}
-                                            <Queue
-                                                bind:items={queue_items}
-                                                bind:item_height
-                                                bind:selected_item_index={queue_selected_item_index}
-                                                bind:playing={playing_index}
-                                                bind:on_item_add={on_queue_item_add}
-                                                bind:tube={$tube}
-                                                bind:dragend={queue_dragend}
-                                                bind:playing_video_info={queue_playing_vid_info}
-                                                {mobile}
-                                                insert_item={on_queue_item_insert}
-                                                move_item={on_queue_item_move}
-                                                delete_item={on_queue_item_delete}
-                                                play_item={on_queue_item_play}
-                                            >
-                                            </Queue>
-                                        {/if}
+                                        <Queue
+                                            bind:items={queue_items}
+                                            bind:item_height
+                                            bind:selected_item_index={queue_selected_item_index}
+                                            bind:playing={playing_index}
+                                            bind:on_item_add={on_queue_item_add}
+                                            bind:tube={$tube}
+                                            bind:dragend={queue_dragend}
+                                            bind:playing_video_info={queue_playing_vid_info}
+                                            {mobile}
+                                            insert_item={on_queue_item_insert}
+                                            move_item={on_queue_item_move}
+                                            delete_item={on_queue_item_delete}
+                                            play_item={on_queue_item_play}
+                                        >
+                                        </Queue>
                                     </div>
                                 </div>
                             </div>
@@ -308,24 +305,22 @@
                     style="height: calc(100%);"
                 >
                     <queue-content class="">
-                        {#if player}
-                            <Queue
-                                bind:items={queue_items}
-                                bind:item_height
-                                bind:selected_item_index={queue_selected_item_index}
-                                bind:playing={playing_index}
-                                bind:on_item_add={on_queue_item_add}
-                                bind:tube={$tube}
-                                bind:dragend={queue_dragend}
-                                bind:playing_video_info={queue_playing_vid_info}
-                                {mobile}
-                                insert_item={on_queue_item_insert}
-                                move_item={on_queue_item_move}
-                                delete_item={on_queue_item_delete}
-                                play_item={on_queue_item_play}
-                            >
-                            </Queue>
-                        {/if}
+                        <Queue
+                            bind:items={queue_items}
+                            bind:item_height
+                            bind:selected_item_index={queue_selected_item_index}
+                            bind:playing={playing_index}
+                            bind:on_item_add={on_queue_item_add}
+                            bind:tube={$tube}
+                            bind:dragend={queue_dragend}
+                            bind:playing_video_info={queue_playing_vid_info}
+                            {mobile}
+                            insert_item={on_queue_item_insert}
+                            move_item={on_queue_item_move}
+                            delete_item={on_queue_item_delete}
+                            play_item={on_queue_item_play}
+                        >
+                        </Queue>
                     </queue-content>
                 </queue>
             </queue-area>
@@ -334,7 +329,6 @@
 
     <play-bar class="px-2 pb-2 pt-4">
         <PlayBar
-            bind:player
             {mobile}
             audio_info={null}
         />
