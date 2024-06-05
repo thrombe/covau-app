@@ -56,7 +56,7 @@ async fn player_command_handler(
                     tokio::time::sleep(timeout).await;
                     let mut p = player.lock().await;
                     let dur = p.duration()?;
-                    if dur > 0.5 {
+                    if dur > 0.5 && dur < 60.0 * 60.0 * 24.0 * 30.0 {
                         tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout)
                             .await?;
                         break;
