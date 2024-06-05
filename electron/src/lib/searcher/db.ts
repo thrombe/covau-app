@@ -28,47 +28,6 @@ export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
     { query_type: 'songs', ids: string[] };
 
-interface IUnionTypeWrapper<D> {
-    next_page(): Promise<MusicListItem[]>;
-    inner: D;
-    has_next_page: boolean;
-};
-function UnionTypeWrapper<D extends {
-    query: BrowseQuery;
-    next_page(): Promise<RObject<unknown>[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-
-        async next_page(): Promise<MusicListItem[]> {
-            let res = await d.next_page();
-
-            let self = this as unknown as IUnionTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
-            switch (d.query.query_type) {
-                case "search":
-                    let typ = d.query.type;
-                    return res.map(data => ({
-                        typ: typ,
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                case "songs":
-                    return res.map(data => ({
-                        typ: "MusimanagerSong",
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                default:
-                    throw exhausted(d.query);
-            }
-        }
-    } as unknown as IUnionTypeWrapper<D>;
-}
-
 export class DbListItem extends ListItem {
     data: MusicListItem;
 
@@ -212,12 +171,13 @@ export class DbListItem extends ListItem {
     }
 }
 
-interface IClassTypeWrapper<D> {
-    next_page(): Promise<DbListItem[]>;
+interface IUnionTypeWrapper<D> {
+    next_page(): Promise<MusicListItem[]>;
     inner: D;
     has_next_page: boolean;
+    query: BrowseQuery;
 };
-function ClassTypeWrapper<D extends {
+function UnionTypeWrapper<D extends {
     query: BrowseQuery;
     next_page(): Promise<RObject<unknown>[]>;
     has_next_page: boolean;
@@ -225,6 +185,54 @@ function ClassTypeWrapper<D extends {
     return {
         inner: d,
         has_next_page: d.has_next_page,
+        query: d.query,
+
+        async next_page(): Promise<MusicListItem[]> {
+            let res = await d.next_page();
+
+            let self = this as unknown as IUnionTypeWrapper<D>;
+            self.has_next_page = d.has_next_page;
+
+            if (res.length === 0) {
+                return [];
+            }
+
+            switch (d.query.query_type) {
+                case "search":
+                    let typ = d.query.type;
+                    return res.map(data => ({
+                        typ: typ,
+                        data: data,
+                        get_key: data.get_key,
+                    })) as unknown as MusicListItem[];
+                case "songs":
+                    return res.map(data => ({
+                        typ: "MusimanagerSong",
+                        data: data,
+                        get_key: data.get_key,
+                    })) as unknown as MusicListItem[];
+                default:
+                    throw exhausted(d.query);
+            }
+        }
+    } as unknown as IUnionTypeWrapper<D>;
+}
+
+interface IClassTypeWrapper<D> {
+    next_page(): Promise<DbListItem[]>;
+    inner: D;
+    has_next_page: boolean;
+    query: BrowseQuery;
+};
+function ClassTypeWrapper<D extends {
+    query: BrowseQuery;
+    next_page(): Promise<MusicListItem[]>;
+    has_next_page: boolean;
+}>(d: D) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+        query: d.query,
 
         async next_page(): Promise<DbListItem[]> {
             let res = await d.next_page();
@@ -236,28 +244,7 @@ function ClassTypeWrapper<D extends {
                 return [];
             }
 
-            let mli;
-            switch (d.query.query_type) {
-                case "search":
-                    let typ = d.query.type;
-                    mli = res.map(data => ({
-                        typ: typ,
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                    break;
-                case "songs":
-                    mli = res.map(data => ({
-                        typ: "MusimanagerSong",
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                    break;
-                default:
-                    throw exhausted(d.query);
-            }
-
-            return mli.map(m => new DbListItem(m));
+            return res.map(m => new DbListItem(m));
         }
     } as unknown as IClassTypeWrapper<D>;
 }
@@ -273,7 +260,9 @@ export class Db<T> extends Unpaged<T> {
     }
 
     static new<T>(query: BrowseQuery, page_size: number) {
-        return ClassTypeWrapper(Db.unwrapped<T>(query, page_size));
+        let w1 = UnionTypeWrapper(Db.unwrapped<T>(query, page_size));
+        let w2 = ClassTypeWrapper(w1);
+        return w2;
     }
 
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
