@@ -2,7 +2,7 @@ import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "y
 import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
 import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
-import { ListItem, type Option } from "./item.ts"; 
+import { ListItem, type Option } from "./item.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -95,12 +95,20 @@ export class StListItem extends ListItem {
     }
 
     title_sub(): string | null {
+        function authors(a: Author[]) {
+            if (a.length == 0) {
+                return '';
+            } else {
+                return a
+                    .map(a => a.name)
+                    .reduce((p, c) => p + ", " + c);
+            }
+        }
+
         switch (this.data.typ) {
             case "song":
             case "video":
-                return this.data.data.authors
-                    .map(a => a.name)
-                    .reduce((p, c) => p + ", " + c, '');
+                return authors(this.data.data.authors);
             case "album":
             case "playlist":
                 return this.data.data.author.name;
