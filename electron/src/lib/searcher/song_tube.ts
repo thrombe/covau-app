@@ -3,6 +3,7 @@ import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
 import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
+import * as stores from "$lib/stores.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;

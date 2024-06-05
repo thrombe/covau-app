@@ -99,11 +99,19 @@ selected_menubar_option.subscribe(async (option) => {
         case "related-music":
             break
         case "home-feed":
-            tabs.set([{
-                name: "Results",
-                searcher: St.SongTube.new({ query_type: "home-feed" }, get(tube)),
-                thumbnail: null,
-            }]);
+            try {
+                tabs.set([{
+                    name: "Results",
+                    searcher: St.SongTube.new({ query_type: "home-feed" }, get(tube)),
+                    thumbnail: null,
+                }]);
+            } catch (e) {
+                if (e instanceof ReferenceError) {
+                    // ignore
+                } else {
+                    throw e;
+                }
+            }
             break
         default:
             exhausted(option);
