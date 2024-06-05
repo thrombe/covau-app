@@ -19,7 +19,7 @@
     let audio_duration = 0;
     let is_muted = false;
     let volume = 1;
-    $player.add_message_listener("any", (m) => {
+    let unhandle = $player.add_message_listener("any", (m) => {
         switch (m.type) {
             case 'Paused':
                 is_playing = false;
@@ -52,6 +52,7 @@
         }
         video_pos = m.content;
     });
+    onDestroy(unhandle);
 
     const on_seek = async (p: number) => {
         $player.seek_to_perc(p);
