@@ -202,6 +202,7 @@
                     class='p-2'
                     on:click={async () => {
                         $player.toggle_mute();
+                        is_muted = !is_muted;
                     }}
                 >
                     <img alt='volume icon' class='h-full w-6 aspect-square {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
