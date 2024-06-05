@@ -54,14 +54,14 @@
     </div>
 
     {#each options as option, i}
-        {#if option.location == "Pos1"}
+        {#if option.location == "TopRight"}
             <button
                 class='pop-button'
                 on:click={option.onclick}
             >
                 <img alt="remove" draggable={false} class='h-3 opacity-50' src={option.icon}>
             </button>
-        {:else if option.location == "Pos2"}
+        {:else if option.location == "IconTop"}
             <div class='absolute h-full flex flex-col justify-center left-0 top-0'>
                 <button
                     class='queue-button'

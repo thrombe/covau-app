@@ -141,11 +141,17 @@ export class DbListItem extends ListItem {
                     case "MusimanagerSong":
                         return [
                             {
-                                icon: "/static/add.svg",
-                                location: "Pos1",
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
                                 tooltip: "add to queue",
                                 onclick: () => {
-                                    toast("add onclick");
+                                },
+                            },
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: () => {
                                 },
                             },
                         ];
