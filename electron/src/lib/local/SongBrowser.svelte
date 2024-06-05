@@ -390,7 +390,7 @@
     }
 
     .item-bg {
-        @apply w-full h-full py-1;
+        @apply w-full h-full;
     }
 
     .open-button {
