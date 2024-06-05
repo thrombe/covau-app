@@ -23,6 +23,7 @@
     import type { WrappedDb, RObject } from "$lib/searcher/searcher.ts";
     import { tube } from "$lib/stores.ts";
     import * as stores from "$lib/stores.ts";
+    import type { ListItem } from "$lib/searcher/item.ts";
 
     onMount(() => {
     });
@@ -51,9 +52,9 @@
     }
 
     let queue_element: HTMLElement;
-    let queue_items: Unique<Db.ListItem, string>[] = [];
+    let queue_items: Unique<ListItem, string>[] = [];
     let queue_selected_item_index: number = -1; // -1 avoids selecting input bar in queue when nothing is in queue
-    let queue_playing_vid_info: Db.ListItem | null;
+    let queue_playing_vid_info: ListItem | null;
     let on_queue_item_add = async (id: string) => {
         // if (player.synced_data.queue.filter((t) => t == id).length > 0) {
         //     await toast("item already in queue");

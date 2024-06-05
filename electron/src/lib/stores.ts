@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import { type ListItem } from "$lib/searcher/db.ts";
+import { type ListItem } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
