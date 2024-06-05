@@ -9,10 +9,12 @@ import { Musiplayer } from "$lib/local/player.ts";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
-    // next_page(): Promise<unknown[]>;
     has_next_page: boolean;
 };
-export let fused_searcher = { async next_page() { return [] }, has_next_page: false };
+export let fused_searcher = {
+    async next_page() { return [] },
+    has_next_page: false,
+};
 
 export type Tab = {
     name: string;

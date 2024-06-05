@@ -3,11 +3,13 @@
     import { Musiplayer } from './player.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
+    import * as stores from "$lib/stores.ts";
 
-    export let player: Musiplayer;
     export let audio_info: { title: string; title_sub: string; img_src: string } | null;
     export let mobile = false;
     export let keyboard_control = true;
+
+    let player = stores.player;
 
     let video_pos = 0;
     let has_prev = false;
@@ -34,11 +36,11 @@
     });
 
     const on_seek = async (p: number) => {
-        player.seek_to_perc(p);
+        $player.seek_to_perc(p);
     };
 
     const on_volume_change = async (v: number) => {
-        player.set_volume(v);
+        $player.set_volume(v);
         volume = v;
     };
 
@@ -75,23 +77,23 @@
         }
 
         if (event.key == ' ') {
-            if (player.paused) {
-                player.unpause();
-            } else {
-                player.play(todo);
-            }
+            // if ($player.paused) {
+            //     $player.unpause();
+            // } else {
+            //     $player.play(todo);
+            // }
         } else if (event.key == 'ArrowLeft' || event.key == 'h') {
             let pos = Math.max(0, video_pos - 10/audio_duration);
-            player.seek_to_perc(pos);
+            $player.seek_to_perc(pos);
         } else if (event.key == 'ArrowRight' || event.key == 'l') {
             let pos = Math.min(1, video_pos + 10/audio_duration);
-            player.seek_to_perc(pos);
+            $player.seek_to_perc(pos);
         } else if (event.key == 'ArrowDown' || event.key == 'j') {
             // await player.play_next();
         } else if (event.key == 'ArrowUp' || event.key == 'k') {
             // await player.play_prev();
         } else if (event.key == 'm') {
-            player.toggle_mute();
+            $player.toggle_mute();
         }
     };
 </script>
@@ -143,8 +145,8 @@
             </button>
             <button
                 on:click={async () => {
-                    player.toggle_pause();
-                    is_playing = !player.paused
+                    $player.toggle_pause();
+                    is_playing = !$player.paused
                 }}
             >
                 <img alt='play pause' class='h-3' src='/static/{is_playing ? 'pause' : 'play'}.svg'>
@@ -180,7 +182,7 @@
                 <button
                     class='p-2'
                     on:click={async () => {
-                        player.toggle_mute();
+                        $player.toggle_mute();
                     }}
                 >
                     <img alt='volume icon' class='h-full w-6 aspect-square {is_muted ? 'brightness-50 opacity-50' : ''}' src='/static/volume-{volume_icon}.svg'>
