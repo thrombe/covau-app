@@ -23,7 +23,7 @@ export type Tab = {
 };
 
 export type MenubarOption = { name: string } & (
-    | { content_type: "music"; type: Db.Typ }
+    | { content_type: "music"; type: Db.Typ | St.Typ }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music"; id: string | null }
@@ -52,6 +52,11 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Playlists", content_type: "music", type: "MusimanagerPlaylist" },
     { name: "Artist", content_type: "music", type: "MusimanagerArtist" },
     { name: "Album", content_type: "music", type: "MusimanagerAlbum" },
+    { name: "Yt Song", content_type: "music", type: "song" },
+    { name: "Yt Video", content_type: "music", type: "video" },
+    { name: "Yt Album", content_type: "music", type: "album" },
+    { name: "Yt Playlist", content_type: "music", type: "playlist" },
+    { name: "Yt Artist", content_type: "music", type: "artist" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
@@ -91,13 +96,35 @@ selected_menubar_option.subscribe(async (option) => {
     if (!get(tube)) {
         return;
     }
+    let s: Searcher;
     switch (option.content_type) {
         case "music": {
-            let s = Db.Db.new({
-                query_type: "search",
-                type: option.type,
-                query: get(query_input),
-            }, page_size);
+            switch (option.type) {
+                case "MusimanagerSong":
+                case "MusimanagerAlbum":
+                case "MusimanagerArtist":
+                case "MusimanagerPlaylist":
+                case "MusimanagerQueue":
+                    s = Db.Db.new({
+                        query_type: "search",
+                        type: option.type,
+                        query: get(query_input),
+                    }, page_size);
+                    break;
+                case "song":
+                case "video":
+                case "album":
+                case "playlist":
+                case "artist":
+                    s = St.SongTube.new({
+                        query_type: "search",
+                        query: get(query_input),
+                        search: option.type,
+                    }, get(tube));
+                    break;
+                default:
+                    throw exhausted(option.type);
+            }
             tabs.update(t => {
                 t = [t[0]];
                 t[0].searcher.set(s);
@@ -113,7 +140,9 @@ selected_menubar_option.subscribe(async (option) => {
             break
         case "home-feed": {
             let st = await import("$lib/searcher/song_tube.ts");
-            let s = st.SongTube.new({ query_type: "home-feed" }, get(tube));
+            let s = st.SongTube.new({
+                query_type: "home-feed",
+            }, get(tube));
             tabs.update(t => {
                 t = [t[0]];
                 t[0].searcher.set(s);
