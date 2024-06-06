@@ -116,7 +116,7 @@
 <div class='flex flex-row h-full'
     style='
         --volume-control-width: 3.5rem;
-        --audio-info-width: {mobile ? '0px' : '15rem'};
+        --audio-info-width: {mobile ? '0px' : '20rem'};
     '
 >
     <audio-info class='flex flex-row {mobile ? 'hidden' : ''}'>
@@ -127,13 +127,6 @@
         />
     </audio-info>
 
-    <a
-        href='https://github.com/thrombe/covau'
-        target='_blank'
-        class='h-full flex justify-center items-center aspect-square bg-gray-200 bg-opacity-10 rounded-md p-1 scale-[90%]'
-    >
-        <img alt='github' src='/static/github.svg' class='h-9 aspect-square' >
-    </a>
     <audio-controls>
         <div class='flex flex-row items-center h-1/3 w-full py-1'>
             <div class='p-2 text-gray-400'>
