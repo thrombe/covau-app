@@ -9,16 +9,12 @@
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
-    import type Innertube from "youtubei.js/web";
     import * as Db from "$lib/searcher/db.ts";
-    import { SongTube } from "$lib/searcher/song_tube.ts";
     import * as stores from "$lib/stores.ts";
-    import { get } from "svelte/store";
     import type { ListItem } from "$lib/searcher/item.ts";
 
     export let columns: number;
     export let item_height: number;
-    export let tube: Innertube;
     export let queue_dragend: (e: DragEvent) => void = () => {};
     export let queue_item_add: (id: string) => Promise<void>;
 

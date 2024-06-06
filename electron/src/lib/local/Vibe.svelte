@@ -8,7 +8,6 @@
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
     import * as Db from "$lib/searcher/db.ts";
-    import { tube } from "$lib/stores.ts";
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
 
@@ -211,7 +210,6 @@
                                             bind:selected_item_index={queue_selected_item_index}
                                             bind:playing={playing_index}
                                             bind:on_item_add={on_queue_item_add}
-                                            bind:tube={$tube}
                                             bind:dragend={queue_dragend}
                                             bind:playing_video_info={queue_playing_vid_info}
                                             {mobile}
@@ -258,7 +256,6 @@
                             <SongBrowser
                                 bind:item_height
                                 columns={browse_columns}
-                                bind:tube={$tube}
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
                             />
@@ -282,7 +279,6 @@
                             bind:selected_item_index={queue_selected_item_index}
                             bind:playing={playing_index}
                             bind:on_item_add={on_queue_item_add}
-                            bind:tube={$tube}
                             bind:dragend={queue_dragend}
                             bind:playing_video_info={queue_playing_vid_info}
                             {mobile}

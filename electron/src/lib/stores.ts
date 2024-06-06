@@ -32,6 +32,9 @@ export type MenubarOption = { name: string } & (
 
 let page_size = 30;
 
+// NOTE: initialized in wrap components
+export let tube: Writable<Innertube> = writable();
+
 export type Source = "Musicbrainz" | "Musimanager" | "Youtube";
 export let sources: Source[] = ["Musimanager", "Youtube", "Musicbrainz"]
 export let source: Writable<Source> = writable("Musimanager");
@@ -54,8 +57,8 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
 export let selected_menubar_option_index = writable(0);
 export let query_input = writable("");
 export let selected_menubar_option: Readable<MenubarOption> = derived(
-    [menubar_options, selected_menubar_option_index, query_input],
-    ([$options, $index, _]) => $options[$index],
+    [menubar_options, selected_menubar_option_index, query_input, tube],
+    ([$options, $index, _q, _t]) => $options[$index],
 );
 
 export let tabs: Writable<Tab[]> = writable([{
@@ -84,11 +87,10 @@ export let player: Writable<Musiplayer> = writable();
     player.set(pl);
 })()
 
-// NOTE: initialized in wrap components
-export let tube: Writable<Innertube> = writable();
-
-
 selected_menubar_option.subscribe(async (option) => {
+    if (!get(tube)) {
+        return;
+    }
     switch (option.content_type) {
         case "music": {
             let s = Db.Db.new({

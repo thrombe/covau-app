@@ -1,14 +1,7 @@
 <script lang="ts">
     import AudioListItem from '$lib/components/AudioListItem.svelte';
-
     import type { ListItem } from '$lib/searcher/item.ts';
-
-    import type { Writable } from 'svelte/store';
     import { onDestroy, tick } from 'svelte';
-
-    import { type RSearcher, type UnwrappedDb } from '$lib/searcher/searcher';
-
-    import type Innertube from 'youtubei.js/web';
     import type { Unique } from '../virtual';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import { toast } from '$lib/toast/toast.ts';
@@ -19,7 +12,6 @@
     export let playing: number | null;
     export let playing_video_info: ListItem | null = null;
     export let on_item_add: (id: string) => Promise<void>;
-    export let tube: Innertube;
     export let dragend = (e: DragEvent) => {
         hovering = null;
         dragging_index = null;
