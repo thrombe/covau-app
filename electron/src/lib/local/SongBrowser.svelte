@@ -97,7 +97,7 @@
         </browse-tab-bar>
     </bar-area>
 
-    {#each $tabs as tab}
+    {#each $tabs as tab (tab.name)}
         <browse-area class={$curr_tab == tab ? "" : "hidden"}>
             <Explorer
                 searcher={tab.searcher}

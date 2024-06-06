@@ -169,6 +169,7 @@ export class DbListItem extends ListItem {
                                 onclick: async () => {
                                     let s = Db.new({ query_type: "songs", ids: list.data_list}, 30);
                                     stores.tabs.update(t => {
+                                        t = [t[0]];
                                         t.push({ name: list.name, searcher: writable(s), thumbnail: null });
                                         return t;
                                     });
