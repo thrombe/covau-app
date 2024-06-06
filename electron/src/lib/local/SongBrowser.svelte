@@ -2,7 +2,6 @@
     import { writable, type Writable } from "svelte/store";
 
     let song_fac = writable(Db.Db.factory());
-    let song_searcher: Writable<stores.Searcher> = writable(stores.fused_searcher);
 </script>
 
 <script lang="ts">
@@ -11,7 +10,6 @@
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
     import type Innertube from "youtubei.js/web";
-    import type { MenubarOption } from "./Vibe.svelte";
     import * as Db from "$lib/searcher/db.ts";
     import { SongTube } from "$lib/searcher/song_tube.ts";
     import * as stores from "$lib/stores.ts";
@@ -22,39 +20,41 @@
     export let item_height: number;
     export let tube: Innertube;
     export let queue_dragend: (e: DragEvent) => void = () => {};
-    export let browse_type: MenubarOption;
+    export let browse_type: stores.MenubarOption;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    const refresh_searcher = async (browse_type: MenubarOption) => {
-        let s;
-        switch (browse_type.content_type) {
-            case "music":
-                s = await $song_fac.search_query<Db.Song>({
-                    query_type: "search",
-                    query: search_query,
-                    type: browse_type.type,
-                });
-                break;
-            case "related-music":
-                // s = await $song_fac.search_query({
-                //     type: "up-next",
-                //     id: browse_type.id ?? "",
-                // });
-                throw "unimplemented";
-                break;
-            case "queue":
-                break;
-            case "home-feed":
-                s = SongTube.new({ query_type: "home-feed" }, get(stores.tube));
-                break;
-            default:
-                break;
-        }
-        if (s) {
-            $song_searcher = s;
-        }
-    };
-    $: refresh_searcher(browse_type);
+    let song_searcher = stores.searcher;
+
+    // const refresh_searcher = async (browse_type: stores.MenubarOption) => {
+    //     let s;
+    //     switch (browse_type.content_type) {
+    //         case "music":
+    //             s = await $song_fac.search_query<Db.Song>({
+    //                 query_type: "search",
+    //                 query: search_query,
+    //                 type: browse_type.type,
+    //             });
+    //             break;
+    //         case "related-music":
+    //             // s = await $song_fac.search_query({
+    //             //     type: "up-next",
+    //             //     id: browse_type.id ?? "",
+    //             // });
+    //             throw "unimplemented";
+    //             break;
+    //         case "queue":
+    //             break;
+    //         case "home-feed":
+    //             s = SongTube.new({ query_type: "home-feed" }, get(stores.tube));
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    //     if (s) {
+    //         $song_searcher = s;
+    //     }
+    // };
+    // $: refresh_searcher(browse_type);
 
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
@@ -81,19 +81,15 @@
         // }
     };
 
-    type Tab = {
-        name: string;
-        searcher: Writable<stores.Searcher>;
-        thumbnail: string | null;
-    };
-
-    let search_tab: Tab = {
-        name: "Results",
-        searcher: song_searcher,
-        thumbnail: null,
-    };
-    let tabs: Tab[] = [search_tab];
-    let curr_tab = search_tab;
+    // let search_tab: Tab = {
+    //     name: "Results",
+    //     searcher: song_searcher,
+    //     thumbnail: null,
+    // };
+    // let tabs: Tab[] = [search_tab];
+    // let curr_tab = search_tab;
+    let tabs = stores.tabs;
+    let curr_tab = stores.curr_tab;
 </script>
 
 <div class="w-full h-full flex flex-col">
@@ -105,13 +101,12 @@
                     bind:value={search_query}
                     bind:input_element={search_input_element}
                     on_enter={async (e) => {
-                        await refresh_searcher(browse_type);
+                        // await refresh_searcher(browse_type);
 
                         e.preventDefault();
                         await search_objects();
 
-                        tabs = [tabs[0]];
-                        curr_tab = tabs[0];
+                        $tabs = [$tabs[0]];
                     }}
                 />
             {:else}
@@ -126,16 +121,16 @@
         <browse-tab-bar
             class="flex flex-row overflow-x-auto gap-1 px-1 justify-center"
         >
-            {#each tabs as tab}
+            {#each $tabs as tab, i}
                 <button
                     class="border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
-                        {curr_tab == tab
+                        {$curr_tab == tab
                         ? 'font-bold border-gray-200'
                         : 'border-gray-600'}
                     "
                     style="max-width: 12rem;"
                     on:click={async () => {
-                        curr_tab = tab;
+                        stores.curr_tab_index.set(i);
                     }}
                 >
                     {tab.name}
@@ -144,11 +139,11 @@
         </browse-tab-bar>
     </bar-area>
 
-    {#each tabs as tab (tab.name)}
-        <browse-area class={curr_tab == tab ? "" : "hidden"}>
-            {#if tab.name == search_tab.name}
+    {#each $tabs as tab, i (tab.name)}
+        <browse-area class={($curr_tab == tab ? "" : "hidden") + " " + tab.name}>
+            {#if tab.name == "Results"}
                 <Explorer
-                    searcher={song_searcher}
+                    searcher={writable($tabs[i].searcher)}
                     bind:selected_item
                     {columns}
                     bind:item_height
@@ -175,27 +170,6 @@
                                 ctx="Browser"
                             />
                             <!-- {#if item.typ == "MusimanagerSong"}
-                                <AudioListItem
-                                    title={item.data.title ?? ""}
-                                    title_sub={item.data.artist_name ?? ""}
-                                    img_src={item.data.info?.thumbnail_url ?? ""}
-                                />
-                                <button
-                                    class="open-button"
-                                    on:click={async () => {
-                                        // if (!item.data.id) {
-                                        //     return;
-                                        // }
-                                        // await queue_item_add(item.data.id);
-                                    }}
-                                >
-                                    <img
-                                        draggable={false}
-                                        class="h-3"
-                                        alt="add"
-                                        src="/static/add.svg"
-                                    />
-                                </button>
                             {:else if item.typ == "MusimanagerAlbum" || item.typ == "MusimanagerPlaylist"}
                                 <AudioListItem
                                     title={item.data.name ?? ""}
@@ -256,54 +230,13 @@
                                     />
                                 </button>
                             {:else if item.typ == "MusimanagerArtist"}
-                                <AudioListItem
-                                    title={item.data.name ?? ""}
-                                    title_sub={item.data.subscribers ?? ""}
-                                    img_src={item.data.thumbnail ?? ""}
-                                />
-                                <button
-                                    class="open-button"
-                                    on:click={async () => {
-                                        if (!item.data.id) {
-                                            return;
-                                        }
-                                        let _new_tab = {
-                                            name: "Artist: " + item.data.name,
-                                            searcher:
-                                                await $song_fac.search_query({
-                                                    query_type: "artist",
-                                                    id: item.data.id,
-                                                }),
-                                            thumbnail: null,
-                                        };
-                                        if (!_new_tab.searcher) {
-                                            return;
-                                        }
-
-                                        let new_tab = {
-                                            ..._new_tab,
-                                            searcher: writable(
-                                                _new_tab.searcher
-                                            ),
-                                        };
-                                        tabs = [tabs[0], new_tab];
-                                        curr_tab = new_tab;
-                                    }}
-                                >
-                                    <img
-                                        draggable={false}
-                                        class="h-3"
-                                        alt="new-tab"
-                                        src="/static/open-new-tab.svg"
-                                    />
-                                </button>
                             {/if} -->
                         </div>
                     </list-item>
                 </Explorer>
             {:else}
                 <Explorer
-                    searcher={tab.searcher}
+                    searcher={writable(tab.searcher)}
                     {selected_item}
                     {columns}
                     {item_height}
@@ -328,37 +261,6 @@
                                 item={item}
                                 ctx="Browser"
                             />
-                            <!-- {#if item.typ == "MusimanagerSong"}
-                                <AudioListItem
-                                    title={item.data.title ?? ""}
-                                    title_sub={item.data.artist_name ?? ""}
-                                    img_src={item.data.info?.thumbnail_url ??
-                                        curr_tab.thumbnail ??
-                                        ""}
-                                />
-                                <button
-                                    class="open-button"
-                                    on:click={async () => {
-                                        // if (!item.data.id) {
-                                        //     return;
-                                        // }
-                                        // await queue_item.data_add(item.data.id);
-                                    }}
-                                >
-                                    <img
-                                        draggable={false}
-                                        class="h-3"
-                                        alt="add"
-                                        src="/static/add.svg"
-                                    />
-                                </button>
-                            {:else}
-                                <AudioListItem
-                                    title={"unknown item"}
-                                    title_sub={""}
-                                    img_src={""}
-                                />
-                            {/if} -->
                         </div>
                     </list-item>
                 </Explorer>
