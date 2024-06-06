@@ -56,7 +56,7 @@
     {#each options as option}
         {#if option.location == "TopRight"}
             <button
-                class='pop-button'
+                class='pop-button top-0'
                 on:click={option.onclick}
             >
                 <img alt="remove" draggable={false} class='h-3 opacity-50' src={option.icon}>
@@ -71,6 +71,13 @@
                     <img alt="play" draggable={false} class='scale-[50%]' src={option.icon}>
                 </button>
             </div>
+        {:else if option.location == "BottomRight"}
+            <button
+                class='pop-button bottom-0'
+                on:click={option.onclick}
+            >
+                <img alt="remove" draggable={false} class='h-3 opacity-50' src={option.icon}>
+            </button>
         {/if}
     {/each}
 </item>
@@ -85,7 +92,7 @@
     }
 
     .pop-button {
-        @apply absolute p-1 m-2 rounded-md bg-gray-200 bg-opacity-30 text-gray-900 font-bold right-0 top-0;
+        @apply absolute p-1 m-2 rounded-md bg-gray-200 bg-opacity-30 text-gray-900 font-bold right-0;
     }
     .queue-button {
         @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;

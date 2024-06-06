@@ -154,12 +154,60 @@ export class DbListItem extends ListItem {
                                 },
                             },
                         ];
-                    case "MusimanagerAlbum":
-                        return [];
-                    case "MusimanagerArtist":
-                        return [];
+                    case "MusimanagerAlbum": {
+                        let list = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: list.songs}, 30);
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({ name: list.name, searcher: writable(s), thumbnail: null });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                        ];
+                    }
+                    case "MusimanagerArtist": {
+                        let a = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open saved",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: a.songs}, 30);
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({ name: a.name, searcher: writable(s), thumbnail: null });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "BottomRight",
+                                tooltip: "open unexplored",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? []}, 30);
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({ name: a.name, searcher: writable(s), thumbnail: null });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                        ];
+                    }
                     case "MusimanagerPlaylist":
-                    case "MusimanagerQueue":
+                    case "MusimanagerQueue": {
                         let list = this.data.data;
                         return [
                             {
@@ -177,6 +225,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                         ];
+                    }
                     default:
                         throw exhausted(this.data)
                 }
