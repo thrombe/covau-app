@@ -190,14 +190,13 @@ mod webui {
     pub async fn test_webui(url: &str) -> anyhow::Result<webui::Window> {
         let win = webui::Window::new();
         win.set_file_handler(unsafe_handle);
+        unsafe {
+            let _ = webui::bindgen::webui_set_port(win.id, 10011);
+        }
 
-        // win.show("<html><head><script src=\"webui.js\"></script><head></head><body><a href=\"/test.html\"> Hello World ! </a> </body></html>");
         win.show(url);
 
-        let a = win.run_js("console.log('hello')").data;
-        dbg!(a);
-        let a = win.run_js("console.log('a', b)").data;
-        dbg!(a);
+        let _ = win.run_js("console.log('webui.js loaded :}')");
 
         tokio::task::spawn_blocking(|| {
             webui::wait();
