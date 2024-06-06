@@ -95,11 +95,8 @@
         }
 
         if (event.key == ' ') {
-            // if ($player.paused) {
-            //     $player.unpause();
-            // } else {
+            $player.toggle_pause();
             //     $player.play(todo);
-            // }
         } else if (event.key == 'ArrowLeft' || event.key == 'h') {
             let pos = Math.max(0, video_pos - 10/audio_duration);
             $player.seek_to_perc(pos);
