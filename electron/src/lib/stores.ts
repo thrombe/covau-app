@@ -52,12 +52,11 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
-export let selected_menubar_option: Readable<MenubarOption> = derived(
-    [menubar_options, selected_menubar_option_index],
-    ([$options, $index]) => $options[$index],
-);
-
 export let query_input = writable("");
+export let selected_menubar_option: Readable<MenubarOption> = derived(
+    [menubar_options, selected_menubar_option_index, query_input],
+    ([$options, $index, _]) => $options[$index],
+);
 
 export let tabs: Writable<Tab[]> = writable([{
     name: "Results",

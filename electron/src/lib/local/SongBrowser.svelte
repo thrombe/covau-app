@@ -24,37 +24,6 @@
 
     let browse_type = stores.selected_menubar_option;
 
-    // const refresh_searcher = async (browse_type: stores.MenubarOption) => {
-    //     let s;
-    //     switch (browse_type.content_type) {
-    //         case "music":
-    //             s = await $song_fac.search_query<Db.Song>({
-    //                 query_type: "search",
-    //                 query: search_query,
-    //                 type: browse_type.type,
-    //             });
-    //             break;
-    //         case "related-music":
-    //             // s = await $song_fac.search_query({
-    //             //     type: "up-next",
-    //             //     id: browse_type.id ?? "",
-    //             // });
-    //             throw "unimplemented";
-    //             break;
-    //         case "queue":
-    //             break;
-    //         case "home-feed":
-    //             s = SongTube.new({ query_type: "home-feed" }, get(stores.tube));
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    //     if (s) {
-    //         $song_searcher = s;
-    //     }
-    // };
-    // $: refresh_searcher(browse_type);
-
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
 
@@ -80,13 +49,6 @@
         // }
     };
 
-    // let search_tab: Tab = {
-    //     name: "Results",
-    //     searcher: song_searcher,
-    //     thumbnail: null,
-    // };
-    // let tabs: Tab[] = [search_tab];
-    // let curr_tab = search_tab;
     let tabs = stores.tabs;
     let curr_tab = stores.curr_tab;
 </script>
@@ -100,12 +62,9 @@
                     bind:value={search_query}
                     bind:input_element={search_input_element}
                     on_enter={async (e) => {
-                        // await refresh_searcher(browse_type);
+                        stores.query_input.set(search_query);
 
                         e.preventDefault();
-                        await search_objects();
-
-                        $tabs = [$tabs[0]];
                     }}
                 />
             {:else}
