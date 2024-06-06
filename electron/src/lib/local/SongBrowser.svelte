@@ -20,8 +20,9 @@
     export let item_height: number;
     export let tube: Innertube;
     export let queue_dragend: (e: DragEvent) => void = () => {};
-    export let browse_type: stores.MenubarOption;
     export let queue_item_add: (id: string) => Promise<void>;
+
+    let browse_type = stores.selected_menubar_option;
 
     // const refresh_searcher = async (browse_type: stores.MenubarOption) => {
     //     let s;
@@ -93,7 +94,7 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar>
-            {#if browse_type.content_type === "music"}
+            {#if $browse_type.content_type === "music"}
                 <InputBar
                     placeholder={"Search"}
                     bind:value={search_query}
@@ -110,7 +111,7 @@
             {:else}
                 <div class="flex h-full items-center">
                     <div class="w-full text-center text-xl">
-                        {browse_type.name}
+                        {$browse_type.name}
                     </div>
                 </div>
             {/if}

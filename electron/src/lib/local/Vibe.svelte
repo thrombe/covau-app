@@ -261,7 +261,6 @@
                                 bind:tube={$tube}
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
-                                browse_type={$menubar_option}
                             />
                         </div>
                     </div>

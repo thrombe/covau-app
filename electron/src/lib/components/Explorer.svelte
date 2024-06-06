@@ -3,7 +3,7 @@
     import VirtualScrollable from "./VirtualScrollable.svelte";
     import { onDestroy, tick } from "svelte";
     import type { Unique } from "../virtual.ts";
-    import type { Readable } from "svelte/store";
+    import { get, readable, type Readable } from "svelte/store";
     import * as stores from "$lib/stores.ts";
 
     export let searcher: Readable<stores.Searcher>;
@@ -31,34 +31,34 @@
 
     let items = new Array<Unique<ListItem, number>>();
 
-    const end_reached = async () => {
+    const end_reached = async (s: Readable<stores.Searcher> = searcher) => {
         while (true) {
-            if (!end_is_visible || !$searcher.has_next_page) {
+            if (!end_is_visible || !get(s).has_next_page) {
                 break;
             }
-            await next_page();
+            await next_page(s);
             await tick();
             await new Promise<void>((r) => setTimeout(() => r(), 100));
             await tick();
         }
     };
-    const next_page = async () => {
-        let r = await $searcher.next_page();
+    const next_page = async (s: Readable<stores.Searcher>) => {
+        let r = await get(s).next_page();
         items = r.map((e) => {
             return { id: e.key(), data: e } as Unique<ListItem, number>;
         });
     };
-    export const search_objects = async () => {
-        await next_page();
+    export const search_objects = async (s: Readable<stores.Searcher>) => {
+        await next_page(s);
         await tick();
         selected_item_index = 0;
         await try_scroll_selected_item_in_view();
-        end_reached();
+        end_reached(s);
     };
-    let unsub = searcher.subscribe(async (_) => {
+    let unsub = searcher.subscribe(async (s) => {
         items = [];
         if (search_objects) {
-            await search_objects();
+            await search_objects(readable(s));
         }
     });
     onDestroy(unsub);
