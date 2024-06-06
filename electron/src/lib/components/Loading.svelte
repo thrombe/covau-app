@@ -20,7 +20,7 @@
 
 <div class='relative w-full h-full'>
     <div class='covered text-[3rem] text-gray-200 font-bold flex flex-col justify-center items-center bg-gray-900 bg-opacity-30'>
-        <div class='h-30 block p-4' style="width: 310px;">
+        <div class='h-30 block p-4' style="width: 22.5rem;">
             {_loading_msg}
         </div>
     </div>
