@@ -169,68 +169,6 @@
                                 item={item}
                                 ctx="Browser"
                             />
-                            <!-- {#if item.typ == "MusimanagerSong"}
-                            {:else if item.typ == "MusimanagerAlbum" || item.typ == "MusimanagerPlaylist"}
-                                <AudioListItem
-                                    title={item.data.name ?? ""}
-                                    title_sub={item.data.author?.name ?? ""}
-                                    img_src={item.data.thumbnail ?? ""}
-                                />
-                                <button
-                                    class="open-button"
-                                    on:click={async () => {
-                                        if (!item.data.id) {
-                                            return;
-                                        }
-                                        let _new_tab;
-                                        if (item.typ == "album") {
-                                            _new_tab = {
-                                                name: "Album: " + item.data.title,
-                                                searcher:
-                                                    await $song_fac.search_query(
-                                                        {
-                                                            query_type: "album",
-                                                            id: item.data.id,
-                                                        }
-                                                    ),
-                                                thumbnail: item.data.thumbnail,
-                                            };
-                                        } else {
-                                            _new_tab = {
-                                                name: "Playlist: " + item.data.title,
-                                                searcher:
-                                                    await $song_fac.search_query(
-                                                        {
-                                                            query_type: "playlist",
-                                                            id: item.data.id,
-                                                        }
-                                                    ),
-                                                thumbnail: null,
-                                            };
-                                        }
-                                        if (!_new_tab.searcher) {
-                                            return;
-                                        }
-
-                                        let new_tab = {
-                                            ..._new_tab,
-                                            searcher: writable(
-                                                _new_tab.searcher
-                                            ),
-                                        };
-                                        tabs = [tabs[0], new_tab];
-                                        curr_tab = new_tab;
-                                    }}
-                                >
-                                    <img
-                                        draggable={false}
-                                        class="h-3"
-                                        alt="new-tab"
-                                        src="/static/open-new-tab.svg"
-                                    />
-                                </button>
-                            {:else if item.typ == "MusimanagerArtist"}
-                            {/if} -->
                         </div>
                     </list-item>
                 </Explorer>
