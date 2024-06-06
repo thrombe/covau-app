@@ -1,12 +1,12 @@
 <script lang="ts">
     import type { ListItem } from "$lib/searcher/item.ts";
     import VirtualScrollable from "./VirtualScrollable.svelte";
-    import { tick } from "svelte";
+    import { onDestroy, tick } from "svelte";
     import type { Unique } from "../virtual.ts";
-    import type { Writable } from "svelte/store";
+    import type { Readable } from "svelte/store";
     import * as stores from "$lib/stores.ts";
 
-    export let searcher: Writable<stores.Searcher>;
+    export let searcher: Readable<stores.Searcher>;
     export let selected_item_index: number;
     export let selected_item: Unique<ListItem, unknown>;
     export let columns: number;
@@ -55,12 +55,13 @@
         await try_scroll_selected_item_in_view();
         end_reached();
     };
-    searcher.subscribe(async (_) => {
+    let unsub = searcher.subscribe(async (_) => {
         items = [];
         if (search_objects) {
             await search_objects();
         }
     });
+    onDestroy(unsub);
 
     let info_width = 0;
     let info_margin = 0;
