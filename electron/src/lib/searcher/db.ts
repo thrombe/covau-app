@@ -119,6 +119,7 @@ export class DbListItem extends ListItem {
                                     } else {
                                         get(stores.player).play(await get_uri(song.key));
                                     }
+                                    stores.playing_item.set(this);
                                 },
                             },
                         ];
@@ -151,6 +152,7 @@ export class DbListItem extends ListItem {
                                     } else {
                                         get(stores.player).play(await get_uri(song.key));
                                     }
+                                    stores.playing_item.set(this);
                                 },
                             },
                         ];
@@ -229,6 +231,8 @@ export class DbListItem extends ListItem {
                     default:
                         throw exhausted(this.data)
                 }
+            case "Playbar":
+                return [];
             default:
                 throw exhausted(ctx);
         }

@@ -34,10 +34,11 @@ let page_size = 30;
 
 // NOTE: initialized in wrap components
 export let tube: Writable<Innertube> = writable();
+export let query_input = writable("");
 
-export type Source = "Musicbrainz" | "Musimanager" | "Youtube";
-export let sources: Source[] = ["Musimanager", "Youtube", "Musicbrainz"]
-export let source: Writable<Source> = writable("Musimanager");
+// export type Source = "Musicbrainz" | "Musimanager" | "Youtube";
+// export let sources: Source[] = ["Musimanager", "Youtube", "Musicbrainz"]
+// export let source: Writable<Source> = writable("Musimanager");
 
 export type MetaBrowseQuery = (
     | ({ source: "Youtube" } & St.BrowseQuery)
@@ -60,7 +61,6 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
-export let query_input = writable("");
 export let selected_menubar_option: Readable<MenubarOption> = derived(
     [menubar_options, selected_menubar_option_index, query_input, tube],
     ([$options, $index, _q, _t]) => $options[$index],
@@ -84,6 +84,7 @@ export let curr_tab = derived(
 
 export let queue_searcher: Writable<Searcher> = writable(fused_searcher);
 
+export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
 export let player: Writable<Musiplayer> = writable();
 (async () => {

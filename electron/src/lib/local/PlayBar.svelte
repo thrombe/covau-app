@@ -9,6 +9,8 @@
     export let mobile = false;
     export let keyboard_control = true;
 
+    let playing_item = stores.playing_item;
+
     let player = stores.player;
 
     let video_pos = 0;
@@ -121,9 +123,8 @@
 >
     <audio-info class='flex flex-row {mobile ? 'hidden' : ''}'>
         <AudioListItem
-            title={audio_info ? audio_info.title : ''}
-            title_sub={audio_info ? audio_info.title_sub : ''}
-            img_src={audio_info ? audio_info.img_src : ''}
+            item={$playing_item}
+            ctx="Playbar"
         />
     </audio-info>
 

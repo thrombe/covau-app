@@ -8,7 +8,7 @@ export abstract class ListItem {
     abstract options(ctx: RenderContext): Option[];
 }
 
-export type RenderContext = "Queue" | "Browser";
+export type RenderContext = "Queue" | "Browser" | "Playbar";
 export type Callback = (() => void) | (() => Promise<void>);
 export type Option = {
     icon: string,

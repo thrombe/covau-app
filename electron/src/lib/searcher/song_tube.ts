@@ -160,6 +160,7 @@ export class StListItem extends ListItem {
                                 tooltip: "play",
                                 onclick: async () => {
                                     get(stores.player).play(await get_uri(song.id));
+                                    stores.playing_item.set(this);
                                 },
                             },
                         ];
