@@ -65,13 +65,7 @@ mod musimanager {
         }
 
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
-            let mut hs = vec![self.name.as_str()];
-
-            // self.artist_name.as_deref().map(|a| {
-            //     hs.push(a);
-            // });
-
-            hs
+            [self.name.as_str(), self.artist_name.as_str()]
         }
 
         fn refids(&self) -> impl IntoIterator<Item = &str> {
@@ -84,13 +78,7 @@ mod musimanager {
         }
 
         fn haystack(&self) -> impl IntoIterator<Item = &str> {
-            let mut hs = vec![self.name.as_str()];
-
-            // self.artist_name.as_deref().map(|a| {
-            //     hs.push(a);
-            // });
-
-            hs
+            [self.name.as_str()]
         }
     }
     impl AutoDbAble for Playlist<SongId> {
