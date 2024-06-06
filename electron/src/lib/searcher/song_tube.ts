@@ -54,9 +54,9 @@ export type MusicListItem =
     { typ: 'artist', data: Artist };
 
 export class StListItem extends ListItem {
-    data: MusicListItem;
+    data: MusicListItem & Keyed;
 
-    constructor(data: MusicListItem) {
+    constructor(data: MusicListItem & Keyed) {
         super();
         this.data = data;
     }
@@ -113,7 +113,7 @@ export class StListItem extends ListItem {
                 return authors(this.data.data.authors);
             case "album":
             case "playlist":
-                return this.data.data.author.name;
+                return this.data.data.author?.name ?? null;
             case "artist":
                 return this.data.data.subscribers;
             default:
@@ -173,6 +173,8 @@ export class StListItem extends ListItem {
                     default:
                         throw exhausted(this.data)
                 }
+            case "Playbar":
+                return [];
             default:
                 throw exhausted(ctx);
         }
@@ -180,23 +182,23 @@ export class StListItem extends ListItem {
 }
 
 interface IClassTypeWrapper<D> {
-    next_page(): Promise<DbListItem[]>;
+    next_page(): Promise<StListItem[]>;
     inner: D;
     has_next_page: boolean;
 };
 function ClassTypeWrapper<D extends {
     query: BrowseQuery;
-    next_page(): Promise<MusicListItem[]>;
+    next_page(): Promise<(MusicListItem & Keyed)[]>;
     has_next_page: boolean;
 }>(d: D) {
     return {
         inner: d,
         has_next_page: d.has_next_page,
 
-        async next_page(): Promise<DbListItem[]> {
+        async next_page(): Promise<StListItem[]> {
             let res = await d.next_page();
 
-            let self = this as unknown as IUnionTypeWrapper<D>;
+            let self = this as unknown as IClassTypeWrapper<D>;
             self.has_next_page = d.has_next_page;
 
             return res.map(m => new StListItem(m));
