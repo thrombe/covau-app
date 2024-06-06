@@ -23,8 +23,6 @@
     export let browse_type: stores.MenubarOption;
     export let queue_item_add: (id: string) => Promise<void>;
 
-    let song_searcher = stores.searcher;
-
     // const refresh_searcher = async (browse_type: stores.MenubarOption) => {
     //     let s;
     //     switch (browse_type.content_type) {
@@ -139,70 +137,38 @@
         </browse-tab-bar>
     </bar-area>
 
-    {#each $tabs as tab, i (tab.name)}
-        <browse-area class={($curr_tab == tab ? "" : "hidden") + " " + tab.name}>
-            {#if tab.name == "Results"}
-                <Explorer
-                    searcher={writable($tabs[i].searcher)}
-                    bind:selected_item
-                    {columns}
-                    bind:item_height
-                    keyboard_control={false}
-                    bind:selected_item_index
-                    bind:search_objects
-                    bind:try_scroll_selected_item_in_view
-                    on_item_click={async (t) => {
-                        console.log(t);
-                    }}
-                    let:item
-                    let:selected
-                >
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item class:selected>
-                        <div
-                            draggable={true}
-                            on:dragstart={(event) => dragstart(event, item)}
-                            on:dragend={queue_dragend}
-                            class="item-bg"
-                        >
-                            <AudioListItem
-                                item={item}
-                                ctx="Browser"
-                            />
-                        </div>
-                    </list-item>
-                </Explorer>
-            {:else}
-                <Explorer
-                    searcher={writable(tab.searcher)}
-                    {selected_item}
-                    {columns}
-                    {item_height}
-                    {selected_item_index}
-                    {search_objects}
-                    {try_scroll_selected_item_in_view}
-                    on_item_click={async (t) => {
-                        console.log(t);
-                    }}
-                    let:item
-                    let:selected
-                >
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item class:selected>
-                        <div
-                            draggable={true}
-                            on:dragstart={(event) => dragstart(event, item)}
-                            on:dragend={queue_dragend}
-                            class="item-bg"
-                        >
-                            <AudioListItem
-                                item={item}
-                                ctx="Browser"
-                            />
-                        </div>
-                    </list-item>
-                </Explorer>
-            {/if}
+    {#each $tabs as tab}
+        <browse-area class={$curr_tab == tab ? "" : "hidden"}>
+            <Explorer
+                searcher={tab.searcher}
+                bind:selected_item
+                {columns}
+                bind:item_height
+                keyboard_control={false}
+                bind:selected_item_index
+                bind:search_objects
+                bind:try_scroll_selected_item_in_view
+                on_item_click={async (t) => {
+                    console.log(t);
+                }}
+                let:item
+                let:selected
+            >
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <list-item class:selected>
+                    <div
+                        draggable={true}
+                        on:dragstart={(event) => dragstart(event, item)}
+                        on:dragend={queue_dragend}
+                        class="item-bg"
+                    >
+                        <AudioListItem
+                            item={item}
+                            ctx="Browser"
+                        />
+                    </div>
+                </list-item>
+            </Explorer>
         </browse-area>
     {/each}
 </div>

@@ -6,7 +6,7 @@ import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts"; 
 import * as stores from "$lib/stores.ts";
-import { get } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
 
 export type Song = Musi.Song<Musi.SongInfo | null>;
@@ -159,9 +159,23 @@ export class DbListItem extends ListItem {
                     case "MusimanagerArtist":
                         return [];
                     case "MusimanagerPlaylist":
-                        return [];
                     case "MusimanagerQueue":
-                        return [];
+                        let list = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: list.data_list}, 30);
+                                    stores.tabs.update(t => {
+                                        t.push({ name: list.name, searcher: writable(s), thumbnail: null });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                        ];
                     default:
                         throw exhausted(this.data)
                 }

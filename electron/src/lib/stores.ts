@@ -18,7 +18,7 @@ export let fused_searcher = {
 
 export type Tab = {
     name: string;
-    searcher: Searcher;
+    searcher: Writable<Searcher>;
     thumbnail: string | null;
 };
 
@@ -61,7 +61,7 @@ export let query_input = writable("");
 
 export let tabs: Writable<Tab[]> = writable([{
     name: "Results",
-    searcher: fused_searcher,
+    searcher: writable(fused_searcher),
     thumbnail: null,
 }]);
 export let curr_tab_index = writable(0);
@@ -70,10 +70,10 @@ export let curr_tab = derived(
     [tabs, curr_tab_index],
     ([$tabs, $index]) => $tabs[$index],
 );
-export let searcher = derived(
-    curr_tab,
-    ($curr_tab) => $curr_tab.searcher,
-);
+// export let searcher = derived(
+//     curr_tab,
+//     ($curr_tab) => get($curr_tab.searcher),
+// );
 
 export let queue_searcher: Writable<Searcher> = writable(fused_searcher);
 
@@ -91,32 +91,35 @@ export let tube: Writable<Innertube> = writable();
 
 selected_menubar_option.subscribe(async (option) => {
     switch (option.content_type) {
-        case "music":
-            tabs.set([{
-                name: "Results",
-                searcher: Db.Db.new({
-                    query_type: "search",
-                    type: option.type,
-                    query: get(query_input),
-                }, page_size),
-                thumbnail: null,
-            }]);
-            break
+        case "music": {
+            let s = Db.Db.new({
+                query_type: "search",
+                type: option.type,
+                query: get(query_input),
+            }, page_size);
+            tabs.update(t => {
+                t = [t[0]];
+                t[0].searcher.set(s);
+                return t;
+            });
+            curr_tab_index.set(0);
+        } break;
         case "queue":
             break
         case "watch":
             break
         case "related-music":
             break
-        case "home-feed":
+        case "home-feed": {
             let st = await import("$lib/searcher/song_tube.ts");
             let s = st.SongTube.new({ query_type: "home-feed" }, get(tube));
-            tabs.set([{
-                name: "Results",
-                searcher: s,
-                thumbnail: null,
-            }]);
-            break
+            tabs.update(t => {
+                t = [t[0]];
+                t[0].searcher.set(s);
+                return t;
+            });
+            curr_tab_index.set(0);
+        } break;
         default:
             exhausted(option);
     }

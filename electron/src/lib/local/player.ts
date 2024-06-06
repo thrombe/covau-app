@@ -69,10 +69,10 @@ export class Musiplayer {
             }
         });
         this.ws.addEventListener('open', async (_e) => {
+            this.unmute();
             this.set_volume(1.0);
             this.seek_to_perc(0.0);
             this.pause();
-            this.unmute();
         });
     }
 
