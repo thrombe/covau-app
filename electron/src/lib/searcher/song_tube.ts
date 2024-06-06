@@ -227,7 +227,10 @@ export class SongTube extends Unpaged<MusicListItem> {
     }
 
     static fused() {
-        let s = SongTube.new({ type: '' } as unknown as BrowseQuery, null as unknown as Innertube);
+        let s = SongTube.new(
+            { type: '' } as unknown as BrowseQuery,
+            null as unknown as Innertube,
+        );
         s.has_next_page = false;
         return s;
     }
@@ -259,7 +262,6 @@ export class SongTube extends Unpaged<MusicListItem> {
             return await this.next_page_search(this.query.query, this.query.search);
         } else if (this.query.query_type == 'artist') {
             let r = await this.next_page_artist_songs(this.query.id);
-            console.log(r);
             return r;
         } else if (this.query.query_type == 'album') {
             let r = await this.next_page_album(this.query.id);
@@ -288,7 +290,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: s.video_id,
                 title: s.title.text ?? '',
                 thumbnail: this.get_thumbnail(s.thumbnail),
-                authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                authors: s.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
             }
         }));
         return keyed(mli) as RObject<MusicListItem>[];
@@ -296,7 +301,9 @@ export class SongTube extends Unpaged<MusicListItem> {
     protected async next_page_home_feed() {
         this.has_next_page = false;
         let r = await this.tube.music.getHomeFeed();
-        let k = r.sections?.filterType(YTNodes.MusicCarouselShelf).flatMap(e => e.contents.filterType(YTNodes.MusicResponsiveListItem)) ?? [];
+        let k = r.sections
+            ?.filterType(YTNodes.MusicCarouselShelf)
+            .flatMap(e => e.contents.filterType(YTNodes.MusicResponsiveListItem)) ?? [];
 
         let mli: MusicListItem[] = k.map(s => ({
             typ: 'song',
@@ -304,7 +311,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: s.id!,
                 title: s.title ?? null,
                 thumbnail: this.get_thumbnail(s.thumbnail),
-                authors: s.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                authors: s.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
             }
         }));
         return keyed(mli) as RObject<MusicListItem>[];
@@ -332,7 +342,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: p.id!,
                 title: p.title ?? null,
                 thumbnail: this.get_thumbnail(p.thumbnail),
-                authors: p.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                authors: p.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
             }
         }));
         return keyed(mli) as RObject<MusicListItem>[];
@@ -346,7 +359,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: a.id!,
                 title: a.title ?? null,
                 thumbnail: this.get_thumbnail(a.thumbnail),
-                authors: a.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                authors: a.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
             }
         }));
         return keyed(mli) as RObject<MusicListItem>[];
@@ -368,7 +384,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: e.id!,
                 title: e.title ?? null,
                 thumbnail: this.get_thumbnail(e.thumbnail),
-                authors: e.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                authors: e.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
             }
         }));
         return keyed(mli) as RObject<MusicListItem>[];
@@ -429,7 +448,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnail: this.get_thumbnail(e.thumbnail),
-                        authors: e.artists?.map(a => ({ name: a.name, channel_id: a.channel_id ?? null })) ?? [],
+                        authors: e.artists?.map(a => ({
+                            name: a.name,
+                            channel_id: a.channel_id ?? null,
+                        })) ?? [],
                     }
                 }
             } else if (e.item_type === 'album' || e.item_type === 'playlist') {
@@ -439,7 +461,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnail: this.get_thumbnail(e.thumbnail),
-                        author: e.author ? { name: e.author.name, channel_id: e.author?.channel_id ?? null } : null,
+                        author: e.author ? {
+                            name: e.author.name,
+                            channel_id: e.author?.channel_id ?? null,
+                        } : null,
                     }
                 }
             } else if (e.item_type === 'artist') {
@@ -487,16 +512,18 @@ export class SongTube extends Unpaged<MusicListItem> {
 }
 
 const keyed = <T extends { data: { id?: any } }>(items: T[]): (T & Keyed)[] => {
-    let res = items.filter((e) => !!e.data.id).map((e) => {
-        let p = e as T & Keyed;
-        p.get_key = function() {
-            if (!p.data.id) {
-                console.warn("item does not have an id :/", p);
-            }
-            return p.data.id;
-        };
-        return p;
-    });
+    let res = items
+        .filter((e) => !!e.data.id)
+        .map((e) => {
+            let p = e as T & Keyed;
+            p.get_key = function() {
+                if (!p.data.id) {
+                    console.warn("item does not have an id :/", p);
+                }
+                return p.data.id;
+            };
+            return p;
+        });
 
     return res;
 }
