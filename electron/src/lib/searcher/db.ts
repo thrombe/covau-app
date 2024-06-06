@@ -264,6 +264,44 @@ function ClassTypeWrapper<D extends {
     } as unknown as IClassTypeWrapper<D>;
 }
 
+interface IAsyncProtWrapper<D> {
+    next_page(): Promise<DbListItem[]>;
+    inner: D;
+    has_next_page: boolean;
+    query: BrowseQuery;
+    promise: Promise<DbListItem[]> | null,
+};
+function AsyncProtWrapper<D extends {
+    query: BrowseQuery;
+    next_page(): Promise<DbListItem[]>;
+    has_next_page: boolean;
+}>(d: D) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+        query: d.query,
+        promise: null,
+
+        async next_page(): Promise<DbListItem[]> {
+            let self = this as unknown as IAsyncProtWrapper<D>;
+
+            if (!self.promise) {
+                self.promise = d.next_page();
+            }
+            let res = await self.promise;
+            self.promise = null;
+
+            self.has_next_page = d.has_next_page;
+
+            if (res.length === 0) {
+                return [];
+            }
+
+            return res;
+        }
+    } as unknown as IAsyncProtWrapper<D>;
+}
+
 export class Db<T> extends Unpaged<T> {
     query: BrowseQuery;
     page_size: number;
@@ -277,6 +315,7 @@ export class Db<T> extends Unpaged<T> {
     static new<T>(query: BrowseQuery, page_size: number) {
         let w1 = UnionTypeWrapper(Db.unwrapped<T>(query, page_size));
         let w2 = ClassTypeWrapper(w1);
+        // let w3 = AsyncProtWrapper(w2);
         return w2;
     }
 
