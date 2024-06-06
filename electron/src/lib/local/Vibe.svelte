@@ -1,13 +1,3 @@
-<script lang="ts" context="module">
-    export type MenubarOption = { name: string } & (
-        | { content_type: "music"; type: Db.Typ }
-        | { content_type: "queue" }
-        | { content_type: "watch" }
-        | { content_type: "related-music"; id: string | null }
-        | { content_type: "home-feed" }
-    );
-</script>
-
 <script lang="ts">
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
@@ -85,25 +75,15 @@
 
     let queue_dragend: (e: DragEvent) => void;
 
-    let menubar_options: MenubarOption[] = [
-        { name: "Home", content_type: "home-feed" },
-        { name: "Song", content_type: "music", type: "MusimanagerSong" },
-        { name: "Queues", content_type: "music", type: "MusimanagerQueue" },
-        { name: "Playlists", content_type: "music", type: "MusimanagerPlaylist" },
-        { name: "Artist", content_type: "music", type: "MusimanagerArtist" },
-        { name: "Album", content_type: "music", type: "MusimanagerAlbum" },
-        { name: "Related", content_type: "related-music", id: null },
-    ];
-    let menubar_home_option = menubar_options[0];
-    let menubar_song_option = menubar_options[1];
-    let menubar_related_option = menubar_options[6] as unknown as {
+    let menubar_options = stores.menubar_options;
+    let menubar_related_option = $menubar_options[6] as unknown as {
         id: string | null;
     };
-    let menubar_queue_option: MenubarOption = {
+    let menubar_queue_option: stores.MenubarOption = {
         name: "Queue",
         content_type: "queue",
     };
-    let menubar_option: MenubarOption = menubar_home_option;
+    let menubar_option = stores.selected_menubar_option;
 
     // $: if (queue_selected_item_index != null) {
     //     let id: string | null | undefined;
@@ -132,18 +112,14 @@
     $: if (width) {
         if (width < item_min_width + 330 + 50) {
             if (!mobile) {
-                menubar_options = [menubar_queue_option, ...menubar_options];
-                menubar_option = menubar_queue_option;
+                $menubar_options = [menubar_queue_option, ...$menubar_options];
             }
             mobile = true;
         } else {
             if (mobile) {
-                menubar_options = menubar_options.filter(
+                $menubar_options = $menubar_options.filter(
                     (o) => o.content_type != "queue"
                 );
-                if (menubar_option == menubar_queue_option) {
-                    menubar_option = menubar_song_option;
-                }
             }
             mobile = false;
         }
@@ -182,9 +158,9 @@
             <top-menubar
                 class="w-full flex flex-row gap-2 py-2 px-6 justify-start text-gray-200 overflow-x-auto scrollbar-hide"
             >
-                {#each menubar_options as typ}
+                {#each $menubar_options as typ, i}
                     <button
-                        class="flex-none rounded-xl p-2 font-bold bg-gray-200 {menubar_option ==
+                        class="flex-none rounded-xl p-2 font-bold bg-gray-200 {$menubar_option ==
                         typ
                             ? 'bg-opacity-30'
                             : 'bg-opacity-10'}"
@@ -196,7 +172,7 @@
                                 toast("no queue item selected", "info");
                                 return;
                             }
-                            menubar_option = typ;
+                            stores.selected_menubar_option_index.set(i)
                         }}
                     >
                         {typ.name}
@@ -216,7 +192,7 @@
                     >
                         {#if mobile}
                             <div
-                                class="flex flex-col w-full {menubar_option ==
+                                class="flex flex-col w-full {$menubar_option ==
                                 menubar_queue_option
                                     ? 'h-full'
                                     : 'h-0'}"
@@ -274,7 +250,7 @@
                         />
 
                         <div
-                            class="w-full h-full {menubar_option.content_type ==
+                            class="w-full h-full {$menubar_option.content_type ==
                             'queue'
                                 ? 'h-0 overflow-hidden'
                                 : ''}"
@@ -285,7 +261,7 @@
                                 bind:tube={$tube}
                                 {queue_dragend}
                                 queue_item_add={on_queue_item_add}
-                                browse_type={menubar_option}
+                                browse_type={$menubar_option}
                             />
                         </div>
                     </div>
