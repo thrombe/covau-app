@@ -201,15 +201,12 @@ mod webui {
         pub async fn open_window(&self, url: String) -> anyhow::Result<()> {
             self.win.set_file_handler(unsafe_handle);
             unsafe {
-                let _ = webui::bindgen::webui_set_port(self.win.id, 6174);
+                let _ = webui::bindgen::webui_set_port(self.win.id, core::env!("WEBUI_PORT").parse().unwrap());
             }
 
             let s = self.clone();
             tokio::task::spawn_blocking(move || {
                 s.win.show(url);
-
-                let _ = s.win.run_js("console.log('webui.js loaded :}')");
-
                 webui::wait();
             })
             .await?;
@@ -247,9 +244,9 @@ async fn webui_app() -> Result<()> {
     let app = webui::App::new();
 
     #[cfg(build_mode = "DEV")]
-    let port = 5173;
+    let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
     #[cfg(build_mode = "PRODUCTION")]
-    let port = 6173;
+    let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
 
     let mut url = format!("http://localhost:{}/", port);
 
@@ -272,7 +269,7 @@ async fn webui_app() -> Result<()> {
 }
 
 async fn server_start() -> Result<()> {
-    server::start("127.0.0.1".parse()?, 6173).await;
+    server::start("127.0.0.1".parse()?, core::env!("SERVER_PORT").parse().unwrap()).await;
     Ok(())
 }
 

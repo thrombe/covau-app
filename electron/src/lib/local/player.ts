@@ -16,7 +16,7 @@ export class Musiplayer {
 
     constructor() {
         this.listeners = new Map();
-        this.ws = new WebSocket("ws://localhost:6173/player");
+        this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/player`);
         this.ws.addEventListener('message', async (e) => {
             let message: PlayerMessage = JSON.parse(e.data);
 

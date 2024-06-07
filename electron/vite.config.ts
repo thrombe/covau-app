@@ -35,7 +35,7 @@ async function bundle(server: ViteDevServer) {
   if (process.env.BUILD_MODE === "DEV") {
     appUrl = `http://${host}:${address.port}`
   } else if (process.env.BUILD_MODE === "PRODUCTION") {
-    appUrl = `http://${host}:6173`
+    appUrl = `http://${host}:${process.env.SERVER_PORT}`
     
   } else {
     throw Error("unknown BUILD_MODE");
@@ -112,6 +112,16 @@ export default defineConfig((env) => ({
   base: env.mode === 'production' ? './' : '/',
   resolve: {
     alias: tsconfigPathAliases,
+  },
+  define: {
+    "import.meta.env.SERVER_PORT": process.env.SERVER_PORT,
+    "import.meta.env.WEBUI_PORT": process.env.WEBUI_PORT,
+    "import.meta.env.DEV_VITE_PORT": process.env.DEV_VITE_PORT,
+    "import.meta.env.UI_BACKEND": `"${process.env.UI_BACKEND}"`,
+    "import.meta.env.BUILD_MODE": `"${process.env.BUILD_MODE}"`,
+  },
+  server: {
+    port: parseInt(process.env.DEV_VITE_PORT),
   },
   plugins: [
     svelte(),

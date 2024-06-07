@@ -135,7 +135,7 @@ export class Mbz<T> extends Unpaged<T> {
             },
         };
         let res = await fetch(
-            "http://localhost:6173/" + this.route,
+            `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route,
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -167,7 +167,7 @@ export class Mbz<T> extends Unpaged<T> {
                     content: this.cont,
                 };
                 let res = await fetch(
-                    "http://localhost:6173/" + this.route,
+                    `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route,
                     {
                         method: "POST",
                         body: JSON.stringify(q),
@@ -228,7 +228,7 @@ export class Mbz<T> extends Unpaged<T> {
         }
 
         let res = await fetch(
-            "http://localhost:6173/" + route,
+            `http://localhost:${import.meta.env.SERVER_PORT}/` + route,
             {
                 method: "POST",
                 body: JSON.stringify(id),

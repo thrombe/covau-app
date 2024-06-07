@@ -191,6 +191,10 @@
             # export UI_BACKEND="TAURI"
             export BUILD_MODE="DEV"
             # export BUILD_MODE="PRODUCTION"
+
+            export SERVER_PORT=6173
+            export WEBUI_PORT=6174
+            export DEV_VITE_PORT=5173
           '';
         };
     });

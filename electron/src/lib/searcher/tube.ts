@@ -41,7 +41,7 @@ export async function new_innertube_instance() {
                 body: init?.body?.toString(),
                 method: request.method
             };
-            let res = await fetch('http://localhost:6173/fetch', {
+            let res = await fetch(`http://localhost:${import.meta.env.SERVER_PORT}/fetch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(req)

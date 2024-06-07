@@ -15,6 +15,6 @@ export default defineConfig({
   },
   define: {
     // once again
-    'import.meta.env.ELECTRON_APP_URL': JSON.stringify('https://localhost:6173/index.html')
+    'import.meta.env.ELECTRON_APP_URL': JSON.stringify(`https://localhost:${process.env.SERVER_PORT}/index.html`)
   }
 })
