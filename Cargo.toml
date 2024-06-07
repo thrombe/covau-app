@@ -35,17 +35,9 @@ rust-embed = "8.4.0"
 mime_guess = "2.0.4"
 
 [features]
-# default = ["player-gst", "force"]
-default = ["player-mpv", "force"]
-# default = ["player-libmpv", "force"]
-force = []
+# default = ["player-gst"]
+default = ["player-mpv"]
+# default = ["player-libmpv"]
 player-mpv = ["mpv"]
 player-gst = ["gstreamer-player", "gstreamer"]
 # player-libmpv = ["libmpv"] # didn't impliment this one yet
-
-[target.'cfg(all(any(target_os = "windows", target_os = "linux"), target_arch = "x86_64"))'.dependencies]
-gstreamer = {version = "0.17"}
-gstreamer-player = {version = "0.17"}
-
-[target.'cfg(all(target_os = "android", target_arch = "aarch64"))'.dependencies]
-mpv = {version = "0.2.3"}
