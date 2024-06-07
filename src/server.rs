@@ -382,6 +382,39 @@ fn id_search<T: IdSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<
     search.boxed()
 }
 
+#[derive(rust_embed::Embed)]
+#[folder = "electron/dist/"]
+pub struct Asset;
+
+fn embedded_asset_route() -> BoxedFilter<(impl Reply,)> {
+    async fn serve_impl(path: &str) -> Result<impl Reply, warp::Rejection> {
+        let asset = Asset::get(path).ok_or_else(warp::reject::not_found)?;
+        let mime = mime_guess::from_path(path).first_or_octet_stream();
+
+        let mut res = warp::reply::Response::new(asset.data.into());
+        res.headers_mut().insert(
+            "content-type",
+            warp::http::HeaderValue::from_str(mime.as_ref()).unwrap(),
+        );
+        Ok::<_, warp::Rejection>(res)
+    }
+
+    let index_route = warp::any().and(warp::path::end()).and_then(|| async move {
+        let path = "index.html";
+        serve_impl(path).await
+    });
+
+    let route =
+        warp::any()
+            .and(warp::path::tail())
+            .and_then(|t: warp::filters::path::Tail| async move {
+                let path = t.as_str();
+                serve_impl(path).await
+            });
+
+    index_route.or(route).boxed()
+}
+
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
     let db = Arc::new(
@@ -444,6 +477,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(mbz_search_routes)
         .or(options_route);
     // let all = all.or(redirect_route(client.clone()));
+    let all = all.or(embedded_asset_route());
 
     println!("Starting server at {}:{}", ip_addr, port);
 
