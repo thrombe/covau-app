@@ -7,6 +7,22 @@
   <link rel='stylesheet' href='./index.css'>
   <meta name="viewport" content="width=device-width">
 
+  <script type="module">
+    // for some reason, this code has to be in index.html :/
+    if (import.meta.env.UI_BACKEND === "WEBUI") {
+        let webui = document.createElement("script");
+        webui.src = `http://localhost:${import.meta.env.WEBUI_PORT}/webui.js`;
+        console.log(webui.src)
+        document.head.appendChild(webui);
+        webui.onload = (_) => {
+            console.log("webui.js loaded :)")
+        };
+        webui.onerror = (_) => {
+            console.log("webui.js NOT loaded :(")
+        };
+    }
+  </script>
+
   <!-- - [disable darkreader](https://github.com/darkreader/darkreader/blob/main/CONTRIBUTING.md#disabling-dark-reader-on-your-site) -->
   <meta name="darkreader-lock">
 

@@ -203,10 +203,24 @@ mod webui {
             unsafe {
                 let _ = webui::bindgen::webui_set_port(self.win.id, core::env!("WEBUI_PORT").parse().unwrap());
             }
+            webui::set_timeout(3);
+            self.win.bind("", |e| {
+                dbg!(e.event_type as u32);
+            });
+
+            // unsafe extern "C" fn events(e: *mut webui::bindgen::webui_event_t) {
+            //     let e = &*e;
+            //     dbg!(e.type_);
+            // }
+            // unsafe {
+            //     webui::bindgen::webui_bind(self.win.id, [0].as_ptr(), Some(events));
+            // }
 
             let s = self.clone();
             tokio::task::spawn_blocking(move || {
                 s.win.show(url);
+                // s.win.show("<html><script src=\"/webui.js\"></script> ... </html>");
+                // let _ = s.win.run_js("console.log('webui.js loaded :}')");
                 webui::wait();
             })
             .await?;
