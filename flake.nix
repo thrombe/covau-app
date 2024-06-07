@@ -10,12 +10,6 @@
       url = "github:webui-dev/webui/2.4.2";
       flake = false;
     };
-    # zls = {
-    #   url = "github:zigtools/zls/0.12.0";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    #   inputs.flake-utils.follows = "flake-utils";
-    #   # inputs.zig-overlay.follows = "zig-overlay";
-    # };
   };
 
   outputs = inputs:
@@ -62,26 +56,6 @@
         ];
 
         inherit meta;
-      };
-      covau-app-zig-packages = with pkgs; [
-        nodejs_21
-        deno
-      ];
-      covau-app-zig = pkgs.stdenv.mkDerivation rec {
-        name = manifest.name;
-
-        src = pkgs.lib.cleanSource ./zig;
-
-        installPhase = ''
-        '';
-
-        buildInputs = [
-          webui
-        ];
-        nativeBuildInputs = with pkgs; [
-          pkg-config
-          unstable.zig_0_11.hook
-        ] ++ covau-app-zig-packages;
       };
       webui = stdenv.mkDerivation {
         name = "webui";
@@ -165,10 +139,6 @@
             unstable.clippy
             # unstable.rustup
 
-            # (flakeDefaultPackage inputs.zls)
-            unstable.zig_0_11
-            zls
-
             unstable.bun
             unstable.electron_29
 
@@ -204,10 +174,9 @@
         pkgs.mkShell.override {
           inherit stdenv;
         } {
-          nativeBuildInputs = (env-packages pkgs) ++ [fhs] ++ covau-app-zig-packages;
+          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
           inputsFrom = [
             covau-app
-            # hyprkool-plugin
           ];
           shellHook = ''
             export PROJECT_ROOT="$(pwd)"
