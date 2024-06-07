@@ -185,6 +185,12 @@
 
             # $(pwd) always resolves to project root :)
             export CLANGD_FLAGS="--compile-commands-dir=$(pwd)/plugin --query-driver=$(which $CXX)"
+
+            # export UI_BACKEND="ELECTRON"
+            export UI_BACKEND="WEBUI"
+            # export UI_BACKEND="TAURI"
+            export BUILD_MODE="DEV"
+            # export BUILD_MODE="PRODUCTION"
           '';
         };
     });

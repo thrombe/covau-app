@@ -12,7 +12,6 @@
     "build:vite": "vite build",
     "build:static": "cp -r ./static ./dist/.",
     "preview": "vite preview",
-    "dev:electron": "electron dist/main.js # delete node_modules/.bin/electron on nixos",
     "build:electron": "vite build -c vite.config.electron.ts",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },

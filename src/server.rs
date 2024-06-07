@@ -572,9 +572,3 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
 
     Ok(types)
 }
-
-pub async fn test_server() -> anyhow::Result<()> {
-    start("127.0.0.1".parse().unwrap(), 10010).await;
-
-    Ok(())
-}

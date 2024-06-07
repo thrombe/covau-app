@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 
-let mainWindow: BrowserWindow | undefined
+let mainWindow: BrowserWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,9 +22,7 @@ function createWindow() {
     mainWindow.webContents.on('devtools-opened', () => {
       mainWindow.webContents.closeDevTools()
     })
-
-    // load the build file instead
-    mainWindow.loadFile(import.meta.env.ELECTRON_APP_URL)
+    mainWindow.loadURL(import.meta.env.ELECTRON_APP_URL)
   }
 }
 

@@ -161,7 +161,7 @@ pub mod yt {
 }
 
 mod webui {
-    use std::ffi::CStr;
+    use std::{ffi::CStr, sync::Arc};
     use webui_rs::webui::{self, bindgen::webui_malloc};
 
     // returned pointer is only freed if allocated using webui_malloc
@@ -187,27 +187,29 @@ mod webui {
         data
     }
 
+    #[derive(Clone)]
     pub struct App {
-        pub win: webui::Window,
+        pub win: Arc<webui::Window>,
     }
     impl App {
         pub fn new() -> Self {
             Self {
-                win: webui::Window::new(),
+                win: Arc::new(webui::Window::new()),
             }
         }
 
-        pub async fn open_window(&self, url: &str) -> anyhow::Result<()> {
+        pub async fn open_window(&self, url: String) -> anyhow::Result<()> {
             self.win.set_file_handler(unsafe_handle);
             unsafe {
-                let _ = webui::bindgen::webui_set_port(self.win.id, 10011);
+                let _ = webui::bindgen::webui_set_port(self.win.id, 6174);
             }
 
-            self.win.show(url);
+            let s = self.clone();
+            tokio::task::spawn_blocking(move || {
+                s.win.show(url);
 
-            let _ = self.win.run_js("console.log('webui.js loaded :}')");
+                let _ = s.win.run_js("console.log('webui.js loaded :}')");
 
-            tokio::task::spawn_blocking(|| {
                 webui::wait();
             })
             .await?;
@@ -241,6 +243,39 @@ fn dump_types() -> Result<()> {
     Ok(())
 }
 
+async fn webui_app() -> Result<()> {
+    let app = webui::App::new();
+
+    #[cfg(build_mode = "DEV")]
+    let port = 5173;
+    #[cfg(build_mode = "PRODUCTION")]
+    let port = 6173;
+
+    let mut url = format!("http://localhost:{}/", port);
+
+    url += "#/local";
+    // url += "#/vibe/test";
+    // url += "#/play";
+
+    tokio::select! {
+        server = server_start() => {
+            app.close();
+            server?;
+        }
+        window = app.open_window(url) => {
+            app.close();
+            window?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn server_start() -> Result<()> {
+    server::start("127.0.0.1".parse()?, 6173).await;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger("./")?;
@@ -251,25 +286,13 @@ async fn main() -> Result<()> {
     // db::db_test().await?;
     // mbz::api_test().await?;
 
+    #[cfg(build_mode = "DEV")]
     dump_types()?;
 
-    let app = webui::App::new();
-
-    let open = app.open_window("http://localhost:5173/#/local");
-    // let open = app.open_window("http://localhost:10010/#/local");
-    // let open = app.open_window("http://localhost:5173/#/vibe/test");
-    // let open = app.open_window("http://localhost:5173/#/play");
-
-    tokio::select! {
-        server = server::test_server() => {
-            app.close();
-            server?;
-        }
-        window = open => {
-            app.close();
-            window?;
-        }
-    }
+    #[cfg(ui_backend = "WEBUI")]
+    webui_app().await?;
+    #[cfg(not(ui_backend = "WEBUI"))]
+    server_start().await?;
 
     Ok(())
 }

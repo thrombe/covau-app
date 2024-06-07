@@ -31,7 +31,16 @@ async function bundle(server: ViteDevServer) {
   // const host = address.address === '127.0.0.1' ? 'localhost' : address.address
   const host = "localhost";
 
-  const appUrl = `http://${host}:${address.port}`
+  let appUrl;
+  if (process.env.BUILD_MODE === "DEV") {
+    appUrl = `http://${host}:${address.port}`
+  } else if (process.env.BUILD_MODE === "PRODUCTION") {
+    appUrl = `http://${host}:6173`
+    
+  } else {
+    throw Error("unknown BUILD_MODE");
+  }
+  appUrl += "/#/local";
 
   // this is RollupWatcher, but vite do not export its typing...
   const watcher: any = await build({
@@ -49,7 +58,7 @@ async function bundle(server: ViteDevServer) {
   // const electron = require('electron') as string
 
   // resolve the electron main file
-  const electronMain = resolve(server.config.root, server.config.build.outDir, 'main.js')
+  const electronMain = resolve(server.config.root, server.config.build.outDir, "electron", 'main.js')
 
   let child: ChildProcess | undefined
 
@@ -85,15 +94,17 @@ async function bundle(server: ViteDevServer) {
     }
   }
 
-  watcher.on('event', startElectron)
+  if (process.env.UI_BACKEND === "ELECTRON") {
+    watcher.on('event', startElectron)
 
-  // watch the build, on change, restart the electron process
-  watcher.on('change', () => {
-    // make sure we dont kill our application when reloading
-    child?.off('close', exitProcess)
+    // watch the build, on change, restart the electron process
+    watcher.on('change', () => {
+      // make sure we dont kill our application when reloading
+      child?.off('close', exitProcess)
 
-    start()
-  })
+      start()
+    })
+  }
 }
 
 export default defineConfig((env) => ({

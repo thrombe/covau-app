@@ -422,7 +422,7 @@ export class Db<T> extends Unpaged<T> {
             },
         };
         let res = await fetch(
-            "http://localhost:10010/" + this.route,
+            "http://localhost:6173/" + this.route,
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -454,7 +454,7 @@ export class Db<T> extends Unpaged<T> {
                     content: this.cont,
                 };
                 let res = await fetch(
-                    "http://localhost:10010/" + this.route,
+                    "http://localhost:6173/" + this.route,
                     {
                         method: "POST",
                         body: JSON.stringify(q),
@@ -502,7 +502,7 @@ export class Db<T> extends Unpaged<T> {
             }
 
             let res = await fetch(
-                "http://localhost:10010/musimanager/search/songs/refid",
+                "http://localhost:6173/musimanager/search/songs/refid",
                 {
                     method: "POST",
                     body: JSON.stringify(ids),

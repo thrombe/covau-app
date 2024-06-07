@@ -7,11 +7,14 @@ export default defineConfig({
     ssr: true, // true means, use rollupOptions.input
     rollupOptions: {
       // the magic, we can build two separate files in one go!
-      input: ['src-electron/main.ts', 'src-electron/preload.ts']
+      input: ['src-electron/main.ts', 'src-electron/preload.ts'],
+      output: {
+        dir: "./dist/electron"
+      },
     }
   },
   define: {
     // once again
-    'import.meta.env.ELECTRON_APP_URL': JSON.stringify('index.html')
+    'import.meta.env.ELECTRON_APP_URL': JSON.stringify('https://localhost:6173/index.html')
   }
 })
