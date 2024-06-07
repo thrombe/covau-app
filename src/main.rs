@@ -11,9 +11,9 @@ mod musiplayer;
 // but store all songs in a single directory
 
 pub mod db;
+pub mod mbz;
 pub mod musimanager;
 pub mod server;
-pub mod mbz;
 
 mod covau_types {
     use std::path::PathBuf;
@@ -187,23 +187,37 @@ mod webui {
         data
     }
 
-    pub async fn test_webui(url: &str) -> anyhow::Result<webui::Window> {
-        let win = webui::Window::new();
-        win.set_file_handler(unsafe_handle);
-        unsafe {
-            let _ = webui::bindgen::webui_set_port(win.id, 10011);
+    pub struct App {
+        pub win: webui::Window,
+    }
+    impl App {
+        pub fn new() -> Self {
+            Self {
+                win: webui::Window::new(),
+            }
         }
 
-        win.show(url);
+        pub async fn open_window(&self, url: &str) -> anyhow::Result<()> {
+            self.win.set_file_handler(unsafe_handle);
+            unsafe {
+                let _ = webui::bindgen::webui_set_port(self.win.id, 10011);
+            }
 
-        let _ = win.run_js("console.log('webui.js loaded :}')");
+            self.win.show(url);
 
-        tokio::task::spawn_blocking(|| {
-            webui::wait();
-        })
-        .await?;
+            let _ = self.win.run_js("console.log('webui.js loaded :}')");
 
-        Ok(win)
+            tokio::task::spawn_blocking(|| {
+                webui::wait();
+            })
+            .await?;
+
+            Ok(())
+        }
+
+        pub fn close(&self) {
+            self.win.close();
+        }
     }
 }
 
@@ -234,11 +248,28 @@ async fn main() -> Result<()> {
     // dbg!(ulid::Ulid::new().to_string());
 
     // parse_test().await?;
-    // api_test().await?;
+    // db::db_test().await?;
+    // mbz::api_test().await?;
 
     dump_types()?;
 
-    server::test_server().await?;
+    let app = webui::App::new();
+
+    let open = app.open_window("http://localhost:5173/#/local");
+    // let open = app.open_window("http://localhost:10010/#/local");
+    // let open = app.open_window("http://localhost:5173/#/vibe/test");
+    // let open = app.open_window("http://localhost:5173/#/play");
+
+    tokio::select! {
+        server = server::test_server() => {
+            app.close();
+            server?;
+        }
+        window = open => {
+            app.close();
+            window?;
+        }
+    }
 
     Ok(())
 }
