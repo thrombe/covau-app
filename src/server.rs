@@ -415,6 +415,40 @@ fn embedded_asset_route() -> BoxedFilter<(impl Reply,)> {
     index_route.or(route).boxed()
 }
 
+fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
+    #[cfg(ui_backend = "WEBUI")]
+    let webui = warp::path("webui.js")
+        .and(warp::path::end())
+        .and(warp::any().map(move || c.clone()))
+        .and_then(|c: Arc<Mutex<reqwest::Client>>| async move {
+            let c = c.lock().await;
+            let req = c.get("http://localhost:6174/webui.js");
+            let res = c
+                .execute(req.build().map_err(custom_reject)?)
+                .await
+                .map_err(custom_reject)?;
+
+            let mut wres = warp::http::Response::builder();
+            for (k, v) in res.headers().iter() {
+                wres = wres.header(k, v);
+            }
+            let status = res.status();
+            let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+            wres.status(status).body(body).map_err(custom_reject)
+        });
+
+    #[cfg(not(ui_backend = "WEBUI"))]
+    let webui = warp::path("webui.js").and(warp::path::end())
+        .and(warp::any().map(move || c.clone()))
+        .and_then(|_: Arc<Mutex<reqwest::Client>>| async move {
+            let mut wres = warp::http::Response::builder();
+            wres.body("").map_err(custom_reject)
+        });
+
+    let webui = webui.with(warp::cors().allow_any_origin());
+    webui.boxed()
+}
+
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
     let db = Arc::new(
@@ -475,6 +509,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
         .or(mbz_search_routes)
+        .or(webui_js_route(client.clone()))
         .or(options_route);
     // let all = all.or(redirect_route(client.clone()));
     let all = all.or(embedded_asset_route());
