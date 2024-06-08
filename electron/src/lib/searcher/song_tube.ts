@@ -159,7 +159,12 @@ export class StListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    get(stores.player).play(await get_uri(song.id));
+                                    let data = await get_uri(song.id);
+                                    let thumbs = data.info.basic_info.thumbnail ?? [];
+                                    if (thumbs.length > 0 && !this.data.data.thumbnail) {
+                                        this.data.data.thumbnail = thumbs[0].url;
+                                    }
+                                    get(stores.player).play(data.uri);
                                     stores.playing_item.set(this);
                                 },
                             },
@@ -536,5 +541,5 @@ export async function get_uri(id: string) {
     // let url = d.getStreamingInfo();
     let uri = f.decipher(itube.session.player);
     console.log(uri)
-    return uri;
+    return { info: d, uri: uri };
 }
