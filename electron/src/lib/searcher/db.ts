@@ -195,7 +195,7 @@ export class DbListItem extends ListItem {
                                     let s = Db.new({ query_type: "songs", ids: a.songs}, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: a.name, searcher: writable(s), thumbnail: null });
+                                        t.push({ name: a.name + " saved", searcher: writable(s), thumbnail: null });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
@@ -209,7 +209,7 @@ export class DbListItem extends ListItem {
                                     let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? []}, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: a.name, searcher: writable(s), thumbnail: null });
+                                        t.push({ name: a.name + " unexplored", searcher: writable(s), thumbnail: null });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
