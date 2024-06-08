@@ -3,7 +3,7 @@
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
     import type { Unique } from "$lib/virtual.ts";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
@@ -84,28 +84,6 @@
     };
     let menubar_option = stores.selected_menubar_option;
 
-    // $: if (queue_selected_item_index != null) {
-    //     let id: string | null | undefined;
-    //     if (queue_selected_item_index > -1) {
-    //         id = queue_items[queue_selected_item_index].id;
-    //     } else if (queue_playing_vid_info) {
-    //         id = queue_playing_vid_info.basic_info.id ?? null;
-    //     } else {
-    //         id = null;
-    //     }
-
-    //     if (
-    //         typeof id !== "undefined" &&
-    //         menubar_related_option.id != id &&
-    //         menubar_option.content_type === "related-music"
-    //     ) {
-    //         menubar_related_option.id = id;
-    //         menubar_option = menubar_option;
-    //     } else {
-    //         menubar_related_option.id = id ?? null;
-    //     }
-    // }
-
     let width: number;
     let mobile = false;
     $: if (width) {
@@ -129,16 +107,19 @@
     let img_w: number;
     let img_squared = false;
 
-    // $: if (queue_playing_vid_info) {
-    //     let q = queue_playing_vid_info.basic_info;
-    //     if (q.thumbnail && q.thumbnail.length > 0) {
-    //         img_src = q.thumbnail[0].url;
-    //     }
-    // }
-
     const on_img_err = async () => {
         img_src = "";
     };
+    let unsub = stores.playing_item.subscribe(item => {
+        if (!item) {
+            return;
+        }
+        let img = item.thumbnail();
+        if (img) {
+            img_src = img;
+        }
+    });
+    onDestroy(unsub);
 </script>
 
 <svelte:window on:resize={on_window_resize} bind:innerWidth={width} />
