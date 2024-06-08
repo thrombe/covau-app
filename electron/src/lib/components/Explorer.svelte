@@ -7,8 +7,6 @@
     import * as stores from "$lib/stores.ts";
 
     export let searcher: Readable<stores.Searcher>;
-    export let selected_item_index: number;
-    export let selected_item: Unique<ListItem, unknown>;
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
@@ -29,6 +27,8 @@
         infobox: {};
     }
 
+    let selected_item_index: number;
+    let selected_item: Unique<ListItem, unknown>;
     let items = new Array<Unique<ListItem, number>>();
 
     const end_reached = async (s: Readable<stores.Searcher> = searcher) => {

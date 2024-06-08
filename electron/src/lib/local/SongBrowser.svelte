@@ -23,8 +23,6 @@
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
 
-    let selected_item: Unique<ListItem, string>;
-    let selected_item_index = 0;
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
@@ -97,11 +95,9 @@
         <browse-area class={$curr_tab == tab ? "" : "hidden"}>
             <Explorer
                 searcher={tab.searcher}
-                bind:selected_item
                 {columns}
                 bind:item_height
                 keyboard_control={false}
-                bind:selected_item_index
                 bind:search_objects
                 bind:try_scroll_selected_item_in_view
                 on_item_click={async (t) => {
