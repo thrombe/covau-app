@@ -13,8 +13,8 @@
     let show_menu = false;
 
     const menu_disabler = () => {
-        show_menu = false;
         window.removeEventListener("click", menu_disabler);
+        show_menu = false;
     };
     let on_menu_click = () => {
         if (!show_menu) {
@@ -22,8 +22,6 @@
             setTimeout(() => {
                 window.addEventListener("click", menu_disabler);
             }, 300);
-        } else {
-            show_menu = false;
         }
     };
 
@@ -173,10 +171,6 @@
         display: block;
     }
 
-    /* .menu-button:hover .menu-box, .menu-box:hover {
-        @apply z-10 opacity-100; 
-        transition: 0.0s;
-    } */
     .menu-button .menu-box,
     .menu-box {
         transition-delay: 0.7s;
