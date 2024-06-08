@@ -31,7 +31,10 @@ derivative = "2.2.0"
 intrusive-collections = "0.9.6"
 sea-orm = { version = "0.12.15", features = ["sqlx-sqlite", "runtime-tokio", "macros", "runtime-tokio-native-tls"] }
 sublime_fuzzy = "0.7.0"
-rust-embed = "8.4.0"
+rust-embed = { version = "8.4.0", features = [
+  "debug-embed",
+  # "compression",
+] }
 mime_guess = "2.0.4"
 
 [features]
