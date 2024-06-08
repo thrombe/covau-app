@@ -96,49 +96,51 @@ export class DbListItem extends ListItem {
     }
 
     options(ctx: RenderContext): Option[] {
+        const song_play = (song: Song) => ({
+            icon: "/static/play.svg",
+            location: "IconTop",
+            tooltip: "play",
+            onclick: async () => {
+                if (song.last_known_path) {
+                    get(stores.player).play("file://" + song.last_known_path);
+                } else {
+                    let data = await get_uri(song.key);
+                    let thumbs = data.info.basic_info.thumbnail ?? [];
+                    if (thumbs.length > 0 && !song.info?.thumbnail_url) {
+                        if (song.info) {
+                            song.info.thumbnail_url = thumbs[0].url;
+                        } else {
+                            song.info = {
+                                duration: null,
+                                tags: [],
+                                album: null,
+                                artist_names: [], // TODO: data.info.basic_info.author?
+                                channel_id: data.info.basic_info.channel_id ?? '',
+                                uploader_id: null,
+                                video_id: song.key,
+                                titles: [song.title],
+                                thumbnail_url: thumbs[0].url,
+                            };
+                        }
+                    }
+                    get(stores.player).play(data.uri);
+                }
+                stores.playing_item.set(this);
+            },
+        } as Option);
+
         switch (ctx) {
             case "Queue":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
                         let song = this.data.data;
                         return [
+                            song_play(song),
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
                                 onclick: () => {
-                                },
-                            },
-                            {
-                                icon: "/static/play.svg",
-                                location: "IconTop",
-                                tooltip: "play",
-                                onclick: async () => {
-                                    if (song.last_known_path) {
-                                        get(stores.player).play("file://" + song.last_known_path);
-                                    } else {
-                                        let data = await get_uri(song.key);
-                                        let thumbs = data.info.basic_info.thumbnail ?? [];
-                                        if (thumbs.length > 0 && !song.info?.thumbnail_url) {
-                                            if (song.info) {
-                                                song.info.thumbnail_url = thumbs[0].url;
-                                            } else {
-                                                song.info = {
-                                                    duration: null,
-                                                    tags: [],
-                                                    album: null,
-                                                    artist_names: [], // TODO: data.info.basic_info.author?
-                                                    channel_id: data.info.basic_info.channel_id ?? '',
-                                                    uploader_id: null,
-                                                    video_id: song.key,
-                                                    titles: [song.title],
-                                                    thumbnail_url: thumbs[0].url,
-                                                };
-                                            }
-                                        }
-                                        get(stores.player).play(data.uri);
-                                    }
-                                    stores.playing_item.set(this);
                                 },
                             },
                         ];
@@ -155,43 +157,12 @@ export class DbListItem extends ListItem {
                     case "MusimanagerSong":
                         let song = this.data.data;
                         return [
+                            song_play(song),
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
                                 onclick: () => { },
-                            },
-                            {
-                                icon: "/static/play.svg",
-                                location: "IconTop",
-                                tooltip: "play",
-                                onclick: async () => {
-                                    if (song.last_known_path) {
-                                        get(stores.player).play("file://" + song.last_known_path);
-                                    } else {
-                                        let data = await get_uri(song.key);
-                                        let thumbs = data.info.basic_info.thumbnail ?? [];
-                                        if (thumbs.length > 0 && !song.info?.thumbnail_url) {
-                                            if (song.info) {
-                                                song.info.thumbnail_url = thumbs[0].url;
-                                            } else {
-                                                song.info = {
-                                                    duration: null,
-                                                    tags: [],
-                                                    album: null,
-                                                    artist_names: [], // TODO: data.info.basic_info.author?
-                                                    channel_id: data.info.basic_info.channel_id ?? '',
-                                                    uploader_id: null,
-                                                    video_id: song.key,
-                                                    titles: [song.title],
-                                                    thumbnail_url: thumbs[0].url,
-                                                };
-                                            }
-                                        }
-                                        get(stores.player).play(data.uri);
-                                    }
-                                    stores.playing_item.set(this);
-                                },
                             },
                         ];
                     case "MusimanagerAlbum": {
@@ -232,7 +203,7 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 icon: "/static/open-new-tab.svg",
-                                location: "BottomRight",
+                                location: "OnlyMenu",
                                 tooltip: "open unexplored",
                                 onclick: async () => {
                                     let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? []}, 30);
