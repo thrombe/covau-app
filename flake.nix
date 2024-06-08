@@ -118,15 +118,12 @@
           export DEV_VITE_PORT=5173
 
           cd electron
-          # bun i --production --cache-dir ${yarn-modules}
-          # cp -r ${yarn-modules}/node_modules ./.
           ln -s ${yarn-modules}/node_modules ./node_modules
 
           bun run build
 
           cd ..
           cargo build --release --locked --offline -Z unstable-options --out-dir ./.
-          # cargo build --locked --offline -Z unstable-options --out-dir ./.
         '';
         installPhase = ''
           mkdir -p $out/bin
@@ -208,7 +205,6 @@
             unstable.clippy
             # unstable.rustup
 
-            unstable.bun
             unstable.electron_29
             # unstable.yarn
 
