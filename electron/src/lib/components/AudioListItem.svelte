@@ -20,7 +20,7 @@
         if (!show_menu) {
             show_menu = true;
             setTimeout(() => {
-                window.addEventListener("click" ,menu_disabler);
+                window.addEventListener("click", menu_disabler);
             }, 300);
         } else {
             show_menu = false;
@@ -112,22 +112,30 @@
         {/if}
     {/each}
 
-    <button class='pop-button bottom-0 menu-button' on:click={on_menu_click}
+    <button
+        class="pop-button bottom-0 menu-button"
+        on:click={on_menu_click}
         class:menu-open={show_menu}
     >
-        <img alt='three dot menu icon' class='h-3 ' src='/static/play.svg'>
-        <div 
-            class='menu-box absolute right-5 top-0 flex flex-col gap-1 w-48 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10'
+        <img alt="three dot menu icon" class="h-3" src="/static/play.svg" />
+        <div
+            class="menu-box absolute right-5 top-0 flex flex-col gap-1 w-48 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
             class:hidden={!show_menu}
         >
             {#each options as option}
-                <button
-                    on:click={option.onclick}
-                >
-                    <div class='flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15'>
-                        <img alt='three dot menu icon' class='h-5 w-5 p-1 mr-4' src='/static/play.svg'>
+                <button on:click={option.onclick}>
+                    <div
+                        class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15"
+                    >
+                        <img
+                            alt="three dot menu icon"
+                            class="h-5 w-5 p-1 mr-4"
+                            src="/static/play.svg"
+                        />
 
-                        <item-title class="flex flex-col justify-end h-1/2 text-sm text-gray-200">
+                        <item-title
+                            class="flex flex-col justify-end h-1/2 text-sm text-gray-200"
+                        >
                             <txt>{option.tooltip}</txt>
                         </item-title>
                     </div>
@@ -158,15 +166,17 @@
     }
     item button.play-button {
     }
-    item button.menu-open, .menu-open button {
-      display: block;
+    item button.menu-open,
+    .menu-open button {
+        display: block;
     }
 
     /* .menu-button:hover .menu-box, .menu-box:hover {
         @apply z-10 opacity-100; 
         transition: 0.0s;
     } */
-    .menu-button .menu-box, .menu-box {
+    .menu-button .menu-box,
+    .menu-box {
         transition-delay: 0.7s;
     }
 </style>
