@@ -13,6 +13,6 @@ export type Callback = (() => void) | (() => Promise<void>);
 export type Option = {
     icon: string,
     tooltip: string,
-    location: "IconTop" | "TopRight" | "BottomRight",
+    location: "IconTop" | "TopRight" | "BottomRight" | "OnlyMenu",
     onclick: Callback,
 };

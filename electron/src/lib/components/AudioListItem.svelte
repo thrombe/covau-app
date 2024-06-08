@@ -118,7 +118,7 @@
             on:click={on_menu_click}
             class:menu-open={show_menu}
         >
-            <img alt="three dot menu icon" class="h-3" src="/static/play.svg" />
+            <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
             <div
                 class="menu-box absolute right-5 top-0 flex flex-col gap-1 w-48 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
                 class:hidden={!show_menu}
@@ -130,8 +130,8 @@
                         >
                             <img
                                 alt="three dot menu icon"
-                                class="h-5 w-5 p-1 mr-4"
-                                src="/static/play.svg"
+                                class="h-4 w-4 m-1 mr-4"
+                                src={option.icon}
                             />
 
                             <item-title
