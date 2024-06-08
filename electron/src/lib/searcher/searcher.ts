@@ -1,6 +1,7 @@
 
 import { YTNodes, SongTube, type MusicListItem } from './song_tube';
 import { Db, type Song } from "./db";
+import * as DB from "$types/db.ts";
 import type { Unique } from '$lib/virtual';
 
 // this should onlybe used for the type parameter in the types below
@@ -15,10 +16,10 @@ export type Keyed = { get_key(): unknown };
 
 export type RObject<T> =
     T extends WrappedDb<infer E>
-    ? E & Keyed
+    ? DB.DbItem<E> & Keyed
 
     : T extends UnwrappedDb<infer E>
-    ? E & Keyed
+    ? DB.DbItem<E> & Keyed
 
     : T & Keyed;
 

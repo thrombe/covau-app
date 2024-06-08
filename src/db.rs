@@ -324,20 +324,26 @@ impl Db {
             } else if len < cap {
                 tree.insert(Box::new(Node {
                     link: Default::default(),
-                    val: t,
-                    id: m.id,
+                    val: DbItem {
+                        id: m.id,
+                        typ: T::typ(),
+                        t,
+                    },
                     score,
                 }));
                 len += 1;
             } else {
                 let mut front = tree.front_mut();
                 let node = front.get().unwrap();
-                if (node.score, node.id) < (score, m.id) {
+                if (node.score, node.val.id) < (score, m.id) {
                     let _ = front.remove().expect("must not fail");
                     tree.insert(Box::new(Node {
                         link: Default::default(),
-                        val: t,
-                        id: m.id,
+                        val: DbItem {
+                            id: m.id,
+                            typ: T::typ(),
+                            t,
+                        },
                         score,
                     }));
                 }
@@ -347,7 +353,7 @@ impl Db {
         let cont = tree
             .front()
             .get()
-            .map(|n| (n.score, n.id))
+            .map(|n| (n.score, n.val.id))
             .map(|(s, id)| s.to_string() + "|" + &id.to_string())
             .map(|cont| SearchContinuation {
                 typ: T::typ(),
@@ -379,7 +385,7 @@ impl Db {
     pub async fn search_many_by_ref_id<T: DbAble>(
         &self,
         ref_ids: Vec<String>,
-    ) -> anyhow::Result<Vec<T>> {
+    ) -> anyhow::Result<Vec<DbItem<T>>> {
         let mut condition = Condition::any();
         for id in ref_ids {
             condition = condition.add(refid::Column::Refid.eq(id));
@@ -393,7 +399,11 @@ impl Db {
             .into_iter()
             .map(|(_refid, obj)| obj)
             .flatten()
-            .map(|e| e.parsed_assume())
+            .map(|e| DbItem {
+                t: e.parsed_assume(),
+                id: e.id,
+                typ: T::typ(),
+            })
             .collect();
         Ok(e)
     }
@@ -420,8 +430,14 @@ impl Db {
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct SearchMatches<T> {
-    pub items: Vec<T>,
+    pub items: Vec<DbItem<T>>,
     pub continuation: Option<SearchContinuation>,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct DbItem<T> {
+    pub id: i32,
+    pub typ: Typ,
+    pub t: T,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -440,8 +456,7 @@ pub enum SearchQuery {
 
 struct Node<T> {
     link: RBTreeLink,
-    val: T,
-    id: i32,
+    val: DbItem<T>,
     score: isize,
 }
 intrusive_adapter!(BAdapter<T> = Box<Node<T>>: Node<T> { link: RBTreeLink } where T: ?Sized + Clone);
@@ -455,13 +470,15 @@ where
         &self,
         value: &'a <Self::PointerOps as intrusive_collections::PointerOps>::Value,
     ) -> Self::Key {
-        (value.score, value.id)
+        (value.score, value.val.id)
     }
 }
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += &specta::ts::export::<SearchMatches<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<DbItem<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Typ>(config)?;
     types += ";\n";
@@ -505,7 +522,7 @@ pub async fn db_test() -> anyhow::Result<()> {
     dbg!(&matches);
     let m = db
         .search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
-            matches.items[0].key.clone(),
+            matches.items[0].t.key.clone(),
         )
         .await?;
     dbg!(m);

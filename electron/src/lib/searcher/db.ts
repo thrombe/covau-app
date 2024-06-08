@@ -4,7 +4,7 @@ import * as Musi from "$types/musimanager.ts";
 import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
-import { toast } from "$lib/toast/toast.ts"; 
+import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
@@ -15,12 +15,19 @@ export type Artist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
 export type Playlist = Musi.Playlist<Musi.SongId>;
 export type Queue = Musi.Queue<Musi.SongId>;
 
-export type MusicListItem = Keyed & { data: Keyed } & (
-    { typ: "MusimanagerSong", data: Song } |
-    { typ: "MusimanagerAlbum", data: Album } |
-    { typ: "MusimanagerArtist", data: Artist } |
-    { typ: "MusimanagerPlaylist", data: Playlist } |
-    { typ: "MusimanagerQueue", data: Queue }
+// export type MusicListItem = Keyed & (
+//     | (DB.DbItem<Song> & { typ: "MusimanagerSong"})
+//     | DB.DbItem<Album>
+//     | DB.DbItem<Artist>
+//     | DB.DbItem<Playlist>
+//     | DB.DbItem<Queue>
+// );
+export type MusicListItem = Keyed & (
+    { id: number, typ: "MusimanagerSong", t: Song } |
+    { id: number, typ: "MusimanagerAlbum", t: Album } |
+    { id: number, typ: "MusimanagerArtist", t: Artist } |
+    { id: number, typ: "MusimanagerPlaylist", t: Playlist } |
+    { id: number, typ: "MusimanagerQueue", t: Queue }
 );
 
 export type Typ = DB.Typ;
@@ -43,15 +50,15 @@ export class DbListItem extends ListItem {
     title(): string {
         switch (this.data.typ) {
             case "MusimanagerSong":
-                return this.data.data.title;
+                return this.data.t.title;
             case "MusimanagerAlbum":
-                return this.data.data.name;
+                return this.data.t.name;
             case "MusimanagerArtist":
-                return this.data.data.name;
+                return this.data.t.name;
             case "MusimanagerPlaylist":
-                return this.data.data.name;
+                return this.data.t.name;
             case "MusimanagerQueue":
-                return this.data.data.name;
+                return this.data.t.name;
             default:
                 throw exhausted(this.data)
         }
@@ -60,7 +67,7 @@ export class DbListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MusimanagerSong":
-                return this.data.data.info?.thumbnail_url ?? null;
+                return this.data.t.info?.thumbnail_url ?? null;
             case "MusimanagerAlbum":
                 return null;
             case "MusimanagerArtist":
@@ -81,15 +88,15 @@ export class DbListItem extends ListItem {
     title_sub(): string | null {
         switch (this.data.typ) {
             case "MusimanagerSong":
-                return this.data.data.artist_name;
+                return this.data.t.artist_name;
             case "MusimanagerAlbum":
-                return this.data.data.artist_name;
+                return this.data.t.artist_name;
             case "MusimanagerArtist":
                 return null;
             case "MusimanagerPlaylist":
-                return this.data.data.data_list.length.toString() + " songs";
+                return this.data.t.data_list.length.toString() + " songs";
             case "MusimanagerQueue":
-                return this.data.data.data_list.length.toString() + " songs";
+                return this.data.t.data_list.length.toString() + " songs";
             default:
                 throw exhausted(this.data)
         }
@@ -133,7 +140,7 @@ export class DbListItem extends ListItem {
             case "Queue":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
-                        let song = this.data.data;
+                        let song = this.data.t;
                         return [
                             song_play(song),
                             {
@@ -155,7 +162,7 @@ export class DbListItem extends ListItem {
             case "Browser":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
-                        let song = this.data.data;
+                        let song = this.data.t;
                         return [
                             song_play(song),
                             {
@@ -166,14 +173,14 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     case "MusimanagerAlbum": {
-                        let list = this.data.data;
+                        let list = this.data.t;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
                                 tooltip: "open",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.songs}, 30);
+                                    let s = Db.new({ query_type: "songs", ids: list.songs }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
                                         t.push({ name: list.name, searcher: writable(s), thumbnail: null });
@@ -185,14 +192,14 @@ export class DbListItem extends ListItem {
                         ];
                     }
                     case "MusimanagerArtist": {
-                        let a = this.data.data;
+                        let a = this.data.t;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
                                 tooltip: "open saved",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: a.songs}, 30);
+                                    let s = Db.new({ query_type: "songs", ids: a.songs }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
                                         t.push({ name: a.name + " saved", searcher: writable(s), thumbnail: null });
@@ -206,7 +213,7 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "open unexplored",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? []}, 30);
+                                    let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? [] }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
                                         t.push({ name: a.name + " unexplored", searcher: writable(s), thumbnail: null });
@@ -219,14 +226,14 @@ export class DbListItem extends ListItem {
                     }
                     case "MusimanagerPlaylist":
                     case "MusimanagerQueue": {
-                        let list = this.data.data;
+                        let list = this.data.t;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
                                 tooltip: "open",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.data_list}, 30);
+                                    let s = Db.new({ query_type: "songs", ids: list.data_list }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
                                         t.push({ name: list.name, searcher: writable(s), thumbnail: null });
@@ -248,53 +255,6 @@ export class DbListItem extends ListItem {
     }
 }
 
-interface IUnionTypeWrapper<D> {
-    next_page(): Promise<MusicListItem[]>;
-    inner: D;
-    has_next_page: boolean;
-    query: BrowseQuery;
-};
-function UnionTypeWrapper<D extends {
-    query: BrowseQuery;
-    next_page(): Promise<RObject<unknown>[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-        query: d.query,
-
-        async next_page(): Promise<MusicListItem[]> {
-            let res = await d.next_page();
-
-            let self = this as unknown as IUnionTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
-            if (res.length === 0) {
-                return [];
-            }
-
-            switch (d.query.query_type) {
-                case "search":
-                    let typ = d.query.type;
-                    return res.map(data => ({
-                        typ: typ,
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                case "songs":
-                    return res.map(data => ({
-                        typ: "MusimanagerSong",
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                default:
-                    throw exhausted(d.query);
-            }
-        }
-    } as unknown as IUnionTypeWrapper<D>;
-}
-
 interface IClassTypeWrapper<D> {
     next_page(): Promise<DbListItem[]>;
     inner: D;
@@ -314,7 +274,7 @@ function ClassTypeWrapper<D extends {
         async next_page(): Promise<DbListItem[]> {
             let res = await d.next_page();
 
-            let self = this as unknown as IUnionTypeWrapper<D>;
+            let self = this as unknown as IClassTypeWrapper<D>;
             self.has_next_page = d.has_next_page;
 
             if (res.length === 0) {
@@ -364,7 +324,7 @@ function AsyncProtWrapper<D extends {
     } as unknown as IAsyncProtWrapper<D>;
 }
 
-export class Db<T> extends Unpaged<T> {
+export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
     page_size: number;
 
@@ -374,21 +334,20 @@ export class Db<T> extends Unpaged<T> {
         this.page_size = page_size;
     }
 
-    static new<T>(query: BrowseQuery, page_size: number) {
-        let w1 = UnionTypeWrapper(Db.unwrapped<T>(query, page_size));
-        let w2 = ClassTypeWrapper(w1);
+    static new(query: BrowseQuery, page_size: number) {
+        let w2 = ClassTypeWrapper(Db.unwrapped(query, page_size));
         // let w3 = AsyncProtWrapper(w2);
         return w2;
     }
 
-    static unwrapped<T>(query: BrowseQuery, page_size: number) {
-        const US = UniqueSearch<T, typeof Db<T>>(Db);
-        const SS = SavedSearch<T, typeof US>(US);
+    static unwrapped(query: BrowseQuery, page_size: number) {
+        const US = UniqueSearch<MusicListItem, typeof Db>(Db);
+        const SS = SavedSearch<MusicListItem, typeof US>(US);
         return new SS(query, page_size);
     }
 
-    static fused<T>() {
-        let s = Db.new<T>({ type: '' } as unknown as BrowseQuery, 1);
+    static fused() {
+        let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
         s.inner.has_next_page = false;
         return s;
     }
@@ -400,7 +359,7 @@ export class Db<T> extends Unpaged<T> {
             }
             async search_query<T>(query: BrowseQuery) {
                 type R = RSearcher<WrappedDb<T>>;
-                let t = Db.new<WrappedDb<T>>(query, this.page_size);
+                let t = Db.new(query, this.page_size);
                 return t as R | null;
             }
         }
@@ -408,7 +367,7 @@ export class Db<T> extends Unpaged<T> {
         return new Fac();
     }
 
-    async fetch(type: Typ, query: string): Promise<T[]> {
+    async fetch(type: Typ, query: string): Promise<MusicListItem[]> {
         if (type == 'MusimanagerSong') {
             this.route = "musimanager/search/songs";
         } else if (type == 'MusimanagerAlbum') {
@@ -439,18 +398,18 @@ export class Db<T> extends Unpaged<T> {
             }
         );
         let body = await res.text();
-        let matches: DB.SearchMatches<T> = JSON.parse(body);
+        let matches: DB.SearchMatches<unknown> = JSON.parse(body);
         this.cont = matches.continuation;
         if (!this.cont) {
             this.has_next_page = false;
         }
-        return matches.items;
+        return matches.items as MusicListItem[];
     }
 
     cont: DB.SearchContinuation | null = null;
     route: string = '';
     page_end_index: number = 0;
-    async next_page(): Promise<RObject<T>[]> {
+    async next_page(): Promise<MusicListItem[]> {
         if (!this.has_next_page) {
             return [];
         }
@@ -471,7 +430,7 @@ export class Db<T> extends Unpaged<T> {
                     }
                 );
                 let body = await res.text();
-                let matches: DB.SearchMatches<T> = JSON.parse(body);
+                let matches: DB.SearchMatches<unknown> = JSON.parse(body);
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;
@@ -481,22 +440,7 @@ export class Db<T> extends Unpaged<T> {
                 items = await this.fetch(this.query.type, this.query.query);
             }
 
-            let k;
-            if (this.query.type == 'MusimanagerSong') {
-                k = keyed(items, "key");
-            } else if (this.query.type == 'MusimanagerAlbum') {
-                k = keyed(items, "browse_id");
-            } else if (this.query.type == 'MusimanagerArtist') {
-                k = keyed(items, null);
-            } else if (this.query.type == 'MusimanagerPlaylist') {
-                k = keyed(items, null);
-            } else if (this.query.type == 'MusimanagerQueue') {
-                k = keyed(items, null);
-            } else {
-                throw exhausted(this.query.type);
-            }
-
-            return k as RObject<T>[];
+            return keyed(items) as MusicListItem[];
         } else if (this.query.query_type === 'songs') {
             let ids = this.query.ids.slice(
                 this.page_end_index,
@@ -519,19 +463,18 @@ export class Db<T> extends Unpaged<T> {
                 }
             );
             let body = await res.text();
-            let matches: T[] = JSON.parse(body);
-            return keyed(matches, "key") as RObject<T>[];
+            let matches: DB.DbItem<unknown>[] = JSON.parse(body);
+            return keyed(matches) as MusicListItem[];
         } else {
             throw exhausted(this.query);
         }
     }
 }
 
-let globally_unique_key: number = 0;
-const keyed = <T>(items: T[], field: string | null): (T & Keyed)[] => {
-    let res = items.map((e: any) => {
-        let key = field ? e[field] : globally_unique_key++;
-        let p = e as T & Keyed;
+const keyed = <T>(items: DB.DbItem<T>[]): (DB.DbItem<T> & Keyed)[] => {
+    let res = items.map((e) => {
+        let key = e.id;
+        let p = e as DB.DbItem<T> & Keyed;
         p.get_key = function() {
             return key;
         };
