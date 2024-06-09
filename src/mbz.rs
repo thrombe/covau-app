@@ -265,14 +265,14 @@ pub struct SearchResults<T> {
     pub continuation: Option<SearchContinuation>,
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 pub trait PagedSearch
 where
     Self: Sized,
 {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>>;
 }
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 pub trait IdSearch
 where
     Self: Sized,
@@ -280,7 +280,7 @@ where
     async fn get(id: &str) -> anyhow::Result<Self>;
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl PagedSearch for Recording {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
         let (query, page_size, offset) = match query {
@@ -311,7 +311,7 @@ impl PagedSearch for Recording {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl PagedSearch for ReleaseWithInfo {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
         let (query, page_size, offset) = match query {
@@ -342,7 +342,7 @@ impl PagedSearch for ReleaseWithInfo {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl PagedSearch for ReleaseGroupWithInfo {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
         let (query, page_size, offset) = match query {
@@ -373,7 +373,7 @@ impl PagedSearch for ReleaseGroupWithInfo {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl PagedSearch for Artist {
     async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
         let (query, page_size, offset) = match query {
@@ -403,7 +403,7 @@ impl PagedSearch for Artist {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl IdSearch for WithUrlRels<Artist> {
     async fn get(id: &str) -> anyhow::Result<Self> {
         let r = artist::Artist::fetch()
@@ -416,7 +416,7 @@ impl IdSearch for WithUrlRels<Artist> {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl IdSearch for Artist {
     async fn get(id: &str) -> anyhow::Result<Self> {
         let r = artist::Artist::fetch().id(id).execute().await?;
@@ -425,7 +425,7 @@ impl IdSearch for Artist {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl IdSearch for ReleaseWithInfo {
     async fn get(id: &str) -> anyhow::Result<Self> {
         let r = release::Release::fetch().id(id).execute().await?;
@@ -434,7 +434,7 @@ impl IdSearch for ReleaseWithInfo {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl IdSearch for ReleaseGroupWithInfo {
     async fn get(id: &str) -> anyhow::Result<Self> {
         let r = release_group::ReleaseGroup::fetch()
@@ -446,7 +446,7 @@ impl IdSearch for ReleaseGroupWithInfo {
     }
 }
 
-#[sea_orm::prelude::async_trait::async_trait]
+#[async_trait::async_trait]
 impl IdSearch for Recording {
     async fn get(id: &str) -> anyhow::Result<Self> {
         let r = recording::Recording::fetch().id(id).execute().await?;
