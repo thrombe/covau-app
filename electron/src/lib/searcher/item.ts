@@ -6,6 +6,7 @@ export abstract class ListItem {
     abstract default_thumbnail(): string;
     abstract title_sub(): string | null;
     abstract options(ctx: RenderContext): Option[];
+    abstract audio_uri(): Promise<string | null>;
 }
 
 export type RenderContext = "Queue" | "Browser" | "Playbar";
