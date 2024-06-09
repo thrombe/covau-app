@@ -22,28 +22,16 @@ pub fn main_js() -> Result<(), JsValue> {
     Ok(())
 }
 
+
 pub mod searcher {
     use super::*;
 
     #[derive(Debug)]
-    pub struct OpaqueLmao {
-        pub thing: String,
-    }
-
-    impl Drop for OpaqueLmao {
-        fn drop(&mut self) {
-            info!("opaque dropped");
-        }
-    }
-
-    #[derive(Debug)]
     #[wasm_bindgen(getter_with_clone, inspectable)]
+    // #[cfg_attr(feature = "wasmdeps", derive(tsify_next::Tsify), tsify(into_wasm_abi, from_wasm_abi))]
     pub struct Searcher {
         client: reqwest::Client,
         cont: Option<JsValue>,
-
-        // :) non pub things are kept hidden from JS :)
-        query: std::rc::Rc<OpaqueLmao> ,
     }
 
     #[wasm_bindgen]
@@ -55,67 +43,17 @@ pub mod searcher {
             Self {
                 client: reqwest::Client::new(),
                 cont: None,
-                query: std::rc::Rc::new(OpaqueLmao { thing: "".into() }),
             }
         }
 
-        pub fn klone(&self) -> Self {
-            Self {
-                client: reqwest::Client::new(),
-                cont: None,
-                query: self.query.clone(),
-            }
-        }
-
-        pub fn inspect(&self) {
+        pub async fn test_client(&self) -> Result<(), JsError> {
+            let req = self.client.get("http://localhost:5173/").build()?;
+            let resp = self.client.execute(req).await?;
+            let str = resp.text().await?;
+            info!("{}", str);
+            Ok(())
         }
     }
-
-    // drop isn't called in js :(
-    // it does mem::forget
-    impl Drop for Searcher {
-        fn drop(&mut self) {
-            info!("searcher dropped");
-        }
-    }
-}
-
-pub mod typ {
-    use super::*;
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(tag = "type", content = "content")]
-    #[cfg_attr(feature = "wasmdeps", derive(tsify_next::Tsify), tsify(into_wasm_abi, from_wasm_abi))]
-    pub enum Typ {
-        Some,
-        Bhing(String),
-    }
-}
-use typ::*;
-
-pub mod gyaat {
-    use super::*;
-    #[derive(Serialize, Deserialize, Debug)]
-    // #[cfg_attr(feature = "wasmdeps", derive(tsify_next::Tsify), tsify(into_wasm_abi, from_wasm_abi))]
-    #[wasm_bindgen(getter_with_clone, inspectable)]
-    pub struct Gyaat {
-        pub lmao: Typ,
-        pub misc: Vec<String>,
-    }
-
-    #[wasm_bindgen]
-    impl Gyaat {
-        pub async fn goon(&self, b: Gyaat) -> Result<Typ, JsError> {
-            Ok(Typ::Some)
-        }
-    }
-}
-use gyaat::*;
-
-#[wasm_bindgen]
-pub async fn test_req(a: Gyaat) -> Result<Typ, JsError> {
-    // a.into_js();
-    // let a: Gyaat = a.to_rs()?;
-    Ok(Typ::Some)
 }
 
 // trait to jsify serde stuff

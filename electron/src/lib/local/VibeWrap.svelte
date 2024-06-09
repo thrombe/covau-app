@@ -9,7 +9,10 @@
         let itube = await new_innertube_instance();
         tube.set(itube);
 
-        await wasm.default();
+        let _info = await wasm.default();
+
+        let s = wasm.Searcher.new();
+        await s.test_client();
     })()
 </script>
 
