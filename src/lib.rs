@@ -30,6 +30,12 @@ pub mod searcher {
         pub thing: String,
     }
 
+    impl Drop for OpaqueLmao {
+        fn drop(&mut self) {
+            info!("opaque dropped");
+        }
+    }
+
     #[derive(Debug)]
     #[wasm_bindgen(getter_with_clone, inspectable)]
     pub struct Searcher {
@@ -38,6 +44,26 @@ pub mod searcher {
 
         // :) non pub things are kept hidden from JS :)
         query: OpaqueLmao,
+    }
+
+    #[wasm_bindgen]
+    impl Searcher {
+        #[wasm_bindgen(constructor)]
+        pub fn new() -> Self {
+            Self {
+                client: reqwest::Client::new(),
+                cont: None,
+                query: OpaqueLmao { thing: "".into() },
+            }
+        }
+    }
+
+    // drop isn't called in js :(
+    // it does mem::forget
+    impl Drop for Searcher {
+        fn drop(&mut self) {
+            info!("searcher dropped");
+        }
     }
 }
 
