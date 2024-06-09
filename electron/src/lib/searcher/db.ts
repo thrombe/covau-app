@@ -102,14 +102,12 @@ export class DbListItem extends ListItem {
         }
     }
 
-    options(ctx: RenderContext): Option[] {
-        const song_play = (song: Song) => ({
-            icon: "/static/play.svg",
-            location: "IconTop",
-            tooltip: "play",
-            onclick: async () => {
+    async audio_uri(): Promise<string | null> {
+        switch (this.data.typ) {
+            case "MusimanagerSong": {
+                let song = this.data.t;
                 if (song.last_known_path) {
-                    get(stores.player).play("file://" + song.last_known_path);
+                    return "file://" + song.last_known_path;
                 } else {
                     let data = await get_uri(song.key);
                     let thumbs = data.info.basic_info.thumbnail ?? [];
@@ -130,24 +128,46 @@ export class DbListItem extends ListItem {
                             };
                         }
                     }
-                    get(stores.player).play(data.uri);
+                    return data.uri;
                 }
-                stores.playing_item.set(this);
-            },
-        } as Option);
+            } break;
+            case "MusimanagerAlbum":
+            case "MusimanagerArtist":
+            case "MusimanagerPlaylist":
+            case "MusimanagerQueue":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
 
+    options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
-                        let song = this.data.t;
                         return [
-                            song_play(song),
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    stores.queue.update(q => {
+                                        q.play_item(this);
+                                        return q;
+                                    });
+                                    stores.playing_item.set(this);
+                                },
+                            },
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                tooltip: "remove item",
                                 onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
                                 },
                             },
                         ];
@@ -162,14 +182,35 @@ export class DbListItem extends ListItem {
             case "Browser":
                 switch (this.data.typ) {
                     case "MusimanagerSong":
-                        let song = this.data.t;
                         return [
-                            song_play(song),
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    let uri = await this.audio_uri();
+                                    if (uri) {
+                                        get(stores.player).play(uri);
+                                        stores.queue.update(q => {
+                                            q.detour();
+                                            return q;
+                                        });
+                                        stores.playing_item.set(this);
+                                    } else {
+                                        toast("could not play item", "error");
+                                    }
+                                },
+                            },
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => { },
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.add(this);
+                                        return q;
+                                    });
+                                },
                             },
                         ];
                     case "MusimanagerAlbum": {
@@ -187,6 +228,19 @@ export class DbListItem extends ListItem {
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: list.songs }, list.songs.length);
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
                                 },
                             },
                         ];
@@ -240,6 +294,19 @@ export class DbListItem extends ListItem {
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let s = Db.new({ query_type: "songs", ids: list.data_list }, list.data_list.length);
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
                                 },
                             },
                         ];
