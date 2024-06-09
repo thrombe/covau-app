@@ -5,7 +5,6 @@
     import * as stores from "$lib/stores.ts";
     import { exhausted } from '$lib/virtual.ts';
 
-    export let audio_info: { title: string; title_sub: string; img_src: string } | null;
     export let mobile = false;
     export let keyboard_control = true;
 

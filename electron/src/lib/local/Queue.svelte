@@ -1,3 +1,7 @@
+<script lang="ts" context="module">
+    let selected_item_index: number;
+</script>
+
 <script lang="ts">
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import type { ListItem } from '$lib/searcher/item.ts';
@@ -8,36 +12,16 @@
     import { queue_searcher } from '$lib/stores.ts';
 
     export let item_height: number;
-    export let selected_item_index: number;
-    export let playing: number | null;
-    export let playing_video_info: ListItem | null = null;
-    export let on_item_add: (id: string) => Promise<void>;
     export let dragend = (e: DragEvent) => {
         hovering = null;
         dragging_index = null;
     };
-    export let move_item = async (from: number, to: number) => {};
-    export let insert_item = async (index: number, id: string) => {};
-    export let delete_item = async (index: number, id: string) => {};
-    export let play_item = async (index: number) => {};
+    let items: Unique<ListItem, string>[] = [];
     export let mobile = false;
 
-    $: if (playing !== null) {
-        update_playing_vid_info();
-    }
+    let playing: number | null = null;
 
-    const update_playing_vid_info = () => {
-        // if (
-        //     playing !== null &&
-        //     (playing_video_info === null || (playing_video_info &&
-        //         playing_video_info.id !== items[playing].data))
-        // ) {
-        //     let vid = searched_item_map.get(items[playing].data);
-        //     playing_video_info = vid ?? null;
-        // }
-    };
 
-    export let items: Unique<ListItem, string>[] = [];
 
     let end_is_visible = false;
     const end_reached = async () => {
@@ -146,25 +130,6 @@
                 item={item}
                 ctx="Queue"
             />
-            <!-- <button
-                class='pop-button'
-                on:click={async () => {
-                    // await delete_item(index, items[index].data);
-                }}
-            >
-                <img alt="remove" draggable={false} class='h-3 opacity-50' src='/static/remove.svg'>
-            </button>
-            <div class='absolute h-full flex flex-col justify-center left-0 top-0'>
-                <button
-                    class='queue-button'
-                    class:play-button={true}
-                    on:click={async () => {
-                        await play_item(index);
-                    }}
-                >
-                    <img alt="play" draggable={false} class='scale-[50%]' src='/static/play.svg'>
-                </button>
-            </div> -->
         </item>
     </VirtualScrollable>
 </div>

@@ -11,17 +11,6 @@
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
 
-    onMount(() => {
-    });
-
-    stores.queue_searcher.set(Db.Db.new({
-        query_type: "search",
-        type: "MusimanagerSong",
-        query: "milet",
-    }, 30));
-
-    let playing_index: number | null = null;
-
     let item_height: number = 75;
     let item_min_width = 290;
     let browse_columns: number = 1;
@@ -35,42 +24,6 @@
     $: if (browse_width) {
         on_window_resize();
     }
-
-    let queue_element: HTMLElement;
-    let queue_items: Unique<ListItem, string>[] = [];
-    let queue_selected_item_index: number = -1; // -1 avoids selecting input bar in queue when nothing is in queue
-    let queue_playing_vid_info: ListItem | null;
-    let on_queue_item_add = async (id: string) => {
-        // if (player.synced_data.queue.filter((t) => t == id).length > 0) {
-        //     await toast("item already in queue");
-        // } else {
-        //     await player.queue(id);
-        //     await toast("item added");
-        // }
-    };
-    let on_queue_item_move = async (from: number, to: number) => {
-        // await player.queue_item_move(from, to);
-    };
-    let on_queue_item_insert = async (index: number, id: string) => {
-        // if (player.synced_data.queue.filter((t) => t == id).length > 0) {
-        //     await toast("item already in queue");
-        // } else {
-        //     await player.queue_item_insert(index, id);
-        // }
-    };
-    let on_queue_item_delete = async (index: number, id: string) => {
-        // if (player.synced_data.queue[index] === id) {
-        //     await player.queue_item_delete(index);
-        // } else {
-        //     await toast(`item at index ${index} is not ${id}`, "error");
-        // }
-    };
-    let on_queue_item_play = async (index: number) => {
-        // let path = queue_items[index].data.last_known_path;
-        // let uri = "file://" + path ?? null;
-        // player.play(uri);
-        // await player.play_index(index);
-    };
 
     let queue_dragend: (e: DragEvent) => void;
 
@@ -178,7 +131,6 @@
                                     : 'h-0'}"
                             >
                                 <div
-                                    bind:this={queue_element}
                                     class="flex flex-col overflow-y-auto h-full"
                                 >
                                     <div
@@ -186,18 +138,9 @@
                                         style="height: calc(100% - 3.5rem);"
                                     >
                                         <Queue
-                                            bind:items={queue_items}
                                             bind:item_height
-                                            bind:selected_item_index={queue_selected_item_index}
-                                            bind:playing={playing_index}
-                                            bind:on_item_add={on_queue_item_add}
                                             bind:dragend={queue_dragend}
-                                            bind:playing_video_info={queue_playing_vid_info}
                                             {mobile}
-                                            insert_item={on_queue_item_insert}
-                                            move_item={on_queue_item_move}
-                                            delete_item={on_queue_item_delete}
-                                            play_item={on_queue_item_play}
                                         >
                                         </Queue>
                                     </div>
@@ -238,7 +181,6 @@
                                 bind:item_height
                                 columns={browse_columns}
                                 {queue_dragend}
-                                queue_item_add={on_queue_item_add}
                             />
                         </div>
                     </div>
@@ -249,24 +191,14 @@
         {#if !mobile}
             <queue-area class="flex flex-col">
                 <queue
-                    bind:this={queue_element}
                     class="flex flex-col overflow-y-auto"
                     style="height: calc(100%);"
                 >
                     <queue-content class="">
                         <Queue
-                            bind:items={queue_items}
                             bind:item_height
-                            bind:selected_item_index={queue_selected_item_index}
-                            bind:playing={playing_index}
-                            bind:on_item_add={on_queue_item_add}
                             bind:dragend={queue_dragend}
-                            bind:playing_video_info={queue_playing_vid_info}
                             {mobile}
-                            insert_item={on_queue_item_insert}
-                            move_item={on_queue_item_move}
-                            delete_item={on_queue_item_delete}
-                            play_item={on_queue_item_play}
                         >
                         </Queue>
                     </queue-content>
@@ -278,7 +210,6 @@
     <play-bar class="px-2 pb-2 pt-4">
         <PlayBar
             {mobile}
-            audio_info={null}
         />
     </play-bar>
 

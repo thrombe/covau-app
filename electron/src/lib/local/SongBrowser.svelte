@@ -16,7 +16,6 @@
     export let columns: number;
     export let item_height: number;
     export let queue_dragend: (e: DragEvent) => void = () => {};
-    export let queue_item_add: (id: string) => Promise<void>;
 
     let browse_type = stores.selected_menubar_option;
 
