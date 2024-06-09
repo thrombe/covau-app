@@ -189,11 +189,46 @@
         '';
       };
       custom-commands = pkgs: [
-        (pkgs.writeShellScriptBin "kool-meson-configure" ''
+        (pkgs.writeShellScriptBin "build-wasm" ''
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          # make plugin-meson-configure
+          cargo build --lib --target wasm32-unknown-unknown --features wasmdeps
+          rm -r ./electron/src/wasm
+          wasm-bindgen --web --out-dir ./electron/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
+        '')
+        (pkgs.writeShellScriptBin "build-wasm-pack" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          wasm-pack build --target web --features wasmdeps
+          rm -r ./electron/src/wasm
+          mv ./pkg ./electron/src/wasm
+        '')
+
+        (pkgs.writeShellScriptBin "web-dev" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          cd electron
+          bun run dev
+        '')
+        (pkgs.writeShellScriptBin "wasm-dev" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          build-wasm
+
+          inotifywait -q -m -e close_write --format %e -r ./src |
+          while read events; do
+            build-wasm
+          done
+        '')
+        (pkgs.writeShellScriptBin "run" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          cargo run --bin covau-app --features bindeps
         '')
       ];
 
@@ -211,6 +246,15 @@
             nodePackages_latest.svelte-language-server
             nodePackages_latest.typescript-language-server
             tailwindcss-language-server
+
+            unstable.wasm-pack
+            lld
+            # unstable.cargo-binutils
+            # unstable.cargo-llvm-cov
+            # unstable.rustc.llvmPackages.llvm
+
+            # manually generate bindings
+            unstable.wasm-bindgen-cli
           ]
           ++ (custom-commands pkgs);
 
@@ -248,6 +292,8 @@
             export SERVER_PORT=6173
             export WEBUI_PORT=6174
             export DEV_VITE_PORT=5173
+
+            export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"
           '';
         };
     });

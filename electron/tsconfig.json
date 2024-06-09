@@ -18,6 +18,9 @@
       ],
       "$types/*": [
         "./src/types/*"
+      ],
+      "$wasm/*": [
+        "./src/wasm/*"
       ]
     },
     "isolatedModules": true

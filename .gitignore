@@ -4,4 +4,5 @@
 /result
 /log.log
 /test.db
+/electron/src/wasm
 

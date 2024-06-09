@@ -3,16 +3,17 @@
     import Loading from '$lib/components/Loading.svelte';
     import Vibe from './Vibe.svelte';
     import { tube } from "$lib/stores.ts";
+    import * as wasm from "$wasm/covau_app_wasm";
 
-
-    let itube_promise = new_innertube_instance();
-    (async () => {
-        let itube = await itube_promise;
+    let promise = (async () => {
+        let itube = await new_innertube_instance();
         tube.set(itube);
+
+        await wasm.default();
     })()
 </script>
 
-{#await itube_promise}
+{#await promise}
     <Loading />
 {:then}
     <Vibe />
