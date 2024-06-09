@@ -118,7 +118,7 @@
         >
             <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
             <div
-                class="menu-box absolute right-5 top-0 flex flex-col gap-1 w-48 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
+                class="menu-box absolute right-5 top-0 flex flex-col gap-1 w-56 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
                 class:hidden={!show_menu}
             >
                 {#each options as option}
