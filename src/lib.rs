@@ -43,18 +43,31 @@ pub mod searcher {
         cont: Option<JsValue>,
 
         // :) non pub things are kept hidden from JS :)
-        query: OpaqueLmao,
+        query: std::rc::Rc<OpaqueLmao> ,
     }
 
     #[wasm_bindgen]
     impl Searcher {
-        #[wasm_bindgen(constructor)]
+        // constructors leak memory (fixed in main branch)
+        // - [Fix Rust values getting GC'd while still borrowed and not getting GC'd if created via. constructor by Liamolucko · Pull Request #3940 · rustwasm/wasm-bindgen · GitHub](https://github.com/rustwasm/wasm-bindgen/pull/3940)
+        // #[wasm_bindgen(constructor)]
         pub fn new() -> Self {
             Self {
                 client: reqwest::Client::new(),
                 cont: None,
-                query: OpaqueLmao { thing: "".into() },
+                query: std::rc::Rc::new(OpaqueLmao { thing: "".into() }),
             }
+        }
+
+        pub fn klone(&self) -> Self {
+            Self {
+                client: reqwest::Client::new(),
+                cont: None,
+                query: self.query.clone(),
+            }
+        }
+
+        pub fn inspect(&self) {
         }
     }
 
