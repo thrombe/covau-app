@@ -1,27 +1,19 @@
 #![cfg(feature = "wasmdeps")]
+#![allow(non_snake_case)]
 
 use serde::{Deserialize, Serialize};
 use log::{info, debug};
 use log::Level;
-use gloo_utils::format::JsValueSerdeExt;
-use wasm_bindgen::{JsError, JsValue};
+use tsify_next::JsValueSerdeExt;
+use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsError, JsValue, prelude::wasm_bindgen};
+// use tsify_next::
 
-
-// When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
-// allocator.
-//
-// If you don't want to use `wee_alloc`, you can safely delete this.
-// #[cfg(feature = "wee_alloc")]
-// #[global_allocator]
-// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
+use crate::bad_error::BadError;
 
 // This is like the `main` function, except for JavaScript.
-#[wasm_bindgen::prelude::wasm_bindgen(start)]
+#[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
-    // This provides better error messages in debug mode.
-    // It's disabled in release mode so it doesn't bloat up the file size.
-    // #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
     console_log::init_with_level(Level::Debug).expect("could not init logger");
 
@@ -30,9 +22,86 @@ pub fn main_js() -> Result<(), JsValue> {
     Ok(())
 }
 
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub async fn test_req(a: JsValue) -> Result<(), JsError> {
-    Ok(())
+pub mod searcher {
+    use super::*;
+
+    #[derive(Debug)]
+    #[wasm_bindgen(getter_with_clone, inspectable)]
+    pub struct Searcher {
+        client: reqwest::Client,
+        cont: Option<JsValue>,
+        // OOF: if i import types from other places, it will ask me to export those types too. and
+        // there are namespacing problems with these macros
+        // query: 
+    }
+}
+
+pub mod typ {
+    use super::*;
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    #[serde(tag = "type", content = "content")]
+    #[cfg_attr(feature = "wasmdeps", derive(tsify_next::Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+    pub enum Typ {
+        Some,
+        Bhing(String),
+    }
+}
+use typ::*;
+
+pub mod gyaat {
+    use super::*;
+    #[derive(Serialize, Deserialize, Debug)]
+    // #[cfg_attr(feature = "wasmdeps", derive(tsify_next::Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+    #[wasm_bindgen(getter_with_clone, inspectable)]
+    pub struct Gyaat {
+        pub lmao: Typ,
+        pub misc: Vec<String>,
+    }
+
+    #[wasm_bindgen]
+    impl Gyaat {
+        pub async fn goon(&self, b: Gyaat) -> Result<Typ, JsError> {
+            Ok(Typ::Some)
+        }
+    }
+}
+use gyaat::*;
+
+#[wasm_bindgen]
+pub async fn test_req(a: Gyaat) -> Result<Typ, JsError> {
+    // a.into_js();
+    // let a: Gyaat = a.to_rs()?;
+    Ok(Typ::Some)
+}
+
+// trait to jsify serde stuff
+trait JsIfy {
+    fn to_js(&self) -> Result<JsValue, JsError>;
+}
+impl<T> JsIfy for T
+where T: Serialize
+{
+    fn to_js(&self) -> Result<JsValue, JsError> {
+        JsValue::from_serde(self).bad_err()
+    }
+}
+
+// trait to extend capabilities of JsValue
+trait JsExt {
+    fn to_rs<T: for<'de> Deserialize<'de>>(&self) -> Result<T, JsError>;
+}
+impl JsExt for JsValue {
+    fn to_rs<T: for<'de> Deserialize<'de>>(&self) -> Result<T, JsError> {
+        // let s = if self.is_undefined() {
+        //     String::from("null")
+        // } else {
+        //     js_sys::JSON::stringify(self)
+        //         .map(String::from)
+        //         .unwrap_throw()
+        // };
+        // serde_json::from_str(&s).bad_err()
+        self.into_serde().bad_err()
+    }
 }
 
 pub mod bad_error {
