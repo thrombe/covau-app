@@ -1,15 +1,24 @@
 #![allow(dead_code)]
+#![allow(non_snake_case)]
 
 use std::path::PathBuf;
 
 use anyhow::Result;
 
-mod musiplayer;
-
 // TODO:
 // create a nix style symlinked artist/songs, album/songs, artist/albums, etc
 // but store all songs in a single directory
+//
+// do things like stremio
+// - rust + wasm
+// - have UI model types be created and sent from wasm to ts
+//
+// - virtual scrolling but paged
+//  - ff basically does not seem to need virtual scrolling (except for memory usage (cheap))
+//  - chrome (and ff to a lesser degree) does not like frequent DOM changes
+//    - just change the virtual scrolling to add/remove items in big chunks
 
+mod musiplayer;
 pub mod db;
 pub mod mbz;
 pub mod musimanager;
