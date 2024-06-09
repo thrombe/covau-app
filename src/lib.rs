@@ -34,3 +34,40 @@ pub fn main_js() -> Result<(), JsValue> {
 pub async fn test_req(a: JsValue) -> Result<(), JsError> {
     Ok(())
 }
+
+pub mod bad_error {
+    use wasm_bindgen::JsError;
+
+    pub trait BadError<T> {
+        fn bad_err(self) -> Result<T, JsError>;
+    }
+    // impl<T, E> BadError<T> for Result<T, E>
+    // where E: std::error::Error
+    // {
+    //     fn bad_err(self) -> Result<T, JsError> {
+    //         match self {
+    //             Ok(t) => Ok(t),
+    //             Err(e) => Err(JsError::from(e)),
+    //         }
+    //     }
+    // }
+    // impl<T> BadError<T> for Result<T, anyhow::Error>
+    // {
+    //     fn bad_err(self) -> Result<T, JsError> {
+    //         match self {
+    //             Ok(t) => Ok(t),
+    //             Err(e) => Err(JsError::new(&e.to_string())),
+    //         }
+    //     }
+    // }
+    impl<T, E> BadError<T> for Result<T, E>
+    where E: std::fmt::Display
+    {
+        fn bad_err(self) -> Result<T, JsError> {
+            match self {
+                Ok(t) => Ok(t),
+                Err(e) => Err(JsError::new(&e.to_string())),
+            }
+        }
+    }
+}
