@@ -26,13 +26,18 @@ pub mod searcher {
     use super::*;
 
     #[derive(Debug)]
+    pub struct OpaqueLmao {
+        pub thing: String,
+    }
+
+    #[derive(Debug)]
     #[wasm_bindgen(getter_with_clone, inspectable)]
     pub struct Searcher {
         client: reqwest::Client,
         cont: Option<JsValue>,
-        // OOF: if i import types from other places, it will ask me to export those types too. and
-        // there are namespacing problems with these macros
-        // query: 
+
+        // :) non pub things are kept hidden from JS :)
+        query: OpaqueLmao,
     }
 }
 
