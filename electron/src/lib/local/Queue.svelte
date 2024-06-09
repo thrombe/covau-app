@@ -9,7 +9,7 @@
     import type { Unique } from '../virtual';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import { toast } from '$lib/toast/toast.ts';
-    import { queue_searcher } from '$lib/stores.ts';
+    import { queue } from '$lib/stores.ts';
 
     export let item_height: number;
     export let dragend = (e: DragEvent) => {
@@ -21,12 +21,16 @@
 
     let playing: number | null = null;
 
+    let unsub = queue.subscribe(q => {
+        playing = q.playing_index;
+    });
+    onDestroy(unsub);
 
 
     let end_is_visible = false;
     const end_reached = async () => {
         while (true) {
-            if (!end_is_visible || !$queue_searcher.has_next_page) {
+            if (!end_is_visible || !$queue.has_next_page) {
                 break;
             }
             await next_page();
@@ -36,7 +40,7 @@
         }
     };
     const next_page = async () => {
-        let r = await $queue_searcher.next_page();
+        let r = await $queue.next_page();
         items = r.map(e => ({ id: e.key(), data: e })) as typeof items;
     };
     export const search_objects = async () => {
@@ -47,8 +51,7 @@
         end_reached();
     };
 
-    let unsub = queue_searcher.subscribe(async (e) => {
-        items = [];
+    unsub = queue.subscribe(async (e) => {
         if (search_objects) {
             await search_objects();
         }
@@ -68,11 +71,15 @@
         if (event.dataTransfer?.getData('covau/dragndrop')) {
             let start_index = parseInt(event.dataTransfer.getData('covau/dragndrop'));
 
-            await move_item(start_index, target);
+            await $queue.move(start_index, target);
+            queue.update(q => q);
         } else if (event.dataTransfer?.getData('covau/dragndropnew')) {
             let new_id = event.dataTransfer.getData('covau/dragndropnew');
 
-            await insert_item(target, new_id);
+            toast("unimplemented");
+            // TODO:
+            // await $queue.insert(target, new_id);
+            // queue.update(q => q);
         }
     };
 
