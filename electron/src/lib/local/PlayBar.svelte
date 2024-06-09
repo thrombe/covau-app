@@ -11,15 +11,16 @@
     let playing_item = stores.playing_item;
 
     let player = stores.player;
+    let queue = stores.queue;
 
     let video_pos = 0;
-    let has_prev = false;
-    let has_next = false;
+    // let has_prev = $queue.has_prev();
+    // let has_next = $queue.has_next();
     let is_playing = false;
     let audio_duration = 0;
     let is_muted = false;
     let volume = 1;
-    let unhandle = $player.add_message_listener("any", (m) => {
+    let unhandle = $player.add_message_listener("any", async (m) => {
         switch (m.type) {
             case 'Paused':
                 is_playing = false;
@@ -29,6 +30,12 @@
                 break;
             case 'Finished':
                 is_playing = false;
+                if ($queue.has_next()) {
+                    await $queue.play_next();
+                } else {
+                    $queue.finished();
+                }
+                queue.update(q => q);
                 break;
             case 'Playing':
                 is_playing = true;
@@ -105,9 +112,11 @@
             let pos = Math.min(1, video_pos + 10/audio_duration);
             $player.seek_to_perc(pos);
         } else if (event.key == 'ArrowDown' || event.key == 'j') {
-            // await player.play_next();
+            await $queue.play_next();
+            queue.update(q => q);
         } else if (event.key == 'ArrowUp' || event.key == 'k') {
-            // await player.play_prev();
+            await $queue.play_prev();
+            queue.update(q => q);
         } else if (event.key == 'm') {
             $player.toggle_mute();
         }
@@ -146,7 +155,8 @@
         <div class='flex flex-row gap-2 justify-center h-2/3'>
             <button
                 on:click={async () => {
-                    // await player.play_prev();
+                    await $queue.play_prev();
+                    queue.update(q => q);
                 }}
             >
                 <img alt='prev' class='h-3' src='/static/prev.svg'>
@@ -161,7 +171,8 @@
             </button>
             <button
                 on:click={async () => {
-                    // await player.play_next();
+                    await $queue.play_next();
+                    queue.update(q => q);
                 }}
             >
                 <img alt='next' class='h-3' src='/static/next.svg'>
