@@ -139,6 +139,7 @@ pub enum PlayerMessage {
     Volume(f64),
     Duration(f64),
     Mute(bool),
+    Error(String),
 }
 
 fn player_route() -> BoxedFilter<(impl Reply,)> {

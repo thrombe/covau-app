@@ -1,3 +1,4 @@
+import { toast } from "$lib/toast/toast";
 import { exhausted } from "$lib/virtual";
 import type { PlayerMessage, PlayerCommand } from "$types/server";
 
@@ -64,6 +65,9 @@ export class Musiplayer {
                 case 'Mute':
                     this.muted = message.content;
                     break
+                case "Error":
+                    toast(message.content, "error");
+                    break;
                 default:
                     throw exhausted(message);
             }

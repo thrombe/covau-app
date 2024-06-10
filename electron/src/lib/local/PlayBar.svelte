@@ -51,6 +51,8 @@
             case 'Mute':
                 is_muted = m.content;
                 break;
+            case "Error":
+                break;
             default:
                 throw exhausted(m);
         }
