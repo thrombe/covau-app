@@ -147,13 +147,13 @@
                     src="/static/three-dot-menu.svg"
                 />
                 <div
-                    class="absolute right-10 top-0 flex flex-col gap-1 w-56 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
+                    class="absolute right-10 top-0 flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
                     class:hidden={!show_menu}
                 >
                     {#each options as option}
                         <button on:click={option.onclick}>
                             <div
-                                class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15"
+                                class="flex flex-row rounded-md p-2 pr-8 hover:bg-gray-100 hover:bg-opacity-15"
                             >
                                 <img
                                     alt="three dot menu icon"
@@ -241,8 +241,5 @@
 
     .pop-button {
         @apply absolute p-1 m-2 rounded-md bg-gray-200 bg-opacity-30 text-gray-900 font-bold right-0 top-0;
-    }
-    .queue-button {
-        @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;
     }
 </style>

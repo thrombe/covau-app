@@ -121,13 +121,13 @@
         >
             <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
             <div
-                class="menu-box absolute right-5 top-0 flex flex-col gap-1 w-56 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
+                class="menu-box absolute right-5 top-0 flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
                 class:hidden={!show_menu}
             >
                 {#each options as option}
                     <button on:click={option.onclick}>
                         <div
-                            class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15"
+                            class="flex flex-row rounded-md p-2 pr-8 hover:bg-gray-100 hover:bg-opacity-15"
                         >
                             <img
                                 alt="three dot menu icon"
