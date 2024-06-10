@@ -27,6 +27,21 @@
     });
     onDestroy(unsub);
 
+    let options = $queue.options();
+    let show_menu = false;
+    const menu_disabler = () => {
+        window.removeEventListener("click", menu_disabler);
+        show_menu = false;
+    };
+    let on_menu_click = () => {
+        if (!show_menu) {
+            show_menu = true;
+            setTimeout(() => {
+                window.addEventListener("click", menu_disabler);
+            }, 300);
+        }
+    };
+
     let end_is_visible = false;
     const end_reached = async () => {
         while (true) {
@@ -109,19 +124,53 @@
 <div class="flex flex-col h-full w-full">
     <div class="p-2 h-16">
         <div class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20">
-            <div class="h-full pl-4 pr-2 flex-grow">
+            <div class="h-full pl-2 pr-2 flex-grow">
                 <InputBar
                     placeholder={"Queue"}
                     value={""}
                     on_enter={async () => {}}
                 />
             </div>
-            <button class="my-2 mr-2 p-1 aspect-square">
+
+            <button
+                class="my-2 mr-2 p-1 aspect-square relative"
+                on:click={on_menu_click}
+                class:menu-open={show_menu}
+                class:hidden={options.length == 0}
+            >
                 <img
                     class="w-full h-full opacity-75"
-                    alt="copy"
+                    alt="three dot menu icon"
                     src="/static/three-dot-menu.svg"
                 />
+                <div
+                    class="absolute right-10 top-0 flex flex-col gap-1 w-56 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
+                    class:hidden={!show_menu}
+                >
+                    {#each options as option}
+                        <button on:click={option.onclick}>
+                            <div
+                                class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15"
+                            >
+                                <img
+                                    alt="three dot menu icon"
+                                    class="h-4 w-4 m-1 mr-4"
+                                    src={option.icon}
+                                />
+
+                                <item-title
+                                    class="flex flex-col justify-end h-1/2 text-sm text-gray-200"
+                                >
+                                    <txt
+                                        class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none"
+                                    >
+                                        {option.tooltip}
+                                    </txt>
+                                </item-title>
+                            </div>
+                        </button>
+                    {/each}
+                </div>
             </button>
         </div>
     </div>

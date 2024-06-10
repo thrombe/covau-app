@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import { type ListItem } from "$lib/searcher/item.ts";
+import { type ListItem, type Option } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
@@ -222,6 +222,25 @@ export class QueueManager implements Searcher {
         } else {
             toast(`no item at index ${index}`, "error");
         }
+    }
+
+    options(): Option[] {
+        return [
+            {
+                tooltip: "empty queue",
+                icon: "/static/remove.svg",
+                location: "OnlyMenu",
+                onclick: () => {
+                    queue.update(q => {
+                        let new_q = new QueueManager();
+                        if (q.state == "Playing") {
+                            new_q.detour();
+                        }
+                        return new_q;
+                    })
+                },
+            },
+        ];
     }
 };
 
