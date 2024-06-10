@@ -179,7 +179,10 @@
             bind:items
             columns={1}
             {item_height}
-            {on_item_click}
+            on_item_click={async (e) => {
+                console.log(selected_item);
+                on_item_click(e);
+            }}
             {end_reached}
             bind:try_scroll_into_view={try_scroll_selected_item_in_view}
             keyboard_control={false}
