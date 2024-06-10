@@ -170,9 +170,4 @@
     .menu-open button {
         display: block;
     }
-
-    .menu-button .menu-box,
-    .menu-box {
-        transition-delay: 0.7s;
-    }
 </style>
