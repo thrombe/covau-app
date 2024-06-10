@@ -148,7 +148,8 @@ export class DbListItem extends ListItem {
         switch (ctx) {
             case "Queue":
                 switch (this.data.typ) {
-                    case "MusimanagerSong":
+                    case "MusimanagerSong": {
+                        let s = this.data.t;
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -173,7 +174,17 @@ export class DbListItem extends ListItem {
                                     });
                                 },
                             },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.key);
+                                    toast("url copied", "info");
+                                },
+                            },
                         ];
+                    }
                     case "MusimanagerAlbum":
                     case "MusimanagerArtist":
                     case "MusimanagerPlaylist":
@@ -184,7 +195,8 @@ export class DbListItem extends ListItem {
                 }
             case "Browser":
                 switch (this.data.typ) {
-                    case "MusimanagerSong":
+                    case "MusimanagerSong": {
+                        let s = this.data.t;
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -226,7 +238,17 @@ export class DbListItem extends ListItem {
                                     });
                                 },
                             },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.key);
+                                    toast("url copied", "info");
+                                },
+                            },
                         ];
+                    }
                     case "MusimanagerAlbum": {
                         let list = this.data.t;
                         return [
