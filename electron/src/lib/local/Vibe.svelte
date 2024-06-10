@@ -10,6 +10,7 @@
     import * as Db from "$lib/searcher/db.ts";
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
+    import InputBar from "$lib/components/InputBar.svelte";
 
     let item_height: number = 75;
     let item_min_width = 290;
@@ -63,7 +64,7 @@
     const on_img_err = async () => {
         img_src = "";
     };
-    let unsub = stores.playing_item.subscribe(item => {
+    let unsub = stores.playing_item.subscribe((item) => {
         if (!item) {
             return;
         }
@@ -105,7 +106,7 @@
                                 toast("no queue item selected", "info");
                                 return;
                             }
-                            stores.selected_menubar_option_index.set(i)
+                            stores.selected_menubar_option_index.set(i);
                         }}
                     >
                         {typ.name}
@@ -125,28 +126,61 @@
                     >
                         {#if mobile}
                             <div
-                                class="flex flex-col w-full {$menubar_option ==
-                                menubar_queue_option
+                                class="flex flex-col w-full overflow-hidden {$menubar_option.content_type ==
+                                'queue'
                                     ? 'h-full'
                                     : 'h-0'}"
                             >
-                                <div
-                                    class="flex flex-col overflow-y-auto h-full"
-                                >
-                                    <div
-                                        class="pl-2"
-                                        style="height: calc(100% - 3.5rem);"
+                                <div class="flex flex-col h-full">
+                                    <queue-name class="p-2 h-16">
+                                        <div
+                                            class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20"
+                                        >
+                                            <div
+                                                class="h-full pl-4 pr-2 flex-grow"
+                                            >
+                                                <InputBar
+                                                    placeholder={"Queue"}
+                                                    value={""}
+                                                    on_enter={async () => {}}
+                                                />
+                                            </div>
+                                            <button
+                                                class="my-2 mr-2 p-1 aspect-square"
+                                            >
+                                                <img
+                                                    class="w-full h-full opacity-75"
+                                                    alt="copy"
+                                                    src="/static/three-dot-menu.svg"
+                                                />
+                                            </button>
+                                        </div>
+                                    </queue-name>
+                                    <queue-content
+                                        style="height: calc(100% - 4rem);"
                                     >
                                         <Queue
                                             bind:item_height
                                             bind:dragend={queue_dragend}
                                             {mobile}
-                                        >
-                                        </Queue>
-                                    </div>
+                                        />
+                                    </queue-content>
                                 </div>
                             </div>
                         {/if}
+
+                        <div
+                            class="w-full {$menubar_option.content_type ==
+                            'queue'
+                                ? 'h-0 overflow-hidden'
+                                : 'h-full'}"
+                        >
+                            <SongBrowser
+                                bind:item_height
+                                columns={browse_columns}
+                                {queue_dragend}
+                            />
+                        </div>
 
                         <div
                             class="absolute h-full w-full left-0 top-0 -z-20 brightness-75"
@@ -170,47 +204,46 @@
                             alt=""
                             on:error={on_img_err}
                         />
-
-                        <div
-                            class="w-full h-full {$menubar_option.content_type ==
-                            'queue'
-                                ? 'h-0 overflow-hidden'
-                                : ''}"
-                        >
-                            <SongBrowser
-                                bind:item_height
-                                columns={browse_columns}
-                                {queue_dragend}
-                            />
-                        </div>
                     </div>
                 </div>
             </browse>
         </search-area>
 
         {#if !mobile}
-            <queue-area class="flex flex-col">
-                <queue
-                    class="flex flex-col overflow-y-auto"
-                    style="height: calc(100%);"
-                >
-                    <queue-content class="">
-                        <Queue
-                            bind:item_height
-                            bind:dragend={queue_dragend}
-                            {mobile}
-                        >
-                        </Queue>
-                    </queue-content>
-                </queue>
+            <queue-area class="flex flex-col h-full">
+                <queue-name class="p-2 h-16 flex-grow-0">
+                    <div
+                        class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20"
+                    >
+                        <div class="h-full pl-4 pr-2 flex-grow">
+                            <InputBar
+                                placeholder={"Queue"}
+                                value={""}
+                                on_enter={async () => {}}
+                            />
+                        </div>
+                        <button class="my-2 mr-2 p-1 aspect-square">
+                            <img
+                                class="w-full h-full opacity-75"
+                                alt="copy"
+                                src="/static/three-dot-menu.svg"
+                            />
+                        </button>
+                    </div>
+                </queue-name>
+                <queue-content style="height: calc(100% - 4rem);">
+                    <Queue
+                        bind:item_height
+                        bind:dragend={queue_dragend}
+                        {mobile}
+                    />
+                </queue-content>
             </queue-area>
         {/if}
     </all-contents>
 
     <play-bar class="px-2 pb-2 pt-4">
-        <PlayBar
-            {mobile}
-        />
+        <PlayBar {mobile} />
     </play-bar>
 
     <div class="w-full h-full absolute -z-30 brightness-50">
@@ -252,16 +285,6 @@
 
     queue-area {
         width: var(--queue-area-width);
-    }
-
-    queue {
-    }
-
-    queue-content {
-        height: calc(100%);
-    }
-
-    video-box {
     }
 
     play-bar {
