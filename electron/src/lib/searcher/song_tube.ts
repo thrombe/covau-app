@@ -4,7 +4,7 @@ import type { Keyed, RObject, RSearcher } from "./searcher";
 import { exhausted } from "$lib/virtual";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
-import { get } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 
 export { YT, YTNodes, YTMusic };
@@ -151,7 +151,8 @@ export class StListItem extends ListItem {
             case "Queue":
                 switch (this.data.typ) {
                     case "song":
-                    case "video":
+                    case "video": {
+                        let s = this.data.data;
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -176,7 +177,17 @@ export class StListItem extends ListItem {
                                     });
                                 },
                             },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    toast("url copied", "info");
+                                },
+                            },
                         ];
+                    }
                     case "album":
                     case "playlist":
                     case "artist":
@@ -187,7 +198,8 @@ export class StListItem extends ListItem {
             case "Browser":
                 switch (this.data.typ) {
                     case "song":
-                    case "video":
+                    case "video": {
+                        let s = this.data.data;
                         return [
                             {
                                 icon: "/static/add.svg",
@@ -214,13 +226,111 @@ export class StListItem extends ListItem {
                                     stores.playing_item.set(this);
                                 },
                             },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    toast("url copied", "info");
+                                },
+                            },
                         ];
-                    case "album":
-                        return [];
-                    case "playlist":
-                        return [];
-                    case "artist":
-                        return [];
+                    }
+                    case "album": {
+                        let a = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        query_type: "album",
+                                        id: a.id,
+                                    }, get(stores.tube));
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({
+                                            name: "Album " + a.title,
+                                            searcher: writable(s),
+                                            thumbnail: a.thumbnail,
+                                        });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        query_type: "album",
+                                        id: a.id,
+                                    }, get(stores.tube));
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
+                                },
+                            },
+                        ];
+                    }
+                    case "playlist": {
+                        let p = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        query_type: "playlist",
+                                        id: p.id,
+                                    }, get(stores.tube));
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({
+                                            name: "Playlist " + p.title,
+                                            searcher: writable(s),
+                                            thumbnail: p.thumbnail,
+                                        });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                        ];
+                    }
+                    case "artist": {
+                        let a = this.data.data;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore songs",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        query_type: "artist",
+                                        id: a.id,
+                                    }, get(stores.tube));
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({
+                                            name: "Artist " + a.name + " songs",
+                                            searcher: writable(s),
+                                            thumbnail: a.thumbnail,
+                                        });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                        ];
+                    }
                     default:
                         throw exhausted(this.data)
                 }
