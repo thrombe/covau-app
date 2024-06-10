@@ -110,6 +110,9 @@ export class DbListItem extends ListItem {
                     return "file://" + song.last_known_path;
                 } else {
                     let data = await get_uri(song.key);
+                    if (!data) {
+                        return null;
+                    }
                     let thumbs = data.info.basic_info.thumbnail ?? [];
                     if (thumbs.length > 0 && !song.info?.thumbnail_url) {
                         if (song.info) {

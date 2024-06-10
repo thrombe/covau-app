@@ -535,11 +535,15 @@ const keyed = <T extends { data: { id?: any } }>(items: T[]): (T & Keyed)[] => {
 
 export async function get_uri(id: string) {
     let itube = get(stores.tube);
-    let d = await itube.getInfo(id);
-    console.log(d);
-    let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
-    // let url = d.getStreamingInfo();
-    let uri = f.decipher(itube.session.player);
-    console.log(uri)
-    return { info: d, uri: uri };
+    try {
+        let d = await itube.getInfo(id);
+        console.log(d);
+        let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+        // let url = d.getStreamingInfo();
+        let uri = f.decipher(itube.session.player);
+        console.log(uri)
+        return { info: d, uri: uri };
+    } catch {
+        return null;
+    }
 }
