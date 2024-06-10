@@ -5,6 +5,7 @@ import { exhausted } from "$lib/virtual";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";
+import { toast } from "$lib/toast/toast.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -121,6 +122,30 @@ export class StListItem extends ListItem {
         }
     }
 
+    async audio_uri() {
+        switch (this.data.typ) {
+            case "song":
+            case "video": {
+                let s = this.data.data;
+                let data = await get_uri(this.data.data.id);
+                if (!data) {
+                    return null;
+                }
+                let thumbs = data.info.basic_info.thumbnail ?? [];
+                if (thumbs.length > 0 && !this.data.data.thumbnail) {
+                    this.data.data.thumbnail = thumbs[0].url;
+                }
+                return data.uri;
+            } break;
+            case "album":
+            case "playlist":
+            case "artist":
+                return null;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue":
@@ -129,10 +154,27 @@ export class StListItem extends ListItem {
                     case "video":
                         return [
                             {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    stores.queue.update(q => {
+                                        q.play_item(this);
+                                        return q;
+                                    });
+                                    stores.playing_item.set(this);
+                                },
+                            },
+                            {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
-                                onclick: () => { },
+                                tooltip: "remove from queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
                             },
                         ];
                     case "album":
@@ -146,25 +188,29 @@ export class StListItem extends ListItem {
                 switch (this.data.typ) {
                     case "song":
                     case "video":
-                        let song = this.data.data;
                         return [
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => { },
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.add(this);
+                                        return q;
+                                    });
+                                },
                             },
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let data = await get_uri(song.id);
-                                    let thumbs = data.info.basic_info.thumbnail ?? [];
-                                    if (thumbs.length > 0 && !this.data.data.thumbnail) {
-                                        this.data.data.thumbnail = thumbs[0].url;
+                                    let uri = await this.audio_uri();
+                                    if (!uri) {
+                                        toast("could not play item", "error");
+                                        return;
                                     }
-                                    get(stores.player).play(data.uri);
+                                    get(stores.player).play(uri);
                                     stores.playing_item.set(this);
                                 },
                             },
