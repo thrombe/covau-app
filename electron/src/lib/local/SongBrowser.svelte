@@ -116,6 +116,7 @@
                         <AudioListItem
                             item={item}
                             ctx="Browser"
+                            show_buttons={selected}
                         />
                     </div>
                 </list-item>

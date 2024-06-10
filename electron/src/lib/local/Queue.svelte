@@ -210,7 +210,7 @@
                 class:is-playing={index === playing}
                 class:is-selected={selected}
             >
-                <AudioListItem {item} ctx="Queue" />
+                <AudioListItem {item} ctx="Queue" show_buttons={selected} />
             </item>
         </VirtualScrollable>
     </div>
@@ -230,6 +230,10 @@
     item.is-active {
         @apply bg-green-400 bg-opacity-20;
     }
+
+    item button {
+        display: none;
+    }
     item:hover button,
     .is-selected button {
         display: block;
@@ -240,11 +244,5 @@
     }
     .queue-button {
         @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;
-    }
-
-    item button {
-        display: none;
-    }
-    item button.play-button {
     }
 </style>
