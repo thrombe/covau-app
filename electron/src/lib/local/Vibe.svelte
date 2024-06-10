@@ -132,39 +132,11 @@
                                     : 'h-0'}"
                             >
                                 <div class="flex flex-col h-full">
-                                    <queue-name class="p-2 h-16">
-                                        <div
-                                            class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20"
-                                        >
-                                            <div
-                                                class="h-full pl-4 pr-2 flex-grow"
-                                            >
-                                                <InputBar
-                                                    placeholder={"Queue"}
-                                                    value={""}
-                                                    on_enter={async () => {}}
-                                                />
-                                            </div>
-                                            <button
-                                                class="my-2 mr-2 p-1 aspect-square"
-                                            >
-                                                <img
-                                                    class="w-full h-full opacity-75"
-                                                    alt="copy"
-                                                    src="/static/three-dot-menu.svg"
-                                                />
-                                            </button>
-                                        </div>
-                                    </queue-name>
-                                    <queue-content
-                                        style="height: calc(100% - 4rem);"
-                                    >
-                                        <Queue
-                                            bind:item_height
-                                            bind:dragend={queue_dragend}
-                                            {mobile}
-                                        />
-                                    </queue-content>
+                                    <Queue
+                                        bind:item_height
+                                        bind:dragend={queue_dragend}
+                                        {mobile}
+                                    />
                                 </div>
                             </div>
                         {/if}
@@ -211,33 +183,11 @@
 
         {#if !mobile}
             <queue-area class="flex flex-col h-full">
-                <queue-name class="p-2 h-16 flex-grow-0">
-                    <div
-                        class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20"
-                    >
-                        <div class="h-full pl-4 pr-2 flex-grow">
-                            <InputBar
-                                placeholder={"Queue"}
-                                value={""}
-                                on_enter={async () => {}}
-                            />
-                        </div>
-                        <button class="my-2 mr-2 p-1 aspect-square">
-                            <img
-                                class="w-full h-full opacity-75"
-                                alt="copy"
-                                src="/static/three-dot-menu.svg"
-                            />
-                        </button>
-                    </div>
-                </queue-name>
-                <queue-content style="height: calc(100% - 4rem);">
-                    <Queue
-                        bind:item_height
-                        bind:dragend={queue_dragend}
-                        {mobile}
-                    />
-                </queue-content>
+                <Queue
+                    bind:item_height
+                    bind:dragend={queue_dragend}
+                    {mobile}
+                />
             </queue-area>
         {/if}
     </all-contents>
