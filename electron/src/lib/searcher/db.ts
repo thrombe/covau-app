@@ -319,7 +319,7 @@ export class DbListItem extends ListItem {
                                     let s = Db.new({
                                         query_type: "songs",
                                         ids: a.songs,
-                                    }, list.data_list.length);
+                                    }, a.songs.length);
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
                                         q.add(...items);
@@ -332,10 +332,11 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "add all unexplored to queue",
                                 onclick: async () => {
+                                    let songs = a.unexplored_songs ?? [];
                                     let s = Db.new({
                                         query_type: "songs",
-                                        ids: a.unexplored_songs ?? [],
-                                    }, list.data_list.length);
+                                        ids: songs,
+                                    }, songs.length);
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
                                         q.add(...items);
