@@ -16,12 +16,13 @@ export type VideoInfo = YT.VideoInfo;
 // https://github.com/LuanRT/YouTube.js/issues/321
 export type Typ = 'song' | 'video' | 'album' | 'playlist' | 'artist';
 export type BrowseQuery =
-    { query_type: 'search', search: Typ, query: string } |
-    { query_type: 'artist', id: string } |
-    { query_type: 'album', id: string } |
-    { query_type: 'playlist', id: string } |
-    { query_type: 'up-next', id: string } |
-    { query_type: 'home-feed' };
+    | { query_type: 'search', search: Typ, query: string }
+    | { query_type: 'artist', id: string }
+    | { query_type: 'album', id: string }
+    | { query_type: 'playlist', id: string }
+    | { query_type: 'up-next', id: string }
+    | { query_type: 'song-ids', ids: string[], batch_size: number }
+    | { query_type: 'home-feed' };
 
 export type Author = {
     name: string,
@@ -436,9 +437,62 @@ export class SongTube extends Unpaged<MusicListItem> {
         } else if (this.query.query_type == 'home-feed') {
             let r = await this.next_page_home_feed();
             return r;
+        } else if (this.query.query_type == "song-ids") {
+            let r = await this.next_page_song_ids(this.query.ids, this.query.batch_size);
+            return r;
         } else {
             throw exhausted(this.query);
         }
+    }
+    page_end_index: number = 0;
+    protected async next_page_song_ids(ids: string[], batch_size: number) {
+        let batch = ids.slice(
+            this.page_end_index,
+            Math.min(
+                this.page_end_index + batch_size,
+                ids.length,
+            ),
+        );
+        this.page_end_index += batch.length;
+        if (this.page_end_index >= ids.length) {
+            this.has_next_page = false;
+        }
+
+        let promises = batch.map(id => {
+            return this.tube.getBasicInfo(id).then(s => ({
+            typ: 'song',
+            data: {
+                id: id,
+                title: s.basic_info.title ?? '',
+                thumbnail: this.get_thumbnail(s.basic_info.thumbnail),
+                authors: s.basic_info.author ? [
+                    {
+                        name: s.basic_info.author,
+                        channel_id: s.basic_info.channel_id ?? null
+                    }
+                ] : [],
+            }
+        } as MusicListItem)).catch(reason => ({
+            typ: 'song',
+            data: {
+                id: id,
+                title: id,
+                thumbnail: null,
+                authors: [{
+                    name: reason,
+                    channel_id: null,
+                }],
+            }
+            } as MusicListItem));
+        });
+
+        let resolved_batch: MusicListItem[] = [];
+        for (let p of promises) {
+            let s = await p;
+            resolved_batch.push(s);
+        }
+
+        return keyed(resolved_batch) as RObject<MusicListItem>[];
     }
     protected async next_page_up_next(video_id: string) {
         this.has_next_page = false;
