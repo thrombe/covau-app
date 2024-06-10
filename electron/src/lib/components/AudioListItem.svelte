@@ -3,6 +3,7 @@
 
     export let item: ListItem;
     export let ctx: RenderContext;
+    export let show_buttons = false;
 
     // TODO: somehow setup retrying and see if images load more reliably
 
@@ -41,7 +42,9 @@
     };
 </script>
 
-<item class="w-full h-full block relative py-1">
+<item class="w-full h-full block relative py-1"
+    class:show-buttons={show_buttons}
+>
     <div class="w-full h-full pl-1 flex flex-row text-gray-200">
         <icon class="block p-1 aspect-square flex-none h-full">
             <div class="w-full h-full rounded-md overflow-hidden">
@@ -150,7 +153,16 @@
         @apply w-full text-ellipsis whitespace-nowrap overflow-hidden select-none;
     }
 
-    item:hover button {
+    item button {
+        display: none;
+    }
+    item:hover button,
+    item.show-buttons button {
+        display: block;
+    }
+
+    item button.menu-open,
+    .menu-open button {
         display: block;
     }
 
@@ -159,15 +171,5 @@
     }
     .queue-button {
         @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;
-    }
-
-    item button {
-        display: none;
-    }
-    item button.play-button {
-    }
-    item button.menu-open,
-    .menu-open button {
-        display: block;
     }
 </style>
