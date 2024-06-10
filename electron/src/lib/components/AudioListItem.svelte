@@ -4,10 +4,11 @@
     export let item: ListItem;
     export let ctx: RenderContext;
     export let show_buttons = false;
+    export let alt_thumbnail: string | null = null;
 
     // TODO: somehow setup retrying and see if images load more reliably
 
-    $: img_src = item?.thumbnail() ?? item?.default_thumbnail() ?? "";
+    $: img_src = item?.thumbnail() ?? alt_thumbnail ?? item?.default_thumbnail() ?? "";
     $: options = item?.options(ctx) ?? [];
 
     let hide_border = true;

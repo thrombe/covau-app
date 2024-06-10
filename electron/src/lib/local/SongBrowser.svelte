@@ -117,6 +117,7 @@
                             item={item}
                             ctx="Browser"
                             show_buttons={selected}
+                            alt_thumbnail={tab.thumbnail}
                         />
                     </div>
                 </list-item>
