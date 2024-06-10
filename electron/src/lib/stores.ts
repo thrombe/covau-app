@@ -251,7 +251,7 @@ export type Tab = {
 };
 
 export type MenubarOption = { name: string } & (
-    | { content_type: "music"; type: Db.Typ | St.Typ }
+    | { content_type: "music"; type: Db.Typ | St.Typ | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music"; id: string | null }
@@ -286,6 +286,7 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Yt Album", content_type: "music", type: "album" },
     { name: "Yt Playlist", content_type: "music", type: "playlist" },
     { name: "Yt Artist", content_type: "music", type: "artist" },
+    { name: "Covau Group", content_type: "music", type: "covau-group" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
@@ -351,6 +352,26 @@ selected_menubar_option.subscribe(async (option) => {
                         search: option.type,
                     }, get(tube));
                     break;
+                case "covau-group": {
+                    let f_app = await import("firebase/app");
+                    let f_store = await import("firebase/firestore");
+                    let f_config = await import("../firebase_config");
+                    let app = f_app.initializeApp(f_config.firebase_config);
+                    let db = f_store.getFirestore(app);
+                    let data_ref = f_store.doc(db, 'groups', get(query_input));
+                    let data = await f_store.getDoc(data_ref);
+                    let covau = data.data();
+                    if (!covau) {
+                        toast("could not load data", "error");
+                        return;
+                    }
+                    let ids: string[] = covau.queue;
+                    s = St.SongTube.new({
+                        query_type: "song-ids",
+                        ids,
+                        batch_size: 10,
+                    }, get(tube));
+                } break;
                 default:
                     throw exhausted(option.type);
             }
