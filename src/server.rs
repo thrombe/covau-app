@@ -51,18 +51,26 @@ async fn player_command_handler(
                 .await?;
 
             let player = player.clone();
-            let _: tokio::task::JoinHandle<anyhow::Result<()>> = tokio::task::spawn(async move {
+            let _: tokio::task::JoinHandle<()> = tokio::task::spawn(async move {
                 for _ in 0..50 {
                     tokio::time::sleep(timeout).await;
                     let mut p = player.lock().await;
-                    let dur = p.duration()?;
+                    let dur = match p.duration() {
+                        Ok(d) => d,
+                        Err(e) => {
+                            tx.send_timeout(Ok(PlayerMessage::Error(e.to_string())), timeout)
+                                .await
+                                .unwrap();
+                            continue;
+                        }
+                    };
                     if dur > 0.5 && dur < 60.0 * 60.0 * 24.0 * 30.0 {
                         tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout)
-                            .await?;
+                            .await
+                            .unwrap();
                         break;
                     }
                 }
-                Ok(())
             });
         }
         PlayerCommand::Pause => {
@@ -171,44 +179,63 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                 );
                 let pl = player.clone();
                 let txc = tx.clone();
-                let _: tokio::task::JoinHandle<anyhow::Result<()>> =
-                    tokio::task::spawn(async move {
-                        let timeout = Duration::from_millis(300);
-                        let mut finished = false;
-                        loop {
-                            tokio::time::sleep(timeout).await;
-                            let mut p = pl.lock().await;
-                            let prog = p.progress()?;
-
-                            if 1.0 - prog < 0.0001 {
-                                if !finished {
-                                    finished = true;
-                                    txc.send_timeout(Ok(PlayerMessage::ProgressPerc(1.0)), timeout)
-                                        .await?;
-                                    txc.send_timeout(Ok(PlayerMessage::Finished), timeout)
-                                        .await?;
-                                }
-                            } else {
-                                finished = false;
-                                txc.send_timeout(Ok(PlayerMessage::ProgressPerc(prog)), timeout)
-                                    .await?;
+                let j: tokio::task::JoinHandle<()> = tokio::task::spawn(async move {
+                    let timeout = Duration::from_millis(300);
+                    let mut finished = false;
+                    // no crashing, ending the loop
+                    // don't worry about timeout errors ig :/
+                    loop {
+                        tokio::time::sleep(timeout).await;
+                        let mut p = pl.lock().await;
+                        let prog = match p.progress() {
+                            Ok(p) => p,
+                            Err(e) => {
+                                let _ = txc
+                                    .send_timeout(Ok(PlayerMessage::Error(e.to_string())), timeout)
+                                    .await;
+                                continue;
                             }
+                        };
+
+                        if 1.0 - prog < 0.0001 {
+                            if !finished {
+                                finished = true;
+                                let _ = txc
+                                    .send_timeout(Ok(PlayerMessage::ProgressPerc(1.0)), timeout)
+                                    .await;
+                                let _ =
+                                    txc.send_timeout(Ok(PlayerMessage::Finished), timeout).await;
+                            }
+                        } else {
+                            finished = false;
+                            let _ = txc
+                                .send_timeout(Ok(PlayerMessage::ProgressPerc(prog)), timeout)
+                                .await;
                         }
-                    });
+                    }
+                });
 
                 while let Some(msg) = wsrx.next().await {
                     match msg {
                         Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await {
                             Ok(_) => (),
                             Err(e) => {
-                                eprintln!("Error: {}", e);
+                                eprintln!("Error in command handler: {}", &e);
+                                let _ = tx
+                                    .send_timeout(
+                                        Ok(PlayerMessage::Error(e.to_string())),
+                                        Duration::from_millis(300),
+                                    )
+                                    .await;
                             }
                         },
                         Err(e) => {
-                            eprintln!("Error: {}", e);
+                            eprintln!("Error: {}", &e);
                         }
                     }
                 }
+
+                j.abort();
             })
         });
     let route = route.with(warp::cors().allow_any_origin());
@@ -440,7 +467,8 @@ fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
         });
 
     #[cfg(not(ui_backend = "WEBUI"))]
-    let webui = warp::path("webui.js").and(warp::path::end())
+    let webui = warp::path("webui.js")
+        .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
         .and_then(|_: Arc<Mutex<reqwest::Client>>| async move {
             let mut wres = warp::http::Response::builder();
