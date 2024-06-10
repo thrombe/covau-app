@@ -10,9 +10,6 @@
         tube.set(itube);
 
         let _info = await wasm.default();
-
-        let s = wasm.Searcher.new();
-        await s.test_client();
     })()
 </script>
 
