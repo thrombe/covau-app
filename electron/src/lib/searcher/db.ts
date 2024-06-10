@@ -212,6 +212,17 @@ export class DbListItem extends ListItem {
                                     });
                                 },
                             },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "remove from queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
                         ];
                     case "MusimanagerAlbum": {
                         let list = this.data.t;
@@ -221,10 +232,17 @@ export class DbListItem extends ListItem {
                                 location: "TopRight",
                                 tooltip: "open",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.songs }, 30);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: list.songs,
+                                    }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: list.name, searcher: writable(s), thumbnail: null });
+                                        t.push({
+                                            name: list.name,
+                                            searcher: writable(s),
+                                            thumbnail: null,
+                                        });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
@@ -235,7 +253,10 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "add all to queue",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.songs }, list.songs.length);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: list.songs,
+                                    }, list.songs.length);
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
                                         q.add(...items);
@@ -253,10 +274,17 @@ export class DbListItem extends ListItem {
                                 location: "TopRight",
                                 tooltip: "open saved",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: a.songs }, 30);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: a.songs,
+                                    }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: a.name + " saved", searcher: writable(s), thumbnail: null });
+                                        t.push({
+                                            name: a.name + " saved",
+                                            searcher: writable(s),
+                                            thumbnail: null,
+                                        });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
@@ -267,13 +295,52 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "open unexplored",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: a.unexplored_songs ?? [] }, 30);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: a.unexplored_songs ?? [],
+                                    }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: a.name + " unexplored", searcher: writable(s), thumbnail: null });
+                                        t.push({
+                                            name: a.name + " unexplored",
+                                            searcher: writable(s),
+                                            thumbnail: null,
+                                        });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all saved to queue",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: a.songs,
+                                    }, list.data_list.length);
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all unexplored to queue",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: a.unexplored_songs ?? [],
+                                    }, list.data_list.length);
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
                                 },
                             },
                         ];
@@ -287,10 +354,17 @@ export class DbListItem extends ListItem {
                                 location: "TopRight",
                                 tooltip: "open",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.data_list }, 30);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: list.data_list,
+                                    }, 30);
                                     stores.tabs.update(t => {
                                         t = [t[0]];
-                                        t.push({ name: list.name, searcher: writable(s), thumbnail: null });
+                                        t.push({
+                                            name: list.name,
+                                            searcher: writable(s),
+                                            thumbnail: null,
+                                        });
                                         return t;
                                     });
                                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
@@ -301,7 +375,10 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "add all to queue",
                                 onclick: async () => {
-                                    let s = Db.new({ query_type: "songs", ids: list.data_list }, list.data_list.length);
+                                    let s = Db.new({
+                                        query_type: "songs",
+                                        ids: list.data_list,
+                                    }, list.data_list.length);
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
                                         q.add(...items);
