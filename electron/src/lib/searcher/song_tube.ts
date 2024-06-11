@@ -486,11 +486,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             } as MusicListItem));
         });
 
-        let resolved_batch: MusicListItem[] = [];
-        for (let p of promises) {
-            let s = await p;
-            resolved_batch.push(s);
-        }
+        let resolved_batch = await Promise.all(promises);
 
         return keyed(resolved_batch) as RObject<MusicListItem>[];
     }
