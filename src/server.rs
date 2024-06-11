@@ -16,14 +16,6 @@ use crate::db::{Db, DbAble};
 use crate::mbz::{self, IdSearch, PagedSearch};
 use crate::musiplayer::Player;
 
-#[derive(Debug, Clone)]
-pub struct Client {
-    pub user_id: String,
-    pub sender: mpsc::UnboundedSender<std::result::Result<ws::Message, warp::Error>>,
-}
-
-pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
-
 // [Rejection and anyhow](https://github.com/seanmonstar/warp/issues/307#issuecomment-570833388)
 #[derive(Debug)]
 struct CustomReject(anyhow::Error);
@@ -246,18 +238,134 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
     route.boxed()
 }
 
-fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
-    let clients: Clients = Arc::new(Mutex::new(HashMap::new()));
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+#[serde(tag = "type", content = "content")]
+pub enum Request {
+    Ping,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+pub struct Message<T> {
+    id: u32,
+    data: T,
+}
 
-    let ws_route = warp::path("ws")
+struct FrontendClient {
+    id_count: std::sync::atomic::AtomicU32,
+    request_sender: mpsc::Sender<Message<Request>>,
+    request_receiver: Mutex<ReceiverStream<Message<Request>>>,
+    requests: Mutex<HashMap<u32, oneshot::Sender<String>>>,
+}
+
+impl FrontendClient {
+    fn new() -> Self {
+        let (tx, rx) = mpsc::channel(100);
+        Self {
+            id_count: Default::default(),
+            request_sender: tx,
+            request_receiver: Mutex::new(ReceiverStream::new(rx)),
+            requests: Mutex::new(HashMap::new()),
+        }
+    }
+
+    async fn execute<T: for<'de> Deserialize<'de>>(&self, req: Request) -> anyhow::Result<T> {
+        let id = self
+            .id_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+        self.request_sender.send(Message { id, data: req }).await?;
+
+        let mut map = self.requests.lock().await;
+        let (tx, rx) = oneshot::channel::<String>();
+        map.insert(id, tx)
+            .is_none()
+            .then(|| Some(()))
+            .expect("request with this id already exists");
+        drop(map);
+
+        let resp = rx.await?;
+        dbg!(&resp);
+        let resp = serde_json::from_str(&resp)?;
+        Ok(resp)
+    }
+}
+
+fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
+    let fe = Arc::new(FrontendClient::new());
+
+    let ws_route = warp::path("serve")
         .and(warp::path::end())
         .and(warp::ws())
-        .and(warp::any().map(move || clients.clone()))
-        .then(|ws: Ws, clients: Clients| async move {
-            ws.on_upgrade(move |ws| client_connection(ws, clients))
+        .and(warp::any().map(move || fe.clone()))
+        .then(|ws: Ws, fe: Arc<FrontendClient>| async move {
+            ws.on_upgrade(move |ws| async move {
+                let (mut wstx, mut wsrx) = ws.split();
+
+                let f = fe.clone();
+                let j = tokio::task::spawn(async move {
+                    let fe = f;
+                    let mut rx = fe.request_receiver.lock().await;
+                    while let Some(msg) = rx.next().await {
+                        let msg = serde_json::to_string(&msg).unwrap();
+                        let msg = ws::Message::text(msg);
+                        match wstx.send(msg).await {
+                            Ok(_) => (),
+                            Err(e) => {
+                                eprintln!(
+                                    "Failed to send message using websocket - {}",
+                                    e.to_string()
+                                );
+                            }
+                        }
+                    }
+                });
+
+                async fn message_handler(
+                    fe: &Arc<FrontendClient>,
+                    msg: ws::Message,
+                ) -> anyhow::Result<()> {
+                    let msg = msg.to_str().ok().context("message was not a string")?;
+                    let msg = serde_json::from_str::<Message<String>>(msg)?;
+                    let mut map = fe.requests.lock().await;
+                    let tx = map.remove(&msg.id).context("sender already taken")?;
+                    tx.send(msg.data)
+                        .ok()
+                        .context("could not send over channel")?;
+                    Ok(())
+                }
+
+                while let Some(msg) = wsrx.next().await {
+                    match msg {
+                        Ok(msg) => {
+                            if msg.is_close() {
+                                break;
+                            }
+                            match message_handler(&fe, msg).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    eprintln!("Error: {}", &e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error: {}", &e);
+                        }
+                    }
+                }
+
+                j.abort();
+            })
         });
     let ws_route = ws_route.with(warp::cors().allow_any_origin());
     ws_route.boxed()
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+pub struct FetchRequest {
+    url: String,
+    #[serde(default = "Default::default")]
+    body: Option<String>,
+    headers: String,
+    method: String,
 }
 
 // - [danielSanchezQ/warp-reverse-proxy](https://github.com/danielSanchezQ/warp-reverse-proxy)
@@ -552,84 +660,11 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     warp::serve(all).run((ip_addr, port)).await;
 }
 
-pub async fn client_connection(ws: WebSocket, clients: Clients) {
-    let (client_ws_sender, mut client_ws_receiver) = ws.split();
-    let (client_sender, client_receiver) = mpsc::unbounded_channel();
-    let client_receiver = UnboundedReceiverStream::new(client_receiver);
-
-    tokio::task::spawn(client_receiver.forward(client_ws_sender).map(|result| {
-        if let Err(e) = result {
-            eprintln!("Failed to send message using websocket - {}", e.to_string());
-        }
-    }));
-
-    let ulid: String = Ulid::new().to_string();
-    let new_client: Client = Client {
-        user_id: ulid.clone(),
-        sender: client_sender,
-    };
-    clients.lock().await.insert(ulid.clone(), new_client);
-
-    while let Some(result) = client_ws_receiver.next().await {
-        let msg = match result {
-            Ok(msg) => msg,
-            Err(e) => {
-                eprintln!(
-                    "Failed to receive message using websocket - {}",
-                    e.to_string()
-                );
-                break;
-            }
-        };
-
-        println!("Received message from {}: {:?}", &ulid, msg);
-        match client_msg(&ulid, msg, &clients).await {
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Error: {}", e);
-            }
-        }
-    }
-
-    clients.lock().await.remove(&ulid);
-    println!("Websocket disconnected: {}", &ulid);
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "type", content = "content")]
-pub enum Message {
-    Ping,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-pub struct FetchRequest {
-    url: String,
-    #[serde(default = "Default::default")]
-    body: Option<String>,
-    // headers: HashMap<String, String>,
-    headers: String,
-    method: String,
-}
-
-async fn client_msg(user_id: &str, msg: ws::Message, clients: &Clients) -> anyhow::Result<()> {
-    let message = msg.to_str().ok().context("message was not a string")?;
-    let message = serde_json::from_str::<Message>(message)?;
-
-    let clients = clients.lock().await;
-    let client = clients.get(user_id).context("Client not found")?;
-
-    match message {
-        Message::Ping => {
-            let _ = client.sender.send(Ok(ws::Message::text("pong")));
-        }
-    }
-
-    Ok(())
-}
-
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
-    types += &specta::ts::export::<Message>(config)?;
+    types += &specta::ts::export::<Message<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Request>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
