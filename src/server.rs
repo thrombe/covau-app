@@ -328,8 +328,9 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
 
 fn client_ws_route<R: Send + Sync + Serialize + 'static>(
     fe: FrontendClient<R>,
+    path: &'static str,
 ) -> BoxedFilter<(impl Reply,)> {
-    let ws_route = warp::path("serve")
+    let ws_route = warp::path(path)
         .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || fe.clone()))
@@ -687,7 +688,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
             .allow_methods(["POST", "GET"]),
     );
 
-    let all = client_ws_route(fe.clone())
+    let all = client_ws_route(fe.clone(), "serve")
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
