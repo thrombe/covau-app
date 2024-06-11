@@ -1,4 +1,4 @@
-import type { Message, Request } from '$types/server';
+import type { Message } from '$types/server';
 import { toast } from './toast/toast';
 
 class Server {
@@ -8,7 +8,7 @@ class Server {
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/serve`);
 
         this.ws.addEventListener('message', async (e) => {
-            let mesg: Message<Request> = JSON.parse(e.data);
+            let mesg: Message<unknown> = JSON.parse(e.data);
             console.log(mesg)
 
             if (mesg.type === "Err") {
@@ -28,7 +28,7 @@ class Server {
         });
     }
 
-    async handle_req(req: Request): Promise<Object | null> {
+    async handle_req(req: unknown): Promise<Object | null> {
         return {};
     }
 }

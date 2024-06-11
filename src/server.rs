@@ -241,11 +241,6 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", content = "content")]
-pub enum Request {
-    Ping,
-}
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "type", content = "content")]
 pub enum MessageResult<T> {
     Ok(T),
     Err(String),
@@ -257,24 +252,28 @@ pub struct Message<T> {
     data: MessageResult<T>,
 }
 
-#[derive(Clone)]
-struct FrontendClient(Arc<InnerFrontendClient>);
-impl Deref for FrontendClient {
-    type Target = InnerFrontendClient;
+struct FrontendClient<R>(Arc<InnerFrontendClient<R>>);
+impl<R> Clone for FrontendClient<R> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+impl<R> Deref for FrontendClient<R> {
+    type Target = InnerFrontendClient<R>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-struct InnerFrontendClient {
+struct InnerFrontendClient<R> {
     id_count: std::sync::atomic::AtomicU32,
-    request_sender: mpsc::Sender<Message<Request>>,
-    request_receiver: Mutex<ReceiverStream<Message<Request>>>,
+    request_sender: mpsc::Sender<Message<R>>,
+    request_receiver: Mutex<ReceiverStream<Message<R>>>,
     requests: Mutex<HashMap<u32, oneshot::Sender<MessageResult<String>>>>,
 }
 
-impl FrontendClient {
+impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
     fn new() -> Self {
         let (tx, rx) = mpsc::channel(100);
         Self(Arc::new(InnerFrontendClient {
@@ -285,17 +284,27 @@ impl FrontendClient {
         }))
     }
 
-    async fn send(&self, msg: MessageResult<Request>) -> anyhow::Result<()> {
-        self.request_sender.send(Message { id: None, data: msg }).await?;
+    async fn send(&self, msg: MessageResult<R>) -> anyhow::Result<()> {
+        self.request_sender
+            .send(Message {
+                id: None,
+                data: msg,
+            })
+            .await?;
         Ok(())
     }
 
-    async fn execute<T: for<'de> Deserialize<'de>>(&self, req: Request) -> anyhow::Result<T> {
+    async fn execute<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
         let id = self
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        self.request_sender.send(Message { id: Some(id), data: MessageResult::Ok(req) }).await?;
+        self.request_sender
+            .send(Message {
+                id: Some(id),
+                data: MessageResult::Ok(req),
+            })
+            .await?;
 
         let mut map = self.requests.lock().await;
         let (tx, rx) = oneshot::channel::<MessageResult<String>>();
@@ -311,20 +320,20 @@ impl FrontendClient {
             MessageResult::Ok(resp) => {
                 let resp = serde_json::from_str(&resp)?;
                 Ok(resp)
-            },
-            MessageResult::Err(e) => {
-                Err(anyhow::anyhow!(e))
-            },
+            }
+            MessageResult::Err(e) => Err(anyhow::anyhow!(e)),
         }
     }
 }
 
-fn client_ws_route(fe: FrontendClient) -> BoxedFilter<(impl Reply,)> {
+fn client_ws_route<R: Send + Sync + Serialize + 'static>(
+    fe: FrontendClient<R>,
+) -> BoxedFilter<(impl Reply,)> {
     let ws_route = warp::path("serve")
         .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || fe.clone()))
-        .then(|ws: Ws, fe: FrontendClient| async move {
+        .then(|ws: Ws, fe: FrontendClient<R>| async move {
             ws.on_upgrade(move |ws| async move {
                 let (mut wstx, mut wsrx) = ws.split();
 
@@ -347,8 +356,8 @@ fn client_ws_route(fe: FrontendClient) -> BoxedFilter<(impl Reply,)> {
                     }
                 });
 
-                async fn message_handler(
-                    fe: &FrontendClient,
+                async fn message_handler<R>(
+                    fe: &FrontendClient<R>,
                     msg: ws::Message,
                 ) -> anyhow::Result<()> {
                     let msg = msg.to_str().ok().context("message was not a string")?;
@@ -360,10 +369,10 @@ fn client_ws_route(fe: FrontendClient) -> BoxedFilter<(impl Reply,)> {
                             tx.send(msg.data)
                                 .ok()
                                 .context("could not send over channel")?;
-                        },
+                        }
                         None => {
                             eprintln!("frontend sent a message without id :/ : {:?}", msg);
-                        },
+                        }
                     }
                     Ok(())
                 }
@@ -635,7 +644,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     );
     // db.init_tables().await.expect("could not init database");
 
-    let fe = FrontendClient::new();
+    let fe = FrontendClient::<()>::new();
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -706,15 +715,13 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     j.abort();
 }
 
-async fn updater_system(fe: FrontendClient, db: Arc<Db>) {}
+async fn updater_system(fe: FrontendClient<()>, db: Arc<Db>) {}
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += &specta::ts::export::<Message<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<MessageResult<()>>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<Request>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
