@@ -270,6 +270,7 @@ pub mod db {
         impl ActiveModelBehavior for ActiveModel {}
     }
 
+    #[derive(Clone)]
     pub struct Db {
         pub db: sea_orm::DatabaseConnection,
     }

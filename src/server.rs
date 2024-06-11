@@ -500,16 +500,13 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
     redirect.boxed()
 }
 
-fn db_search_route<T: DbAble + Send>(
-    db: Arc<Db>,
-    path: &'static str,
-) -> BoxedFilter<(impl Reply,)> {
+fn db_search_route<T: DbAble + Send>(db: Db, path: &'static str) -> BoxedFilter<(impl Reply,)> {
     let search = warp::path("search")
         .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Arc<Db>, query: crate::db::SearchQuery| async move {
+        .and_then(|db: Db, query: crate::db::SearchQuery| async move {
             let res = db.search::<T>(query).await.map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply::json(&res))
         });
@@ -518,7 +515,7 @@ fn db_search_route<T: DbAble + Send>(
 }
 
 fn db_search_by_refid_route<T: DbAble + Send>(
-    db: Arc<Db>,
+    db: Db,
     path: &'static str,
 ) -> BoxedFilter<(impl Reply,)> {
     let search = warp::path("search")
@@ -527,7 +524,7 @@ fn db_search_by_refid_route<T: DbAble + Send>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Arc<Db>, query: Vec<String>| async move {
+        .and_then(|db: Db, query: Vec<String>| async move {
             let res = db
                 .search_many_by_ref_id::<T>(query)
                 .await
@@ -637,11 +634,9 @@ fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
-    let db = Arc::new(
-        Db::new("sqlite:./test.db?mode=rwc")
-            .await
-            .expect("cannot connect to database"),
-    );
+    let db = Db::new("sqlite:./test.db?mode=rwc")
+        .await
+        .expect("cannot connect to database");
     // db.init_tables().await.expect("could not init database");
 
     let fe = FrontendClient::<()>::new();
