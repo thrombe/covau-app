@@ -1,9 +1,9 @@
 use anyhow::Context;
-use futures::{FutureExt, StreamExt};
+use futures::{FutureExt, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::time::Duration;
 use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
 use ulid::Ulid;
@@ -79,8 +79,7 @@ async fn player_command_handler(
         }
         PlayerCommand::Unpause => {
             p.unpause()?;
-            tx.send_timeout(PlayerMessage::Unpaused, timeout)
-                .await?;
+            tx.send_timeout(PlayerMessage::Unpaused, timeout).await?;
         }
         PlayerCommand::SeekBy(t) => {
             p.seek_by(t)?;
@@ -164,7 +163,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                 let (tx, rx) = mpsc::channel::<PlayerMessage>(100);
                 let rx = ReceiverStream::new(rx);
 
-                let _ = tokio::task::spawn(
+                let j2 = tokio::task::spawn(
                     rx.map(|e| {
                         let e = ws::Message::text(serde_json::to_string(&e).unwrap());
                         Ok::<_, warp::Error>(e)
@@ -202,8 +201,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                                 let _ = txc
                                     .send_timeout(PlayerMessage::ProgressPerc(1.0), timeout)
                                     .await;
-                                let _ =
-                                    txc.send_timeout(PlayerMessage::Finished, timeout).await;
+                                let _ = txc.send_timeout(PlayerMessage::Finished, timeout).await;
                             }
                         } else {
                             finished = false;
@@ -216,18 +214,23 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
 
                 while let Some(msg) = wsrx.next().await {
                     match msg {
-                        Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await {
-                            Ok(_) => (),
-                            Err(e) => {
-                                eprintln!("Error in command handler: {}", &e);
-                                let _ = tx
-                                    .send_timeout(
-                                        PlayerMessage::Error(e.to_string()),
-                                        Duration::from_millis(300),
-                                    )
-                                    .await;
+                        Ok(msg) => {
+                            if msg.is_close() {
+                                break;
                             }
-                        },
+                            match player_command_handler(msg, &player, tx.clone()).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    eprintln!("Error in command handler: {}", &e);
+                                    let _ = tx
+                                        .send_timeout(
+                                            PlayerMessage::Error(e.to_string()),
+                                            Duration::from_millis(300),
+                                        )
+                                        .await;
+                                }
+                            }
+                        }
                         Err(e) => {
                             eprintln!("Error: {}", &e);
                         }
@@ -235,6 +238,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                 }
 
                 j.abort();
+                j2.abort();
             })
         });
     let route = route.with(warp::cors().allow_any_origin());
