@@ -2,6 +2,7 @@ use anyhow::Context;
 use futures::{FutureExt, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
+use std::ops::Deref;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::time::Duration;
@@ -249,7 +250,17 @@ pub struct Message<T> {
     data: T,
 }
 
-struct FrontendClient {
+#[derive(Clone)]
+struct FrontendClient(Arc<InnerFrontendClient>);
+impl Deref for FrontendClient {
+    type Target = InnerFrontendClient;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+struct InnerFrontendClient {
     id_count: std::sync::atomic::AtomicU32,
     request_sender: mpsc::Sender<Message<Request>>,
     request_receiver: Mutex<ReceiverStream<Message<Request>>>,
@@ -259,12 +270,12 @@ struct FrontendClient {
 impl FrontendClient {
     fn new() -> Self {
         let (tx, rx) = mpsc::channel(100);
-        Self {
+        Self(Arc::new(InnerFrontendClient {
             id_count: Default::default(),
             request_sender: tx,
             request_receiver: Mutex::new(ReceiverStream::new(rx)),
             requests: Mutex::new(HashMap::new()),
-        }
+        }))
     }
 
     async fn execute<T: for<'de> Deserialize<'de>>(&self, req: Request) -> anyhow::Result<T> {
@@ -289,14 +300,12 @@ impl FrontendClient {
     }
 }
 
-fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
-    let fe = Arc::new(FrontendClient::new());
-
+fn client_ws_route(fe: FrontendClient) -> BoxedFilter<(impl Reply,)> {
     let ws_route = warp::path("serve")
         .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || fe.clone()))
-        .then(|ws: Ws, fe: Arc<FrontendClient>| async move {
+        .then(|ws: Ws, fe: FrontendClient| async move {
             ws.on_upgrade(move |ws| async move {
                 let (mut wstx, mut wsrx) = ws.split();
 
@@ -320,7 +329,7 @@ fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
                 });
 
                 async fn message_handler(
-                    fe: &Arc<FrontendClient>,
+                    fe: &FrontendClient,
                     msg: ws::Message,
                 ) -> anyhow::Result<()> {
                     let msg = msg.to_str().ok().context("message was not a string")?;
@@ -352,6 +361,7 @@ fn client_ws_route() -> BoxedFilter<(impl Reply,)> {
                     }
                 }
 
+                // NOTE: abort drops everything correctly. so this is fine
                 j.abort();
             })
         });
@@ -599,6 +609,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     );
     // db.init_tables().await.expect("could not init database");
 
+    let fe = FrontendClient::new();
+
     let musimanager_search_routes = {
         use crate::musimanager::*;
 
@@ -645,7 +657,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
             .allow_methods(["POST", "GET"]),
     );
 
-    let all = client_ws_route()
+    let all = client_ws_route(fe.clone())
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
@@ -655,10 +667,20 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     // let all = all.or(redirect_route(client.clone()));
     let all = all.or(embedded_asset_route());
 
+    let j = tokio::task::spawn(async move {
+        let fe = fe;
+        let db = db;
+
+        updater_system(fe, db).await;
+    });
+
     println!("Starting server at {}:{}", ip_addr, port);
 
     warp::serve(all).run((ip_addr, port)).await;
+    j.abort();
 }
+
+async fn updater_system(fe: FrontendClient, db: Arc<Db>) {}
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
