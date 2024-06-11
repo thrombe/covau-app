@@ -245,9 +245,16 @@ pub enum Request {
     Ping,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+#[serde(tag = "type", content = "content")]
+pub enum MessageResult<T> {
+    Ok(T),
+    Err(String),
+}
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 pub struct Message<T> {
-    id: u32,
-    data: T,
+    id: Option<u32>,
+    #[serde(flatten)]
+    data: MessageResult<T>,
 }
 
 #[derive(Clone)]
@@ -264,7 +271,7 @@ struct InnerFrontendClient {
     id_count: std::sync::atomic::AtomicU32,
     request_sender: mpsc::Sender<Message<Request>>,
     request_receiver: Mutex<ReceiverStream<Message<Request>>>,
-    requests: Mutex<HashMap<u32, oneshot::Sender<String>>>,
+    requests: Mutex<HashMap<u32, oneshot::Sender<MessageResult<String>>>>,
 }
 
 impl FrontendClient {
@@ -278,15 +285,20 @@ impl FrontendClient {
         }))
     }
 
+    async fn send(&self, msg: MessageResult<Request>) -> anyhow::Result<()> {
+        self.request_sender.send(Message { id: None, data: msg }).await?;
+        Ok(())
+    }
+
     async fn execute<T: for<'de> Deserialize<'de>>(&self, req: Request) -> anyhow::Result<T> {
         let id = self
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        self.request_sender.send(Message { id, data: req }).await?;
+        self.request_sender.send(Message { id: Some(id), data: MessageResult::Ok(req) }).await?;
 
         let mut map = self.requests.lock().await;
-        let (tx, rx) = oneshot::channel::<String>();
+        let (tx, rx) = oneshot::channel::<MessageResult<String>>();
         map.insert(id, tx)
             .is_none()
             .then(|| Some(()))
@@ -295,8 +307,15 @@ impl FrontendClient {
 
         let resp = rx.await?;
         dbg!(&resp);
-        let resp = serde_json::from_str(&resp)?;
-        Ok(resp)
+        match resp {
+            MessageResult::Ok(resp) => {
+                let resp = serde_json::from_str(&resp)?;
+                Ok(resp)
+            },
+            MessageResult::Err(e) => {
+                Err(anyhow::anyhow!(e))
+            },
+        }
     }
 }
 
@@ -334,11 +353,18 @@ fn client_ws_route(fe: FrontendClient) -> BoxedFilter<(impl Reply,)> {
                 ) -> anyhow::Result<()> {
                     let msg = msg.to_str().ok().context("message was not a string")?;
                     let msg = serde_json::from_str::<Message<String>>(msg)?;
-                    let mut map = fe.requests.lock().await;
-                    let tx = map.remove(&msg.id).context("sender already taken")?;
-                    tx.send(msg.data)
-                        .ok()
-                        .context("could not send over channel")?;
+                    match msg.id {
+                        Some(id) => {
+                            let mut map = fe.requests.lock().await;
+                            let tx = map.remove(&id).context("sender already taken")?;
+                            tx.send(msg.data)
+                                .ok()
+                                .context("could not send over channel")?;
+                        },
+                        None => {
+                            eprintln!("frontend sent a message without id :/ : {:?}", msg);
+                        },
+                    }
                     Ok(())
                 }
 
@@ -685,6 +711,8 @@ async fn updater_system(fe: FrontendClient, db: Arc<Db>) {}
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += &specta::ts::export::<Message<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<MessageResult<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Request>(config)?;
     types += ";\n";
