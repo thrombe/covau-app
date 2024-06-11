@@ -37,7 +37,7 @@ pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection 
 async fn player_command_handler(
     msg: ws::Message,
     player: &Arc<Mutex<Player>>,
-    tx: tokio::sync::mpsc::Sender<Result<PlayerMessage, warp::Error>>,
+    tx: tokio::sync::mpsc::Sender<PlayerMessage>,
 ) -> anyhow::Result<()> {
     let message = msg.to_str().ok().context("message was not a string")?;
     let message = serde_json::from_str::<PlayerCommand>(message)?;
@@ -47,7 +47,7 @@ async fn player_command_handler(
     match message {
         PlayerCommand::Play(url) => {
             p.play(url.clone())?;
-            tx.send_timeout(Ok(PlayerMessage::Playing(url)), timeout)
+            tx.send_timeout(PlayerMessage::Playing(url), timeout)
                 .await?;
 
             let player = player.clone();
@@ -58,14 +58,14 @@ async fn player_command_handler(
                     let dur = match p.duration() {
                         Ok(d) => d,
                         Err(e) => {
-                            tx.send_timeout(Ok(PlayerMessage::Error(e.to_string())), timeout)
+                            tx.send_timeout(PlayerMessage::Error(e.to_string()), timeout)
                                 .await
                                 .unwrap();
                             continue;
                         }
                     };
                     if dur > 0.5 && dur < 60.0 * 60.0 * 24.0 * 30.0 {
-                        tx.send_timeout(Ok(PlayerMessage::Duration(dur)), timeout)
+                        tx.send_timeout(PlayerMessage::Duration(dur), timeout)
                             .await
                             .unwrap();
                         break;
@@ -75,11 +75,11 @@ async fn player_command_handler(
         }
         PlayerCommand::Pause => {
             p.pause()?;
-            tx.send_timeout(Ok(PlayerMessage::Paused), timeout).await?;
+            tx.send_timeout(PlayerMessage::Paused, timeout).await?;
         }
         PlayerCommand::Unpause => {
             p.unpause()?;
-            tx.send_timeout(Ok(PlayerMessage::Unpaused), timeout)
+            tx.send_timeout(PlayerMessage::Unpaused, timeout)
                 .await?;
         }
         PlayerCommand::SeekBy(t) => {
@@ -89,33 +89,33 @@ async fn player_command_handler(
             p.seek_to_perc(perc)?;
         }
         PlayerCommand::GetVolume => {
-            tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout)
+            tx.send_timeout(PlayerMessage::Volume(p.get_volume()?), timeout)
                 .await?;
         }
         PlayerCommand::SetVolume(v) => {
             p.set_volume(v)?;
             tokio::time::sleep(timeout).await;
-            tx.send_timeout(Ok(PlayerMessage::Volume(p.get_volume()?)), timeout)
+            tx.send_timeout(PlayerMessage::Volume(p.get_volume()?), timeout)
                 .await?;
         }
         PlayerCommand::GetDuration => {
-            tx.send_timeout(Ok(PlayerMessage::Duration(p.duration()?)), timeout)
+            tx.send_timeout(PlayerMessage::Duration(p.duration()?), timeout)
                 .await?;
         }
         PlayerCommand::Mute => {
             p.mute()?;
             tokio::time::sleep(timeout).await;
-            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+            tx.send_timeout(PlayerMessage::Mute(p.is_muted()?), timeout)
                 .await?;
         }
         PlayerCommand::Unmute => {
             p.unmute()?;
             tokio::time::sleep(timeout).await;
-            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+            tx.send_timeout(PlayerMessage::Mute(p.is_muted()?), timeout)
                 .await?;
         }
         PlayerCommand::IsMuted => {
-            tx.send_timeout(Ok(PlayerMessage::Mute(p.is_muted()?)), timeout)
+            tx.send_timeout(PlayerMessage::Mute(p.is_muted()?), timeout)
                 .await?;
         }
     }
@@ -161,14 +161,13 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
             ws.on_upgrade(move |ws| async move {
                 let (wstx, mut wsrx) = ws.split();
 
-                let (tx, rx) = mpsc::channel::<Result<PlayerMessage, warp::Error>>(100);
+                let (tx, rx) = mpsc::channel::<PlayerMessage>(100);
                 let rx = ReceiverStream::new(rx);
 
                 let _ = tokio::task::spawn(
                     rx.map(|e| {
-                        let e = e?;
                         let e = ws::Message::text(serde_json::to_string(&e).unwrap());
-                        Ok(e)
+                        Ok::<_, warp::Error>(e)
                     })
                     .forward(wstx)
                     .map(|result| {
@@ -191,7 +190,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                             Ok(p) => p,
                             Err(e) => {
                                 let _ = txc
-                                    .send_timeout(Ok(PlayerMessage::Error(e.to_string())), timeout)
+                                    .send_timeout(PlayerMessage::Error(e.to_string()), timeout)
                                     .await;
                                 continue;
                             }
@@ -201,15 +200,15 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                             if !finished {
                                 finished = true;
                                 let _ = txc
-                                    .send_timeout(Ok(PlayerMessage::ProgressPerc(1.0)), timeout)
+                                    .send_timeout(PlayerMessage::ProgressPerc(1.0), timeout)
                                     .await;
                                 let _ =
-                                    txc.send_timeout(Ok(PlayerMessage::Finished), timeout).await;
+                                    txc.send_timeout(PlayerMessage::Finished, timeout).await;
                             }
                         } else {
                             finished = false;
                             let _ = txc
-                                .send_timeout(Ok(PlayerMessage::ProgressPerc(prog)), timeout)
+                                .send_timeout(PlayerMessage::ProgressPerc(prog), timeout)
                                 .await;
                         }
                     }
@@ -223,7 +222,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                                 eprintln!("Error in command handler: {}", &e);
                                 let _ = tx
                                     .send_timeout(
-                                        Ok(PlayerMessage::Error(e.to_string())),
+                                        PlayerMessage::Error(e.to_string()),
                                         Duration::from_millis(300),
                                     )
                                     .await;
