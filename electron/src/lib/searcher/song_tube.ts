@@ -643,7 +643,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
 
         let mli: MusicListItem[] = songs.map(e => {
-            if (e.item_type === 'song' || e.item_type === 'video') {
+            if (e.item_type === 'song') {
                 return {
                     typ: 'song',
                     data: {
@@ -651,6 +651,19 @@ export class SongTube extends Unpaged<MusicListItem> {
                         title: e.title ?? null,
                         thumbnail: this.get_thumbnail(e.thumbnail),
                         authors: e.artists?.map(a => ({
+                            name: a.name,
+                            channel_id: a.channel_id ?? null,
+                        })) ?? [],
+                    }
+                }
+            } else if (e.item_type === 'video') {
+                return {
+                    typ: 'video',
+                    data: {
+                        id: e.id!,
+                        title: e.title ?? null,
+                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        authors: e.authors?.map(a => ({
                             name: a.name,
                             channel_id: a.channel_id ?? null,
                         })) ?? [],
