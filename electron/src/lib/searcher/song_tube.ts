@@ -28,13 +28,23 @@ export type Author = {
     name: string,
     channel_id: string | null,
 };
+export type AlbumId = {
+    name: string,
+    id: string,
+};
 export type Song = {
     id: string,
     title: string | null,
     thumbnail: string | null,
     authors: Author[],
+    album: AlbumId | null,
 };
-export type Video = Song;
+export type Video = {
+    id: string,
+    title: string | null,
+    thumbnail: string | null,
+    authors: Author[],
+};
 export type Album = {
     id: string,
     title: string | null,
@@ -501,6 +511,12 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: s.video_id,
                 title: s.title.text ?? '',
                 thumbnail: this.get_thumbnail(s.thumbnail),
+                album: s.album?.id ? {
+                    title: s.album.name,
+                    id: s.album.id,
+                    thumbnail: null,
+                    author: null,
+                } : null,
                 authors: s.artists?.map(a => ({
                     name: a.name,
                     channel_id: a.channel_id ?? null,
@@ -522,6 +538,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: s.id!,
                 title: s.title ?? null,
                 thumbnail: this.get_thumbnail(s.thumbnail),
+                album: s.album?.id ? {
+                    name: s.album.name,
+                    id: s.album.id,
+                } : null,
                 authors: s.artists?.map(a => ({
                     name: a.name,
                     channel_id: a.channel_id ?? null,
@@ -547,13 +567,17 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let arr = a.filterType(YTNodes.MusicResponsiveListItem);
 
-        let mli: MusicListItem[] = arr.map(p => ({
+        let mli: MusicListItem[] = arr.map(s => ({
             typ: 'song',
             data: {
-                id: p.id!,
-                title: p.title ?? null,
-                thumbnail: this.get_thumbnail(p.thumbnail),
-                authors: p.artists?.map(a => ({
+                id: s.id!,
+                title: s.title ?? null,
+                thumbnail: this.get_thumbnail(s.thumbnail),
+                album: s.album?.id ? {
+                    name: s.album.name,
+                    id: s.album.id,
+                } : null,
+                authors: s.artists?.map(a => ({
                     name: a.name,
                     channel_id: a.channel_id ?? null,
                 })) ?? [],
@@ -570,6 +594,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: a.id!,
                 title: a.title ?? null,
                 thumbnail: this.get_thumbnail(a.thumbnail),
+                album: a.album?.id ? {
+                    name: a.album.name,
+                    id: a.album.id,
+                } : null,
                 authors: a.artists?.map(a => ({
                     name: a.name,
                     channel_id: a.channel_id ?? null,
@@ -650,6 +678,10 @@ export class SongTube extends Unpaged<MusicListItem> {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnail: this.get_thumbnail(e.thumbnail),
+                        album: e.album?.id ? {
+                            name: e.album.name,
+                            id: e.album.id,
+                        } : null,
                         authors: e.artists?.map(a => ({
                             name: a.name,
                             channel_id: a.channel_id ?? null,
