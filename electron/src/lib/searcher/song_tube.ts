@@ -24,6 +24,12 @@ export type BrowseQuery =
     | { query_type: 'song-ids', ids: string[], batch_size: number }
     | { query_type: 'home-feed' };
 
+export type Thumbnail = {
+    url: string,
+    width: number,
+    height: number,
+};
+
 export type Author = {
     name: string,
     channel_id: string | null,
@@ -35,20 +41,20 @@ export type AlbumId = {
 export type Song = {
     id: string,
     title: string | null,
-    thumbnail: string | null,
+    thumbnails: Thumbnail[],
     authors: Author[],
     album: AlbumId | null,
 };
 export type Video = {
     id: string,
     title: string | null,
-    thumbnail: string | null,
+    thumbnails: Thumbnail[],
     authors: Author[],
 };
 export type Album = {
     id: string,
     title: string | null,
-    thumbnail: string | null,
+    thumbnails: Thumbnail[],
     author: Author | null,
 };
 export type Playlist = Album;
@@ -56,7 +62,7 @@ export type Artist = {
     id: string,
     name: string | null,
     subscribers: string | null,
-    thumbnail: string | null,
+    thumbnails: Thumbnail[],
 };
 export type MusicListItem =
     { typ: 'song', data: Song } |
@@ -98,7 +104,7 @@ export class StListItem extends ListItem {
             case "album":
             case "playlist":
             case "artist":
-                return this.data.data.thumbnail;
+                return this.data.data.thumbnails.at(0)?.url ?? null;
             default:
                 throw exhausted(this.data)
         }
@@ -142,10 +148,8 @@ export class StListItem extends ListItem {
                 if (!data) {
                     return null;
                 }
-                let thumbs = data.info.basic_info.thumbnail ?? [];
-                if (thumbs.length > 0 && !this.data.data.thumbnail) {
-                    this.data.data.thumbnail = thumbs[0].url;
-                }
+                let thumbs = SongTube.get_thumbnail(data.info.basic_info.thumbnail);
+                this.data.data.thumbnails = thumbs;
                 return data.uri;
             } break;
             case "album":
@@ -265,7 +269,7 @@ export class StListItem extends ListItem {
                                         t.push({
                                             name: "Album " + a.title,
                                             searcher: writable(s),
-                                            thumbnail: a.thumbnail,
+                                            thumbnail: a.thumbnails.at(0)?.url ?? null,
                                         });
                                         return t;
                                     });
@@ -307,7 +311,7 @@ export class StListItem extends ListItem {
                                         t.push({
                                             name: "Playlist " + p.title,
                                             searcher: writable(s),
-                                            thumbnail: p.thumbnail,
+                                            thumbnail: p.thumbnails.at(0)?.url ?? null,
                                         });
                                         return t;
                                     });
@@ -333,7 +337,7 @@ export class StListItem extends ListItem {
                                         t.push({
                                             name: "Artist " + a.name + " songs",
                                             searcher: writable(s),
-                                            thumbnail: a.thumbnail,
+                                            thumbnail: a.thumbnails.at(0)?.url ?? null,
                                         });
                                         return t;
                                     });
@@ -470,30 +474,31 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let promises = batch.map(id => {
             return this.tube.getBasicInfo(id).then(s => ({
-            typ: 'song',
-            data: {
-                id: id,
-                title: s.basic_info.title ?? '',
-                thumbnail: this.get_thumbnail(s.basic_info.thumbnail),
-                album: null,
-                authors: s.basic_info.author ? [
-                    {
-                        name: s.basic_info.author,
-                        channel_id: s.basic_info.channel_id ?? null
-                    }
-                ] : [],
-            }
-        } as MusicListItem)).catch(reason => ({
-            typ: 'song',
-            data: {
-                id: id,
-                title: id,
-                thumbnail: null,
-                authors: [{
-                    name: reason,
-                    channel_id: null,
-                }],
-            }
+                typ: 'song',
+                data: {
+                    id: id,
+                    title: s.basic_info.title ?? '',
+                    thumbnails: SongTube.get_thumbnail(s.basic_info.thumbnail),
+                    album: null,
+                    authors: s.basic_info.author ? [
+                        {
+                            name: s.basic_info.author,
+                            channel_id: s.basic_info.channel_id ?? null
+                        }
+                    ] : [],
+                }
+            } as MusicListItem)).catch(reason => ({
+                typ: 'song',
+                data: {
+                    id: id,
+                    title: id,
+                    thumbnails: [],
+                    album: null,
+                    authors: [{
+                        name: reason,
+                        channel_id: null,
+                    }],
+                }
             } as MusicListItem));
         });
 
@@ -511,7 +516,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             data: {
                 id: s.video_id,
                 title: s.title.text ?? '',
-                thumbnail: this.get_thumbnail(s.thumbnail),
+                thumbnails: SongTube.get_thumbnail(s.thumbnail),
                 album: s.album?.id ? {
                     name: s.album.name,
                     id: s.album.id,
@@ -536,7 +541,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             data: {
                 id: s.id!,
                 title: s.title ?? null,
-                thumbnail: this.get_thumbnail(s.thumbnail),
+                thumbnails: SongTube.get_thumbnail(s.thumbnail),
                 album: s.album?.id ? {
                     name: s.album.name,
                     id: s.album.id,
@@ -571,7 +576,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             data: {
                 id: s.id!,
                 title: s.title ?? null,
-                thumbnail: this.get_thumbnail(s.thumbnail),
+                thumbnails: SongTube.get_thumbnail(s.thumbnail),
                 album: s.album?.id ? {
                     name: s.album.name,
                     id: s.album.id,
@@ -592,7 +597,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             data: {
                 id: a.id!,
                 title: a.title ?? null,
-                thumbnail: this.get_thumbnail(a.thumbnail),
+                thumbnails: SongTube.get_thumbnail(a.thumbnail),
                 album: a.album?.id ? {
                     name: a.album.name,
                     id: a.album.id,
@@ -676,7 +681,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     data: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         album: e.album?.id ? {
                             name: e.album.name,
                             id: e.album.id,
@@ -693,7 +698,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     data: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         authors: e.authors?.map(a => ({
                             name: a.name,
                             channel_id: a.channel_id ?? null,
@@ -706,7 +711,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     data: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         author: e.author ? {
                             name: e.author.name,
                             channel_id: e.author?.channel_id ?? null,
@@ -719,7 +724,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     data: {
                         id: e.id!,
                         name: e.name ?? null,
-                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         subscribers: e.subscribers ?? null,
                     }
                 }
@@ -729,7 +734,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     data: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnail: this.get_thumbnail(e.thumbnail),
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         authors: [],
                     }
                 };
@@ -741,19 +746,19 @@ export class SongTube extends Unpaged<MusicListItem> {
         return k as RObject<MusicListItem>[];
     }
 
-    get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['data']['thumbnail'] | null {
+    static get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['data']['thumbnails'] {
         if (node === null || !node) {
-            return null;
+            return [];
         }
 
         let t;
         if (node instanceof YTNodes.MusicThumbnail) {
-            t = node.contents.map(t => t.url);
+            t = node.contents.map(t => ({ url: t.url, width: t.width, height: t.height }));
         } else {
-            t = node.map(t => t.url);
+            t = node.map(t => ({ url: t.url, width: t.width, height: t.height }));
         }
 
-        return [...t, null][0];
+        return [...t];
     }
 }
 
