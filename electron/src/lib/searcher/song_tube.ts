@@ -475,6 +475,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 id: id,
                 title: s.basic_info.title ?? '',
                 thumbnail: this.get_thumbnail(s.basic_info.thumbnail),
+                album: null,
                 authors: s.basic_info.author ? [
                     {
                         name: s.basic_info.author,
@@ -512,10 +513,8 @@ export class SongTube extends Unpaged<MusicListItem> {
                 title: s.title.text ?? '',
                 thumbnail: this.get_thumbnail(s.thumbnail),
                 album: s.album?.id ? {
-                    title: s.album.name,
+                    name: s.album.name,
                     id: s.album.id,
-                    thumbnail: null,
-                    author: null,
                 } : null,
                 authors: s.artists?.map(a => ({
                     name: a.name,
