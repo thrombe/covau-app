@@ -6,6 +6,7 @@ import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
+import * as yt from "$types/yt.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -24,52 +25,12 @@ export type BrowseQuery =
     | { query_type: 'song-ids', ids: string[], batch_size: number }
     | { query_type: 'home-feed' };
 
-export type Thumbnail = {
-    url: string,
-    width: number,
-    height: number,
-};
-
-export type Author = {
-    name: string,
-    channel_id: string | null,
-};
-export type AlbumId = {
-    name: string,
-    id: string,
-};
-export type Song = {
-    id: string,
-    title: string | null,
-    thumbnails: Thumbnail[],
-    authors: Author[],
-    album: AlbumId | null,
-};
-export type Video = {
-    id: string,
-    title: string | null,
-    thumbnails: Thumbnail[],
-    authors: Author[],
-};
-export type Album = {
-    id: string,
-    title: string | null,
-    thumbnails: Thumbnail[],
-    author: Author | null,
-};
-export type Playlist = Album;
-export type Artist = {
-    id: string,
-    name: string | null,
-    subscribers: string | null,
-    thumbnails: Thumbnail[],
-};
 export type MusicListItem =
-    { typ: 'song', data: Song } |
-    { typ: 'video', data: Video } |
-    { typ: 'album', data: Album } |
-    { typ: 'playlist', data: Playlist } |
-    { typ: 'artist', data: Artist };
+    { typ: 'song', data: yt.Song } |
+    { typ: 'video', data: yt.Video } |
+    { typ: 'album', data: yt.Album } |
+    { typ: 'playlist', data: yt.Playlist } |
+    { typ: 'artist', data: yt.Artist };
 
 export class StListItem extends ListItem {
     data: MusicListItem & Keyed;
@@ -115,7 +76,7 @@ export class StListItem extends ListItem {
     }
 
     title_sub(): string | null {
-        function authors(a: Author[]) {
+        function authors(a: yt.Author[]) {
             if (a.length == 0) {
                 return '';
             } else {

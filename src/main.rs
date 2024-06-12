@@ -65,6 +65,7 @@ mod covau_types {
         pub current_index: u32,
     }
 
+    // this only contains minimal info. just to uniquely identify things
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     #[serde(tag = "type", content = "content")]
     pub enum UpdateSource {
@@ -76,11 +77,17 @@ mod covau_types {
             releases: Vec<UpdateItem<mbz::ReleaseWithInfo>>,
             recordings: ListenQueue<Vec<UpdateItem<mbz::Recording>>>,
         },
-        YtSearch {
+        MusimanagerSearch {
             // search words -> albums -> filter match any key -> songs
             search_words: Vec<String>,
             artist_keys: Vec<String>,
             non_search_words: Vec<String>,
+            known_albums: Vec<UpdateItem<yt::Album>>,
+            songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
+        },
+        SongTubeSearch {
+            search_words: Vec<String>,
+            artist_keys: Vec<String>,
             known_albums: Vec<UpdateItem<yt::Album>>,
             songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
         },
@@ -119,6 +126,78 @@ mod covau_types {
 pub mod yt {
     use serde::{Deserialize, Serialize};
 
+    use crate::server::{FrontendClient, MessageResult};
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct VideoId(String);
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct AlbumId(String);
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct ChannelOrUploaderId(String);
+
+    pub mod song_tube {
+        use super::*;
+
+        
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Thumbnail {
+            url: String,
+            width: u32,
+            height: u32,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Author {
+            name: String,
+            channel_id: Option<String>,
+        }
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct AlbumId {
+            name: String,
+            id: String,
+        }
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Song {
+            id: String,
+            title: Option<String>,
+            thumbnails: Vec<Thumbnail>,
+            authors: Vec<Author>,
+            album: Option<AlbumId>,
+        }
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Video {
+            id: String,
+            title: Option<String>,
+            thumbnails: Vec<Thumbnail>,
+            authors: Vec<Author>,
+        }
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Album {
+            id: String,
+            title: Option<String>,
+            thumbnails: Vec<Thumbnail>,
+            author: Option<Author>,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Playlist {
+            id: String,
+            title: Option<String>,
+            thumbnails: Vec<Thumbnail>,
+            author: Option<Author>,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub struct Artist {
+            id: String,
+            name: Option<String>,
+            subscribers: Option<String>,
+            thumbnails: Vec<Thumbnail>,
+        }
+    }
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Video {
         pub title: String,
@@ -156,14 +235,33 @@ pub mod yt {
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
-        types += &specta::ts::export::<Video>(config)?;
+        types += &specta::ts::export::<song_tube::Thumbnail>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<VideoWithInfo>(config)?;
+        types += &specta::ts::export::<song_tube::Album>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<Album>(config)?;
+        types += &specta::ts::export::<song_tube::AlbumId>(config)?;
         types += ";\n";
-        types += &specta::ts::export::<AlbumWithInfo>(config)?;
+        types += &specta::ts::export::<song_tube::Artist>(config)?;
         types += ";\n";
+        types += &specta::ts::export::<song_tube::Author>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<song_tube::Playlist>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<song_tube::Song>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<song_tube::Video>(config)?;
+        types += ";\n";
+
+        // types += &specta::ts::export::<Video>(config)?;
+        // types += ";\n";
+        // types += &specta::ts::export::<VideoWithInfo>(config)?;
+        // types += ";\n";
+        // types += &specta::ts::export::<Album>(config)?;
+        // types += ";\n";
+        // types += &specta::ts::export::<AlbumWithInfo>(config)?;
+        // types += ";\n";
+        // types += &specta::ts::export::<YtiRequest>(config)?;
+        // types += ";\n";
 
         Ok(types)
     }
