@@ -578,30 +578,21 @@ export class SongTube extends Unpaged<MusicListItem> {
         }));
         return keyed(mli) as RObject<MusicListItem>[];
     }
+    artist_songs_playlist_id: string | null = null;
     protected async next_page_artist_songs(artist_id: string) {
-        this.has_next_page = false;
-        let a = await this.tube.music.getArtist(artist_id);
-        let r = await a.getAllSongs();
-        let arr: MusicResponsiveListItem[];
-        if (!r) {
-            arr = [];
+        if (this.artist_songs_playlist_id) {
+            return await this.next_page_playlist(this.artist_songs_playlist_id);
         } else {
-            arr = r.contents;
-        }
-
-        let mli: MusicListItem[] = arr.map(e => ({
-            typ: 'song',
-            data: {
-                id: e.id!,
-                title: e.title ?? null,
-                thumbnail: this.get_thumbnail(e.thumbnail),
-                authors: e.artists?.map(a => ({
-                    name: a.name,
-                    channel_id: a.channel_id ?? null,
-                })) ?? [],
+            let a = await this.tube.music.getArtist(artist_id);
+            let r = await a.getAllSongs();
+            if (!r) {
+                this.has_next_page = false;
+                return [];
+            } else {
+                this.artist_songs_playlist_id = r.playlist_id;
+                return await this.next_page_playlist(r.playlist_id);
             }
-        }));
-        return keyed(mli) as RObject<MusicListItem>[];
+        }
     }
     protected async next_page_search(query: string, type: Typ) {
         if (query.length == 0) {
