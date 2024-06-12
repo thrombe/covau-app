@@ -140,61 +140,91 @@ pub mod yt {
     pub mod song_tube {
         use super::*;
 
-        
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        pub enum Typ {
+            Song,
+            Video,
+            Album,
+            Playlist,
+            Artist,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        #[serde(tag = "type", content = "content")]
+        pub enum BrowseQuery {
+            Search { search: Typ, query: String },
+            Artist(String),
+            Album(String),
+            Playlist(String),
+            UpNext(String),
+            SongIds { ids: Vec<String>, batch_size: u32 },
+            HomeFeed,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+        #[serde(tag = "type", content = "content")]
+        pub enum MusicListItem {
+            Song(Song),
+            Video(Video),
+            Album(Album),
+            Playlist(Playlist),
+            Artist(Artist),
+        }
+
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Thumbnail {
-            url: String,
-            width: u32,
-            height: u32,
+            pub url: String,
+            pub width: u32,
+            pub height: u32,
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Author {
-            name: String,
-            channel_id: Option<String>,
+            pub name: String,
+            pub channel_id: Option<String>,
         }
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct AlbumId {
-            name: String,
-            id: String,
+            pub name: String,
+            pub id: String,
         }
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Song {
-            id: String,
-            title: Option<String>,
-            thumbnails: Vec<Thumbnail>,
-            authors: Vec<Author>,
-            album: Option<AlbumId>,
+            pub id: String,
+            pub title: Option<String>,
+            pub thumbnails: Vec<Thumbnail>,
+            pub authors: Vec<Author>,
+            pub album: Option<AlbumId>,
         }
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Video {
-            id: String,
-            title: Option<String>,
-            thumbnails: Vec<Thumbnail>,
-            authors: Vec<Author>,
+            pub id: String,
+            pub title: Option<String>,
+            pub thumbnails: Vec<Thumbnail>,
+            pub authors: Vec<Author>,
         }
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Album {
-            id: String,
-            title: Option<String>,
-            thumbnails: Vec<Thumbnail>,
-            author: Option<Author>,
+            pub id: String,
+            pub title: Option<String>,
+            pub thumbnails: Vec<Thumbnail>,
+            pub author: Option<Author>,
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Playlist {
-            id: String,
-            title: Option<String>,
-            thumbnails: Vec<Thumbnail>,
-            author: Option<Author>,
+            pub id: String,
+            pub title: Option<String>,
+            pub thumbnails: Vec<Thumbnail>,
+            pub author: Option<Author>,
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
         pub struct Artist {
-            id: String,
-            name: Option<String>,
-            subscribers: Option<String>,
-            thumbnails: Vec<Thumbnail>,
+            pub id: String,
+            pub name: Option<String>,
+            pub subscribers: Option<String>,
+            pub thumbnails: Vec<Thumbnail>,
         }
     }
 
@@ -235,6 +265,12 @@ pub mod yt {
 
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
+        types += &specta::ts::export::<song_tube::Typ>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<song_tube::MusicListItem>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<song_tube::BrowseQuery>(config)?;
+        types += ";\n";
         types += &specta::ts::export::<song_tube::Thumbnail>(config)?;
         types += ";\n";
         types += &specta::ts::export::<song_tube::Album>(config)?;

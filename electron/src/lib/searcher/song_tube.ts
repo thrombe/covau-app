@@ -15,22 +15,10 @@ export type MusicResponsiveListItem = YTNodes.MusicResponsiveListItem;
 export type VideoInfo = YT.VideoInfo;
 
 // https://github.com/LuanRT/YouTube.js/issues/321
-export type Typ = 'song' | 'video' | 'album' | 'playlist' | 'artist';
-export type BrowseQuery =
-    | { query_type: 'search', search: Typ, query: string }
-    | { query_type: 'artist', id: string }
-    | { query_type: 'album', id: string }
-    | { query_type: 'playlist', id: string }
-    | { query_type: 'up-next', id: string }
-    | { query_type: 'song-ids', ids: string[], batch_size: number }
-    | { query_type: 'home-feed' };
+export type Typ = yt.Typ;
+export type BrowseQuery = yt.BrowseQuery;
 
-export type MusicListItem =
-    { typ: 'song', data: yt.Song } |
-    { typ: 'video', data: yt.Video } |
-    { typ: 'album', data: yt.Album } |
-    { typ: 'playlist', data: yt.Playlist } |
-    { typ: 'artist', data: yt.Artist };
+export type MusicListItem = yt.MusicListItem;
 
 export class StListItem extends ListItem {
     data: MusicListItem & Keyed;
@@ -45,27 +33,27 @@ export class StListItem extends ListItem {
     }
 
     title(): string {
-        switch (this.data.typ) {
-            case "song":
-            case "video":
-            case "album":
-            case "playlist":
-                return this.data.data.title ?? this.data.data.id;
-            case "artist":
-                return this.data.data.name ?? this.data.data.id;
+        switch (this.data.type) {
+            case "Song":
+            case "Video":
+            case "Album":
+            case "Playlist":
+                return this.data.content.title ?? this.data.content.id;
+            case "Artist":
+                return this.data.content.name ?? this.data.content.id;
             default:
                 throw exhausted(this.data)
         }
     }
 
     thumbnail(): string | null {
-        switch (this.data.typ) {
-            case "song":
-            case "video":
-            case "album":
-            case "playlist":
-            case "artist":
-                return this.data.data.thumbnails.at(0)?.url ?? null;
+        switch (this.data.type) {
+            case "Song":
+            case "Video":
+            case "Album":
+            case "Playlist":
+            case "Artist":
+                return this.data.content.thumbnails.at(0)?.url ?? null;
             default:
                 throw exhausted(this.data)
         }
@@ -86,36 +74,36 @@ export class StListItem extends ListItem {
             }
         }
 
-        switch (this.data.typ) {
-            case "song":
-            case "video":
-                return authors(this.data.data.authors);
-            case "album":
-            case "playlist":
-                return this.data.data.author?.name ?? null;
-            case "artist":
-                return this.data.data.subscribers;
+        switch (this.data.type) {
+            case "Song":
+            case "Video":
+                return authors(this.data.content.authors);
+            case "Album":
+            case "Playlist":
+                return this.data.content.author?.name ?? null;
+            case "Artist":
+                return this.data.content.subscribers;
             default:
                 throw exhausted(this.data)
         }
     }
 
     async audio_uri() {
-        switch (this.data.typ) {
-            case "song":
-            case "video": {
-                let s = this.data.data;
-                let data = await get_uri(this.data.data.id);
+        switch (this.data.type) {
+            case "Song":
+            case "Video": {
+                let s = this.data.content;
+                let data = await get_uri(this.data.content.id);
                 if (!data) {
                     return null;
                 }
                 let thumbs = SongTube.get_thumbnail(data.info.basic_info.thumbnail);
-                this.data.data.thumbnails = thumbs;
+                this.data.content.thumbnails = thumbs;
                 return data.uri;
             } break;
-            case "album":
-            case "playlist":
-            case "artist":
+            case "Album":
+            case "Playlist":
+            case "Artist":
                 return null;
             default:
                 throw exhausted(this.data)
@@ -125,10 +113,10 @@ export class StListItem extends ListItem {
     options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue":
-                switch (this.data.typ) {
-                    case "song":
-                    case "video": {
-                        let s = this.data.data;
+                switch (this.data.type) {
+                    case "Song":
+                    case "Video": {
+                        let s = this.data.content;
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -164,18 +152,18 @@ export class StListItem extends ListItem {
                             },
                         ];
                     }
-                    case "album":
-                    case "playlist":
-                    case "artist":
-                        throw new Error("cannot render " + this.data.typ + " in " + ctx + " context");
+                    case "Album":
+                    case "Playlist":
+                    case "Artist":
+                        throw new Error("cannot render " + this.data.type + " in " + ctx + " context");
                     default:
                         throw exhausted(this.data)
                 }
             case "Browser":
-                switch (this.data.typ) {
-                    case "song":
-                    case "video": {
-                        let s = this.data.data;
+                switch (this.data.type) {
+                    case "Song":
+                    case "Video": {
+                        let s = this.data.content;
                         return [
                             {
                                 icon: "/static/add.svg",
@@ -213,8 +201,8 @@ export class StListItem extends ListItem {
                             },
                         ];
                     }
-                    case "album": {
-                        let a = this.data.data;
+                    case "Album": {
+                        let a = this.data.content;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
@@ -222,8 +210,8 @@ export class StListItem extends ListItem {
                                 tooltip: "open",
                                 onclick: async () => {
                                     let s = SongTube.new({
-                                        query_type: "album",
-                                        id: a.id,
+                                        type: "Album",
+                                        content: a.id,
                                     }, get(stores.tube));
                                     stores.tabs.update(t => {
                                         t = [t[0]];
@@ -243,8 +231,8 @@ export class StListItem extends ListItem {
                                 tooltip: "add all to queue",
                                 onclick: async () => {
                                     let s = SongTube.new({
-                                        query_type: "album",
-                                        id: a.id,
+                                        type: "Album",
+                                        content: a.id,
                                     }, get(stores.tube));
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
@@ -255,8 +243,8 @@ export class StListItem extends ListItem {
                             },
                         ];
                     }
-                    case "playlist": {
-                        let p = this.data.data;
+                    case "Playlist": {
+                        let p = this.data.content;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
@@ -264,8 +252,8 @@ export class StListItem extends ListItem {
                                 tooltip: "open",
                                 onclick: async () => {
                                     let s = SongTube.new({
-                                        query_type: "playlist",
-                                        id: p.id,
+                                        type: "Playlist",
+                                        content: p.id,
                                     }, get(stores.tube));
                                     stores.tabs.update(t => {
                                         t = [t[0]];
@@ -281,8 +269,8 @@ export class StListItem extends ListItem {
                             },
                         ];
                     }
-                    case "artist": {
-                        let a = this.data.data;
+                    case "Artist": {
+                        let a = this.data.content;
                         return [
                             {
                                 icon: "/static/open-new-tab.svg",
@@ -290,8 +278,8 @@ export class StListItem extends ListItem {
                                 tooltip: "explore songs",
                                 onclick: async () => {
                                     let s = SongTube.new({
-                                        query_type: "artist",
-                                        id: a.id,
+                                        type: "Artist",
+                                        content: a.id,
                                     }, get(stores.tube));
                                     stores.tabs.update(t => {
                                         t = [t[0]];
@@ -395,25 +383,25 @@ export class SongTube extends Unpaged<MusicListItem> {
         if (!this.has_next_page) {
             return [];
         }
-        if (this.query.query_type == 'search') {
-            return await this.next_page_search(this.query.query, this.query.search);
-        } else if (this.query.query_type == 'artist') {
-            let r = await this.next_page_artist_songs(this.query.id);
+        if (this.query.type == 'Search') {
+            return await this.next_page_search(this.query.content.query, this.query.content.search);
+        } else if (this.query.type == 'Artist') {
+            let r = await this.next_page_artist_songs(this.query.content);
             return r;
-        } else if (this.query.query_type == 'album') {
-            let r = await this.next_page_album(this.query.id);
+        } else if (this.query.type == 'Album') {
+            let r = await this.next_page_album(this.query.content);
             return r;
-        } else if (this.query.query_type == 'playlist') {
-            let r = await this.next_page_playlist(this.query.id);
+        } else if (this.query.type == 'Playlist') {
+            let r = await this.next_page_playlist(this.query.content);
             return r;
-        } else if (this.query.query_type == 'up-next') {
-            let r = await this.next_page_up_next(this.query.id);
+        } else if (this.query.type == 'UpNext') {
+            let r = await this.next_page_up_next(this.query.content);
             return r;
-        } else if (this.query.query_type == 'home-feed') {
+        } else if (this.query.type == 'HomeFeed') {
             let r = await this.next_page_home_feed();
             return r;
-        } else if (this.query.query_type == "song-ids") {
-            let r = await this.next_page_song_ids(this.query.ids, this.query.batch_size);
+        } else if (this.query.type == "SongIds") {
+            let r = await this.next_page_song_ids(this.query.content.ids, this.query.content.batch_size);
             return r;
         } else {
             throw exhausted(this.query);
@@ -435,8 +423,8 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let promises = batch.map(id => {
             return this.tube.getBasicInfo(id).then(s => ({
-                typ: 'song',
-                data: {
+                type: 'Song',
+                content: {
                     id: id,
                     title: s.basic_info.title ?? '',
                     thumbnails: SongTube.get_thumbnail(s.basic_info.thumbnail),
@@ -449,8 +437,8 @@ export class SongTube extends Unpaged<MusicListItem> {
                     ] : [],
                 }
             } as MusicListItem)).catch(reason => ({
-                typ: 'song',
-                data: {
+                type: 'Song',
+                content: {
                     id: id,
                     title: id,
                     thumbnails: [],
@@ -473,8 +461,8 @@ export class SongTube extends Unpaged<MusicListItem> {
         let k = r.contents.filterType(YTNodes.PlaylistPanelVideo);
 
         let mli: MusicListItem[] = k.map(s => ({
-            typ: 'song',
-            data: {
+            type: 'Song',
+            content: {
                 id: s.video_id,
                 title: s.title.text ?? '',
                 thumbnails: SongTube.get_thumbnail(s.thumbnail),
@@ -498,8 +486,8 @@ export class SongTube extends Unpaged<MusicListItem> {
             .flatMap(e => e.contents.filterType(YTNodes.MusicResponsiveListItem)) ?? [];
 
         let mli: MusicListItem[] = k.map(s => ({
-            typ: 'song',
-            data: {
+            type: 'Song',
+            content: {
                 id: s.id!,
                 title: s.title ?? null,
                 thumbnails: SongTube.get_thumbnail(s.thumbnail),
@@ -533,8 +521,8 @@ export class SongTube extends Unpaged<MusicListItem> {
         let arr = a.filterType(YTNodes.MusicResponsiveListItem);
 
         let mli: MusicListItem[] = arr.map(s => ({
-            typ: 'song',
-            data: {
+            type: 'Song',
+            content: {
                 id: s.id!,
                 title: s.title ?? null,
                 thumbnails: SongTube.get_thumbnail(s.thumbnail),
@@ -554,8 +542,8 @@ export class SongTube extends Unpaged<MusicListItem> {
         this.has_next_page = false;
         let a = await this.tube.music.getAlbum(album_id);
         let mli: MusicListItem[] = a.contents.map(a => ({
-            typ: 'song',
-            data: {
+            type: 'Song',
+            content: {
                 id: a.id!,
                 title: a.title ?? null,
                 thumbnails: SongTube.get_thumbnail(a.thumbnail),
@@ -587,11 +575,33 @@ export class SongTube extends Unpaged<MusicListItem> {
             }
         }
     }
-    protected async next_page_search(query: string, type: Typ) {
+    protected async next_page_search(query: string, typ: Typ) {
         if (query.length == 0) {
             this.has_next_page = false;
             return [];
         }
+
+        let type: 'song' | 'video' | 'album' | 'playlist' | 'artist';
+        switch (typ) {
+            case "Song":
+                type = "song";
+                break;
+            case "Video":
+                type = "video";
+                break;
+            case "Album":
+                type = "album";
+                break;
+            case "Playlist":
+                type = "playlist";
+                break;
+            case "Artist":
+                type = "artist";
+                break;
+            default:
+                throw exhausted(typ);
+        }
+
 
         let songs: Array<MusicResponsiveListItem>;
         if (this.results === null) {
@@ -638,8 +648,8 @@ export class SongTube extends Unpaged<MusicListItem> {
         let mli: MusicListItem[] = songs.map(e => {
             if (e.item_type === 'song') {
                 return {
-                    typ: 'song',
-                    data: {
+                    type: 'Song',
+                    content: {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
@@ -655,8 +665,8 @@ export class SongTube extends Unpaged<MusicListItem> {
                 }
             } else if (e.item_type === 'video') {
                 return {
-                    typ: 'video',
-                    data: {
+                    type: 'Video',
+                    content: {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
@@ -666,10 +676,23 @@ export class SongTube extends Unpaged<MusicListItem> {
                         })) ?? [],
                     }
                 }
-            } else if (e.item_type === 'album' || e.item_type === 'playlist') {
+            } else if (e.item_type === 'album') {
                 return {
-                    typ: e.item_type,
-                    data: {
+                    type: 'Album',
+                    content: {
+                        id: e.id!,
+                        title: e.title ?? null,
+                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        author: e.author ? {
+                            name: e.author.name,
+                            channel_id: e.author?.channel_id ?? null,
+                        } : null,
+                    }
+                }
+            } else if (e.item_type === 'playlist') {
+                return {
+                    type: 'Playlist',
+                    content: {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
@@ -681,8 +704,8 @@ export class SongTube extends Unpaged<MusicListItem> {
                 }
             } else if (e.item_type === 'artist') {
                 return {
-                    typ: 'artist',
-                    data: {
+                    type: 'Artist',
+                    content: {
                         id: e.id!,
                         name: e.name ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
@@ -691,8 +714,8 @@ export class SongTube extends Unpaged<MusicListItem> {
                 }
             } else {
                 return {
-                    typ: 'video',
-                    data: {
+                    type: 'Video',
+                    content: {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
@@ -707,7 +730,7 @@ export class SongTube extends Unpaged<MusicListItem> {
         return k as RObject<MusicListItem>[];
     }
 
-    static get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['data']['thumbnails'] {
+    static get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['content']['thumbnails'] {
         if (node === null || !node) {
             return [];
         }
@@ -723,16 +746,16 @@ export class SongTube extends Unpaged<MusicListItem> {
     }
 }
 
-const keyed = <T extends { data: { id?: any } }>(items: T[]): (T & Keyed)[] => {
+const keyed = <T extends { content: { id?: any } }>(items: T[]): (T & Keyed)[] => {
     let res = items
-        .filter((e) => !!e.data.id)
+        .filter((e) => !!e.content.id)
         .map((e) => {
             let p = e as T & Keyed;
             p.get_key = function() {
-                if (!p.data.id) {
+                if (!p.content.id) {
                     console.warn("item does not have an id :/", p);
                 }
-                return p.data.id;
+                return p.content.id;
             };
             return p;
         });
