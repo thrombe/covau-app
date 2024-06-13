@@ -283,9 +283,9 @@
             export CLANGD_FLAGS="--compile-commands-dir=$(pwd)/plugin --query-driver=$(which $CXX)"
 
             # export UI_BACKEND="ELECTRON"
-            export UI_BACKEND="WEBUI"
+            # export UI_BACKEND="WEBUI"
             # export UI_BACKEND="TAURI"
-            # export UI_BACKEND="NONE"
+            export UI_BACKEND="NONE"
             export BUILD_MODE="DEV"
             # export BUILD_MODE="PRODUCTION"
 

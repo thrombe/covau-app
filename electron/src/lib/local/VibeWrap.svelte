@@ -10,7 +10,7 @@
         let itube = await new_innertube_instance();
         tube.set(itube);
 
-        let _info = await wasm.default();
+        // let _info = await wasm.default();
 
         let _ = serve();
     })()

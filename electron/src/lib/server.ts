@@ -4,8 +4,10 @@ import * as stores from "$lib/stores.ts";
 import { get } from 'svelte/store';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
+import * as covau from "$types/covau.ts";
 import { exhausted } from './virtual';
 import type Innertube from 'youtubei.js';
+import { Db } from './searcher/db';
 
 class Server {
     ws: WebSocket;
@@ -86,4 +88,24 @@ class Server {
 export let server: Server | null = null;
 export const serve = async () => {
     server = new Server();
+
+    // let tube = get(stores.tube);
+    // let res = await tube.music.search("Aimer", { type: 'video' });
+    // console.log(res)
+    // let contents = res.contents!
+    //     .flatMap(e => e.contents?.filterType(St.YTNodes.MusicResponsiveListItem) ?? []);
+    // let i = contents[0];
+    // console.log(await tube.music.getInfo(i.id!))
+    // console.log(i)
+
+    // let a = await tube.music.getArtist(i.id!);
+    // console.log(a);
+    // let songs = await a.getAllSongs();
+    // console.log(songs);
+    // let playlist = await tube.music.getPlaylist(songs?.playlist_id!);
+    // console.log(playlist)
+    // // console.log(tube.music.getAlbum())
+    // // console.log(await a.sections[2].as(St.YTNodes.MusicCarouselShelf).header?.more_content?.endpoint.call());
+    // let channel = await tube.getChannel(i.id!);
+    // console.log(channel)
 };

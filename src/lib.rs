@@ -12,7 +12,7 @@ use crate::bad_error::BadError;
 
 pub mod musimanager;
 pub mod mbz;
-pub mod db;
+// pub mod db;
 
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]

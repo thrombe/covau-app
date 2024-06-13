@@ -865,7 +865,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
 
 async fn _updater_system(fe: FrontendClient<YtiRequest>, db: Db) -> anyhow::Result<()> {
     let manager = crate::covau_types::UpdateManager::new(crate::yt::SongTubeFac::new(fe), db);
-    manager.test().await?;
+    // manager.test().await?;
     Ok(())
 }
 
