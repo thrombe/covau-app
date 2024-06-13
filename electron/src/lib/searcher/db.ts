@@ -1,6 +1,8 @@
 import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./searcher.ts";
 import * as Musi from "$types/musimanager.ts";
+import * as yt from "$types/yt.ts";
+import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
@@ -9,11 +11,11 @@ import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
 
-export type Song = Musi.Song<Musi.SongInfo | null>;
-export type Album = Musi.Album<Musi.SongId>;
-export type Artist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
-export type Playlist = Musi.Playlist<Musi.SongId>;
-export type Queue = Musi.Queue<Musi.SongId>;
+export type MmSong = Musi.Song<Musi.SongInfo | null>;
+export type MmAlbum = Musi.Album<Musi.SongId>;
+export type MmArtist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
+export type MmPlaylist = Musi.Playlist<Musi.SongId>;
+export type MmQueue = Musi.Queue<Musi.SongId>;
 
 // export type MusicListItem = Keyed & (
 //     | (DB.DbItem<Song> & { typ: "MusimanagerSong"})
@@ -23,17 +25,26 @@ export type Queue = Musi.Queue<Musi.SongId>;
 //     | DB.DbItem<Queue>
 // );
 export type MusicListItem = Keyed & (
-    { id: number, typ: "MusimanagerSong", t: Song } |
-    { id: number, typ: "MusimanagerAlbum", t: Album } |
-    { id: number, typ: "MusimanagerArtist", t: Artist } |
-    { id: number, typ: "MusimanagerPlaylist", t: Playlist } |
-    { id: number, typ: "MusimanagerQueue", t: Queue }
+    | { id: number, typ: "MmSong", t: MmSong }
+    | { id: number, typ: "MmAlbum", t: MmAlbum }
+    | { id: number, typ: "MmArtist", t: MmArtist }
+    | { id: number, typ: "MmPlaylist", t: MmPlaylist }
+    | { id: number, typ: "MmQueue", t: MmQueue }
+    | { id: number, typ: "StSong", t: yt.Song }
+    | { id: number, typ: "StVideo", t: yt.Video }
+    | { id: number, typ: "StAlbum", t: yt.Album }
+    | { id: number, typ: "StPlaylist", t: yt.Playlist }
+    | { id: number, typ: "StArtist", t: yt.Artist }
+    | { id: number, typ: "Song", t: covau.Song }
+    | { id: number, typ: "Playlist", t: covau.Playlist }
+    | { id: number, typ: "Queue", t: covau.Queue }
+    | { id: number, typ: "Updater", t: covau.Updater }
 );
 
 export type Typ = DB.Typ;
 export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
-    { query_type: 'songs', ids: string[] };
+    { query_type: 'refids', type: Typ , ids: string[] };
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
@@ -49,16 +60,34 @@ export class DbListItem extends ListItem {
 
     title(): string {
         switch (this.data.typ) {
-            case "MusimanagerSong":
+            case "MmSong":
                 return this.data.t.title;
-            case "MusimanagerAlbum":
+            case "MmAlbum":
                 return this.data.t.name;
-            case "MusimanagerArtist":
+            case "MmArtist":
                 return this.data.t.name;
-            case "MusimanagerPlaylist":
+            case "MmPlaylist":
                 return this.data.t.name;
-            case "MusimanagerQueue":
+            case "MmQueue":
                 return this.data.t.name;
+            case "StSong":
+                return this.data.t.title ?? this.data.t.id;
+            case "StVideo":
+                return this.data.t.title ?? this.data.t.id;
+            case "StAlbum":
+                return this.data.t.title ?? this.data.t.id;
+            case "StPlaylist":
+                return this.data.t.title ?? this.data.t.id;
+            case "StArtist":
+                return this.data.t.name ?? this.data.t.id;
+            case "Song":
+                return this.data.t.haystacks.at(0) ?? this.data.id.toString();
+            case "Playlist":
+                return this.data.t.title;
+            case "Queue":
+                return this.data.t.queue.title;
+            case "Updater":
+                return this.data.t.title;
             default:
                 throw exhausted(this.data)
         }
@@ -66,15 +95,33 @@ export class DbListItem extends ListItem {
 
     thumbnail(): string | null {
         switch (this.data.typ) {
-            case "MusimanagerSong":
+            case "MmSong":
                 return this.data.t.info?.thumbnail_url ?? null;
-            case "MusimanagerAlbum":
+            case "MmAlbum":
                 return null;
-            case "MusimanagerArtist":
+            case "MmArtist":
                 return null;
-            case "MusimanagerPlaylist":
+            case "MmPlaylist":
                 return null;
-            case "MusimanagerQueue":
+            case "MmQueue":
+                return null;
+            case "StSong":
+                return this.data.t.thumbnails.at(0)?.url ?? null;
+            case "StVideo":
+                return this.data.t.thumbnails.at(0)?.url ?? null;
+            case "StAlbum":
+                return this.data.t.thumbnails.at(0)?.url ?? null;
+            case "StPlaylist":
+                return this.data.t.thumbnails.at(0)?.url ?? null;
+            case "StArtist":
+                return this.data.t.thumbnails.at(0)?.url ?? null;
+            case "Song":
+                return null;
+            case "Playlist":
+                return null;
+            case "Queue":
+                return null;
+            case "Updater":
                 return null;
             default:
                 throw exhausted(this.data)
@@ -86,17 +133,43 @@ export class DbListItem extends ListItem {
     }
 
     title_sub(): string | null {
+        function authors(a: yt.Author[]) {
+            if (a.length == 0) {
+                return '';
+            } else {
+                return a
+                    .map(a => a.name)
+                    .reduce((p, c) => p + ", " + c);
+            }
+        }
+
         switch (this.data.typ) {
-            case "MusimanagerSong":
+            case "MmSong":
                 return this.data.t.artist_name;
-            case "MusimanagerAlbum":
+            case "MmAlbum":
                 return this.data.t.artist_name;
-            case "MusimanagerArtist":
+            case "MmArtist":
                 return null;
-            case "MusimanagerPlaylist":
+            case "MmPlaylist":
                 return this.data.t.data_list.length.toString() + " songs";
-            case "MusimanagerQueue":
+            case "MmQueue":
                 return this.data.t.data_list.length.toString() + " songs";
+            case "StSong":
+                return authors(this.data.t.authors);
+            case "StVideo":
+                return authors(this.data.t.authors);
+            case "StAlbum":
+                return this.data.t.author?.name ?? null;
+            case "StPlaylist":
+                return this.data.t.author?.name ?? null;
+            case "StArtist":
+                return this.data.t.subscribers ?? null;
+            case "Song":
+                return this.data.t.haystacks.at(1) ?? null;
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                return null;
             default:
                 throw exhausted(this.data)
         }
@@ -104,7 +177,7 @@ export class DbListItem extends ListItem {
 
     async audio_uri(): Promise<string | null> {
         switch (this.data.typ) {
-            case "MusimanagerSong": {
+            case "MmSong": {
                 let song = this.data.t;
                 if (song.last_known_path) {
                     return "file://" + song.last_known_path;
@@ -134,10 +207,51 @@ export class DbListItem extends ListItem {
                     return data.uri;
                 }
             } break;
-            case "MusimanagerAlbum":
-            case "MusimanagerArtist":
-            case "MusimanagerPlaylist":
-            case "MusimanagerQueue":
+            case "StSong": {
+                let song = this.data.t;
+                let data = await get_uri(song.id);
+                if (!data) {
+                    return null;
+                }
+                return data.uri;
+            } break;
+            case "StVideo": {
+                let song = this.data.t;
+                let data = await get_uri(song.id);
+                if (!data) {
+                    return null;
+                }
+                return data.uri;
+            } break;
+            case "Song": {
+                let song = this.data.t;
+                for (let source of song.play_sources) {
+                    switch (source.type) {
+                        case "File":
+                            return "file://" + source.content;
+                        case "YtId": {
+                            let data = await get_uri(source.content);
+                            if (!data) {
+                                continue;
+                            }
+                            return data.uri;
+                        } break;
+                        default:
+                            throw exhausted(source);
+                    }
+                }
+                return null;
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
                 return null;
             default:
                 throw exhausted(this.data);
@@ -148,7 +262,7 @@ export class DbListItem extends ListItem {
         switch (ctx) {
             case "Queue":
                 switch (this.data.typ) {
-                    case "MusimanagerSong": {
+                    case "MmSong": {
                         let s = this.data.t;
                         return [
                             {
@@ -185,17 +299,27 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
-                    case "MusimanagerAlbum":
-                    case "MusimanagerArtist":
-                    case "MusimanagerPlaylist":
-                    case "MusimanagerQueue":
+                    case "StSong":
+                    case "StVideo":
+                    case "Song":
+                        return [];
+                    case "StAlbum":
+                    case "StPlaylist":
+                    case "StArtist":
+                    case "Playlist":
+                    case "Queue":
+                    case "Updater":
+                    case "MmAlbum":
+                    case "MmArtist":
+                    case "MmPlaylist":
+                    case "MmQueue":
                         throw new Error("cannot render " + this.data.typ + " in " + ctx + " context");
                     default:
                         throw exhausted(this.data)
                 }
             case "Browser":
                 switch (this.data.typ) {
-                    case "MusimanagerSong": {
+                    case "MmSong": {
                         let s = this.data.t;
                         return [
                             {
@@ -249,7 +373,7 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
-                    case "MusimanagerAlbum": {
+                    case "MmAlbum": {
                         let list = this.data.t;
                         return [
                             {
@@ -258,7 +382,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "open",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: list.songs,
                                     }, 30);
                                     stores.tabs.update(t => {
@@ -279,7 +404,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: list.songs,
                                     }, list.songs.length);
                                     let items = await s.next_page();
@@ -291,7 +417,7 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
-                    case "MusimanagerArtist": {
+                    case "MmArtist": {
                         let a = this.data.t;
                         return [
                             {
@@ -300,7 +426,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "open saved",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: a.songs,
                                     }, 30);
                                     stores.tabs.update(t => {
@@ -321,7 +448,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "open unexplored",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: a.unexplored_songs ?? [],
                                     }, 30);
                                     stores.tabs.update(t => {
@@ -342,7 +470,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "add all saved to queue",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: a.songs,
                                     }, a.songs.length);
                                     let items = await s.next_page();
@@ -359,7 +488,8 @@ export class DbListItem extends ListItem {
                                 onclick: async () => {
                                     let songs = a.unexplored_songs ?? [];
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: songs,
                                     }, songs.length);
                                     let items = await s.next_page();
@@ -371,8 +501,8 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
-                    case "MusimanagerPlaylist":
-                    case "MusimanagerQueue": {
+                    case "MmPlaylist":
+                    case "MmQueue": {
                         let list = this.data.t;
                         return [
                             {
@@ -381,7 +511,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "open",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: list.data_list,
                                     }, 30);
                                     stores.tabs.update(t => {
@@ -402,7 +533,8 @@ export class DbListItem extends ListItem {
                                 tooltip: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
-                                        query_type: "songs",
+                                        query_type: "refids",
+                                        type: "MmSong",
                                         ids: list.data_list,
                                     }, list.data_list.length);
                                     let items = await s.next_page();
@@ -414,6 +546,16 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
+                    case "Song":
+                    case "Playlist":
+                    case "Queue":
+                    case "Updater":
+                    case "StSong":
+                    case "StVideo":
+                    case "StAlbum":
+                    case "StPlaylist":
+                    case "StArtist":
+                        return [];
                     default:
                         throw exhausted(this.data)
                 }
@@ -537,21 +679,42 @@ export class Db extends Unpaged<MusicListItem> {
         return new Fac();
     }
 
-    async fetch(type: Typ, query: string): Promise<MusicListItem[]> {
-        if (type == 'MusimanagerSong') {
-            this.route = "musimanager/search/songs";
-        } else if (type == 'MusimanagerAlbum') {
-            this.route = "musimanager/search/albums";
-        } else if (type == 'MusimanagerArtist') {
-            this.route = "musimanager/search/artists";
-        } else if (type == 'MusimanagerPlaylist') {
-            this.route = "musimanager/search/playlists";
-        } else if (type == 'MusimanagerQueue') {
-            this.route = "musimanager/search/queues";
-        } else {
-            throw exhausted(type)
+    route() {
+        let type = this.query.type;
+        switch (type) {
+            case "MmSong":
+                return "musimanager/search/songs";
+            case "MmAlbum":
+                return "musimanager/search/albums";
+            case "MmArtist":
+                return "musimanager/search/artists";
+            case "MmPlaylist":
+                return "musimanager/search/playlists";
+            case "MmQueue":
+                return "musimanager/search/queues";
+            case "Song":
+                return "covau/search/songs";
+            case "Playlist":
+                return "covau/search/playlists";
+            case "Queue":
+                return "covau/search/queues";
+            case "Updater":
+                return "covau/search/updaters";
+            case "StSong":
+                return "song_tube/search/songs";
+            case "StVideo":
+                return "song_tube/search/videos";
+            case "StAlbum":
+                return "song_tube/search/albums";
+            case "StPlaylist":
+                return "song_tube/search/playlists";
+            case "StArtist":
+                return "song_tube/search/artists";
+            default:
+                throw exhausted(type);
         }
-
+    }
+    async fetch(type: Typ, query: string): Promise<MusicListItem[]> {
         let q: DB.SearchQuery = {
             type: "Query",
             content: {
@@ -560,7 +723,7 @@ export class Db extends Unpaged<MusicListItem> {
             },
         };
         let res = await fetch(
-            "http://localhost:6173/" + this.route,
+            `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route(),
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -577,7 +740,6 @@ export class Db extends Unpaged<MusicListItem> {
     }
 
     cont: DB.SearchContinuation | null = null;
-    route: string = '';
     page_end_index: number = 0;
     async next_page(): Promise<MusicListItem[]> {
         if (!this.has_next_page) {
@@ -592,7 +754,7 @@ export class Db extends Unpaged<MusicListItem> {
                     content: this.cont,
                 };
                 let res = await fetch(
-                    `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route,
+                    `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route(),
                     {
                         method: "POST",
                         body: JSON.stringify(q),
@@ -611,7 +773,7 @@ export class Db extends Unpaged<MusicListItem> {
             }
 
             return keyed(items) as MusicListItem[];
-        } else if (this.query.query_type === 'songs') {
+        } else if (this.query.query_type === 'refids') {
             let ids = this.query.ids.slice(
                 this.page_end_index,
                 Math.min(
@@ -625,7 +787,7 @@ export class Db extends Unpaged<MusicListItem> {
             }
 
             let res = await fetch(
-                `http://localhost:${import.meta.env.SERVER_PORT}/musimanager/search/songs/refid`,
+                `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route() + "/refid",
                 {
                     method: "POST",
                     body: JSON.stringify(ids),
