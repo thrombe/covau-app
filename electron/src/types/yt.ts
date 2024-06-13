@@ -1,3 +1,6 @@
+export type Typ = "Song" | "Video" | "Album" | "Playlist" | "Artist";
+export type MusicListItem = { type: "Song"; content: Song } | { type: "Video"; content: Video } | { type: "Album"; content: Album } | { type: "Playlist"; content: Playlist } | { type: "Artist"; content: Artist };
+export type BrowseQuery = { type: "Search"; content: { search: Typ; query: string } } | { type: "Artist"; content: string } | { type: "Album"; content: string } | { type: "Playlist"; content: string } | { type: "UpNext"; content: string } | { type: "SongIds"; content: { ids: string[]; batch_size: number } } | { type: "HomeFeed" };
 export type Thumbnail = { url: string; width: number; height: number };
 export type Album = { id: string; title: string | null; thumbnails: Thumbnail[]; author: Author | null };
 export type AlbumId = { name: string; id: string };
