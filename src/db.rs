@@ -443,7 +443,7 @@ pub mod db {
 
         #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
         pub enum Relation {
-            #[sea_orm(has_one = "super::refid::Entity")]
+            #[sea_orm(has_many = "super::refid::Entity")]
             RefId,
         }
         impl Related<super::refid::Entity> for Entity {
