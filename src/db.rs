@@ -539,19 +539,19 @@ pub mod db {
                 let data = std::fs::read_to_string(path)?;
 
                 let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
-                for s in tracker.songs.iter() {
+                for s in tracker.songs.into_iter() {
                     self.insert(s).await?;
                 }
-                for a in tracker.artists.iter() {
+                for a in tracker.artists.into_iter() {
                     self.insert(a).await?;
                 }
-                for a in tracker.albums.iter() {
+                for a in tracker.albums.into_iter() {
                     self.insert(a).await?;
                 }
-                for p in tracker.playlists.iter() {
+                for p in tracker.playlists.into_iter() {
                     self.insert(p).await?;
                 }
-                for q in tracker.queues.iter() {
+                for q in tracker.queues.into_iter() {
                     self.insert(q).await?;
                 }
             }
@@ -713,7 +713,7 @@ pub mod db {
             Ok(e)
         }
 
-        pub async fn insert<T: DbAble>(&self, t: &T) -> anyhow::Result<()> {
+        pub async fn insert<T: DbAble>(&self, t: T) -> anyhow::Result<i32> {
             let am = object::ActiveModel {
                 id: sea_orm::ActiveValue::NotSet,
                 data: sea_orm::ActiveValue::Set(t.to_json()),
@@ -721,11 +721,39 @@ pub mod db {
             };
             let obj = object::Entity::insert(am).exec(&self.db).await?;
 
-            for rid in t.refids() {
+            let refids = t.refids().into_iter().map(String::from).collect::<Vec<_>>();
+            for rid in refids {
                 let id = refid::ActiveModel {
                     refid: sea_orm::ActiveValue::Set(rid.to_string()),
                     typ: sea_orm::ActiveValue::Set(T::typ()),
                     object_id: sea_orm::ActiveValue::Set(obj.last_insert_id),
+                };
+                refid::Entity::insert(id).exec(&self.db).await?;
+            }
+            Ok(obj.last_insert_id)
+        }
+
+        pub async fn update<T: DbAble>(&self, t: DbItem<T>) -> anyhow::Result<()> {
+            let am = object::ActiveModel {
+                id: sea_orm::ActiveValue::Unchanged(t.id),
+                data: sea_orm::ActiveValue::Set(t.t.to_json()),
+                typ: sea_orm::ActiveValue::Unchanged(T::typ()),
+            };
+            let obj = object::Entity::update(am).exec(&self.db).await?;
+
+            let _ = refid::Entity::delete(refid::ActiveModel {
+                object_id: sea_orm::ActiveValue::Set(t.id),
+                ..Default::default()
+            })
+            .exec(&self.db)
+            .await?;
+
+            let refids = t.t.refids().into_iter().map(String::from).collect::<Vec<_>>();
+            for rid in refids {
+                let id = refid::ActiveModel {
+                    refid: sea_orm::ActiveValue::Set(rid.to_string()),
+                    typ: sea_orm::ActiveValue::Set(T::typ()),
+                    object_id: sea_orm::ActiveValue::Set(t.id),
                 };
                 refid::Entity::insert(id).exec(&self.db).await?;
             }
