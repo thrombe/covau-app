@@ -375,6 +375,11 @@ selected_menubar_option.subscribe(async (option) => {
                     }, get(tube));
                     break;
                 case "covau-group": {
+                    if (!get(query_input)) {
+                        s = fused_searcher;
+                        break;
+                    }
+
                     let f_app = await import("firebase/app");
                     let f_store = await import("firebase/firestore");
                     let f_config = await import("../firebase_config");
