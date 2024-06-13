@@ -114,13 +114,13 @@ pub mod song_tube {
 
     pub trait TMusicListItem {
         fn typ() -> Typ;
-        fn from(item: MusicListItem) -> Self;
+        fn assume(item: MusicListItem) -> Self;
     }
     impl TMusicListItem for Song {
         fn typ() -> Typ {
             Typ::Song
         }
-        fn from(item: MusicListItem) -> Self {
+        fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Song(s) = item {
                 s
             } else {
@@ -132,7 +132,7 @@ pub mod song_tube {
         fn typ() -> Typ {
             Typ::Video
         }
-        fn from(item: MusicListItem) -> Self {
+        fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Video(s) = item {
                 s
             } else {
@@ -144,7 +144,7 @@ pub mod song_tube {
         fn typ() -> Typ {
             Typ::Album
         }
-        fn from(item: MusicListItem) -> Self {
+        fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Album(s) = item {
                 s
             } else {
@@ -156,7 +156,7 @@ pub mod song_tube {
         fn typ() -> Typ {
             Typ::Artist
         }
-        fn from(item: MusicListItem) -> Self {
+        fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Artist(s) = item {
                 s
             } else {
@@ -168,7 +168,7 @@ pub mod song_tube {
         fn typ() -> Typ {
             Typ::Playlist
         }
-        fn from(item: MusicListItem) -> Self {
+        fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Playlist(s) = item {
                 s
             } else {
@@ -243,7 +243,7 @@ impl<T: song_tube::TMusicListItem> SongTube<T> {
         let items = self.inner.next_page().await?;
         let items = SearchResults {
             has_next_page: items.has_next_page,
-            items: items.items.into_iter().map(T::from).collect(),
+            items: items.items.into_iter().map(T::assume).collect(),
         };
         Ok(items)
     }
