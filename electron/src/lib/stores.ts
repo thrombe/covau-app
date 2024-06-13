@@ -281,11 +281,11 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Playlists", content_type: "music", type: "MusimanagerPlaylist" },
     { name: "Artist", content_type: "music", type: "MusimanagerArtist" },
     { name: "Album", content_type: "music", type: "MusimanagerAlbum" },
-    { name: "Yt Song", content_type: "music", type: "song" },
-    { name: "Yt Video", content_type: "music", type: "video" },
-    { name: "Yt Album", content_type: "music", type: "album" },
-    { name: "Yt Playlist", content_type: "music", type: "playlist" },
-    { name: "Yt Artist", content_type: "music", type: "artist" },
+    { name: "Yt Song", content_type: "music", type: "Song" },
+    { name: "Yt Video", content_type: "music", type: "Video" },
+    { name: "Yt Album", content_type: "music", type: "Album" },
+    { name: "Yt Playlist", content_type: "music", type: "Playlist" },
+    { name: "Yt Artist", content_type: "music", type: "Artist" },
     { name: "Covau Group", content_type: "music", type: "covau-group" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
@@ -341,15 +341,17 @@ selected_menubar_option.subscribe(async (option) => {
                         query: get(query_input),
                     }, page_size);
                     break;
-                case "song":
-                case "video":
-                case "album":
-                case "playlist":
-                case "artist":
+                case "Song":
+                case "Video":
+                case "Album":
+                case "Playlist":
+                case "Artist":
                     s = St.SongTube.new({
-                        query_type: "search",
-                        query: get(query_input),
-                        search: option.type,
+                        type: "Search",
+                        content: {
+                            query: get(query_input),
+                            search: option.type
+                        },
                     }, get(tube));
                     break;
                 case "covau-group": {
@@ -367,9 +369,11 @@ selected_menubar_option.subscribe(async (option) => {
                     }
                     let ids: string[] = covau.queue;
                     s = St.SongTube.new({
-                        query_type: "song-ids",
-                        ids,
-                        batch_size: 10,
+                        type: "SongIds",
+                        content: {
+                            ids,
+                            batch_size: 10,
+                        },
                     }, get(tube));
                 } break;
                 default:
@@ -391,7 +395,7 @@ selected_menubar_option.subscribe(async (option) => {
         case "home-feed": {
             let st = await import("$lib/searcher/song_tube.ts");
             let s = st.SongTube.new({
-                query_type: "home-feed",
+                type: "HomeFeed",
             }, get(tube));
             tabs.update(t => {
                 t = [t[0]];
