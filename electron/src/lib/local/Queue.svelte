@@ -122,7 +122,7 @@
 </script>
 
 <div class="flex flex-col h-full w-full">
-    <div class="p-2 h-16">
+    <div class="p-2 pl-0 h-16">
         <div class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20">
             <div class="h-full pl-2 pr-2 flex-grow">
                 <div class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold">
