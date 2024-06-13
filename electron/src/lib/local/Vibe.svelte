@@ -11,6 +11,7 @@
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
     import InputBar from "$lib/components/InputBar.svelte";
+    import Prompt from "$lib/prompt/Prompt.svelte";
 
     let item_height: number = 75;
     let item_min_width = 290;
@@ -204,6 +205,7 @@
     <div class="-z-20 grainy grainy-bg" />
 </div>
 
+<Prompt />
 <Toasts />
 
 <style lang="postcss">

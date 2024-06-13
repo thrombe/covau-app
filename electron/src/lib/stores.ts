@@ -7,6 +7,7 @@ import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
+import { prompt } from "./prompt/prompt";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
@@ -238,6 +239,15 @@ export class QueueManager implements Searcher {
                         }
                         return new_q;
                     })
+                },
+            },
+            {
+                tooltip: "save queue",
+                icon: "/static/floppy-disk.svg",
+                location: "OnlyMenu",
+                onclick: async () => {
+                    let name = await prompt("Enter queue name");
+                    console.log(name);
                 },
             },
         ];
