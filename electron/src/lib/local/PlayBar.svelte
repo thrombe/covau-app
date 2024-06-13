@@ -4,6 +4,7 @@
     import ProgressBar from "$lib/components/ProgressBar.svelte";
     import * as stores from "$lib/stores.ts";
     import { exhausted } from "$lib/virtual.ts";
+    import { CustomListItem } from "$lib/searcher/item";
 
     export let mobile = false;
     export let keyboard_control = true;
@@ -123,6 +124,8 @@
             $player.toggle_mute();
         }
     };
+
+    let default_item = new CustomListItem("default", "Nothing is playing");
 </script>
 
 <div
@@ -133,7 +136,7 @@
     "
 >
     <audio-info class="flex flex-row {mobile ? 'hidden' : ''}">
-        <AudioListItem item={$playing_item} ctx="Playbar" />
+        <AudioListItem item={$playing_item ?? default_item} ctx="Playbar" />
     </audio-info>
 
     <audio-controls>
