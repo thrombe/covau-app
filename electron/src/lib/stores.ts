@@ -30,14 +30,6 @@ export class QueueManager implements Searcher {
         return this.items;
     }
 
-    // async sync_state() {
-    //     switch (this.state) {
-    //         case "Playing": {
-    //         } break;
-    //         default:
-    //             throw exhausted(this.state);
-    //     }
-    // }
     detour() {
         this.state = "Detour";
     }
@@ -286,11 +278,11 @@ export type MetaBrowseQuery = (
 
 export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Home", content_type: "home-feed" },
-    { name: "Song", content_type: "music", type: "MusimanagerSong" },
-    { name: "Queues", content_type: "music", type: "MusimanagerQueue" },
-    { name: "Playlists", content_type: "music", type: "MusimanagerPlaylist" },
-    { name: "Artist", content_type: "music", type: "MusimanagerArtist" },
-    { name: "Album", content_type: "music", type: "MusimanagerAlbum" },
+    { name: "Mm Song", content_type: "music", type: "MusimanagerSong" },
+    { name: "Mm Queues", content_type: "music", type: "MusimanagerQueue" },
+    { name: "Mm Playlists", content_type: "music", type: "MusimanagerPlaylist" },
+    { name: "Mm Artist", content_type: "music", type: "MusimanagerArtist" },
+    { name: "Mm Album", content_type: "music", type: "MusimanagerAlbum" },
     { name: "Yt Song", content_type: "music", type: "Song" },
     { name: "Yt Video", content_type: "music", type: "Video" },
     { name: "Yt Album", content_type: "music", type: "Album" },
