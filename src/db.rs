@@ -92,6 +92,8 @@ pub enum SearchQuery {
 pub use db::*;
 #[cfg(feature = "bindeps")]
 pub mod db {
+    use std::collections::HashSet;
+
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::RelationTrait;
     use sea_orm::{entity::prelude::*, Schema};
@@ -721,7 +723,7 @@ pub mod db {
             };
             let obj = object::Entity::insert(am).exec(&self.db).await?;
 
-            let refids = t.refids().into_iter().map(String::from).collect::<Vec<_>>();
+            let refids = t.refids().into_iter().map(String::from).collect::<HashSet<_>>();
             for rid in refids {
                 let id = refid::ActiveModel {
                     refid: sea_orm::ActiveValue::Set(rid.to_string()),
@@ -741,14 +743,16 @@ pub mod db {
             };
             let obj = object::Entity::update(am).exec(&self.db).await?;
 
-            let _ = refid::Entity::delete(refid::ActiveModel {
-                object_id: sea_orm::ActiveValue::Set(t.id),
-                ..Default::default()
-            })
-            .exec(&self.db)
-            .await?;
+            let _ = refid::Entity::delete_many()
+                .filter(refid::Column::ObjectId.eq(t.id))
+                .exec(&self.db)
+                .await?;
 
-            let refids = t.t.refids().into_iter().map(String::from).collect::<Vec<_>>();
+            let refids =
+                t.t.refids()
+                    .into_iter()
+                    .map(String::from)
+                    .collect::<HashSet<_>>();
             for rid in refids {
                 let id = refid::ActiveModel {
                     refid: sea_orm::ActiveValue::Set(rid.to_string()),
@@ -757,6 +761,36 @@ pub mod db {
                 };
                 refid::Entity::insert(id).exec(&self.db).await?;
             }
+            Ok(())
+        }
+
+        pub async fn delete<T: DbAble>(&self, t: DbItem<T>) -> anyhow::Result<()> {
+            // let am = object::ActiveModel {
+            //     id: sea_orm::ActiveValue::Unchanged(t.id),
+            //     // typ: sea_orm::ActiveValue::Set(T::typ()),
+            //     ..Default::default()
+            // };
+            // let _ = object::Entity::delete(am).exec(&self.db).await?;
+
+            let _ = refid::Entity::delete_many()
+                .filter(refid::Column::Refid.eq(t.id))
+                .exec(&self.db)
+                .await?;
+
+            let _ = object::Entity::delete_many()
+                .filter(object::Column::Id.eq(t.id))
+                .exec(&self.db)
+                .await?;
+
+            // let _ = object::Entity::delete_by_id(t.id).exec(&self.db).await?;
+
+            // let _ = refid::Entity::delete(refid::ActiveModel {
+            //     object_id: sea_orm::ActiveValue::Set(t.id),
+            //     ..Default::default()
+            // })
+            // .exec(&self.db)
+            // .await?;
+
             Ok(())
         }
     }
