@@ -22,6 +22,16 @@ pub enum Typ {
     MusimanagerPlaylist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
     MusimanagerQueue,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
+    YtSong,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
+    YtVideo,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 12))]
+    YtAlbum,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 13))]
+    YtPlaylist,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 14))]
+    YtArtist,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -70,7 +80,6 @@ pub enum SearchQuery {
     Continuation(SearchContinuation),
 }
 
-
 #[cfg(feature = "bindeps")]
 pub use db::*;
 #[cfg(feature = "bindeps")]
@@ -111,6 +120,133 @@ pub mod db {
         }
         fn refids(&self) -> impl IntoIterator<Item = &str> {
             <Self as AutoDbAble>::refids(self)
+        }
+    }
+
+
+    mod yt {
+        use super::*;
+        use crate::yt::song_tube::*;
+
+        impl AutoDbAble for Song {
+            fn typ() -> db::Typ {
+                db::Typ::YtSong
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                self.title.as_deref().map(|a| {
+                    hs.push(a);
+                });
+
+                self.authors
+                    .iter()
+                    .map(|a| a.name.as_str())
+                    .for_each(|n| hs.push(n));
+
+                self.album
+                    .as_ref()
+                    .map(|a| a.name.as_str())
+                    .map(|n| hs.push(n));
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                [self.id.as_ref()]
+            }
+        }
+        impl AutoDbAble for Video {
+            fn typ() -> db::Typ {
+                db::Typ::YtVideo
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                self.title.as_deref().map(|a| {
+                    hs.push(a);
+                });
+
+                self.authors
+                    .iter()
+                    .map(|a| a.name.as_str())
+                    .for_each(|n| hs.push(n));
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                [self.id.as_ref()]
+            }
+        }
+        impl AutoDbAble for Album {
+            fn typ() -> db::Typ {
+                db::Typ::YtAlbum
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                self.title.as_deref().map(|a| {
+                    hs.push(a);
+                });
+
+                self.author
+                    .as_ref()
+                    .map(|a| a.name.as_str())
+                    .map(|n| hs.push(n));
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                [self.id.as_ref()]
+            }
+        }
+        impl AutoDbAble for Playlist {
+            fn typ() -> db::Typ {
+                db::Typ::YtPlaylist
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                self.title.as_deref().map(|a| {
+                    hs.push(a);
+                });
+
+                self.author
+                    .as_ref()
+                    .map(|a| a.name.as_str())
+                    .map(|n| hs.push(n));
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                [self.id.as_ref()]
+            }
+        }
+        impl AutoDbAble for Artist {
+            fn typ() -> db::Typ {
+                db::Typ::YtAlbum
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                self.name.as_deref().map(|a| {
+                    hs.push(a);
+                });
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                [self.id.as_ref()]
+            }
         }
     }
 
