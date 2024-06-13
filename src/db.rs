@@ -22,6 +22,14 @@ pub enum Typ {
     MusimanagerPlaylist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
     MusimanagerQueue,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 6))]
+    Song,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 7))]
+    Playlist,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 8))]
+    Queue,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 9))]
+    Updater,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
     YtSong,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
@@ -123,6 +131,93 @@ pub mod db {
         }
     }
 
+    mod covau_types {
+        use super::*;
+        use crate::covau_types::*;
+
+        impl AutoDbAble for Song {
+            fn typ() -> Typ {
+                Typ::Song
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                self.haystacks
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>()
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                let mut hs = vec![];
+
+                for id in self.info_sources.iter() {
+                    match id {
+                        InfoSource::YtId(id) => {
+                            hs.push(id.as_ref());
+                        }
+                        InfoSource::MbzId(id) => {
+                            hs.push(id.as_ref());
+                        }
+                    }
+                }
+                for id in self.play_sources.iter() {
+                    match id {
+                        PlaySource::File(id) => {
+                            hs.push(id.as_ref());
+                        }
+                        PlaySource::YtId(id) => {
+                            hs.push(id.as_ref());
+                        }
+                    }
+                }
+
+                hs
+            }
+        }
+        impl AutoDbAble for Playlist {
+            fn typ() -> Typ {
+                Typ::Playlist
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                [self.title.as_ref()]
+            }
+        }
+        impl AutoDbAble for Queue {
+            fn typ() -> Typ {
+                Typ::Queue
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                [self.0.queue.title.as_ref()]
+            }
+        }
+        impl AutoDbAble for Updater {
+            fn typ() -> Typ {
+                Typ::Updater
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+                [self.title.as_ref()]
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                let mut rids = vec![];
+                match &self.source {
+                    UpdateSource::Mbz { artist_id, .. } => {
+                        rids.push(artist_id.as_str());
+                    }
+                    UpdateSource::MusimanagerSearch { artist_keys, .. } => {
+                        rids.extend(artist_keys.iter().map(String::as_str));
+                    }
+                    UpdateSource::SongTubeSearch { artist_keys, .. } => {
+                        rids.extend(artist_keys.iter().map(String::as_str));
+                    }
+                }
+                rids
+            }
+        }
+    }
 
     mod yt {
         use super::*;
