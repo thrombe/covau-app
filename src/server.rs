@@ -666,6 +666,39 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         )
     };
 
+    let song_tube_search_routes = {
+        use crate::yt::song_tube::*;
+
+        warp::path("song_tube").and(
+            db_search_route::<Song>(db.clone(), "songs")
+                .or(db_search_by_refid_route::<Song>(
+                    db.clone(),
+                    "songs",
+                ))
+                // TODO: searching for video separately is annoying. get rid of it
+                .or(db_search_route::<Video>(db.clone(), "videos"))
+                .or(db_search_by_refid_route::<Video>(
+                    db.clone(),
+                    "videos",
+                ))
+                .or(db_search_route::<Album>(db.clone(), "albums"))
+                .or(db_search_by_refid_route::<Album>(
+                    db.clone(),
+                    "albums",
+                ))
+                .or(db_search_route::<Artist>(
+                    db.clone(),
+                    "artists",
+                ))
+                .or(db_search_by_refid_route::<Artist>(
+                    db.clone(),
+                    "artists",
+                ))
+                .or(db_search_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_search_by_refid_route::<Playlist>(db.clone(), "playlists")),
+        )
+    };
+
     let mbz_search_routes = {
         use crate::mbz::*;
 
@@ -693,6 +726,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
+        .or(song_tube_search_routes)
         .or(mbz_search_routes)
         .or(webui_js_route(client.clone()))
         .or(options_route);
