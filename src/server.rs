@@ -699,6 +699,30 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         )
     };
 
+    let covau_search_routes = {
+        use crate::covau_types::*;
+
+        warp::path("covau").and(
+            db_search_route::<Song>(db.clone(), "songs")
+                .or(db_search_by_refid_route::<Song>(
+                    db.clone(),
+                    "songs",
+                ))
+                .or(db_search_route::<Updater>(
+                    db.clone(),
+                    "Updaters",
+                ))
+                .or(db_search_by_refid_route::<Updater>(
+                    db.clone(),
+                    "updaters",
+                ))
+                .or(db_search_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_search_by_refid_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_search_route::<Queue>(db.clone(), "queues"))
+                .or(db_search_by_refid_route::<Queue>(db.clone(), "queues")),
+        )
+    };
+
     let mbz_search_routes = {
         use crate::mbz::*;
 
@@ -727,6 +751,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
         .or(song_tube_search_routes)
+        .or(covau_search_routes)
         .or(mbz_search_routes)
         .or(webui_js_route(client.clone()))
         .or(options_route);
