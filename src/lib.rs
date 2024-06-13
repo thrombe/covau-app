@@ -7,7 +7,6 @@ use log::Level;
 use tsify_next::JsValueSerdeExt;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen::{JsError, JsValue, prelude::wasm_bindgen};
-// use tsify_next::
 
 use crate::bad_error::BadError;
 

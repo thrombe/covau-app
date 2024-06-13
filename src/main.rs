@@ -18,10 +18,10 @@ use anyhow::Result;
 //  - chrome (and ff to a lesser degree) does not like frequent DOM changes
 //    - just change the virtual scrolling to add/remove items in big chunks
 
-mod musiplayer;
 pub mod db;
 pub mod mbz;
 pub mod musimanager;
+mod musiplayer;
 pub mod server;
 
 mod covau_types {
@@ -344,7 +344,10 @@ mod webui {
         pub async fn open_window(&self, url: String) -> anyhow::Result<()> {
             self.win.set_file_handler(unsafe_handle);
             unsafe {
-                let _ = webui::bindgen::webui_set_port(self.win.id, core::env!("WEBUI_PORT").parse().unwrap());
+                let _ = webui::bindgen::webui_set_port(
+                    self.win.id,
+                    core::env!("WEBUI_PORT").parse().unwrap(),
+                );
             }
             webui::set_timeout(3);
             self.win.bind("", |e| {
@@ -426,7 +429,11 @@ async fn webui_app() -> Result<()> {
 }
 
 async fn server_start() -> Result<()> {
-    server::start("127.0.0.1".parse()?, core::env!("SERVER_PORT").parse().unwrap()).await;
+    server::start(
+        "127.0.0.1".parse()?,
+        core::env!("SERVER_PORT").parse().unwrap(),
+    )
+    .await;
     Ok(())
 }
 
