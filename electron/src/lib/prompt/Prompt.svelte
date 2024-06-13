@@ -1,5 +1,4 @@
 <script context="module" lang="ts">
-    import { fly } from "svelte/transition";
     import { prompter } from "./prompt.ts";
 
     let prompt = prompter.active;
@@ -39,14 +38,17 @@
 </script>
 
 {#if show}
-    <div class="relatice fixed top-0 flex flex-col w-full h-full items-center">
+    <div class="fixed top-0 flex flex-col w-full h-full items-center">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div on:click={on_unfocus} class="absolute w-full h-full -z-10" />
         <div
-            in:fly={{ y: -20, duration: 200 }}
-            out:fly={{ x: 20, duration: 200 }}
-            class="flex flex-row mt-32 gap-4 h-20 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg"
+            on:click={on_unfocus}
+            class="absolute w-full h-full -z-10 bg-gray-900 bg-opacity-20 backdrop-blur-[2px] transition-opacity"
+            style="transition-duration: 800ms;"
+        />
+        <div
+            class="flex flex-row mt-32 gap-4 h-20 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
+            style="transition-duration: 800ms;"
         >
             <InputBar
                 classes={"text-2xl font-semibold placeholder-gray-200 placeholder-opacity-60"}
