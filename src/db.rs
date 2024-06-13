@@ -13,15 +13,15 @@ use serde::{Deserialize, Serialize};
 )]
 pub enum Typ {
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 1))]
-    MusimanagerSong,
+    MmSong,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 2))]
-    MusimanagerAlbum,
+    MmAlbum,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 3))]
-    MusimanagerArtist,
+    MmArtist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 4))]
-    MusimanagerPlaylist,
+    MmPlaylist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
-    MusimanagerQueue,
+    MmQueue,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 6))]
     Song,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 7))]
@@ -31,15 +31,15 @@ pub enum Typ {
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 9))]
     Updater,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
-    YtSong,
+    StSong,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
-    YtVideo,
+    StVideo,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 12))]
-    YtAlbum,
+    StAlbum,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 13))]
-    YtPlaylist,
+    StPlaylist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 14))]
-    YtArtist,
+    StArtist,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -225,7 +225,7 @@ pub mod db {
 
         impl AutoDbAble for Song {
             fn typ() -> db::Typ {
-                db::Typ::YtSong
+                db::Typ::StSong
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -254,7 +254,7 @@ pub mod db {
         }
         impl AutoDbAble for Video {
             fn typ() -> db::Typ {
-                db::Typ::YtVideo
+                db::Typ::StVideo
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -278,7 +278,7 @@ pub mod db {
         }
         impl AutoDbAble for Album {
             fn typ() -> db::Typ {
-                db::Typ::YtAlbum
+                db::Typ::StAlbum
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -302,7 +302,7 @@ pub mod db {
         }
         impl AutoDbAble for Playlist {
             fn typ() -> db::Typ {
-                db::Typ::YtPlaylist
+                db::Typ::StPlaylist
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -326,7 +326,7 @@ pub mod db {
         }
         impl AutoDbAble for Artist {
             fn typ() -> db::Typ {
-                db::Typ::YtAlbum
+                db::Typ::StAlbum
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -351,7 +351,7 @@ pub mod db {
 
         impl AutoDbAble for Song<Option<SongInfo>> {
             fn typ() -> Typ {
-                Typ::MusimanagerSong
+                Typ::MmSong
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -370,7 +370,7 @@ pub mod db {
         }
         impl AutoDbAble for Album<SongId> {
             fn typ() -> Typ {
-                Typ::MusimanagerAlbum
+                Typ::MmAlbum
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -383,7 +383,7 @@ pub mod db {
         }
         impl AutoDbAble for Artist<SongId, AlbumId> {
             fn typ() -> Typ {
-                Typ::MusimanagerArtist
+                Typ::MmArtist
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -396,7 +396,7 @@ pub mod db {
         }
         impl AutoDbAble for Playlist<SongId> {
             fn typ() -> Typ {
-                Typ::MusimanagerPlaylist
+                Typ::MmPlaylist
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -405,7 +405,7 @@ pub mod db {
         }
         impl AutoDbAble for Queue<SongId> {
             fn typ() -> Typ {
-                Typ::MusimanagerQueue
+                Typ::MmQueue
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {

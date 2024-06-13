@@ -27,11 +27,11 @@ pub mod song_tube {
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub enum Typ {
-        Song,
-        Video,
-        Album,
-        Playlist,
-        Artist,
+        YtSong,
+        YtVideo,
+        YtAlbum,
+        YtPlaylist,
+        YtArtist,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -118,7 +118,7 @@ pub mod song_tube {
     }
     impl TMusicListItem for Song {
         fn typ() -> Typ {
-            Typ::Song
+            Typ::YtSong
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Song(s) = item {
@@ -130,7 +130,7 @@ pub mod song_tube {
     }
     impl TMusicListItem for Video {
         fn typ() -> Typ {
-            Typ::Video
+            Typ::YtVideo
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Video(s) = item {
@@ -142,7 +142,7 @@ pub mod song_tube {
     }
     impl TMusicListItem for Album {
         fn typ() -> Typ {
-            Typ::Album
+            Typ::YtAlbum
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Album(s) = item {
@@ -154,7 +154,7 @@ pub mod song_tube {
     }
     impl TMusicListItem for Artist {
         fn typ() -> Typ {
-            Typ::Artist
+            Typ::YtArtist
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Artist(s) = item {
@@ -166,7 +166,7 @@ pub mod song_tube {
     }
     impl TMusicListItem for Playlist {
         fn typ() -> Typ {
-            Typ::Playlist
+            Typ::YtPlaylist
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Playlist(s) = item {

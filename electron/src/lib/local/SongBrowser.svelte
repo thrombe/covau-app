@@ -49,7 +49,7 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar>
-            {#if $browse_type.content_type === "music"}
+            {#if $browse_type.content_type === "list"}
                 <InputBar
                     placeholder={"Search"}
                     bind:value={search_query}

@@ -253,7 +253,7 @@ export type Tab = {
 };
 
 export type MenubarOption = { name: string } & (
-    | { content_type: "music"; type: Db.Typ | St.Typ | "covau-group" }
+    | { content_type: "list"; type: Db.Typ | St.Typ | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music"; id: string | null }
@@ -278,17 +278,26 @@ export type MetaBrowseQuery = (
 
 export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Home", content_type: "home-feed" },
-    { name: "Mm Song", content_type: "music", type: "MusimanagerSong" },
-    { name: "Mm Queues", content_type: "music", type: "MusimanagerQueue" },
-    { name: "Mm Playlists", content_type: "music", type: "MusimanagerPlaylist" },
-    { name: "Mm Artist", content_type: "music", type: "MusimanagerArtist" },
-    { name: "Mm Album", content_type: "music", type: "MusimanagerAlbum" },
-    { name: "Yt Song", content_type: "music", type: "Song" },
-    { name: "Yt Video", content_type: "music", type: "Video" },
-    { name: "Yt Album", content_type: "music", type: "Album" },
-    { name: "Yt Playlist", content_type: "music", type: "Playlist" },
-    { name: "Yt Artist", content_type: "music", type: "Artist" },
-    { name: "Covau Group", content_type: "music", type: "covau-group" },
+    { name: "Mm Song", content_type: "list", type: "MmSong" },
+    { name: "Mm Queues", content_type: "list", type: "MmQueue" },
+    { name: "Mm Playlists", content_type: "list", type: "MmPlaylist" },
+    { name: "Mm Artist", content_type: "list", type: "MmArtist" },
+    { name: "Mm Album", content_type: "list", type: "MmAlbum" },
+    { name: "Yt Song", content_type: "list", type: "YtSong" },
+    { name: "Yt Video", content_type: "list", type: "YtVideo" },
+    { name: "Yt Album", content_type: "list", type: "YtAlbum" },
+    { name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
+    { name: "Yt Artist", content_type: "list", type: "YtArtist" },
+    { name: "St Song", content_type: "list", type: "StSong" },
+    { name: "St Video", content_type: "list", type: "StVideo" },
+    { name: "St Album", content_type: "list", type: "StAlbum" },
+    { name: "St Playlist", content_type: "list", type: "StPlaylist" },
+    { name: "St Artist", content_type: "list", type: "StArtist" },
+    { name: "Song", content_type: "list", type: "Song" },
+    { name: "Playlist", content_type: "list", type: "Playlist" },
+    { name: "Queue", content_type: "list", type: "Queue" },
+    { name: "Updater", content_type: "list", type: "Updater" },
+    { name: "Covau Group", content_type: "list", type: "covau-group" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
@@ -330,24 +339,33 @@ selected_menubar_option.subscribe(async (option) => {
     }
     let s: Searcher;
     switch (option.content_type) {
-        case "music": {
+        case "list": {
             switch (option.type) {
-                case "MusimanagerSong":
-                case "MusimanagerAlbum":
-                case "MusimanagerArtist":
-                case "MusimanagerPlaylist":
-                case "MusimanagerQueue":
+                case "MmSong":
+                case "MmAlbum":
+                case "MmArtist":
+                case "MmPlaylist":
+                case "MmQueue":
+                case "Song":
+                case "Playlist":
+                case "Queue":
+                case "Updater":
+                case "StSong":
+                case "StVideo":
+                case "StAlbum":
+                case "StPlaylist":
+                case "StArtist":
                     s = Db.Db.new({
                         query_type: "search",
                         type: option.type,
                         query: get(query_input),
                     }, page_size);
                     break;
-                case "Song":
-                case "Video":
-                case "Album":
-                case "Playlist":
-                case "Artist":
+                case "YtSong":
+                case "YtVideo":
+                case "YtAlbum":
+                case "YtPlaylist":
+                case "YtArtist":
                     s = St.SongTube.new({
                         type: "Search",
                         content: {
