@@ -636,6 +636,8 @@ function AsyncProtWrapper<D extends {
     } as unknown as IAsyncProtWrapper<D>;
 }
 
+let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
+
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
     page_size: number;
@@ -664,6 +666,12 @@ export class Db extends Unpaged<MusicListItem> {
         return s;
     }
 
+    static saver() {
+        let s = new Db({ type: '' } as unknown as BrowseQuery, 1);
+        s.has_next_page = false;
+        return s;
+    }
+
     static factory() {
         class Fac {
             page_size: number = 30;
@@ -679,42 +687,86 @@ export class Db extends Unpaged<MusicListItem> {
         return new Fac();
     }
 
-    route() {
-        let type = this.query.type;
+    async insert<T>(typ: Typ, item: T): Promise<DB.DbItem<T>> {
+        let route = this.route(typ, "insert");
+
+        let res = await fetch(
+            server_base + route,
+            {
+                method: "POST",
+                body: JSON.stringify(item),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        let body = await res.text();
+        let dbitem: DB.DbItem<T> = JSON.parse(body);
+        return dbitem;
+    }
+
+    async update<T>(item: DB.DbItem<T>) {
+        let route = this.route(item.typ, "update");
+
+        let _res = await fetch(
+            server_base + route,
+            {
+                method: "POST",
+                body: JSON.stringify(item),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+    }
+
+    async delete<T>(item: DB.DbItem<T>) {
+        let route = this.route(item.typ, "delete");
+
+        let _res = await fetch(
+            server_base + route,
+            {
+                method: "POST",
+                body: JSON.stringify(item),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+    }
+
+    route(type: Typ | null = null, op: string = "search") {
+        if (!type) {
+            type = this.query.type;
+        }
         switch (type) {
             case "MmSong":
-                return "musimanager/search/songs";
+                return `musimanager/${op}/songs`;
             case "MmAlbum":
-                return "musimanager/search/albums";
+                return `musimanager/${op}/albums`;
             case "MmArtist":
-                return "musimanager/search/artists";
+                return `musimanager/${op}/artists`;
             case "MmPlaylist":
-                return "musimanager/search/playlists";
+                return `musimanager/${op}/playlists`;
             case "MmQueue":
-                return "musimanager/search/queues";
+                return `musimanager/${op}/queues`;
             case "Song":
-                return "covau/search/songs";
+                return `covau/${op}/songs`;
             case "Playlist":
-                return "covau/search/playlists";
+                return `covau/${op}/playlists`;
             case "Queue":
-                return "covau/search/queues";
+                return `covau/${op}/queues`;
             case "Updater":
-                return "covau/search/updaters";
+                return `covau/${op}/updaters`;
             case "StSong":
-                return "song_tube/search/songs";
+                return `song_tube/${op}/songs`;
             case "StVideo":
-                return "song_tube/search/videos";
+                return `song_tube/${op}/videos`;
             case "StAlbum":
-                return "song_tube/search/albums";
+                return `song_tube/${op}/albums`;
             case "StPlaylist":
-                return "song_tube/search/playlists";
+                return `song_tube/${op}/playlists`;
             case "StArtist":
-                return "song_tube/search/artists";
+                return `song_tube/${op}/artists`;
             default:
                 throw exhausted(type);
         }
     }
-    async fetch(type: Typ, query: string): Promise<MusicListItem[]> {
+    async fetch(query: string): Promise<MusicListItem[]> {
         let q: DB.SearchQuery = {
             type: "Query",
             content: {
@@ -723,7 +775,7 @@ export class Db extends Unpaged<MusicListItem> {
             },
         };
         let res = await fetch(
-            `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route(),
+            server_base + this.route(),
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -754,7 +806,7 @@ export class Db extends Unpaged<MusicListItem> {
                     content: this.cont,
                 };
                 let res = await fetch(
-                    `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route(),
+                    server_base + this.route(),
                     {
                         method: "POST",
                         body: JSON.stringify(q),
@@ -769,7 +821,7 @@ export class Db extends Unpaged<MusicListItem> {
                 }
                 items = matches.items;
             } else {
-                items = await this.fetch(this.query.type, this.query.query);
+                items = await this.fetch(this.query.query);
             }
 
             return keyed(items) as MusicListItem[];
@@ -787,7 +839,7 @@ export class Db extends Unpaged<MusicListItem> {
             }
 
             let res = await fetch(
-                `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route() + "/refid",
+                server_base + this.route() + "/refid",
                 {
                     method: "POST",
                     body: JSON.stringify(ids),
