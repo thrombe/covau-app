@@ -389,6 +389,10 @@ pub mod db {
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
                 [self.name.as_str()]
             }
+
+            fn refids(&self) -> impl IntoIterator<Item = &str> {
+                self.keys.iter().map(String::as_str).collect::<Vec<_>>()
+            }
         }
         impl AutoDbAble for Playlist<SongId> {
             fn typ() -> Typ {
