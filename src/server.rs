@@ -710,7 +710,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 ))
                 .or(db_search_route::<Updater>(
                     db.clone(),
-                    "Updaters",
+                    "updaters",
                 ))
                 .or(db_search_by_refid_route::<Updater>(
                     db.clone(),
