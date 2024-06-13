@@ -246,13 +246,13 @@ pub enum MessageResult<T> {
     Err(String),
 }
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-pub struct Message<T> {
+struct Message<T> {
     id: Option<u32>,
     #[serde(flatten)]
     data: MessageResult<T>,
 }
 
-struct FrontendClient<R>(Arc<InnerFrontendClient<R>>);
+pub struct FrontendClient<R>(Arc<InnerFrontendClient<R>>);
 impl<R> Clone for FrontendClient<R> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
@@ -266,7 +266,7 @@ impl<R> Deref for FrontendClient<R> {
     }
 }
 
-struct InnerFrontendClient<R> {
+pub struct InnerFrontendClient<R> {
     id_count: std::sync::atomic::AtomicU32,
     request_sender: mpsc::Sender<Message<R>>,
     request_receiver: Mutex<ReceiverStream<Message<R>>>,
@@ -274,7 +274,7 @@ struct InnerFrontendClient<R> {
 }
 
 impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let (tx, rx) = mpsc::channel(100);
         Self(Arc::new(InnerFrontendClient {
             id_count: Default::default(),
@@ -284,7 +284,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
         }))
     }
 
-    async fn send(&self, msg: MessageResult<R>) -> anyhow::Result<()> {
+    pub async fn send(&self, msg: MessageResult<R>) -> anyhow::Result<()> {
         self.request_sender
             .send(Message {
                 id: None,
@@ -294,7 +294,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
         Ok(())
     }
 
-    async fn execute<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
+    pub async fn execute<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
         let id = self
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
