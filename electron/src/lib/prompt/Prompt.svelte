@@ -46,9 +46,10 @@
         <div
             in:fly={{ y: -20, duration: 200 }}
             out:fly={{ x: 20, duration: 200 }}
-            class="flex flex-row mt-32 gap-4 h-20 w-[50%] min-w-[28rem] rounded-xl bg-gray-400 bg-opacity-20 backdrop-blur-md"
+            class="flex flex-row mt-32 gap-4 h-20 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg"
         >
             <InputBar
+                classes={"text-2xl font-semibold placeholder-gray-200 placeholder-opacity-60"}
                 bind:input_element
                 {placeholder}
                 bind:value

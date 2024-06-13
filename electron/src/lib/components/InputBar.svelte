@@ -7,6 +7,7 @@
     export let on_unfocus = async () => {};
     export let input_element: HTMLElement | null = null;
     export let focus_on_create = false;
+    export let classes = "";
 
     const _on_keydown = async (e: KeyboardEvent) => {
         console.log(e);
@@ -29,7 +30,7 @@
 </script>
 
 <input
-    class='w-full h-full text-center focus:border-none focus:outline-none bg-opacity-0 bg-gray-50 text-gray-200 text-lg'
+    class='w-full h-full text-center focus:border-none focus:outline-none bg-opacity-0 bg-gray-50 text-gray-200 text-lg {classes}'
     {placeholder}
     bind:value
     on:keydown={_on_keydown}
