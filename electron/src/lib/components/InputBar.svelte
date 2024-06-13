@@ -4,6 +4,7 @@
     export let placeholder: string;
     export let on_keydown = async (e: KeyboardEvent) => {};
     export let on_enter = async (e: KeyboardEvent) => {};
+    export let on_unfocus = async () => {};
     export let input_element: HTMLElement | null = null;
     export let focus_on_create = false;
 
@@ -16,6 +17,7 @@
         } else if (e.key == 'Escape') {
             e.preventDefault();
             input_element?.blur();
+            await on_unfocus();
         } else {
             await on_keydown(e);
         }
