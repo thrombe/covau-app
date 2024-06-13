@@ -5,9 +5,14 @@ use serde::{Deserialize, Serialize};
 use super::{mbz, yt};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct LocalState {
+    queue: Queue,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum PlaySource {
-    File(PathBuf),
+    File(String),
     YtId(String),
 }
 
@@ -19,10 +24,19 @@ pub enum InfoSource {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Song {
+pub struct Playlist {
     pub title: String,
-    pub mbz_id: Option<String>,
-    pub sources: Vec<PlaySource>,
+    pub songs: Vec<Song>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Queue(pub ListenQueue<Playlist>);
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Song {
+    pub haystacks: Vec<String>,
+    pub info_sources: Vec<InfoSource>,
+    pub play_sources: Vec<PlaySource>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -119,9 +133,17 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
         "import type { ReleaseGroupWithInfo, ReleaseWithInfo, Recording } from '$types/mbz.ts';\n";
     types += "import type { Album, Video } from '$types/yt.ts';\n";
     types += "\n";
+    types += &specta::ts::export::<LocalState>(config)?;
+    types += ";\n";
     types += &specta::ts::export::<PlaySource>(config)?;
     types += ";\n";
+    types += &specta::ts::export::<InfoSource>(config)?;
+    types += ";\n";
     types += &specta::ts::export::<Song>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Playlist>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Queue>(config)?;
     types += ";\n";
     types += &specta::ts::export::<UpdateItem<()>>(config)?;
     types += ";\n";
