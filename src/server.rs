@@ -13,6 +13,7 @@ use warp::ws::WebSocket;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
+use crate::yt::YtiRequest;
 use crate::db::{Db, DbAble};
 use crate::mbz::{self, IdSearch, PagedSearch};
 use crate::musiplayer::Player;
@@ -640,7 +641,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .expect("cannot connect to database");
     // db.init_tables().await.expect("could not init database");
 
-    let fe = FrontendClient::<()>::new();
+    let fe = FrontendClient::<YtiRequest>::new();
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -711,7 +712,20 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     j.abort();
 }
 
-async fn updater_system(fe: FrontendClient<()>, db: Arc<Db>) {}
+async fn _updater_system(fe: FrontendClient<YtiRequest>, db: Db) -> anyhow::Result<()> {
+    let manager = crate::covau_types::UpdateManager::new(crate::yt::SongTubeFac::new(fe), db);
+    manager.test().await?;
+    Ok(())
+}
+
+async fn updater_system(fe: FrontendClient<YtiRequest>, db: Db) {
+    match _updater_system(fe, db).await {
+        Ok(()) => (),
+        Err(e) => {
+            eprintln!("updater error: {}", e);
+        }
+    }
+}
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
