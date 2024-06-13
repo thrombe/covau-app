@@ -328,7 +328,7 @@ pub mod db {
         }
         impl AutoDbAble for Artist {
             fn typ() -> db::Typ {
-                db::Typ::StAlbum
+                db::Typ::StArtist
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
@@ -392,9 +392,9 @@ pub mod db {
                 [self.name.as_str()]
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                self.keys.iter().map(String::as_str).collect::<Vec<_>>()
-            }
+            // fn refids(&self) -> impl IntoIterator<Item = &str> {
+            //     self.keys.iter().map(String::as_str).collect::<Vec<_>>()
+            // }
         }
         impl AutoDbAble for Playlist<SongId> {
             fn typ() -> Typ {
