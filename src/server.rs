@@ -1,5 +1,6 @@
 use anyhow::Context;
 use futures::{FutureExt, SinkExt, StreamExt};
+use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::ops::Deref;
@@ -512,7 +513,17 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: T| async move {
-            let id = item.insert(&db.db).await.map_err(custom_reject)?;
+            let txn = db.db.begin().await.map_err(custom_reject)?;
+            let id = match item.insert(&txn).await {
+                Ok(id) => {
+                    txn.commit().await.map_err(custom_reject)?;
+                    id
+                }
+                Err(e) => {
+                    txn.rollback().await.map_err(custom_reject)?;
+                    return Err(custom_reject(e));
+                }
+            };
             let db_item = crate::db::DbItem {
                 id,
                 typ: T::typ(),
@@ -534,7 +545,17 @@ fn db_update_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let _ = item.update(&db.db).await.map_err(custom_reject)?;
+            let txn = db.db.begin().await.map_err(custom_reject)?;
+            let _ = match item.update(&txn).await {
+                Ok(()) => {
+                    txn.commit().await.map_err(custom_reject)?;
+                }
+                Err(e) => {
+                    txn.rollback().await.map_err(custom_reject)?;
+                    return Err(custom_reject(e));
+                }
+            };
+
             Ok::<_, warp::Rejection>(warp::reply())
         });
     let update = update.with(warp::cors().allow_any_origin());
@@ -551,7 +572,17 @@ fn db_delete_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let _ = item.delete(&db.db).await.map_err(custom_reject)?;
+            let txn = db.db.begin().await.map_err(custom_reject)?;
+            let _ = match item.delete(&txn).await {
+                Ok(()) => {
+                    txn.commit().await.map_err(custom_reject)?;
+                }
+                Err(e) => {
+                    txn.rollback().await.map_err(custom_reject)?;
+                    return Err(custom_reject(e));
+                }
+            };
+
             Ok::<_, warp::Rejection>(warp::reply())
         });
     let delete = delete.with(warp::cors().allow_any_origin());
