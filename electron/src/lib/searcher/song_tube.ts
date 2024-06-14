@@ -52,6 +52,7 @@ export class StListItem extends ListItem {
         switch (this.data.type) {
             case "Song":
             case "Video":
+                return this.data.content.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.content.id}/maxresdefault.jpg`;
             case "Album":
             case "Playlist":
             case "Artist":
