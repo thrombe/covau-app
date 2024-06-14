@@ -1,5 +1,4 @@
-import type { RObject } from "./searcher";
-
+import { type Keyed } from "$lib/virtual";
 
 type Constructor<T> = new (...args: any[]) => T;
 
@@ -46,18 +45,18 @@ export function SlowSearch<T, Q, S extends Constructor<{
 
 
 export interface ISaved<T> {
-    next_page(): Promise<RObject<T>[]>;
+    next_page(): Promise<(T & Keyed)[]>;
 
-    search_results: RObject<T>[];
+    search_results: (T & Keyed)[];
 }
 export function SavedSearch<T, S extends Constructor<{
-    next_page(): Promise<RObject<T>[]>;
+    next_page(): Promise<(T & Keyed)[]>;
 }>>(s: S) {
     return class extends s implements ISaved<T> {
-        search_results: Array<RObject<T>>;
+        search_results: Array<(T & Keyed)>;
 
         // this essentially acts as an async semaphore
-        last_op: Promise<RObject<T>[]>;
+        last_op: Promise<(T & Keyed)[]>;
 
         constructor(...args: any[]) {
             super(...args);
@@ -77,10 +76,10 @@ export function SavedSearch<T, S extends Constructor<{
 
 
 export interface IUnique<T> {
-    next_page(): Promise<RObject<T>[]>;
+    next_page(): Promise<(T & Keyed)[]>;
 }
 export function UniqueSearch<T, S extends Constructor<{
-    next_page(): Promise<RObject<T>[]>;
+    next_page(): Promise<(T & Keyed)[]>;
 }>>(s: S) {
     return class extends s implements IUnique<T> {
         uniq: Set<T>;
@@ -116,13 +115,13 @@ export abstract class Paged<T> {
     }
 
     // implementor must set has_next_page
-    protected abstract search(page: number): Promise<RObject<T>[]>;
-    abstract get_key(t: RObject<T>): unknown;
+    protected abstract search(page: number): Promise<(T & Keyed)[]>;
+    abstract get_key(t: (T & Keyed)): unknown;
 
     async next_page() {
         // TODO: if this function is called multiple times really quickly, this has_next_page check fails as previous calls are still awaiting for io
         if (!this.has_next_page) {
-            return new Array<RObject<T>>();
+            return new Array<(T & Keyed)>();
         }
         let r = await this.search(this.next_page_num);
         this.next_page_num += 1;
@@ -134,7 +133,7 @@ export abstract class Paged<T> {
 export abstract class Unpaged<T> {
     has_next_page: boolean = true;
 
-    abstract next_page(): Promise<RObject<T>[]>;
+    abstract next_page(): Promise<(T & Keyed)[]>;
 }
 
 
@@ -147,13 +146,13 @@ export abstract class Offset<T> {
     }
 
     // implementor must set has_next_page
-    protected abstract search(page: number): Promise<RObject<T>[]>;
-    abstract get_key(t: RObject<T>): unknown;
+    protected abstract search(page: number): Promise<(T & Keyed)[]>;
+    abstract get_key(t: (T & Keyed)): unknown;
 
     async next_page() {
         // TODO: if this function is called multiple times really quickly, this has_next_page check fails as previous calls are still awaiting for io
         if (!this.has_next_page) {
-            return new Array<RObject<T>>();
+            return new Array<(T & Keyed)>();
         }
         let r = await this.search(this.curr_offset);
         this.curr_offset += r.length;

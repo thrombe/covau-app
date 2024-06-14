@@ -2,15 +2,11 @@
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
-    import type { Unique } from "$lib/virtual.ts";
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
-    import * as Db from "$lib/searcher/db.ts";
     import * as stores from "$lib/stores.ts";
-    import type { ListItem } from "$lib/searcher/item.ts";
-    import InputBar from "$lib/components/InputBar.svelte";
     import Prompt from "$lib/prompt/Prompt.svelte";
 
     let item_height: number = 75;

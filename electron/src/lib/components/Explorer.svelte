@@ -4,9 +4,9 @@
     import { onDestroy, tick } from "svelte";
     import type { Unique } from "../virtual.ts";
     import { get, readable, type Readable } from "svelte/store";
-    import * as stores from "$lib/stores.ts";
+    import type { Searcher } from "$lib/searcher/searcher.ts";
 
-    export let searcher: Readable<stores.Searcher>;
+    export let searcher: Readable<Searcher>;
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
@@ -31,7 +31,7 @@
     let selected_item: Unique<ListItem, unknown>;
     let items = new Array<Unique<ListItem, number>>();
 
-    const end_reached = async (s: Readable<stores.Searcher> = searcher) => {
+    const end_reached = async (s: Readable<Searcher> = searcher) => {
         while (true) {
             if (!end_is_visible || !get(s).has_next_page) {
                 break;
@@ -42,13 +42,13 @@
             await tick();
         }
     };
-    const next_page = async (s: Readable<stores.Searcher>) => {
+    const next_page = async (s: Readable<Searcher>) => {
         let r = await get(s).next_page();
         items = r.map((e) => {
             return { id: e.key(), data: e } as Unique<ListItem, number>;
         });
     };
-    export const search_objects = async (s: Readable<stores.Searcher>) => {
+    export const search_objects = async (s: Readable<Searcher>) => {
         await next_page(s);
         await tick();
         selected_item_index = 0;

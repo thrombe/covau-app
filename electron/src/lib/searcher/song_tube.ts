@@ -1,7 +1,6 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
-import { SavedSearch, SlowSearch, UniqueSearch, Unpaged } from "./mixins";
-import type { Keyed, RObject, RSearcher } from "./searcher";
-import { exhausted } from "$lib/virtual";
+import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
@@ -21,6 +20,7 @@ export type Typ = yt.Typ;
 export type BrowseQuery = yt.BrowseQuery;
 
 export type MusicListItem = yt.MusicListItem;
+export type RObject = MusicListItem & Keyed;
 
 export class StListItem extends ListItem {
     data: MusicListItem & Keyed;
@@ -384,31 +384,6 @@ export class SongTube extends Unpaged<MusicListItem> {
         return new SS(query, tube);
     }
 
-    static fused() {
-        let s = SongTube.new(
-            { type: '' } as unknown as BrowseQuery,
-            null as unknown as Innertube,
-        );
-        s.has_next_page = false;
-        return s;
-    }
-
-    static factory(tube: Innertube) {
-        type R = RSearcher<MusicListItem>;
-        class Fac {
-            tube: Innertube;
-            constructor(tube: Innertube) {
-                this.tube = tube;
-            }
-            async search_query(query: BrowseQuery) {
-                let t = SongTube.new(query, this.tube);
-                return t as R | null;
-            }
-        }
-        const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
-        return new SS(tube);
-    }
-
     results: Search | null = null;
     cont: SearchContinuation | null = null;
     pages: Array<MusicShelfContinuation> = new Array();
@@ -486,7 +461,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let resolved_batch = await Promise.all(promises);
 
-        return keyed(resolved_batch) as RObject<MusicListItem>[];
+        return keyed(resolved_batch) as RObject[];
     }
     protected async next_page_up_next(video_id: string) {
         this.has_next_page = false;
@@ -509,7 +484,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 })) ?? [],
             }
         }));
-        return keyed(mli) as RObject<MusicListItem>[];
+        return keyed(mli) as RObject[];
     }
     protected async next_page_home_feed() {
         this.has_next_page = false;
@@ -534,7 +509,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 })) ?? [],
             }
         }));
-        return keyed(mli) as RObject<MusicListItem>[];
+        return keyed(mli) as RObject[];
     }
     playlist: YTMusic.Playlist | null = null;
     protected async next_page_playlist(playlist_id: string) {
@@ -569,7 +544,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 })) ?? [],
             }
         }));
-        return keyed(mli) as RObject<MusicListItem>[];
+        return keyed(mli) as RObject[];
     }
     protected async next_page_album(album_id: string) {
         this.has_next_page = false;
@@ -590,7 +565,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 })) ?? [],
             }
         }));
-        return keyed(mli) as RObject<MusicListItem>[];
+        return keyed(mli) as RObject[];
     }
     artist_songs_playlist_id: string | null = null;
     protected async next_page_artist_songs(artist_id: string) {
@@ -760,7 +735,7 @@ export class SongTube extends Unpaged<MusicListItem> {
         let k = keyed(mli);
 
         this.has_next_page = this.results.has_continuation;
-        return k as RObject<MusicListItem>[];
+        return k as RObject[];
     }
 
     static get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['content']['thumbnails'] {

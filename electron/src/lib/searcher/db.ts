@@ -1,11 +1,9 @@
 import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
-import { type WrappedDb, type Keyed, type RSearcher } from "./searcher.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
-import * as server from "$types/server.ts";
 import * as DB from "$types/db.ts";
-import { exhausted } from "$lib/virtual.ts";
+import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
@@ -876,21 +874,6 @@ export class Db extends Unpaged<MusicListItem> {
         let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
         s.inner.has_next_page = false;
         return s;
-    }
-
-    static factory() {
-        class Fac {
-            page_size: number = 30;
-            constructor() {
-            }
-            async search_query<T>(query: BrowseQuery) {
-                type R = RSearcher<WrappedDb<T>>;
-                let t = Db.new(query, this.page_size);
-                return t as R | null;
-            }
-        }
-        // const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
-        return new Fac();
     }
 
     async fetch(query: string): Promise<MusicListItem[]> {

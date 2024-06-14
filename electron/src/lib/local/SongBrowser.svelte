@@ -1,15 +1,7 @@
-<script lang="ts" context="module">
-    import { writable, type Writable } from "svelte/store";
-
-    let song_fac = writable(Db.Db.factory());
-</script>
-
 <script lang="ts">
-    import { type Unique } from "../virtual.ts";
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
-    import * as Db from "$lib/searcher/db.ts";
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
 

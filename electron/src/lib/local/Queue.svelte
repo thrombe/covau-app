@@ -9,7 +9,8 @@
     import type { Unique } from "../virtual";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import { toast } from "$lib/toast/toast.ts";
-    import { QueueManager, queue } from "$lib/stores.ts";
+    import { queue } from "$lib/stores.ts";
+    import { type QueueManager } from "./queue.ts";
     import { get, readable, type Readable } from "svelte/store";
 
     export let item_height: number;

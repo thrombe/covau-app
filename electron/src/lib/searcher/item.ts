@@ -1,5 +1,4 @@
-import * as db from "$types/db.ts";
-import type { AlmostDbItem } from "$lib/searcher/db.ts";
+import type { AlmostDbItem } from "$lib/local/db.ts";
 
 export abstract class ListItem {
     abstract key(): unknown;
