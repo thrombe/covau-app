@@ -755,6 +755,84 @@ pub mod db {
             })
         }
 
+        pub async fn search_untyped_by_id(
+            &self,
+            id: DbId,
+        ) -> anyhow::Result<Option<DbItem<String>>> {
+            let e = object::Entity::find()
+                .filter(object::Column::Id.eq(id))
+                .one(&self.db)
+                .await?
+                .map(|e| DbItem {
+                    t: e.data,
+                    id: e.id,
+                    typ: e.typ,
+                });
+            Ok(e)
+        }
+
+        pub async fn search_many_untyped_by_id(
+            &self,
+            ids: Vec<DbId>,
+        ) -> anyhow::Result<Vec<DbItem<String>>> {
+            let mut condition = Condition::any();
+            for id in ids {
+                condition = condition.add(object::Column::Id.eq(id));
+            }
+            let e = object::Entity::find()
+                .filter(condition)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|e| DbItem {
+                    t: e.data,
+                    id: e.id,
+                    typ: e.typ,
+                })
+                .collect();
+            Ok(e)
+        }
+
+        pub async fn search_by_id<T: DbAble>(
+            &self,
+            id: DbId,
+        ) -> anyhow::Result<Option<DbItem<T>>> {
+            let e = object::Entity::find()
+                .filter(object::Column::Typ.eq(T::typ()))
+                .filter(object::Column::Id.eq(id))
+                .one(&self.db)
+                .await?
+                .map(|e| DbItem {
+                    t: e.parsed_assume(),
+                    id: e.id,
+                    typ: T::typ(),
+                });
+            Ok(e)
+        }
+
+        pub async fn search_many_by_id<T: DbAble>(
+            &self,
+            ids: Vec<DbId>,
+        ) -> anyhow::Result<Vec<DbItem<T>>> {
+            let mut condition = Condition::any();
+            for id in ids {
+                condition = condition.add(object::Column::Id.eq(id));
+            }
+            let e = object::Entity::find()
+                .filter(object::Column::Typ.eq(T::typ()))
+                .filter(condition)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|e| DbItem {
+                    t: e.parsed_assume(),
+                    id: e.id,
+                    typ: T::typ(),
+                })
+                .collect();
+            Ok(e)
+        }
+
         pub async fn search_by_ref_id<T: DbAble>(
             &self,
             ref_id: String,

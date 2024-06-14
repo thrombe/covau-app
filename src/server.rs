@@ -630,6 +630,45 @@ fn db_search_by_refid_route<T: DbAble + Send>(
     search.boxed()
 }
 
+fn db_search_by_id_route<T: DbAble + Send>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("dbid"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Db, query: Vec<crate::db::DbId>| async move {
+            let res = db
+                .search_many_by_id::<T>(query)
+                .await
+                .map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
+fn db_search_untyped_by_id_route(db: Db, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("dbid"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Db, query: Vec<crate::db::DbId>| async move {
+            let res = db
+                .search_many_untyped_by_id(query)
+                .await
+                .map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 fn paged_search<T: PagedSearch + Serialize + Send>(
     path: &'static str,
 ) -> BoxedFilter<(impl Reply,)> {
@@ -745,6 +784,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "songs",
                 ))
+                .or(db_search_by_id_route::<Song<Option<SongInfo>>>(
+                    db.clone(),
+                    "songs",
+                ))
                 .or(db_insert_route::<Song<Option<SongInfo>>>(
                     db.clone(),
                     "songs",
@@ -762,10 +805,15 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "albums",
                 ))
+                .or(db_search_by_id_route::<Album<SongId>>(db.clone(), "albums"))
                 .or(db_insert_route::<Album<SongId>>(db.clone(), "albums"))
                 .or(db_update_route::<Album<SongId>>(db.clone(), "albums"))
                 .or(db_delete_route::<Album<SongId>>(db.clone(), "albums"))
                 .or(db_search_route::<Artist<SongId, AlbumId>>(
+                    db.clone(),
+                    "artists",
+                ))
+                .or(db_search_by_id_route::<Artist<SongId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
@@ -782,10 +830,15 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     "artists",
                 ))
                 .or(db_search_route::<Playlist<SongId>>(db.clone(), "playlists"))
+                .or(db_search_by_id_route::<Playlist<SongId>>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_insert_route::<Playlist<SongId>>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist<SongId>>(db.clone(), "playlists"))
                 .or(db_delete_route::<Playlist<SongId>>(db.clone(), "playlists"))
                 .or(db_search_route::<Queue<SongId>>(db.clone(), "queues"))
+                .or(db_search_by_id_route::<Queue<SongId>>(db.clone(), "queues"))
                 .or(db_insert_route::<Queue<SongId>>(db.clone(), "queues"))
                 .or(db_update_route::<Queue<SongId>>(db.clone(), "queues"))
                 .or(db_delete_route::<Queue<SongId>>(db.clone(), "queues")),
@@ -798,22 +851,26 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         warp::path("song_tube").and(
             db_search_route::<Song>(db.clone(), "songs")
                 .or(db_search_by_refid_route::<Song>(db.clone(), "songs"))
+                .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
                 .or(db_update_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 // TODO: searching for video separately is annoying. get rid of it
                 .or(db_search_route::<Video>(db.clone(), "videos"))
                 .or(db_search_by_refid_route::<Video>(db.clone(), "videos"))
+                .or(db_search_by_id_route::<Video>(db.clone(), "videos"))
                 .or(db_insert_route::<Video>(db.clone(), "videos"))
                 .or(db_update_route::<Video>(db.clone(), "videos"))
                 .or(db_delete_route::<Video>(db.clone(), "videos"))
                 .or(db_search_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_refid_route::<Album>(db.clone(), "albums"))
+                .or(db_search_by_id_route::<Album>(db.clone(), "albums"))
                 .or(db_insert_route::<Album>(db.clone(), "albums"))
                 .or(db_update_route::<Album>(db.clone(), "albums"))
                 .or(db_delete_route::<Album>(db.clone(), "albums"))
                 .or(db_search_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_by_refid_route::<Artist>(db.clone(), "artists"))
+                .or(db_search_by_id_route::<Artist>(db.clone(), "artists"))
                 .or(db_insert_route::<Artist>(db.clone(), "artists"))
                 .or(db_update_route::<Artist>(db.clone(), "artists"))
                 .or(db_delete_route::<Artist>(db.clone(), "artists"))
@@ -825,6 +882,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "playlists",
                 ))
+                .or(db_search_by_id_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_insert_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists")),
@@ -837,11 +895,13 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         warp::path("covau").and(
             db_search_route::<Song>(db.clone(), "songs")
                 .or(db_search_by_refid_route::<Song>(db.clone(), "songs"))
+                .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
                 .or(db_update_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 .or(db_search_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_by_refid_route::<Updater>(db.clone(), "updaters"))
+                .or(db_search_by_id_route::<Updater>(db.clone(), "updaters"))
                 .or(db_insert_route::<Updater>(db.clone(), "updaters"))
                 .or(db_update_route::<Updater>(db.clone(), "updaters"))
                 .or(db_delete_route::<Updater>(db.clone(), "updaters"))
@@ -850,11 +910,13 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "playlists",
                 ))
+                .or(db_search_by_id_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_insert_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_search_route::<Queue>(db.clone(), "queues"))
                 .or(db_search_by_refid_route::<Queue>(db.clone(), "queues"))
+                .or(db_search_by_id_route::<Queue>(db.clone(), "queues"))
                 .or(db_insert_route::<Queue>(db.clone(), "queues"))
                 .or(db_update_route::<Queue>(db.clone(), "queues"))
                 .or(db_delete_route::<Queue>(db.clone(), "queues")),
@@ -884,12 +946,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
             .allow_methods(["POST", "GET"]),
     );
 
+    // TODO: expose db transactions somehow T_T
     let all = client_ws_route(fe.clone(), "serve")
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes)
         .or(song_tube_search_routes)
         .or(covau_search_routes)
+        .or(db_search_untyped_by_id_route(db.clone(), "object"))
         .or(mbz_search_routes)
         .or(webui_js_route(client.clone()))
         .or(options_route);
