@@ -95,19 +95,91 @@ pub mod db {
     use std::collections::HashSet;
 
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
-    use sea_orm::RelationTrait;
     use sea_orm::{entity::prelude::*, Schema};
     use sea_orm::{Condition, DeriveEntityModel, QuerySelect};
+    use sea_orm::{RelationTrait, TransactionTrait};
     use tokio_stream::StreamExt;
 
     use super::*;
 
+    #[async_trait::async_trait]
     pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
         fn to_json(&self) -> String;
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
         fn refids(&self) -> impl IntoIterator<Item = &str>;
+
+        async fn insert<C>(&self, conn: &C) -> anyhow::Result<i32>
+        where
+            C: ConnectionTrait,
+        {
+            let am = object::ActiveModel {
+                id: sea_orm::ActiveValue::NotSet,
+                data: sea_orm::ActiveValue::Set(self.to_json()),
+                typ: sea_orm::ActiveValue::Set(Self::typ()),
+            };
+            let obj = object::Entity::insert(am).exec(conn).await?;
+
+            let refids = self
+                .refids()
+                .into_iter()
+                .map(String::from)
+                .collect::<HashSet<_>>();
+            for rid in refids {
+                let id = refid::ActiveModel {
+                    refid: sea_orm::ActiveValue::Set(rid.to_string()),
+                    typ: sea_orm::ActiveValue::Set(Self::typ()),
+                    object_id: sea_orm::ActiveValue::Set(obj.last_insert_id),
+                };
+                refid::Entity::insert(id).exec(conn).await?;
+            }
+            Ok(obj.last_insert_id)
+        }
     }
+
+    impl<T: DbAble> DbItem<T> {
+        pub async fn update<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {
+            let am = object::ActiveModel {
+                id: sea_orm::ActiveValue::Unchanged(self.id),
+                data: sea_orm::ActiveValue::Set(self.t.to_json()),
+                typ: sea_orm::ActiveValue::Unchanged(T::typ()),
+            };
+            let obj = object::Entity::update(am).exec(conn).await?;
+
+            let _ = refid::Entity::delete_many()
+                .filter(refid::Column::ObjectId.eq(self.id))
+                .exec(conn)
+                .await?;
+
+            let refids = self
+                .t
+                .refids()
+                .into_iter()
+                .map(String::from)
+                .collect::<HashSet<_>>();
+
+            for rid in refids {
+                let id = refid::ActiveModel {
+                    refid: sea_orm::ActiveValue::Set(rid.to_string()),
+                    typ: sea_orm::ActiveValue::Set(T::typ()),
+                    object_id: sea_orm::ActiveValue::Set(self.id),
+                };
+                refid::Entity::insert(id).exec(conn).await?;
+            }
+            Ok(())
+        }
+
+        pub async fn delete<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {
+            let _ = refid::Entity::delete_many()
+                .filter(refid::Column::ObjectId.eq(self.id))
+                .exec(conn)
+                .await?;
+
+            let _ = object::Entity::delete_by_id(self.id).exec(conn).await?;
+            Ok(())
+        }
+    }
+
     pub trait AutoDbAble {
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = &str>;
@@ -539,23 +611,31 @@ pub mod db {
                 let path = "/home/issac/0Git/musimanager/db/musitracker.json";
 
                 let data = std::fs::read_to_string(path)?;
+                let txn = self.db.begin().await?;
 
                 let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
                 for s in tracker.songs.into_iter() {
-                    self.insert(s).await?;
+                    s.insert(&txn).await?;
                 }
-                for a in tracker.artists.into_iter() {
-                    self.insert(a).await?;
+                println!("songs added");
+                for a in tracker.artists.iter() {
+                    a.insert(&txn).await?;
                 }
-                for a in tracker.albums.into_iter() {
-                    self.insert(a).await?;
+                println!("artists added");
+                for a in tracker.albums.iter() {
+                    a.insert(&txn).await?;
                 }
-                for p in tracker.playlists.into_iter() {
-                    self.insert(p).await?;
+                println!("albums added");
+                for p in tracker.playlists.iter() {
+                    p.insert(&txn).await?;
                 }
-                for q in tracker.queues.into_iter() {
-                    self.insert(q).await?;
+                println!("playlists added");
+                for q in tracker.queues.iter() {
+                    q.insert(&txn).await?;
                 }
+                println!("queues added");
+
+                txn.commit().await?;
             }
 
             Ok(())
@@ -713,68 +793,6 @@ pub mod db {
                 })
                 .collect();
             Ok(e)
-        }
-
-        pub async fn insert<T: DbAble>(&self, t: T) -> anyhow::Result<i32> {
-            let am = object::ActiveModel {
-                id: sea_orm::ActiveValue::NotSet,
-                data: sea_orm::ActiveValue::Set(t.to_json()),
-                typ: sea_orm::ActiveValue::Set(T::typ()),
-            };
-            let obj = object::Entity::insert(am).exec(&self.db).await?;
-
-            let refids = t.refids().into_iter().map(String::from).collect::<HashSet<_>>();
-            for rid in refids {
-                let id = refid::ActiveModel {
-                    refid: sea_orm::ActiveValue::Set(rid.to_string()),
-                    typ: sea_orm::ActiveValue::Set(T::typ()),
-                    object_id: sea_orm::ActiveValue::Set(obj.last_insert_id),
-                };
-                refid::Entity::insert(id).exec(&self.db).await?;
-            }
-            Ok(obj.last_insert_id)
-        }
-
-        pub async fn update<T: DbAble>(&self, t: DbItem<T>) -> anyhow::Result<()> {
-            let am = object::ActiveModel {
-                id: sea_orm::ActiveValue::Unchanged(t.id),
-                data: sea_orm::ActiveValue::Set(t.t.to_json()),
-                typ: sea_orm::ActiveValue::Unchanged(T::typ()),
-            };
-            let obj = object::Entity::update(am).exec(&self.db).await?;
-
-            let _ = refid::Entity::delete_many()
-                .filter(refid::Column::ObjectId.eq(t.id))
-                .exec(&self.db)
-                .await?;
-
-            let refids =
-                t.t.refids()
-                    .into_iter()
-                    .map(String::from)
-                    .collect::<HashSet<_>>();
-
-            for rid in refids {
-                let id = refid::ActiveModel {
-                    refid: sea_orm::ActiveValue::Set(rid.to_string()),
-                    typ: sea_orm::ActiveValue::Set(T::typ()),
-                    object_id: sea_orm::ActiveValue::Set(t.id),
-                };
-                refid::Entity::insert(id).exec(&self.db).await?;
-            }
-            Ok(())
-        }
-
-        pub async fn delete<T: DbAble>(&self, t: DbItem<T>) -> anyhow::Result<()> {
-            let _ = refid::Entity::delete_many()
-                .filter(refid::Column::ObjectId.eq(t.id))
-                .exec(&self.db)
-                .await?;
-
-            let _ = object::Entity::delete_by_id(t.id)
-                .exec(&self.db)
-                .await?;
-            Ok(())
         }
     }
 

@@ -502,14 +502,17 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
     redirect.boxed()
 }
 
-fn db_insert_route<T: DbAble + Send + 'static>(db: Db, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+fn db_insert_route<T: DbAble + Send + Sync + 'static>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
     let insert = warp::path("insert")
         .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: T| async move {
-            let id = db.insert::<T>(item.clone()).await.map_err(custom_reject)?;
+            let id = item.insert(&db.db).await.map_err(custom_reject)?;
             let db_item = crate::db::DbItem {
                 id,
                 typ: T::typ(),
@@ -521,28 +524,34 @@ fn db_insert_route<T: DbAble + Send + 'static>(db: Db, path: &'static str) -> Bo
     insert.boxed()
 }
 
-fn db_update_route<T: DbAble + Send + 'static>(db: Db, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+fn db_update_route<T: DbAble + Send + Sync + 'static>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
     let update = warp::path("update")
         .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let _ = db.update::<T>(item).await.map_err(custom_reject)?;
+            let _ = item.update(&db.db).await.map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply())
         });
     let update = update.with(warp::cors().allow_any_origin());
     update.boxed()
 }
 
-fn db_delete_route<T: DbAble + Send + 'static>(db: Db, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+fn db_delete_route<T: DbAble + Send + Sync + 'static>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
     let delete = warp::path("delete")
         .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let _ = db.delete::<T>(item).await.map_err(custom_reject)?;
+            let _ = item.delete(&db.db).await.map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply())
         });
     let delete = delete.with(warp::cors().allow_any_origin());
