@@ -768,10 +768,14 @@ fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let client = Arc::new(Mutex::new(reqwest::Client::new()));
-    let db = Db::new("sqlite:./test.db?mode=rwc")
+    let db_path = "./test.db";
+    let db_exists = std::path::PathBuf::from(db_path).exists();
+    let db = Db::new(format!("sqlite:{}?mode=rwc", db_path))
         .await
         .expect("cannot connect to database");
-    // db.init_tables().await.expect("could not init database");
+    if !db_exists {
+        db.init_tables().await.expect("could not init database");
+    }
 
     let fe = FrontendClient::<YtiRequest>::new();
 
