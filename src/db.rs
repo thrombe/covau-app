@@ -102,6 +102,8 @@ pub mod db {
 
     use super::*;
 
+    pub type DbId = i32;
+
     #[async_trait::async_trait]
     pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
         fn to_json(&self) -> String;
@@ -756,16 +758,20 @@ pub mod db {
         pub async fn search_by_ref_id<T: DbAble>(
             &self,
             ref_id: String,
-        ) -> anyhow::Result<Option<T>> {
+        ) -> anyhow::Result<Option<DbItem<T>>> {
             let e = refid::Entity::find()
-                .filter(refid::Column::Typ.eq(T::typ().to_value().to_string()))
+                .filter(refid::Column::Typ.eq(T::typ()))
                 .filter(refid::Column::Refid.eq(ref_id))
                 .find_also_related(object::Entity)
                 .one(&self.db)
                 .await?
                 .map(|(_refid, obj)| obj)
                 .flatten()
-                .map(|e| e.parsed_assume());
+                .map(|e| DbItem {
+                    t: e.parsed_assume(),
+                    id: e.id,
+                    typ: T::typ(),
+                });
             Ok(e)
         }
 
@@ -778,7 +784,7 @@ pub mod db {
                 condition = condition.add(refid::Column::Refid.eq(id));
             }
             let e = refid::Entity::find()
-                .filter(refid::Column::Typ.eq(T::typ().to_value().to_string()))
+                .filter(refid::Column::Typ.eq(T::typ()))
                 .filter(condition)
                 .find_also_related(object::Entity)
                 .all(&self.db)

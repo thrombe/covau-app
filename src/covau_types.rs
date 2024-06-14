@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use super::{mbz, yt};
+use super::db::DbId;
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
@@ -26,7 +27,7 @@ pub enum InfoSource {
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Playlist {
     pub title: String,
-    pub songs: Vec<Song>,
+    pub songs: Vec<DbId>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -49,7 +50,7 @@ pub struct UpdateItem<T> {
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct ListenQueue<T> {
     pub queue: T,
-    pub current_index: u32,
+    pub current_index: Option<u32>,
 }
 
 // this only contains minimal info. just to uniquely identify things
