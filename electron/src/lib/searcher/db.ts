@@ -3,6 +3,7 @@ import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./sear
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
+import * as server from "$types/server.ts";
 import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
@@ -44,7 +45,7 @@ export type MusicListItem = Keyed & (
 export type Typ = DB.Typ;
 export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
-    { query_type: 'refids', type: Typ , ids: string[] };
+    { query_type: 'refids', type: Typ, ids: string[] };
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
@@ -638,6 +639,50 @@ function AsyncProtWrapper<D extends {
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 
+async function api_request<P, T>(url: string, json_payload: P) {
+    let res = await fetch(
+        url,
+        {
+            method: "POST",
+            body: JSON.stringify(json_payload),
+            headers: { "Content-Type": "application/json" },
+        }
+    );
+    console.log(res);
+
+    let body = await res.text();
+
+    if (!res.ok) {
+        let err: server.ErrorMessage = JSON.parse(body);
+        console.error(err.stack_trace);
+        throw new Error(err.message);
+    }
+
+    let resp: T = JSON.parse(body);
+    console.log(resp);
+    return resp;
+}
+
+async function api_request_no_resp<P, T>(url: string, json_payload: P) {
+    let res = await fetch(
+        url,
+        {
+            method: "POST",
+            body: JSON.stringify(json_payload),
+            headers: { "Content-Type": "application/json" },
+        }
+    );
+    console.log(res);
+
+    let body = await res.text();
+
+    if (!res.ok) {
+        let err: server.ErrorMessage = JSON.parse(body);
+        console.error(err.stack_trace);
+        throw new Error(err.message);
+    }
+}
+
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
     page_size: number;
@@ -690,43 +735,20 @@ export class Db extends Unpaged<MusicListItem> {
     async insert<T>(typ: Typ, item: T): Promise<DB.DbItem<T>> {
         let route = this.route(typ, "insert");
 
-        let res = await fetch(
-            server_base + route,
-            {
-                method: "POST",
-                body: JSON.stringify(item),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body = await res.text();
-        let dbitem: DB.DbItem<T> = JSON.parse(body);
+        let dbitem: DB.DbItem<T> = await api_request(server_base + route, item);
         return dbitem;
     }
 
     async update<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "update");
 
-        let _res = await fetch(
-            server_base + route,
-            {
-                method: "POST",
-                body: JSON.stringify(item),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
+        await api_request_no_resp(server_base + route, item);
     }
 
     async delete<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "delete");
 
-        let _res = await fetch(
-            server_base + route,
-            {
-                method: "POST",
-                body: JSON.stringify(item),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
+        await api_request_no_resp(server_base + route, item);
     }
 
     route(type: Typ | null = null, op: string = "search") {
@@ -774,16 +796,7 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let res = await fetch(
-            server_base + this.route(),
-            {
-                method: "POST",
-                body: JSON.stringify(q),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body = await res.text();
-        let matches: DB.SearchMatches<unknown> = JSON.parse(body);
+        let matches: DB.SearchMatches<unknown> = await api_request(server_base + this.route(), q);
         this.cont = matches.continuation;
         if (!this.cont) {
             this.has_next_page = false;
@@ -805,16 +818,7 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let res = await fetch(
-                    server_base + this.route(),
-                    {
-                        method: "POST",
-                        body: JSON.stringify(q),
-                        headers: { "Content-Type": "application/json" },
-                    }
-                );
-                let body = await res.text();
-                let matches: DB.SearchMatches<unknown> = JSON.parse(body);
+                let matches: DB.SearchMatches<unknown> = await api_request(server_base + this.route(), q);
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;
@@ -838,16 +842,7 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let res = await fetch(
-                server_base + this.route() + "/refid",
-                {
-                    method: "POST",
-                    body: JSON.stringify(ids),
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-            let body = await res.text();
-            let matches: DB.DbItem<unknown>[] = JSON.parse(body);
+            let matches: DB.DbItem<unknown>[] = await api_request(server_base + this.route() + "/refid", ids);
             return keyed(matches) as MusicListItem[];
         } else {
             throw exhausted(this.query);
