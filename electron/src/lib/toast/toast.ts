@@ -33,7 +33,7 @@ export class Toaster {
 }
 
 export let toaster = new Toaster();
-export let toast = async (message: string, level: 'info' | 'error' = 'info') => {
+export let toast = async (message: string, level: 'info' | 'error' = 'info', timeout = 1000) => {
     let color: string;
     if (level == 'error') {
         color = 'bg-red-400';
@@ -45,6 +45,6 @@ export let toast = async (message: string, level: 'info' | 'error' = 'info') => 
     await toaster.toast({
         message,
         classes: `whitespace-nowrap block ${color} bg-opacity-90 font-bold text-gray-900 rounded-lg p-2 text-sm`,
-        timeout: 1000,
+        timeout: timeout,
     });
 };
