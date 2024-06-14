@@ -45,7 +45,8 @@ export type MusicListItem = Keyed & (
 export type Typ = DB.Typ;
 export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
-    { query_type: 'refids', type: Typ, ids: string[] };
+    { query_type: 'refids', type: Typ, ids: string[] } |
+    { query_type: 'ids', type: Typ, ids: number[] };
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
@@ -639,7 +640,7 @@ function AsyncProtWrapper<D extends {
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 
-async function api_request<P, T>(url: string, json_payload: P) {
+export async function api_request<P, T>(url: string, json_payload: P) {
     let res = await fetch(
         url,
         {
@@ -648,7 +649,7 @@ async function api_request<P, T>(url: string, json_payload: P) {
             headers: { "Content-Type": "application/json" },
         }
     );
-    console.log(res);
+    // console.log(res);
 
     let body = await res.text();
 
@@ -659,11 +660,11 @@ async function api_request<P, T>(url: string, json_payload: P) {
     }
 
     let resp: T = JSON.parse(body);
-    console.log(resp);
+    // console.log(resp);
     return resp;
 }
 
-async function api_request_no_resp<P, T>(url: string, json_payload: P) {
+export async function api_request_no_resp<P, T>(url: string, json_payload: P) {
     let res = await fetch(
         url,
         {
@@ -672,7 +673,7 @@ async function api_request_no_resp<P, T>(url: string, json_payload: P) {
             headers: { "Content-Type": "application/json" },
         }
     );
-    console.log(res);
+    // console.log(res);
 
     let body = await res.text();
 
@@ -843,6 +844,21 @@ export class Db extends Unpaged<MusicListItem> {
             }
 
             let matches: DB.DbItem<unknown>[] = await api_request(server_base + this.route() + "/refid", ids);
+            return keyed(matches) as MusicListItem[];
+        } else if (this.query.query_type === "ids") {
+            let ids = this.query.ids.slice(
+                this.page_end_index,
+                Math.min(
+                    this.page_end_index + this.page_size,
+                    this.query.ids.length,
+                ),
+            );
+            this.page_end_index += ids.length;
+            if (this.page_end_index >= this.query.ids.length) {
+                this.has_next_page = false;
+            }
+
+            let matches: DB.DbItem<unknown>[] = await api_request(server_base + this.route() + "/dbid", ids);
             return keyed(matches) as MusicListItem[];
         } else {
             throw exhausted(this.query);
