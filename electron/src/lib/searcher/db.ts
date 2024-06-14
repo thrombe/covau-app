@@ -266,6 +266,12 @@ export class DbListItem extends ListItem {
         }
     }
 
+    savable(): AlmostDbItem<unknown> | null {
+        // return this.data;
+        // return null here, as it's already saved.
+        return null;
+    }
+
     options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue":
@@ -308,9 +314,69 @@ export class DbListItem extends ListItem {
                         ];
                     }
                     case "StSong":
-                    case "StVideo":
+                    case "StVideo": {
+                        let s = this.data.t;
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    stores.queue.update(q => {
+                                        q.play_item(this);
+                                        return q;
+                                    });
+                                    stores.playing_item.set(this);
+                                },
+                            },
+                            {
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
+                                tooltip: "remove item",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    toast("url copied", "info");
+                                },
+                            },
+                        ];
+                    }
                     case "Song":
-                        return [];
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    stores.queue.update(q => {
+                                        q.play_item(this);
+                                        return q;
+                                    });
+                                    stores.playing_item.set(this);
+                                },
+                            },
+                            {
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
+                                tooltip: "remove item",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                        ];
                     case "StAlbum":
                     case "StPlaylist":
                     case "StArtist":
@@ -554,12 +620,150 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
+                    case "Queue": {
+                        let queue = this.data.t;
+                        return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "open",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "ids",
+                                        type: "Song",
+                                        ids: queue.queue.songs,
+                                    }, 30);
+                                    stores.tabs.update(t => {
+                                        t = [t[0]];
+                                        t.push({
+                                            name: queue.queue.title,
+                                            searcher: writable(s),
+                                            thumbnail: null,
+                                        });
+                                        return t;
+                                    });
+                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "ids",
+                                        type: "Song",
+                                        ids: queue.queue.songs,
+                                    }, queue.queue.songs.length);
+                                    let items = await s.next_page();
+                                    stores.queue.update(q => {
+                                        q.add(...items);
+                                        return q;
+                                    });
+                                },
+                            },
+                        ];
+                    } break;
                     case "Song":
-                    case "Playlist":
-                    case "Queue":
-                    case "Updater":
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    let uri = await this.audio_uri();
+                                    if (uri) {
+                                        get(stores.player).play(uri);
+                                        stores.queue.update(q => {
+                                            q.detour();
+                                            return q;
+                                        });
+                                        stores.playing_item.set(this);
+                                    } else {
+                                        toast("could not play item", "error");
+                                    }
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "TopRight",
+                                tooltip: "add to queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.add(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "remove from queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                        ];
                     case "StSong":
-                    case "StVideo":
+                    case "StVideo": {
+                        let s = this.data.t;
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    let uri = await this.audio_uri();
+                                    if (uri) {
+                                        get(stores.player).play(uri);
+                                        stores.queue.update(q => {
+                                            q.detour();
+                                            return q;
+                                        });
+                                        stores.playing_item.set(this);
+                                    } else {
+                                        toast("could not play item", "error");
+                                    }
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "TopRight",
+                                tooltip: "add to queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.add(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "remove from queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/copy.svg",
+                                location: "OnlyMenu",
+                                tooltip: "copy url",
+                                onclick: async () => {
+                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    toast("url copied", "info");
+                                },
+                            },
+                        ];
+                    } break;
+                    case "Playlist":
+                    case "Updater":
                     case "StAlbum":
                     case "StPlaylist":
                     case "StArtist":
