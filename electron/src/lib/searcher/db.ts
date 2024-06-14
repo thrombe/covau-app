@@ -18,13 +18,6 @@ export type MmArtist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
 export type MmPlaylist = Musi.Playlist<Musi.SongId>;
 export type MmQueue = Musi.Queue<Musi.SongId>;
 
-// export type MusicListItem = Keyed & (
-//     | (DB.DbItem<Song> & { typ: "MusimanagerSong"})
-//     | DB.DbItem<Album>
-//     | DB.DbItem<Artist>
-//     | DB.DbItem<Playlist>
-//     | DB.DbItem<Queue>
-// );
 export type MusicListItem = Keyed & (
     | { id: number, typ: "MmSong", t: MmSong }
     | { id: number, typ: "MmAlbum", t: MmAlbum }
@@ -684,78 +677,29 @@ export async function api_request_no_resp<P, T>(url: string, json_payload: P) {
     }
 }
 
-export class Db extends Unpaged<MusicListItem> {
-    query: BrowseQuery;
-    page_size: number;
+export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
 
-    constructor(query: BrowseQuery, page_size: number) {
-        super();
-        this.query = query;
-        this.page_size = page_size;
-    }
+export const db = {
+    async insert<T>(t: AlmostDbItem<T>): Promise<DB.DbItem<T>> {
+        let route = this.route(t.typ, "insert");
 
-    static new(query: BrowseQuery, page_size: number) {
-        let w2 = ClassTypeWrapper(Db.unwrapped(query, page_size));
-        // let w3 = AsyncProtWrapper(w2);
-        return w2;
-    }
-
-    static unwrapped(query: BrowseQuery, page_size: number) {
-        const US = UniqueSearch<MusicListItem, typeof Db>(Db);
-        const SS = SavedSearch<MusicListItem, typeof US>(US);
-        return new SS(query, page_size);
-    }
-
-    static fused() {
-        let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
-        s.inner.has_next_page = false;
-        return s;
-    }
-
-    static saver() {
-        let s = new Db({ type: '' } as unknown as BrowseQuery, 1);
-        s.has_next_page = false;
-        return s;
-    }
-
-    static factory() {
-        class Fac {
-            page_size: number = 30;
-            constructor() {
-            }
-            async search_query<T>(query: BrowseQuery) {
-                type R = RSearcher<WrappedDb<T>>;
-                let t = Db.new(query, this.page_size);
-                return t as R | null;
-            }
-        }
-        // const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
-        return new Fac();
-    }
-
-    async insert<T>(typ: Typ, item: T): Promise<DB.DbItem<T>> {
-        let route = this.route(typ, "insert");
-
-        let dbitem: DB.DbItem<T> = await api_request(server_base + route, item);
+        let dbitem: DB.DbItem<T> = await api_request(server_base + route, t.t);
         return dbitem;
-    }
+    },
 
     async update<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "update");
 
         await api_request_no_resp(server_base + route, item);
-    }
+    },
 
     async delete<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "delete");
 
         await api_request_no_resp(server_base + route, item);
-    }
+    },
 
-    route(type: Typ | null = null, op: string = "search") {
-        if (!type) {
-            type = this.query.type;
-        }
+    route(type: Typ, op: "search" | "insert" | "update" | "delete") {
         switch (type) {
             case "MmSong":
                 return `musimanager/${op}/songs`;
@@ -788,7 +732,52 @@ export class Db extends Unpaged<MusicListItem> {
             default:
                 throw exhausted(type);
         }
+    },
+};
+
+export class Db extends Unpaged<MusicListItem> {
+    query: BrowseQuery;
+    page_size: number;
+
+    constructor(query: BrowseQuery, page_size: number) {
+        super();
+        this.query = query;
+        this.page_size = page_size;
     }
+
+    static new(query: BrowseQuery, page_size: number) {
+        let w2 = ClassTypeWrapper(Db.unwrapped(query, page_size));
+        // let w3 = AsyncProtWrapper(w2);
+        return w2;
+    }
+
+    static unwrapped(query: BrowseQuery, page_size: number) {
+        const US = UniqueSearch<MusicListItem, typeof Db>(Db);
+        const SS = SavedSearch<MusicListItem, typeof US>(US);
+        return new SS(query, page_size);
+    }
+
+    static fused() {
+        let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
+        s.inner.has_next_page = false;
+        return s;
+    }
+
+    static factory() {
+        class Fac {
+            page_size: number = 30;
+            constructor() {
+            }
+            async search_query<T>(query: BrowseQuery) {
+                type R = RSearcher<WrappedDb<T>>;
+                let t = Db.new(query, this.page_size);
+                return t as R | null;
+            }
+        }
+        // const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
+        return new Fac();
+    }
+
     async fetch(query: string): Promise<MusicListItem[]> {
         let q: DB.SearchQuery = {
             type: "Query",
@@ -797,7 +786,10 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await api_request(server_base + this.route(), q);
+        let matches: DB.SearchMatches<unknown> = await api_request(
+            server_base + db.route(this.query.type, "search"),
+            q,
+        );
         this.cont = matches.continuation;
         if (!this.cont) {
             this.has_next_page = false;
@@ -819,7 +811,10 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await api_request(server_base + this.route(), q);
+                let matches: DB.SearchMatches<unknown> = await api_request(
+                    server_base + db.route(this.query.type, "search"),
+                    q,
+                );
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;
@@ -843,7 +838,10 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await api_request(server_base + this.route() + "/refid", ids);
+            let matches: DB.DbItem<unknown>[] = await api_request(
+                server_base + db.route(this.query.type, "search") + "/refid",
+                ids,
+            );
             return keyed(matches) as MusicListItem[];
         } else if (this.query.query_type === "ids") {
             let ids = this.query.ids.slice(
@@ -858,7 +856,10 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await api_request(server_base + this.route() + "/dbid", ids);
+            let matches: DB.DbItem<unknown>[] = await api_request(
+                server_base + db.route(this.query.type, "search") + "/dbid",
+                ids,
+            );
             return keyed(matches) as MusicListItem[];
         } else {
             throw exhausted(this.query);
