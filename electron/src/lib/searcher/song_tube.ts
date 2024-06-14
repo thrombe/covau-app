@@ -7,6 +7,9 @@ import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 import * as yt from "$types/yt.ts";
+import * as db from "$types/db.ts";
+import * as covau from "$types/covau.ts";
+import * as DB from "$lib/searcher/db.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -105,6 +108,36 @@ export class StListItem extends ListItem {
             case "Playlist":
             case "Artist":
                 return null;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    savable(): DB.AlmostDbItem<unknown> | null {
+        function not_null<T>(a: (T | null)[]): T[] {
+            return a.filter(t => !!t) as T[];
+        }
+        switch (this.data.type) {
+            case "Video":
+            case "Song": {
+                let song = this.data.content;
+                let id: covau.PlaySource = { type: "YtId", content: song.id };
+                let t: covau.Song = {
+                    haystacks: not_null([song.title, ...song.authors.map(a => a.name)]),
+                    play_sources: [id],
+                    info_sources: [id]
+                };
+                return { typ: "Song", t };
+            } break;
+            case "Album": {
+                return null;
+            } break;
+            case "Playlist": {
+                return null;
+            } break;
+            case "Artist": {
+                return null;
+            } break;
             default:
                 throw exhausted(this.data)
         }

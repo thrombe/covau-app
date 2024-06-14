@@ -1,3 +1,5 @@
+import * as db from "$types/db.ts";
+import type { AlmostDbItem } from "$lib/searcher/db.ts";
 
 export abstract class ListItem {
     abstract key(): unknown;
@@ -7,6 +9,7 @@ export abstract class ListItem {
     abstract title_sub(): string | null;
     abstract options(ctx: RenderContext): Option[];
     abstract audio_uri(): Promise<string | null>;
+    abstract savable(): AlmostDbItem<unknown> | null;
 }
 
 export class CustomListItem extends ListItem {
@@ -49,6 +52,10 @@ export class CustomListItem extends ListItem {
 
     options(_ctx: RenderContext) {
         return this._options;
+    }
+
+    savable() {
+        return null;
     }
 }
 
