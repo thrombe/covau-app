@@ -9,8 +9,9 @@
     import type { Unique } from "../virtual";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import { toast } from "$lib/toast/toast.ts";
-    import { queue } from "$lib/stores.ts";
+    import { QueueManager, queue } from "$lib/stores.ts";
     import InputBar from "$lib/components/InputBar.svelte";
+    import { get, readable, type Readable } from "svelte/store";
 
     export let item_height: number;
     export let dragend = (e: DragEvent) => {
@@ -24,6 +25,7 @@
 
     let unsub = queue.subscribe((q) => {
         playing = q.playing_index;
+        options = q.options();
     });
     onDestroy(unsub);
 
@@ -43,32 +45,32 @@
     };
 
     let end_is_visible = false;
-    const end_reached = async () => {
+    const end_reached = async (q: Readable<QueueManager>) => {
         while (true) {
             if (!end_is_visible || !$queue.has_next_page) {
                 break;
             }
-            await next_page();
+            await next_page(q);
             await tick();
             await new Promise<void>((r) => setTimeout(() => r(), 100));
             await tick();
         }
     };
-    const next_page = async () => {
-        let r = await $queue.next_page();
+    const next_page = async (q: Readable<QueueManager>) => {
+        let r = await get(q).next_page();
         items = r.map((e) => ({ id: e.key(), data: e })) as typeof items;
     };
-    export const search_objects = async () => {
-        await next_page();
+    export const search_objects = async (q: Readable<QueueManager> = queue) => {
+        await next_page(q);
         await tick();
         selected_item_index = 0;
         await try_scroll_selected_item_in_view();
-        end_reached();
+        end_reached(q);
     };
 
-    unsub = queue.subscribe(async (e) => {
+    unsub = queue.subscribe(async (q) => {
         if (search_objects) {
-            await search_objects();
+            await search_objects(readable(q));
         }
     });
     onDestroy(unsub);
