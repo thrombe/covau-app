@@ -91,7 +91,7 @@ export class DbListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MmSong":
-                return this.data.t.info?.thumbnail_url ?? null;
+                return this.data.t.info?.thumbnail_url ?? `https://i.ytimg.com/vi/${this.data.t.key}/maxresdefault.jpg`;
             case "MmAlbum":
                 return null;
             case "MmArtist":
@@ -110,8 +110,21 @@ export class DbListItem extends ListItem {
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "StArtist":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
-            case "Song":
+            case "Song": {
+                let song = this.data.t;
+                for (let source of song.play_sources) {
+                    switch (source.type) {
+                        case "File":
+                            break;
+                        case "YtId": {
+                            return `https://i.ytimg.com/vi/${source.content}/maxresdefault.jpg`;
+                        } break;
+                        default:
+                            throw exhausted(source);
+                    }
+                }
                 return null;
+            } break;
             case "Playlist":
                 return null;
             case "Queue":
