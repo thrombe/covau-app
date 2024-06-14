@@ -101,9 +101,9 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? null;
+                return this.data.t.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.id}/maxresdefault.jpg`;
             case "StVideo":
-                return this.data.t.thumbnails.at(0)?.url ?? null;
+                return this.data.t.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.id}/maxresdefault.jpg`;
             case "StAlbum":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "StPlaylist":
@@ -112,9 +112,9 @@ export class DbListItem extends ListItem {
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "Song": {
                 let song = this.data.t;
-                for (let source of song.play_sources) {
+                for (let source of song.info_sources) {
                     switch (source.type) {
-                        case "File":
+                        case "MbzId":
                             break;
                         case "YtId": {
                             return `https://i.ytimg.com/vi/${source.content}/maxresdefault.jpg`;
