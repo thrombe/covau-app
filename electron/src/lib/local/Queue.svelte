@@ -22,6 +22,7 @@
     export let mobile = false;
 
     let playing: number | null = null;
+    let options = $queue.options();
 
     let unsub = queue.subscribe((q) => {
         playing = q.playing_index;
@@ -29,7 +30,6 @@
     });
     onDestroy(unsub);
 
-    let options = $queue.options();
     let show_menu = false;
     const menu_disabler = () => {
         window.removeEventListener("click", menu_disabler);
