@@ -25,6 +25,12 @@ struct CustomReject(anyhow::Error);
 
 impl warp::reject::Reject for CustomReject {}
 
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+struct ErrorMessage {
+    message: String,
+    stack_trace: String,
+}
+
 pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection {
     warp::reject::custom(CustomReject(error.into()))
 }
@@ -889,6 +895,23 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(options_route);
     // let all = all.or(redirect_route(client.clone()));
     let all = all.or(embedded_asset_route());
+    let all = all.recover(|rej: warp::reject::Rejection| async move {
+        let msg = if let Some(CustomReject(err)) = rej.find() {
+            warp::reply::json(&ErrorMessage {
+                message: format!("{}", err),
+                stack_trace: format!("{:?}", err),
+            })
+        } else {
+            warp::reply::json(&ErrorMessage {
+                message: "server error".into(),
+                stack_trace: format!("{:?}", rej),
+            })
+        };
+        let r = warp::reply::with_status(msg, warp::http::StatusCode::INTERNAL_SERVER_ERROR);
+        let r = warp::reply::with_header(r, "access-control-allow-origin", "*");
+
+        Result::<_, std::convert::Infallible>::Ok(r)
+    });
 
     let j = tokio::task::spawn(async move {
         let fe = fe;
@@ -929,6 +952,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlayerMessage>(config)?;
     types += ";\n";
     types += &specta::ts::export::<FetchRequest>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<ErrorMessage>(config)?;
     types += ";\n";
 
     Ok(types)
