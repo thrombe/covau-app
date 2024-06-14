@@ -8,6 +8,7 @@ import { exhausted } from "$lib/virtual.ts";
 import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
 import { prompt } from "./prompt/prompt";
+import * as covau from "$types/covau.ts";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
@@ -239,7 +240,29 @@ export class QueueManager implements Searcher {
                 location: "OnlyMenu",
                 onclick: async () => {
                     let name = await prompt("Enter queue name");
-                    console.log(name);
+                    if (!name) {
+                        return;
+                    }
+
+                    // TODO: this should be atomic
+
+                    let items = await Promise.all(this.items.map(async (item) => {
+                        let song = item.savable();
+                        if (!song || song.typ != "Song") {
+                            let msg = `item: ${item.title()} can't be saved in db`;
+                            toast(msg, "error");
+                            throw new Error(msg);
+                        }
+                        return await Db.db.insert(song);
+                    }));
+                    let queue: covau.Queue = {
+                        current_index: this.playing_index,
+                        queue: {
+                            title: name,
+                            songs: items.map(t => t.id),
+                        },
+                    };
+                    await Db.db.insert({ typ: "Queue", t: queue });
                 },
             },
         ];
