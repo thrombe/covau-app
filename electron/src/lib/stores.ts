@@ -9,6 +9,7 @@ import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
 import { prompt } from "./prompt/prompt";
 import * as covau from "$types/covau.ts";
+import { db } from "$lib/local/db.ts";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
@@ -253,7 +254,7 @@ export class QueueManager implements Searcher {
                             toast(msg, "error");
                             throw new Error(msg);
                         }
-                        return await Db.db.insert(song);
+                        return await db.insert(song);
                     }));
                     let queue: covau.Queue = {
                         current_index: this.playing_index,
@@ -262,7 +263,7 @@ export class QueueManager implements Searcher {
                             songs: items.map(t => t.id),
                         },
                     };
-                    await Db.db.insert({ typ: "Queue", t: queue });
+                    await db.insert({ typ: "Queue", t: queue });
                 },
             },
         ];

@@ -1,5 +1,5 @@
 import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
-import { type WrappedDb, type Keyed, type RObject, type RSearcher } from "./searcher.ts";
+import { type WrappedDb, type Keyed, type RSearcher } from "./searcher.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -11,6 +11,7 @@ import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
+import { db, type AlmostDbItem } from "$lib/local/db.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<Musi.SongId>;
@@ -848,109 +849,6 @@ function AsyncProtWrapper<D extends {
     } as unknown as IAsyncProtWrapper<D>;
 }
 
-let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
-
-export async function api_request<P, T>(url: string, json_payload: P) {
-    let res = await fetch(
-        url,
-        {
-            method: "POST",
-            body: JSON.stringify(json_payload),
-            headers: { "Content-Type": "application/json" },
-        }
-    );
-    // console.log(res);
-
-    let body = await res.text();
-
-    if (!res.ok) {
-        let err: server.ErrorMessage = JSON.parse(body);
-        console.error(err.stack_trace);
-        throw new Error(err.message);
-    }
-
-    let resp: T = JSON.parse(body);
-    // console.log(resp);
-    return resp;
-}
-
-export async function api_request_no_resp<P, T>(url: string, json_payload: P) {
-    let res = await fetch(
-        url,
-        {
-            method: "POST",
-            body: JSON.stringify(json_payload),
-            headers: { "Content-Type": "application/json" },
-        }
-    );
-    // console.log(res);
-
-    let body = await res.text();
-
-    if (!res.ok) {
-        let err: server.ErrorMessage = JSON.parse(body);
-        console.error(err.stack_trace);
-        throw new Error(err.message);
-    }
-}
-
-export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
-
-export const db = {
-    async insert<T>(t: AlmostDbItem<T>): Promise<DB.DbItem<T>> {
-        let route = this.route(t.typ, "insert");
-
-        let dbitem: DB.DbItem<T> = await api_request(server_base + route, t.t);
-        return dbitem;
-    },
-
-    async update<T>(item: DB.DbItem<T>) {
-        let route = this.route(item.typ, "update");
-
-        await api_request_no_resp(server_base + route, item);
-    },
-
-    async delete<T>(item: DB.DbItem<T>) {
-        let route = this.route(item.typ, "delete");
-
-        await api_request_no_resp(server_base + route, item);
-    },
-
-    route(type: Typ, op: "search" | "insert" | "update" | "delete") {
-        switch (type) {
-            case "MmSong":
-                return `musimanager/${op}/songs`;
-            case "MmAlbum":
-                return `musimanager/${op}/albums`;
-            case "MmArtist":
-                return `musimanager/${op}/artists`;
-            case "MmPlaylist":
-                return `musimanager/${op}/playlists`;
-            case "MmQueue":
-                return `musimanager/${op}/queues`;
-            case "Song":
-                return `covau/${op}/songs`;
-            case "Playlist":
-                return `covau/${op}/playlists`;
-            case "Queue":
-                return `covau/${op}/queues`;
-            case "Updater":
-                return `covau/${op}/updaters`;
-            case "StSong":
-                return `song_tube/${op}/songs`;
-            case "StVideo":
-                return `song_tube/${op}/videos`;
-            case "StAlbum":
-                return `song_tube/${op}/albums`;
-            case "StPlaylist":
-                return `song_tube/${op}/playlists`;
-            case "StArtist":
-                return `song_tube/${op}/artists`;
-            default:
-                throw exhausted(type);
-        }
-    },
-};
 
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
@@ -1003,8 +901,8 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await api_request(
-            server_base + db.route(this.query.type, "search"),
+        let matches: DB.SearchMatches<unknown> = await db.api_request(
+            db.route(this.query.type, "search"),
             q,
         );
         this.cont = matches.continuation;
@@ -1028,8 +926,8 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await api_request(
-                    server_base + db.route(this.query.type, "search"),
+                let matches: DB.SearchMatches<unknown> = await db.api_request(
+                    db.route(this.query.type, "search"),
                     q,
                 );
                 this.cont = matches.continuation;
@@ -1055,8 +953,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await api_request(
-                server_base + db.route(this.query.type, "search") + "/refid",
+            let matches: DB.DbItem<unknown>[] = await db.api_request(
+                db.route(this.query.type, "search") + "/refid",
                 ids,
             );
             return keyed(matches) as MusicListItem[];
@@ -1073,8 +971,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await api_request(
-                server_base + db.route(this.query.type, "search") + "/dbid",
+            let matches: DB.DbItem<unknown>[] = await db.api_request(
+                db.route(this.query.type, "search") + "/dbid",
                 ids,
             );
             return keyed(matches) as MusicListItem[];

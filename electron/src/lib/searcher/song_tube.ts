@@ -7,9 +7,8 @@ import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 import * as yt from "$types/yt.ts";
-import * as db from "$types/db.ts";
 import * as covau from "$types/covau.ts";
-import * as DB from "$lib/searcher/db.ts";
+import { type AlmostDbItem } from "$lib/local/db.ts"; 
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -113,7 +112,7 @@ export class StListItem extends ListItem {
         }
     }
 
-    savable(): DB.AlmostDbItem<unknown> | null {
+    savable(): AlmostDbItem<unknown> | null {
         function not_null<T>(a: (T | null)[]): T[] {
             return a.filter(t => !!t) as T[];
         }
