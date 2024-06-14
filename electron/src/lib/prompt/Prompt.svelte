@@ -16,6 +16,7 @@
     let unsub = prompt.subscribe((e) => {
         if (!e) {
             show = false;
+            value = "";
             return;
         } else {
             show = true;
@@ -26,9 +27,11 @@
 
     const on_enter = async (_: KeyboardEvent) => {
         $prompt!.resolve(value);
+        value = "";
     };
     const on_unfocus = async () => {
         $prompt!.resolve(null);
+        value = "";
     };
 
     $: if (input_element) {
