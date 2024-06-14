@@ -583,19 +583,19 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let type: 'song' | 'video' | 'album' | 'playlist' | 'artist';
         switch (typ) {
-            case "Song":
+            case "YtSong":
                 type = "song";
                 break;
-            case "Video":
+            case "YtVideo":
                 type = "video";
                 break;
-            case "Album":
+            case "YtAlbum":
                 type = "album";
                 break;
-            case "Playlist":
+            case "YtPlaylist":
                 type = "playlist";
                 break;
-            case "Artist":
+            case "YtArtist":
                 type = "artist";
                 break;
             default:

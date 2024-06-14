@@ -10,7 +10,6 @@
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import { QueueManager, queue } from "$lib/stores.ts";
-    import InputBar from "$lib/components/InputBar.svelte";
     import { get, readable, type Readable } from "svelte/store";
 
     export let item_height: number;
