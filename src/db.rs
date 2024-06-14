@@ -454,21 +454,21 @@ pub mod db {
 
         #[async_trait::async_trait]
         impl ActiveModelBehavior for ActiveModel {
-            async fn after_delete<C>(self, db: &C) -> Result<Self, DbErr>
+            async fn before_delete<C>(self, db: &C) -> Result<Self, DbErr>
             where
                 C: ConnectionTrait,
             {
-                super::refid::Entity::delete_many()
-                    .filter(
-                        super::refid::Column::Typ
-                            .contains(self.typ.clone().unwrap().to_value().to_string()),
-                    )
-                    .filter(
-                        super::refid::Column::ObjectId
-                            .contains(self.id.clone().unwrap().to_string()),
-                    )
-                    .exec(db)
-                    .await?;
+                // super::refid::Entity::delete_many()
+                //     .filter(
+                //         super::refid::Column::Typ
+                //             .contains(self.typ.clone().unwrap().to_value().to_string()),
+                //     )
+                //     .filter(
+                //         super::refid::Column::ObjectId
+                //             .contains(self.id.clone().unwrap().to_string()),
+                //     )
+                //     .exec(db)
+                //     .await?;
                 Ok(self)
             }
         }
@@ -753,6 +753,7 @@ pub mod db {
                     .into_iter()
                     .map(String::from)
                     .collect::<HashSet<_>>();
+
             for rid in refids {
                 let id = refid::ActiveModel {
                     refid: sea_orm::ActiveValue::Set(rid.to_string()),
@@ -765,32 +766,14 @@ pub mod db {
         }
 
         pub async fn delete<T: DbAble>(&self, t: DbItem<T>) -> anyhow::Result<()> {
-            // let am = object::ActiveModel {
-            //     id: sea_orm::ActiveValue::Unchanged(t.id),
-            //     // typ: sea_orm::ActiveValue::Set(T::typ()),
-            //     ..Default::default()
-            // };
-            // let _ = object::Entity::delete(am).exec(&self.db).await?;
-
             let _ = refid::Entity::delete_many()
-                .filter(refid::Column::Refid.eq(t.id))
+                .filter(refid::Column::ObjectId.eq(t.id))
                 .exec(&self.db)
                 .await?;
 
-            let _ = object::Entity::delete_many()
-                .filter(object::Column::Id.eq(t.id))
+            let _ = object::Entity::delete_by_id(t.id)
                 .exec(&self.db)
                 .await?;
-
-            // let _ = object::Entity::delete_by_id(t.id).exec(&self.db).await?;
-
-            // let _ = refid::Entity::delete(refid::ActiveModel {
-            //     object_id: sea_orm::ActiveValue::Set(t.id),
-            //     ..Default::default()
-            // })
-            // .exec(&self.db)
-            // .await?;
-
             Ok(())
         }
     }
