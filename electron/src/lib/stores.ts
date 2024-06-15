@@ -76,6 +76,19 @@ export let tabs: Writable<Tab[]> = writable([{
     thumbnail: null,
 }]);
 export let curr_tab_index = writable(0);
+export const push_tab = (s: Searcher, title: string, thumb: string | null = null) => {
+    let index = get(curr_tab_index);
+    tabs.update(t => {
+        t = [...t.slice(0, index+1)];
+        t.push({
+            name: title,
+            searcher: writable(s),
+            thumbnail: thumb,
+        });
+        return t;
+    });
+    curr_tab_index.set(get(tabs).length - 1);
+};
 
 export let curr_tab = derived(
     [tabs, curr_tab_index],
