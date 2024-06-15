@@ -27,9 +27,17 @@ export type MusicListItem = Keyed & { data: Keyed } & (
 
 export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecording";
 export type IdFetchTyp = SearchTyp | "MbzArtistWithUrls";
+export type LinkedTyp = (
+    | "MbzReleaseGroup_MbzArtist"
+    | "MbzRelease_MbzArtist"
+    | "MbzRelease_MbzReleaseGroup"
+    | "MbzRecording_MbzArtsit"
+    | "MbzRecording_MbzRelease"
+);
 export type BrowseQuery =
     | { query_type: 'search', type: SearchTyp, query: string }
     | { query_type: 'id', id: string, type: IdFetchTyp }
+    | { query_type: 'linked', id: string, type: LinkedTyp };
 
 export class MbzListItem extends ListItem {
     data: MusicListItem;
@@ -158,21 +166,73 @@ export class MbzListItem extends ListItem {
                     case "MbzReleaseWithInfo": {
                         let a = this.data.data;
                         return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore recordings",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRecording_MbzRelease",
+                                        id: a.title,
+                                    }, 30);
+                                    stores.push_tab(s, "Recordings for " + a.title);
+                                },
+                            },
                         ];
                     } break;
                     case "MbzReleaseGroupWithInfo": {
                         let a = this.data.data;
                         return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore releases",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRelease_MbzReleaseGroup",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Releases for " + a.title);
+                                },
+                            },
                         ];
                     } break;
                     case "MbzReleaseGroup": {
                         let a = this.data.data;
                         return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore releases",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRelease_MbzReleaseGroup",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Releases for " + a.title);
+                                },
+                            },
                         ];
                     } break;
                     case "MbzRelease": {
                         let a = this.data.data;
                         return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore recordings",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRecording_MbzRelease",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Recordings for " + a.title);
+                                },
+                            },
                         ];
                     } break;
                     case "MbzRecording": {
@@ -207,6 +267,45 @@ export class MbzListItem extends ListItem {
                     case "MbzArtist": {
                         let a = this.data.data;
                         return [
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "OnlyMenu",
+                                tooltip: "explore release groups",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzReleaseGroup_MbzArtist",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Release groups for " + a.name);
+                                },
+                            },
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "OnlyMenu",
+                                tooltip: "explore releases",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRelease_MbzArtist",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Releases for " + a.name);
+                                },
+                            },
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "TopRight",
+                                tooltip: "explore recordings",
+                                onclick: async () => {
+                                    let s = Mbz.new({
+                                        query_type: "linked",
+                                        type: "MbzRecording_MbzArtsit",
+                                        id: a.id,
+                                    }, 30);
+                                    stores.push_tab(s, "Recordings for " + a.name);
+                                },
+                            },
                         ];
                     } break;
                     default:
@@ -312,6 +411,15 @@ function UnionTypeWrapper<D extends {
                         data: data,
                         get_key: data.get_key,
                     })) as unknown as MusicListItem[];
+                } break;
+                case "linked": {
+                    let typ = d.query.type;
+                    return res.map(data => ({
+                        typ: typ.substring(0, typ.indexOf("_")),
+                        data: data,
+                        get_key: data.get_key,
+                    })) as unknown as MusicListItem[]
+                } break;
                 default:
                     throw exhausted(type)
             }
@@ -360,6 +468,22 @@ export const mbz = {
                 throw exhausted(type);
         }
     },
+    linked_route(type: LinkedTyp) {
+        switch (type) {
+            case "MbzReleaseGroup_MbzArtist":
+                return server_base + "mbz/search/release_groups/linked/artist";
+            case "MbzRelease_MbzArtist":
+                return server_base + "mbz/search/releases/linked/artist";
+            case "MbzRelease_MbzReleaseGroup":
+                return server_base + "mbz/search/releases/linked/release_group";
+            case "MbzRecording_MbzArtsit":
+                return server_base + "mbz/search/recordings/linked/artist";
+            case "MbzRecording_MbzRelease":
+                return server_base + "mbz/search/recordings/linked/release";
+            default:
+                throw exhausted(type);
+        }
+    }
 };
 
 export class Mbz<T> extends Unpaged<T> {
@@ -459,6 +583,36 @@ export class Mbz<T> extends Unpaged<T> {
             let match = await this.fetch_id(this.query.id, this.query.type);
 
             return [match] as (T & Keyed)[];
+        } else if (this.query.query_type === "linked") {
+            let items;
+            if (this.cont) {
+                let q: MBZ.SearchQuery = {
+                    type: "Continuation",
+                    content: this.cont,
+                };
+                let res = await fetch(
+                    this.route,
+                    {
+                        method: "POST",
+                        body: JSON.stringify(q),
+                        headers: { "Content-Type": "application/json" },
+                    }
+                );
+                let body = await res.text();
+                let matches: MBZ.SearchResults<T> = JSON.parse(body);
+                this.cont = matches.continuation;
+                if (!this.cont) {
+                    this.has_next_page = false;
+                }
+                items = matches.items;
+            } else {
+                this.route = mbz.linked_route(this.query.type);
+                items = await this.fetch(this.query.id);
+            }
+
+            let k = keyed(items, "id");
+
+            return k as (T & Keyed)[];
         } else {
             throw exhausted(this.query);
         }
