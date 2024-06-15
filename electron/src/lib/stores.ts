@@ -14,7 +14,13 @@ export type Tab = {
     name: string;
     searcher: Writable<Searcher>;
     thumbnail: string | null;
+    key: number;
 };
+
+let tab_key = 0;
+export function new_tab_key() {
+    return tab_key++;
+}
 
 export type MenubarOption = { name: string } & (
     | { content_type: "list"; type: Db.Typ | St.Typ | Mbz.SearchTyp | "covau-group" }
@@ -79,11 +85,7 @@ export let selected_menubar_option: Readable<MenubarOption> = derived(
     ([$options, $index, _u, _t]) => $options[$index],
 );
 
-export let tabs: Writable<Tab[]> = writable([{
-    name: "Results",
-    searcher: writable(fused_searcher),
-    thumbnail: null,
-}]);
+export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
 export const push_tab = (s: Searcher, title: string, thumb: string | null = null) => {
     let index = get(curr_tab_index);
@@ -93,6 +95,7 @@ export const push_tab = (s: Searcher, title: string, thumb: string | null = null
             name: title,
             searcher: writable(s),
             thumbnail: thumb,
+            key: new_tab_key(),
         });
         return t;
     });

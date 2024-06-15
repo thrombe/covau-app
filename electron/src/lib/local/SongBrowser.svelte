@@ -94,7 +94,7 @@
         </browse-tab-bar>
     </bar-area>
 
-    {#each tabs as tab (tab.name)}
+    {#each tabs as tab (tab.key)}
         <browse-area class={curr_tab == tab ? "" : "hidden"}>
             <Explorer
                 searcher={tab.searcher}
