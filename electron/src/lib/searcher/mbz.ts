@@ -4,7 +4,7 @@ import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import type { AlmostDbItem } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
-import { get, writable } from "svelte/store";
+import { get } from "svelte/store";
 import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
@@ -175,26 +175,6 @@ export class MbzListItem extends ListItem {
                 }
             } break;
             case "Browser": {
-                const recordings_from_releases = async (releases: Release[]) => {
-                    let recordings_es = await Promise.all(
-                        releases
-                            .map(r => Mbz.new({
-                                query_type: "linked",
-                                id: r.id,
-                                type: "MbzRecording_MbzRelease",
-                            }, 200).next_page()));
-                    let recordings = recordings_es.flat();
-                    let set = new Set();
-                    let deduped: MbzListItem[] = [];
-                    for (let rec of recordings) {
-                        if (!set.has(rec.data.data.id)) {
-                            set.add(rec.data.data.id);
-                            deduped.push(rec);
-                        }
-                    }
-                    return deduped;
-                };
-
                 switch (this.data.typ) {
                     case "MbzReleaseWithInfo": {
                         let a = this.data.data;
@@ -235,7 +215,7 @@ export class MbzListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "explore recordings",
                                 onclick: async () => {
-                                    let releases = await recordings_from_releases(a.releases);
+                                    let releases = await mbz.recordings_from_releases(a.releases);
                                     let s = StaticSearcher(releases);
                                     stores.push_tab(s, "Releases for " + a.title);
                                 },
@@ -245,7 +225,7 @@ export class MbzListItem extends ListItem {
                                 location: "OnlyMenu",
                                 tooltip: "add all to queue",
                                 onclick: async () => {
-                                    let releases = await recordings_from_releases(a.releases);
+                                    let releases = await mbz.recordings_from_releases(a.releases);
                                     stores.queue.update(q => {
                                         q.add(...releases);
                                         return q;
@@ -278,7 +258,7 @@ export class MbzListItem extends ListItem {
                                     let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
                                     this.data.data = rel;
                                     this.data.typ = "MbzReleaseGroupWithInfo";
-                                    let releases = await recordings_from_releases(rel.releases);
+                                    let releases = await mbz.recordings_from_releases(rel.releases);
                                     let s = StaticSearcher(releases);
                                     stores.push_tab(s, "Releases for " + a.title);
                                 },
@@ -291,7 +271,7 @@ export class MbzListItem extends ListItem {
                                     let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
                                     this.data.data = rel;
                                     this.data.typ = "MbzReleaseGroupWithInfo";
-                                    let releases = await recordings_from_releases(rel.releases);
+                                    let releases = await mbz.recordings_from_releases(rel.releases);
                                     stores.queue.update(q => {
                                         q.add(...releases);
                                         return q;
@@ -551,6 +531,26 @@ export const mbz = {
         let res: T = await server.api_request(route, id);
         let k = keyed([res], "id")[0];
         return k;
+    },
+
+    async recordings_from_releases(releases: Release[]) {
+        let recordings_es = await Promise.all(
+            releases
+                .map(r => Mbz.new({
+                    query_type: "linked",
+                    id: r.id,
+                    type: "MbzRecording_MbzRelease",
+                }, 200).next_page()));
+        let recordings = recordings_es.flat();
+        let set = new Set();
+        let deduped: MbzListItem[] = [];
+        for (let rec of recordings) {
+            if (!set.has(rec.data.data.id)) {
+                set.add(rec.data.data.id);
+                deduped.push(rec);
+            }
+        }
+        return deduped;
     },
 
     search_route(type: SearchTyp) {
