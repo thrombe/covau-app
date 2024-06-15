@@ -423,55 +423,52 @@ pub struct FetchRequest {
 }
 
 // - [danielSanchezQ/warp-reverse-proxy](https://github.com/danielSanchezQ/warp-reverse-proxy)
-fn cors_proxy_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
+fn cors_proxy_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     let cors_proxy = warp::path("fetch")
         .and(warp::path::end())
         // .and(warp::post())
         .and(warp::body::bytes())
         .and(warp::any().map(move || c.clone()))
-        .and_then(
-            |fetch: bytes::Bytes, client: Arc<Mutex<reqwest::Client>>| async move {
-                let fetch = fetch.to_vec();
-                if fetch.is_empty() {
-                    // OOF: for preflight requests. idk what else to do
-                    return warp::http::Response::builder()
-                        .body(warp::hyper::Body::empty())
-                        .map_err(custom_reject);
-                }
-                let fetch = serde_json::from_slice::<FetchRequest>(fetch.as_ref())
-                    .map_err(custom_reject)?;
-                let headers: Vec<(String, String)> =
-                    serde_json::from_str(&fetch.headers).map_err(custom_reject)?;
-                let c = client.lock().await;
-                let url = reqwest::Url::parse(&fetch.url).map_err(custom_reject)?;
-                let mut url = c.request(
-                    reqwest::Method::from_bytes(fetch.method.as_bytes()).map_err(custom_reject)?,
-                    url,
-                );
-                if let Some(body) = fetch.body {
-                    url = url.body(body);
-                }
-                for (k, v) in headers {
-                    url = url.header(k, v);
-                }
-                let res = c
-                    .execute(url.build().map_err(custom_reject)?)
-                    .await
-                    .map_err(custom_reject)?;
-                let mut wres = warp::http::Response::builder();
-                for (k, v) in res.headers().iter() {
-                    wres = wres.header(k, v);
-                }
-                let status = res.status();
-                let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
-                wres.status(status).body(body).map_err(custom_reject)
-            },
-        );
+        .and_then(|fetch: bytes::Bytes, c: reqwest::Client| async move {
+            let fetch = fetch.to_vec();
+            if fetch.is_empty() {
+                // OOF: for preflight requests. idk what else to do
+                return warp::http::Response::builder()
+                    .body(warp::hyper::Body::empty())
+                    .map_err(custom_reject);
+            }
+            let fetch =
+                serde_json::from_slice::<FetchRequest>(fetch.as_ref()).map_err(custom_reject)?;
+            let headers: Vec<(String, String)> =
+                serde_json::from_str(&fetch.headers).map_err(custom_reject)?;
+            let url = reqwest::Url::parse(&fetch.url).map_err(custom_reject)?;
+            let mut url = c.request(
+                reqwest::Method::from_bytes(fetch.method.as_bytes()).map_err(custom_reject)?,
+                url,
+            );
+            if let Some(body) = fetch.body {
+                url = url.body(body);
+            }
+            for (k, v) in headers {
+                url = url.header(k, v);
+            }
+            let res = c
+                .execute(url.build().map_err(custom_reject)?)
+                .await
+                .map_err(custom_reject)?;
+            let mut wres = warp::http::Response::builder();
+            for (k, v) in res.headers().iter() {
+                wres = wres.header(k, v);
+            }
+            let status = res.status();
+            let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+            wres.status(status).body(body).map_err(custom_reject)
+        });
     let cors_proxy = cors_proxy.with(warp::cors().allow_any_origin());
     cors_proxy.boxed()
 }
 
-fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
+fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     let redirect = warp::any()
         .and(warp::any().map(move || c.clone()))
         .and(warp::method())
@@ -479,12 +476,11 @@ fn redirect_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
         .and(warp::header::headers_cloned())
         .and(warp::body::bytes())
         .and_then(
-            |client: Arc<Mutex<reqwest::Client>>,
+            |c: reqwest::Client,
              m: warp::http::Method,
              p: warp::path::Tail,
              h: warp::http::HeaderMap,
              b: bytes::Bytes| async move {
-                let c = client.lock().await;
                 let url = String::from("http://localhost:5173/") + p.as_str();
                 dbg!(&url);
                 let mut req = c.request(m, url);
@@ -751,13 +747,12 @@ fn embedded_asset_route() -> BoxedFilter<(impl Reply,)> {
     index_route.or(route).boxed()
 }
 
-fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> {
+fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     #[cfg(ui_backend = "WEBUI")]
     let webui = warp::path("webui.js")
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
-        .and_then(|c: Arc<Mutex<reqwest::Client>>| async move {
-            let c = c.lock().await;
+        .and_then(|c: reqwest::Client| async move {
             let req = c.get("http://localhost:6174/webui.js");
             let res = c
                 .execute(req.build().map_err(custom_reject)?)
@@ -777,7 +772,7 @@ fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
     let webui = warp::path("webui.js")
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
-        .and_then(|_: Arc<Mutex<reqwest::Client>>| async move {
+        .and_then(|_: reqwest::Client| async move {
             let mut wres = warp::http::Response::builder();
             wres.body("").map_err(custom_reject)
         });
@@ -787,7 +782,7 @@ fn webui_js_route(c: Arc<Mutex<reqwest::Client>>) -> BoxedFilter<(impl Reply,)> 
 }
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16) {
-    let client = Arc::new(Mutex::new(reqwest::Client::new()));
+    let client = reqwest::Client::new();
     let db_path = "./test.db";
     let db_exists = std::path::PathBuf::from(db_path).exists();
     let db = Db::new(format!("sqlite:{}?mode=rwc", db_path))
@@ -965,25 +960,25 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
                 .or(paged_search::<RecordingWithInfo>("recordings_with_info"))
                 .or(id_search::<RecordingWithInfo>("recordings_with_info"))
-                .or(linked_search::<
-                    ReleaseGroup,
-                    artist::Artist,
-                >("release_groups", "artist"))
+                .or(linked_search::<ReleaseGroup, artist::Artist>(
+                    "release_groups",
+                    "artist",
+                ))
                 .or(linked_search::<Release, artist::Artist>(
                     "releases", "artist",
                 ))
-                .or(linked_search::<
-                    Release,
-                    release_group::ReleaseGroup,
-                >("releases", "release_group"))
-                .or(linked_search::<
-                    Recording,
-                    artist::Artist,
-                >("recordings", "artist"))
-                .or(linked_search::<
-                    Recording,
-                    release::Release,
-                >("recordings", "release")),
+                .or(linked_search::<Release, release_group::ReleaseGroup>(
+                    "releases",
+                    "release_group",
+                ))
+                .or(linked_search::<Recording, artist::Artist>(
+                    "recordings",
+                    "artist",
+                ))
+                .or(linked_search::<Recording, release::Release>(
+                    "recordings",
+                    "release",
+                )),
         )
     };
 
