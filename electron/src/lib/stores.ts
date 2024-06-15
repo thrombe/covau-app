@@ -13,7 +13,9 @@ import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
 export type Tab = {
     name: string;
     searcher: Writable<Searcher>;
+    new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null;
     thumbnail: string | null;
+    query: Writable<string>;
     key: number;
 };
 
@@ -76,27 +78,40 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
-let tab_updater = writable(1);
-export const refresh_tab = () => {
-    tab_updater.update(t => t+1);
-};
 export let selected_menubar_option: Readable<MenubarOption> = derived(
-    [menubar_options, selected_menubar_option_index, tab_updater, tube],
-    ([$options, $index, _u, _t]) => $options[$index],
+    [menubar_options, selected_menubar_option_index, tube],
+    ([$options, $index, _t]) => $options[$index],
 );
 
 export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
-export const push_tab = (s: Searcher, title: string, thumb: string | null = null) => {
+export const push_tab = (
+    s: Searcher,
+    title: string,
+    thumb: string | null = null,
+    query: string | null = null,
+    new_searcher: (((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null) = null,
+) => {
     let index = get(curr_tab_index);
     tabs.update(t => {
-        t = [...t.slice(0, index+1)];
-        t.push({
+        t = [...t.slice(0, index + 1)];
+
+        let q = writable(query ?? "");
+        let tab: Tab = {
             name: title,
             searcher: writable(s),
+            new_searcher: new_searcher,
             thumbnail: thumb,
+            query: q,
             key: new_tab_key(),
+        };
+        q.subscribe(async (q) => {
+            if (tab.new_searcher) {
+                tab.searcher.set(await tab.new_searcher(q));
+            }
         });
+
+        t.push(tab);
         return t;
     });
     curr_tab_index.set(get(tabs).length - 1);
@@ -127,6 +142,7 @@ selected_menubar_option.subscribe(async (option) => {
         return;
     }
     let s: Searcher;
+    let new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null = null;
     switch (option.content_type) {
         case "list": {
             switch (option.type) {
@@ -144,69 +160,91 @@ selected_menubar_option.subscribe(async (option) => {
                 case "StAlbum":
                 case "StPlaylist":
                 case "StArtist": {
-                    s = Db.Db.new({
+                    let type = option.type;
+                    new_searcher = (q: string) => Db.Db.new({
                         query_type: "search",
-                        type: option.type,
-                        query: get(query_input),
+                        type: type,
+                        query: q,
                     }, page_size);
+                    s = new_searcher(get(query_input));
                 } break;
                 case "YtSong":
                 case "YtVideo":
                 case "YtAlbum":
                 case "YtPlaylist":
                 case "YtArtist": {
-                    s = St.SongTube.new({
+                    let type = option.type;
+                    new_searcher = (q: string) => St.SongTube.new({
                         type: "Search",
                         content: {
-                            query: get(query_input),
-                            search: option.type
+                            query: q,
+                            search: type, // trick it
                         },
                     });
+                    s = new_searcher(get(query_input));
                 } break;
                 case "MbzRadioSong":
                 case "MbzReleaseWithInfo":
                 case "MbzReleaseGroupWithInfo":
                 case "MbzArtist":
                 case "MbzRecordingWithInfo": {
-                    s = Mbz.Mbz.new({
+                    let type = option.type;
+                    new_searcher = (q: string) => Mbz.Mbz.new({
                         query_type: "search",
-                        type: option.type,
-                        query: get(query_input),
+                        type: type,
+                        query: q,
                     }, 30);
+                    s = new_searcher(get(query_input));
                 } break;
                 case "covau-group": {
-                    if (!get(query_input)) {
-                        s = fused_searcher;
-                        break;
-                    }
+                    new_searcher = async (q: string) => {
+                        if (q.length == 0) {
+                            return fused_searcher;
+                        }
 
-                    let f_app = await import("firebase/app");
-                    let f_store = await import("firebase/firestore");
-                    let f_config = await import("../firebase_config");
-                    let app = f_app.initializeApp(f_config.firebase_config);
-                    let db = f_store.getFirestore(app);
-                    let data_ref = f_store.doc(db, 'groups', get(query_input));
-                    let data = await f_store.getDoc(data_ref);
-                    let covau = data.data();
-                    if (!covau) {
-                        toast("could not load data", "error");
-                        return;
-                    }
-                    let ids: string[] = covau.queue;
-                    s = St.SongTube.new({
-                        type: "SongIds",
-                        content: {
-                            ids,
-                            batch_size: 10,
-                        },
-                    });
+                        let f_app = await import("firebase/app");
+                        let f_store = await import("firebase/firestore");
+                        let f_config = await import("../firebase_config");
+                        let app = f_app.initializeApp(f_config.firebase_config);
+                        let db = f_store.getFirestore(app);
+                        let data_ref = f_store.doc(db, 'groups', q);
+                        let data = await f_store.getDoc(data_ref);
+                        let covau = data.data();
+                        if (!covau) {
+                            toast("could not load data", "error");
+                            return fused_searcher;
+                        }
+                        let ids: string[] = covau.queue;
+                        return St.SongTube.new({
+                            type: "SongIds",
+                            content: {
+                                ids,
+                                batch_size: 10,
+                            },
+                        });
+                    }; 
+
+                    s = await new_searcher(get(query_input));
                 } break;
                 default:
                     throw exhausted(option.type);
             }
             tabs.update(t => {
-                t = [t[0]];
-                t[0].searcher.set(s);
+                let q = writable(get(query_input));
+                let tab: Tab = {
+                    name: "Results",
+                    searcher: writable(s),
+                    thumbnail: null,
+                    query: q,
+                    key: new_tab_key(),
+                    new_searcher: new_searcher,
+                };
+                q.subscribe(async (q) => {
+                    if (tab.new_searcher) {
+                        tab.searcher.set(await tab.new_searcher(q));
+                    }
+                });
+                t = [tab];
                 return t;
             });
             curr_tab_index.set(0);
@@ -223,8 +261,14 @@ selected_menubar_option.subscribe(async (option) => {
                 type: "HomeFeed",
             });
             tabs.update(t => {
-                t = [t[0]];
-                t[0].searcher.set(s);
+                t = [{
+                    name: "Home",
+                    searcher: writable(s),
+                    new_searcher: null,
+                    key: new_tab_key(),
+                    thumbnail: null,
+                    query: writable(""),
+                }];
                 return t;
             });
             curr_tab_index.set(0);

@@ -45,6 +45,9 @@
     onDestroy(unsub);
     unsub = stores.curr_tab.subscribe(t => {
         curr_tab = t;
+        if (t?.query) {
+            search_query = get(t.query);
+        }
     });
     onDestroy(unsub);
 </script>
@@ -52,25 +55,27 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar>
-            {#if $browse_type.content_type === "list"}
-                <InputBar
-                    placeholder={"Search"}
-                    bind:value={search_query}
-                    bind:input_element={search_input_element}
-                    on_enter={async (e) => {
-                        stores.query_input.set(search_query);
-                        stores.refresh_tab();
-
-                        e.preventDefault();
-                    }}
-                />
-            {:else}
-                <div class="flex h-full items-center">
-                    <div class="w-full text-center text-xl">
-                        {$browse_type.name}
+                {#if curr_tab && curr_tab.new_searcher === null}
+                    <div class="flex h-full items-center">
+                        <div class="w-full text-center text-xl">
+                            {curr_tab.name}
+                        </div>
                     </div>
-                </div>
-            {/if}
+                {:else}
+                    <InputBar
+                        placeholder={"Search"}
+                        bind:value={search_query}
+                        bind:input_element={search_input_element}
+                        on_enter={async (e) => {
+                            stores.query_input.set(search_query);
+                            if (curr_tab.query) {
+                                curr_tab.query.set(search_query);
+                            }
+
+                            e.preventDefault();
+                        }}
+                    />
+                {/if}
         </search-bar>
 
         <browse-tab-bar

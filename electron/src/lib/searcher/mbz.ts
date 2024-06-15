@@ -393,15 +393,16 @@ export class MbzListItem extends ListItem {
     }
     async audio_uri(): Promise<string | null> {
         const search_and_get = async (query: string) => {
-            let searcher = st.SongTube.new({
+            let new_searcher = (q: string) => st.SongTube.new({
                 type: "Search",
                 content: {
                     search: "YtSong",
-                    query: query,
+                    query: q,
                 },
             });
 
-            stores.push_tab(searcher, query);
+            let searcher = new_searcher(query);
+            stores.push_tab(searcher, query, null, query, new_searcher);
             stores.query_input.set(query);
             stores.curr_tab_index.set(get(stores.tabs).length - 2);
 
