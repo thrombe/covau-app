@@ -714,6 +714,27 @@ where
     search.boxed()
 }
 
+fn mbz_radio_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("radio")
+        .and(warp::path::end())
+        .and(warp::body::json())
+        .and(warp::any().map(move || c.clone()))
+        .and_then(|query: String, c: reqwest::Client| async move {
+            let res = mbz::listenbrainz::explore(c, query, mbz::listenbrainz::Mode::Easy)
+                .await
+                .map_err(custom_reject)?;
+            let res = match res {
+                mbz::listenbrainz::QueryResult::Ok { payload } => payload.jspf.playlist.track,
+                mbz::listenbrainz::QueryResult::Err { code, error } => {
+                    return Err(custom_reject(anyhow::anyhow!(error)));
+                }
+            };
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 #[derive(rust_embed::Embed)]
 #[folder = "electron/dist/"]
 pub struct Asset;
@@ -947,7 +968,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         use musicbrainz_rs::entity::{artist, recording, release, release_group};
 
         warp::path("mbz").and(
-            paged_search::<ReleaseWithInfo>("releases_with_info")
+            mbz_radio_route(client.clone())
+                .or(paged_search::<ReleaseWithInfo>("releases_with_info"))
                 .or(id_search::<ReleaseWithInfo>("releases_with_info"))
                 .or(paged_search::<ReleaseGroupWithInfo>(
                     "release_groups_with_info",
