@@ -7,6 +7,8 @@ import * as st from "$lib/searcher/song_tube.ts";
 import { get, writable } from "svelte/store";
 import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
+import { utils as server } from "$lib/server.ts";
+import { prompt } from "$lib/prompt/prompt.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -36,7 +38,6 @@ export type LinkedTyp = (
 );
 export type BrowseQuery =
     | { query_type: 'search', type: SearchTyp, query: string }
-    | { query_type: 'id', id: string, type: IdFetchTyp }
     | { query_type: 'linked', id: string, type: LinkedTyp };
 
 export class MbzListItem extends ListItem {
@@ -367,14 +368,12 @@ function ClassTypeWrapper<D extends {
 interface IUnionTypeWrapper<D> {
     query: BrowseQuery;
     next_page(): Promise<MusicListItem[]>;
-    get(): Promise<MusicListItem>;
     inner: D;
     has_next_page: boolean;
 };
 function UnionTypeWrapper<D extends {
     query: BrowseQuery;
     next_page(): Promise<Keyed[]>;
-    get(): Promise<Keyed>;
     has_next_page: boolean;
 }>(d: D) {
     return {
@@ -397,13 +396,6 @@ function UnionTypeWrapper<D extends {
                         get_key: data.get_key,
                     })) as unknown as MusicListItem[];
                 } break;
-                case "id": {
-                    return res.map(data => ({
-                        typ: d.query.type,
-                        data: data,
-                        get_key: data.get_key,
-                    })) as unknown as MusicListItem[];
-                } break;
                 case "linked": {
                     let typ = d.query.type;
                     return res.map(data => ({
@@ -416,20 +408,18 @@ function UnionTypeWrapper<D extends {
                     throw exhausted(type)
             }
         },
-
-        async get(): Promise<MusicListItem> {
-            let data = await d.get();
-            return {
-                typ: d.query.type,
-                data,
-                get_key: data.get_key,
-            } as unknown as MusicListItem;
-        },
     } as unknown as IUnionTypeWrapper<D>;
 }
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 export const mbz = {
+    async id_fetch<T>(id: string, type: IdFetchTyp) {
+        let route = this.id_fetch_route(type);
+        let res: T = await server.api_request(route, id);
+        let k = keyed([res], "id")[0];
+        return k;
+    },
+
     search_route(type: SearchTyp) {
         switch (type) {
             case "MbzReleaseWithInfo":
@@ -514,16 +504,7 @@ export class Mbz<T> extends Unpaged<T> {
                 page_size: this.page_size,
             },
         };
-        let res = await fetch(
-            this.route,
-            {
-                method: "POST",
-                body: JSON.stringify(q),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body = await res.text();
-        let matches: MBZ.SearchResults<T> = JSON.parse(body);
+        let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
         this.cont = matches.continuation;
         if (!this.cont) {
             this.has_next_page = false;
@@ -546,16 +527,7 @@ export class Mbz<T> extends Unpaged<T> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let res = await fetch(
-                    this.route,
-                    {
-                        method: "POST",
-                        body: JSON.stringify(q),
-                        headers: { "Content-Type": "application/json" },
-                    }
-                );
-                let body = await res.text();
-                let matches: MBZ.SearchResults<T> = JSON.parse(body);
+                let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;
@@ -569,12 +541,6 @@ export class Mbz<T> extends Unpaged<T> {
             let k = keyed(items, "id");
 
             return k as (T & Keyed)[];
-        } else if (this.query.query_type === 'id') {
-            this.has_next_page = false;
-
-            let match = await this.fetch_id(this.query.id, this.query.type);
-
-            return [match] as (T & Keyed)[];
         } else if (this.query.query_type === "linked") {
             let items;
             if (this.cont) {
@@ -582,16 +548,7 @@ export class Mbz<T> extends Unpaged<T> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let res = await fetch(
-                    this.route,
-                    {
-                        method: "POST",
-                        body: JSON.stringify(q),
-                        headers: { "Content-Type": "application/json" },
-                    }
-                );
-                let body = await res.text();
-                let matches: MBZ.SearchResults<T> = JSON.parse(body);
+                let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;
@@ -608,35 +565,6 @@ export class Mbz<T> extends Unpaged<T> {
         } else {
             throw exhausted(this.query);
         }
-    }
-
-    async get() {
-        if (this.query.query_type === 'id') {
-            this.has_next_page = false;
-
-            let match = await this.fetch_id(this.query.id, this.query.type);
-
-            return match;
-        } else {
-            throw "query type should be 'id' to call get()";
-        }
-    }
-
-    private async fetch_id(id: string, type: IdFetchTyp) {
-        let route = mbz.id_fetch_route(type);
-
-        let res = await fetch(
-            route,
-            {
-                method: "POST",
-                body: JSON.stringify(id),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        let body = await res.text();
-        let match: T = JSON.parse(body);
-        let k = keyed([match], "id")[0];
-        return k as (T & Keyed);
     }
 }
 
