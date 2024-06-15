@@ -45,7 +45,7 @@
     };
 
     let end_is_visible = false;
-    const end_reached = async (q: Readable<QueueManager>) => {
+    const end_reached = async (q: Readable<QueueManager> = queue) => {
         while (true) {
             if (!end_is_visible || !$queue.has_next_page) {
                 break;
