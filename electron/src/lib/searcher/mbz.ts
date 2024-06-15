@@ -1,27 +1,280 @@
-import { SavedSearch, UniqueSearch, Unpaged } from "./mixins";
-import { type Keyed, type RObject } from "./searcher";
-import * as MBZ from "$types/mbz";
+import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import * as MBZ from "$types/mbz.ts";
+import { exhausted, type Keyed } from "$lib/virtual.ts";
+import { ListItem, type Option, type RenderContext } from "./item.ts";
+import type { AlmostDbItem } from "$lib/local/db.ts";
+import * as st from "$lib/searcher/song_tube.ts";
+import { get, writable } from "svelte/store";
+import * as stores from "$lib/stores.ts";
+import { toast } from "$lib/toast/toast.ts";
 
-export type Release = MBZ.ReleaseWithInfo;
-export type ReleaseGroup = MBZ.ReleaseGroupWithInfo;
+export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
+export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
+export type Release = MBZ.Release;
+export type ReleaseGroup = MBZ.ReleaseGroup;
 export type Artist = MBZ.Artist;
 export type ArtistWithUrls = MBZ.WithUrlRels<MBZ.Artist>;
 export type Recording = MBZ.Recording;
 
 export type MusicListItem = Keyed & { data: Keyed } & (
-    { typ: "MbzRelease", data: Release } |
-    { typ: "MbzReleaseGroup", data: ReleaseGroup } |
-    { typ: "MbzRecording", data: Recording } |
-    { typ: "MbzArtist", data: Artist }
+    | { typ: "MbzReleaseWithInfo", data: ReleaseWithInfo }
+    | { typ: "MbzReleaseGroupWithInfo", data: ReleaseGroupWithInfo }
+    | { typ: "MbzRelease", data: Release }
+    | { typ: "MbzReleaseGroup", data: ReleaseGroup }
+    | { typ: "MbzRecording", data: Recording }
+    | { typ: "MbzArtist", data: Artist }
 );
 
-export type Typ = "MbzRelease" | "MbzReleaseGroup" | "MbzArtist" | "MbzRecording";
-export type IdFetchTyp = Typ | "MbzArtistWithUrls"
+export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecording";
+export type IdFetchTyp = SearchTyp | "MbzArtistWithUrls";
 export type BrowseQuery =
-    { query_type: 'search', type: Typ, query: string } |
-    { query_type: 'id', id: string, type: IdFetchTyp };
+    | { query_type: 'search', type: SearchTyp, query: string }
+    | { query_type: 'id', id: string, type: IdFetchTyp }
+
+export class MbzListItem extends ListItem {
+    data: MusicListItem;
+
+    constructor(data: MusicListItem) {
+        super();
+        this.data = data;
+    }
+
+    key(): unknown {
+        return this.data.get_key();
+    }
+    title(): string {
+        switch (this.data.typ) {
+            case "MbzReleaseWithInfo":
+                return this.data.data.title;
+            case "MbzReleaseGroupWithInfo":
+                return this.data.data.title;
+            case "MbzRelease":
+                return this.data.data.title;
+            case "MbzReleaseGroup":
+                return this.data.data.title;
+            case "MbzArtist":
+                return this.data.data.name;
+            case "MbzRecording":
+                return this.data.data.title;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+    thumbnail(): string | null {
+        return null;
+    }
+    default_thumbnail(): string {
+        return "/static/default-music-icon.svg";
+    }
+    title_sub(): string | null {
+        function authors(a: Artist[]) {
+            if (a.length == 0) {
+                return '';
+            } else {
+                return a
+                    .map(a => a.name)
+                    .reduce((p, c) => p + ", " + c);
+            }
+        }
+        function releases(a: MBZ.Release[]) {
+            if (a.length == 0) {
+                return '';
+            } else {
+                return a
+                    .map(a => a.title)
+                    .reduce((p, c) => p + ", " + c);
+            }
+        }
+
+        switch (this.data.typ) {
+            case "MbzReleaseWithInfo":
+                return authors(this.data.data.credit);
+            case "MbzReleaseGroupWithInfo":
+                return authors(this.data.data.credit);
+            case "MbzRelease":
+                return null;
+            case "MbzReleaseGroup":
+                return null;
+            case "MbzArtist":
+                return this.data.data.disambiguation;
+            case "MbzRecording":
+                return releases(this.data.data.releases);
+            default:
+                throw exhausted(this.data);
+        }
+    }
+    options(ctx: RenderContext): Option[] {
+        switch (ctx) {
+            case "Queue": {
+                switch (this.data.typ) {
+                    case "MbzReleaseWithInfo": {
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    stores.queue.update(q => {
+                                        q.play_item(this);
+                                        return q;
+                                    });
+                                    stores.playing_item.set(this);
+                                },
+                            },
+                            {
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
+                                tooltip: "remove from queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.remove_item(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                        ];
+                    } break;
+                    case "MbzReleaseGroupWithInfo": {
+                        return [];
+                    } break;
+                    case "MbzReleaseGroup": {
+                        return [];
+                    } break;
+                    case "MbzRelease": {
+                        return [];
+                    } break;
+                    case "MbzRecording": {
+                        return [];
+                    } break;
+                    case "MbzArtist": {
+                        return [];
+                    } break;
+                    default:
+                        throw exhausted(this.data);
+                }
+            } break;
+            case "Browser": {
+                switch (this.data.typ) {
+                    case "MbzReleaseWithInfo": {
+                        let a = this.data.data;
+                        return [
+                        ];
+                    } break;
+                    case "MbzReleaseGroupWithInfo": {
+                        let a = this.data.data;
+                        return [
+                        ];
+                    } break;
+                    case "MbzReleaseGroup": {
+                        let a = this.data.data;
+                        return [
+                        ];
+                    } break;
+                    case "MbzRelease": {
+                        let a = this.data.data;
+                        return [
+                        ];
+                    } break;
+                    case "MbzRecording": {
+                        return [
+                            {
+                                icon: "/static/add.svg",
+                                location: "TopRight",
+                                tooltip: "add to queue",
+                                onclick: () => {
+                                    stores.queue.update(q => {
+                                        q.add(this);
+                                        return q;
+                                    });
+                                },
+                            },
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    let uri = await this.audio_uri();
+                                    if (!uri) {
+                                        toast("could not play item", "error");
+                                        return;
+                                    }
+                                    get(stores.player).play(uri);
+                                    stores.playing_item.set(this);
+                                },
+                            },
+                        ];
+                    } break;
+                    case "MbzArtist": {
+                        let a = this.data.data;
+                        return [
+                        ];
+                    } break;
+                    default:
+                        throw exhausted(this.data);
+                }
+            } break;
+            case "Playbar":
+                return [];
+            default:
+                throw exhausted(ctx);
+        }
+    }
+    async audio_uri(): Promise<string | null> {
+        switch (this.data.typ) {
+            case "MbzRecording": {
+                // TODO: fetch more details for it? and then search "{song} by {artist}"
+                let searcher = st.SongTube.new({
+                    type: "Search",
+                    content: {
+                        search: "YtSong",
+                        query: this.data.data.title,
+                    },
+                }, get(stores.tube));
+                let songs = await searcher.next_page();
+                return songs.at(0)?.audio_uri() ?? null;
+            } break;
+            case "MbzReleaseWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+    savable(): AlmostDbItem<unknown> | null {
+        return null;
+    }
+}
+
+interface IClassTypeWrapper<D> {
+    next_page(): Promise<MbzListItem[]>;
+    inner: D;
+    has_next_page: boolean;
+};
+function ClassTypeWrapper<D extends {
+    query: BrowseQuery;
+    next_page(): Promise<MusicListItem[]>;
+    has_next_page: boolean;
+}>(d: D) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+
+        async next_page(): Promise<MbzListItem[]> {
+            let res = await d.next_page();
+
+            let self = this as unknown as IClassTypeWrapper<D>;
+            self.has_next_page = d.has_next_page;
+
+            return res.map(m => new MbzListItem(m));
+        }
+    } as unknown as IClassTypeWrapper<D>;
+}
 
 interface IUnionTypeWrapper<D> {
+    query: BrowseQuery;
     next_page(): Promise<MusicListItem[]>;
     get(): Promise<MusicListItem>;
     inner: D;
@@ -29,8 +282,8 @@ interface IUnionTypeWrapper<D> {
 };
 function UnionTypeWrapper<D extends {
     query: BrowseQuery;
-    next_page(): Promise<RObject<unknown>[]>;
-    get(): Promise<RObject<unknown>>;
+    next_page(): Promise<Keyed[]>;
+    get(): Promise<Keyed>;
     has_next_page: boolean;
 }>(d: D) {
     return {
@@ -43,22 +296,24 @@ function UnionTypeWrapper<D extends {
             let self = this as unknown as IUnionTypeWrapper<D>;
             self.has_next_page = d.has_next_page;
 
-            switch (d.query.query_type) {
-                case "search":
+            let type = d.query.query_type;
+            switch (type) {
+                case "search": {
                     let typ = d.query.type;
                     return res.map(data => ({
                         typ: typ,
                         data: data,
                         get_key: data.get_key,
                     })) as unknown as MusicListItem[];
-                case "id":
+                } break;
+                case "id": {
                     return res.map(data => ({
                         typ: d.query.type,
                         data: data,
                         get_key: data.get_key,
                     })) as unknown as MusicListItem[];
                 default:
-                    throw "unimplemented";
+                    throw exhausted(type)
             }
         },
 
@@ -73,6 +328,40 @@ function UnionTypeWrapper<D extends {
     } as unknown as IUnionTypeWrapper<D>;
 }
 
+let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
+export const mbz = {
+    search_route(type: SearchTyp) {
+        switch (type) {
+            case "MbzReleaseWithInfo":
+                return server_base + "mbz/search/releases_with_info";
+            case "MbzReleaseGroupWithInfo":
+                return server_base + "mbz/search/release_groups_with_info";
+            case "MbzArtist":
+                return server_base + "mbz/search/artists";
+            case "MbzRecording":
+                return server_base + "mbz/search/recordings";
+            default:
+                throw exhausted(type);
+        }
+    },
+    id_fetch_route(type: IdFetchTyp) {
+        switch (type) {
+            case "MbzReleaseWithInfo":
+                return server_base + "mbz/search/releases_with_info/id";
+            case "MbzReleaseGroupWithInfo":
+                return server_base + "mbz/search/release_groups_with_info/id";
+            case "MbzArtist":
+                return server_base + "mbz/search/artists/id";
+            case "MbzRecording":
+                return server_base + "mbz/search/recordings/id";
+            case "MbzArtistWithUrls":
+                return server_base + "mbz/search/artist_with_urls/id";
+            default:
+                throw exhausted(type);
+        }
+    },
+};
+
 export class Mbz<T> extends Unpaged<T> {
     query: BrowseQuery;
     page_size: number;
@@ -84,7 +373,10 @@ export class Mbz<T> extends Unpaged<T> {
     }
 
     static new<T>(query: BrowseQuery, page_size: number) {
-        return UnionTypeWrapper(Mbz.unwrapped<T>(query, page_size));
+        let w0 = Mbz.unwrapped<T>(query, page_size);
+        let w1 = UnionTypeWrapper(w0);
+        let w2 = ClassTypeWrapper(w1);
+        return w2
     }
 
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
@@ -93,38 +385,10 @@ export class Mbz<T> extends Unpaged<T> {
         return new SS(query, page_size);
     }
 
-    static fused<T>() {
-        let s = Mbz.new<T>({ type: '' } as unknown as BrowseQuery, 1);
-        s.inner.has_next_page = false;
-        return s;
-    }
-
-    static factory() {
-        class Fac {
-            page_size: number = 30;
-            constructor() {
-            }
-            async search_query<T>(query: BrowseQuery) {
-                type R = ReturnType<typeof Mbz.new>;
-                let t = Mbz.new<T>(query, this.page_size);
-                return t as R | null;
-            }
-        }
-        // const SS = SlowSearch<R, BrowseQuery, typeof Fac>(Fac);
-        return new Fac();
-    }
-
-    async fetch(type: Typ, query: string): Promise<T[]> {
-        if (type == 'MbzRelease') {
-            this.route = "mbz/search/releases";
-        } else if (type == 'MbzReleaseGroup') {
-            this.route = "mbz/search/release_groups";
-        } else if (type == 'MbzArtist') {
-            this.route = "mbz/search/artists";
-        } else if (type == 'MbzRecording') {
-            this.route = "mbz/search/recordings";
-        } else {
-            throw 'unreachable';
+    async fetch(query: string): Promise<T[]> {
+        if (query.length == 0) {
+            this.has_next_page = false;
+            return [];
         }
 
         let q: MBZ.SearchQuery = {
@@ -135,7 +399,7 @@ export class Mbz<T> extends Unpaged<T> {
             },
         };
         let res = await fetch(
-            `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route,
+            this.route,
             {
                 method: "POST",
                 body: JSON.stringify(q),
@@ -154,7 +418,7 @@ export class Mbz<T> extends Unpaged<T> {
     cont: MBZ.SearchContinuation | null = null;
     route: string = '';
     page_end_index: number = 0;
-    async next_page(): Promise<RObject<T>[]> {
+    async next_page(): Promise<(T & Keyed)[]> {
         if (!this.has_next_page) {
             return [];
         }
@@ -167,7 +431,7 @@ export class Mbz<T> extends Unpaged<T> {
                     content: this.cont,
                 };
                 let res = await fetch(
-                    `http://localhost:${import.meta.env.SERVER_PORT}/` + this.route,
+                    this.route,
                     {
                         method: "POST",
                         body: JSON.stringify(q),
@@ -182,20 +446,21 @@ export class Mbz<T> extends Unpaged<T> {
                 }
                 items = matches.items;
             } else {
-                items = await this.fetch(this.query.type, this.query.query);
+                this.route = mbz.search_route(this.query.type);
+                items = await this.fetch(this.query.query);
             }
 
             let k = keyed(items, "id");
 
-            return k as RObject<T>[];
+            return k as (T & Keyed)[];
         } else if (this.query.query_type === 'id') {
             this.has_next_page = false;
 
             let match = await this.fetch_id(this.query.id, this.query.type);
 
-            return [match] as RObject<T>[];
+            return [match] as (T & Keyed)[];
         } else {
-            throw "unreachable";
+            throw exhausted(this.query);
         }
     }
 
@@ -212,23 +477,10 @@ export class Mbz<T> extends Unpaged<T> {
     }
 
     private async fetch_id(id: string, type: IdFetchTyp) {
-        let route = '';
-        if (type == 'MbzRelease') {
-            route = "mbz/search/releases/id";
-        } else if (type == 'MbzReleaseGroup') {
-            route = "mbz/search/release_groups/id";
-        } else if (type == 'MbzArtist') {
-            route = "mbz/search/artists/id";
-        } else if (type == 'MbzRecording') {
-            route = "mbz/search/recordings/id";
-        } else if (type == 'MbzArtistWithUrls') {
-            route = "mbz/search/artist_with_urls/id";
-        } else {
-            throw 'unreachable';
-        }
+        let route = mbz.id_fetch_route(type);
 
         let res = await fetch(
-            `http://localhost:${import.meta.env.SERVER_PORT}/` + route,
+            route,
             {
                 method: "POST",
                 body: JSON.stringify(id),
@@ -238,14 +490,13 @@ export class Mbz<T> extends Unpaged<T> {
         let body = await res.text();
         let match: T = JSON.parse(body);
         let k = keyed([match], "id")[0];
-        return k as RObject<T>;
+        return k as (T & Keyed);
     }
 }
 
-let globally_unique_key: number = 0;
-const keyed = <T>(items: T[], field: string | null): (T & Keyed)[] => {
+const keyed = <T>(items: T[], field: string): (T & Keyed)[] => {
     let res = items.map((e: any) => {
-        let key = field ? e[field] : globally_unique_key++;
+        let key = e[field];
         let p = e as T & Keyed;
         p.get_key = function() {
             return key;
