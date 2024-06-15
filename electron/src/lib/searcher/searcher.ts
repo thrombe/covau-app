@@ -9,3 +9,12 @@ export let fused_searcher = {
     has_next_page: false,
 };
 
+export function StaticSearcher(items: ListItem[]) {
+    return {
+        async next_page() {
+            return items;
+        },
+        has_next_page: false,
+    } as Searcher;
+}
+

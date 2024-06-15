@@ -9,6 +9,7 @@ import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
 import { prompt } from "$lib/prompt/prompt.ts";
+import { StaticSearcher } from "./searcher.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -174,6 +175,26 @@ export class MbzListItem extends ListItem {
                 }
             } break;
             case "Browser": {
+                const recordings_from_releases = async (releases: Release[]) => {
+                    let recordings_es = await Promise.all(
+                        releases
+                            .map(r => Mbz.new({
+                                query_type: "linked",
+                                id: r.id,
+                                type: "MbzRecording_MbzRelease",
+                            }, 200).next_page()));
+                    let recordings = recordings_es.flat();
+                    let set = new Set();
+                    let deduped: MbzListItem[] = [];
+                    for (let rec of recordings) {
+                        if (!set.has(rec.data.data.id)) {
+                            set.add(rec.data.data.id);
+                            deduped.push(rec);
+                        }
+                    }
+                    return deduped;
+                };
+
                 switch (this.data.typ) {
                     case "MbzReleaseWithInfo": {
                         let a = this.data.data;
@@ -209,6 +230,28 @@ export class MbzListItem extends ListItem {
                                     stores.push_tab(s, "Releases for " + a.title);
                                 },
                             },
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "OnlyMenu",
+                                tooltip: "explore recordings",
+                                onclick: async () => {
+                                    let releases = await recordings_from_releases(a.releases);
+                                    let s = StaticSearcher(releases);
+                                    stores.push_tab(s, "Releases for " + a.title);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let releases = await recordings_from_releases(a.releases);
+                                    stores.queue.update(q => {
+                                        q.add(...releases);
+                                        return q;
+                                    });
+                                },
+                            },
                         ];
                     } break;
                     case "MbzReleaseGroup": {
@@ -225,6 +268,34 @@ export class MbzListItem extends ListItem {
                                         id: a.id,
                                     }, 30);
                                     stores.push_tab(s, "Releases for " + a.title);
+                                },
+                            },
+                            {
+                                icon: "/static/open-new-tab.svg",
+                                location: "OnlyMenu",
+                                tooltip: "explore recordings",
+                                onclick: async () => {
+                                    let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
+                                    this.data.data = rel;
+                                    this.data.typ = "MbzReleaseGroupWithInfo";
+                                    let releases = await recordings_from_releases(rel.releases);
+                                    let s = StaticSearcher(releases);
+                                    stores.push_tab(s, "Releases for " + a.title);
+                                },
+                            },
+                            {
+                                icon: "/static/add.svg",
+                                location: "OnlyMenu",
+                                tooltip: "add all to queue",
+                                onclick: async () => {
+                                    let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
+                                    this.data.data = rel;
+                                    this.data.typ = "MbzReleaseGroupWithInfo";
+                                    let releases = await recordings_from_releases(rel.releases);
+                                    stores.queue.update(q => {
+                                        q.add(...releases);
+                                        return q;
+                                    });
                                 },
                             },
                         ];
@@ -333,50 +404,54 @@ export class MbzListItem extends ListItem {
     }
     async audio_uri(): Promise<string | null> {
         const play_recording = async (recording: RecordingWithInfo) => {
-                let query: string | null = null;
+            let query: string | null = null;
 
-                let artist = recording.credit.at(0)?.name ?? null;
-                if (artist) {
-                    query = recording.title + " by " + artist;
+            let artist = recording.credit.at(0)?.name ?? null;
+            if (artist) {
+                query = recording.title + " by " + artist;
+            }
+
+            let release_id = recording.releases.at(0)?.id ?? null;
+            if (release_id) {
+                let release: ReleaseWithInfo = await mbz.id_fetch(release_id, "MbzReleaseWithInfo");
+                let release_group = release.release_group?.title;
+
+                if (!query && release_group) {
+                    query = recording.title + release_group;
                 }
+            }
 
-                let release_id = recording.releases.at(0)?.id ?? null;
-                if (release_id) {
-                    let release: ReleaseWithInfo = await mbz.id_fetch(release_id, "MbzReleaseWithInfo");
-                    let release_group = release.release_group?.title;
+            if (!query) {
+                query = await prompt("Enter a search query");
+            }
+            if (!query) {
+                return null;
+            }
 
-                    if (!query && release_group) {
-                        query = recording.title + release_group;
-                    }
-                }
+            let searcher = st.SongTube.new({
+                type: "Search",
+                content: {
+                    search: "YtSong",
+                    query: query,
+                },
+            }, get(stores.tube));
 
-                if (!query) {
-                    query = await prompt("Enter a search query");
-                }
-                if (!query) {
-                    return null;
-                }
+            stores.push_tab(searcher, query);
+            stores.query_input.set(query);
+            stores.curr_tab_index.set(get(stores.tabs).length - 2);
 
-                let searcher = st.SongTube.new({
-                    type: "Search",
-                    content: {
-                        search: "YtSong",
-                        query: query,
-                    },
-                }, get(stores.tube));
-                stores.push_tab(searcher, query);
-                stores.query_input.set(query);
-                stores.curr_tab_index.set(get(stores.tabs).length - 2);
-                let songs = await searcher.next_page();
-                console.log(songs);
-                recording.cover_art = songs.at(0)?.thumbnail() ?? null;
-                return songs.at(0)?.audio_uri() ?? null;
+            let songs = await searcher.next_page();
+            let song = songs.at(0) ?? null;
+
+            recording.cover_art = song?.thumbnail() ?? null;
+
+            return song?.audio_uri() ?? null;
         };
 
         switch (this.data.typ) {
             case "MbzRecording": {
-                let recording: RecordingWithInfo = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
-                this.data.data = keyed([recording], "id")[0];
+                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
+                this.data.data = recording;
                 this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
                 return await play_recording(recording);
             } break;
