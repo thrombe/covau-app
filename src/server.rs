@@ -698,6 +698,26 @@ fn id_search<T: IdSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<
     search.boxed()
 }
 
+fn linked_search<T, A>(path: &'static str, linked_to: &'static str) -> BoxedFilter<(impl Reply,)>
+where
+    T: mbz::Linked<A> + Serialize + Send + Sized,
+{
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("linked"))
+        .and(warp::path(linked_to))
+        .and(warp::path::end())
+        .and(warp::body::json())
+        .and_then(|query: mbz::SearchQuery| async move {
+            use musicbrainz_rs::entity::search::Searchable;
+
+            let res = T::search(query).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 #[derive(rust_embed::Embed)]
 #[folder = "electron/dist/"]
 pub struct Asset;
@@ -929,17 +949,41 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
 
     let mbz_search_routes = {
         use crate::mbz::*;
+        use musicbrainz_rs::entity::{artist, recording, release, release_group};
 
         warp::path("mbz").and(
-            paged_search::<ReleaseWithInfo>("releases")
-                .or(id_search::<ReleaseWithInfo>("releases"))
-                .or(paged_search::<ReleaseGroupWithInfo>("release_groups"))
-                .or(id_search::<ReleaseGroupWithInfo>("release_groups"))
+            paged_search::<ReleaseWithInfo>("releases_with_info")
+                .or(id_search::<ReleaseWithInfo>("releases_with_info"))
+                .or(paged_search::<ReleaseGroupWithInfo>(
+                    "release_groups_with_info",
+                ))
+                .or(id_search::<ReleaseGroupWithInfo>(
+                    "release_groups_with_info",
+                ))
                 .or(paged_search::<Artist>("artists"))
                 .or(id_search::<Artist>("artists"))
                 .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
                 .or(paged_search::<Recording>("recordings"))
-                .or(id_search::<Recording>("recordings")),
+                .or(id_search::<Recording>("recordings"))
+                .or(linked_search::<
+                    ReleaseGroup,
+                    artist::Artist,
+                >("release_groups", "artist"))
+                .or(linked_search::<Release, artist::Artist>(
+                    "releases", "artist",
+                ))
+                .or(linked_search::<
+                    Release,
+                    release_group::ReleaseGroup,
+                >("releases", "release_group"))
+                .or(linked_search::<
+                    Recording,
+                    artist::Artist,
+                >("recordings", "artist"))
+                .or(linked_search::<
+                    Recording,
+                    release::Release,
+                >("recordings", "release")),
         )
     };
 
