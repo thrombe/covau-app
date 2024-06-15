@@ -61,7 +61,7 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Playlist", content_type: "list", type: "Playlist" },
     { name: "Queue", content_type: "list", type: "Queue" },
     { name: "Updater", content_type: "list", type: "Updater" },
-    { name: "Mbz Recording", content_type: "list", type: "MbzRecording" },
+    { name: "Mbz Recording", content_type: "list", type: "MbzRecordingWithInfo" },
     { name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
     { name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
     { name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
@@ -158,7 +158,7 @@ selected_menubar_option.subscribe(async (option) => {
                 case "MbzReleaseWithInfo":
                 case "MbzReleaseGroupWithInfo":
                 case "MbzArtist":
-                case "MbzRecording": {
+                case "MbzRecordingWithInfo": {
                     s = Mbz.Mbz.new({
                         query_type: "search",
                         type: option.type,

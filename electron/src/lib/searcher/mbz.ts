@@ -17,17 +17,19 @@ export type ReleaseGroup = MBZ.ReleaseGroup;
 export type Artist = MBZ.Artist;
 export type ArtistWithUrls = MBZ.WithUrlRels<MBZ.Artist>;
 export type Recording = MBZ.Recording;
+export type RecordingWithInfo = MBZ.RecordingWithInfo;
 
 export type MusicListItem = Keyed & { data: Keyed } & (
     | { typ: "MbzReleaseWithInfo", data: ReleaseWithInfo }
     | { typ: "MbzReleaseGroupWithInfo", data: ReleaseGroupWithInfo }
     | { typ: "MbzRelease", data: Release }
     | { typ: "MbzReleaseGroup", data: ReleaseGroup }
+    | { typ: "MbzRecordingWithInfo", data: RecordingWithInfo }
     | { typ: "MbzRecording", data: Recording }
     | { typ: "MbzArtist", data: Artist }
 );
 
-export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecording";
+export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecordingWithInfo";
 export type IdFetchTyp = SearchTyp | "MbzArtistWithUrls";
 export type LinkedTyp = (
     | "MbzReleaseGroup_MbzArtist"
@@ -64,6 +66,8 @@ export class MbzListItem extends ListItem {
             case "MbzArtist":
                 return this.data.data.name;
             case "MbzRecording":
+                return this.data.data.title;
+            case "MbzRecordingWithInfo":
                 return this.data.data.title;
             default:
                 throw exhausted(this.data);
@@ -107,7 +111,9 @@ export class MbzListItem extends ListItem {
             case "MbzArtist":
                 return this.data.data.disambiguation;
             case "MbzRecording":
-                return releases(this.data.data.releases);
+                return null;
+            case "MbzRecordingWithInfo":
+                return authors(this.data.data.credit);
             default:
                 throw exhausted(this.data);
         }
@@ -116,7 +122,8 @@ export class MbzListItem extends ListItem {
         switch (ctx) {
             case "Queue": {
                 switch (this.data.typ) {
-                    case "MbzReleaseWithInfo": {
+                    case "MbzRecording":
+                    case "MbzRecordingWithInfo": {
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -143,10 +150,10 @@ export class MbzListItem extends ListItem {
                             },
                         ];
                     } break;
+                    case "MbzReleaseWithInfo":
                     case "MbzReleaseGroupWithInfo":
                     case "MbzReleaseGroup":
                     case "MbzRelease":
-                    case "MbzRecording":
                     case "MbzArtist": {
                         throw new Error("Can't display this item in queue");
                     } break;
@@ -228,6 +235,7 @@ export class MbzListItem extends ListItem {
                             },
                         ];
                     } break;
+                    case "MbzRecordingWithInfo":
                     case "MbzRecording": {
                         return [
                             {
@@ -428,8 +436,8 @@ export const mbz = {
                 return server_base + "mbz/search/release_groups_with_info";
             case "MbzArtist":
                 return server_base + "mbz/search/artists";
-            case "MbzRecording":
-                return server_base + "mbz/search/recordings";
+            case "MbzRecordingWithInfo":
+                return server_base + "mbz/search/recordings_with_info";
             default:
                 throw exhausted(type);
         }
@@ -442,8 +450,8 @@ export const mbz = {
                 return server_base + "mbz/search/release_groups_with_info/id";
             case "MbzArtist":
                 return server_base + "mbz/search/artists/id";
-            case "MbzRecording":
-                return server_base + "mbz/search/recordings/id";
+            case "MbzRecordingWithInfo":
+                return server_base + "mbz/search/recordings_with_info/id";
             case "MbzArtistWithUrls":
                 return server_base + "mbz/search/artist_with_urls/id";
             default:
