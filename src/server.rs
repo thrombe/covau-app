@@ -963,8 +963,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(paged_search::<Artist>("artists"))
                 .or(id_search::<Artist>("artists"))
                 .or(id_search::<WithUrlRels<Artist>>("artist_with_urls"))
-                .or(paged_search::<Recording>("recordings"))
-                .or(id_search::<Recording>("recordings"))
+                .or(paged_search::<RecordingWithInfo>("recordings_with_info"))
+                .or(id_search::<RecordingWithInfo>("recordings_with_info"))
                 .or(linked_search::<
                     ReleaseGroup,
                     artist::Artist,

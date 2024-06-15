@@ -1,4 +1,5 @@
-export type Recording = { title: string; id: string; releases: Release[] };
+export type Recording = { title: string; id: string };
+export type RecordingWithInfo = ({ title: string; id: string }) & { releases: ReleaseWithInfo[]; credit: Artist[]; cover_art: string | null };
 export type ReleaseGroup = { id: string; title: string; primary_type: string | null; secondary_types: string[]; disambiguation: string };
 export type ReleaseGroupWithInfo = ({ id: string; title: string; primary_type: string | null; secondary_types: string[]; disambiguation: string }) & { releases: Release[]; credit: Artist[]; cover_art: string | null };
 export type ReleaseMedia = { track_count: number; format: string | null };

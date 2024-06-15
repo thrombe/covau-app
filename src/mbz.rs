@@ -11,7 +11,16 @@ fn type_to_string<S: Serialize>(s: S) -> String {
 pub struct Recording {
     pub title: String,
     pub id: String,
-    pub releases: Vec<Release>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct RecordingWithInfo {
+    #[serde(flatten)]
+    pub recording: Recording,
+    pub releases: Vec<ReleaseWithInfo>,
+    pub credit: Vec<Artist>,
+
+    pub cover_art: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -149,7 +158,23 @@ mod trait_impls {
             Self {
                 title: r.title,
                 id: r.id,
-                releases: r.releases.into_iter().flatten().map(Into::into).collect(),
+            }
+        }
+    }
+
+    impl From<recording::Recording> for RecordingWithInfo {
+        fn from(r: recording::Recording) -> Self {
+            Self {
+                releases: r.releases.clone().into_iter().flatten().map(Into::into).collect(),
+                credit: r
+                    .artist_credit
+                    .clone()
+                    .into_iter()
+                    .flatten()
+                    .map(Into::into)
+                    .collect(),
+                recording: r.into(),
+                cover_art: None,
             }
         }
     }
@@ -437,7 +462,7 @@ mod trait_impls {
     }
 
     #[async_trait::async_trait]
-    impl PagedSearch for Recording {
+    impl PagedSearch for RecordingWithInfo {
         async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
             let (query, page_size, offset) = match query {
                 SearchQuery::Search { query, page_size } => (query, page_size, 0),
@@ -584,7 +609,11 @@ mod trait_impls {
     #[async_trait::async_trait]
     impl IdSearch for ReleaseWithInfo {
         async fn get(id: &str) -> anyhow::Result<Self> {
-            let r = release::Release::fetch().id(id).execute().await?;
+            let r = release::Release::fetch().id(id)
+                .with_artists()
+                .with_release_groups()
+                // .with_recordings()
+                .execute().await?;
             let res = r.into();
             Ok(res)
         }
@@ -595,6 +624,8 @@ mod trait_impls {
         async fn get(id: &str) -> anyhow::Result<Self> {
             let r = release_group::ReleaseGroup::fetch()
                 .id(id)
+                .with_artists()
+                .with_releases()
                 .execute()
                 .await?;
             let res = r.into();
@@ -603,9 +634,9 @@ mod trait_impls {
     }
 
     #[async_trait::async_trait]
-    impl IdSearch for Recording {
+    impl IdSearch for RecordingWithInfo {
         async fn get(id: &str) -> anyhow::Result<Self> {
-            let r = recording::Recording::fetch().id(id).execute().await?;
+            let r = recording::Recording::fetch().id(id).with_artists().with_releases().execute().await?;
             let res = r.into();
             Ok(res)
         }
@@ -616,6 +647,8 @@ mod trait_impls {
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += &specta::ts::export::<Recording>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<RecordingWithInfo>(config)?;
     types += ";\n";
     types += &specta::ts::export::<ReleaseGroup>(config)?;
     types += ";\n";
@@ -649,12 +682,24 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
 
 #[cfg(feature = "bindeps")]
 pub async fn api_test() -> anyhow::Result<()> {
-    // limit=
-    // offset=
-    // let r = artist::Artist::search("query=aimer&inc=url-rels".into()).execute().await?;
-    // let r = recording::Recording::search("method=indexed&query=rejuvenation queen bee".into())
-    //     .execute()
-    //     .await?;
+    use musicbrainz_rs::{
+        entity::{
+            alias, area, artist, artist_credit, coverart, recording, relations, release,
+            release_group, search::Searchable, work::Work, Browsable, BrowseResult,
+        },
+        Browse, Fetch, FetchCoverart, Path, Search,
+    };
+
+    let r = artist::Artist::search("query=aimer".into()).execute().await?;
+    dbg!(&r);
+    let r = recording::Recording::browse()
+        .by_artist(&r.entities[0].id)
+        // .with_releases()
+        .execute()
+        .await?;
+    dbg!(&r);
+    let r = recording::Recording::fetch().id(&r.entities[0].id).with_artists().with_releases().execute().await?;
+    dbg!(&r);
     // let r = Work::search("method=indexed&query=violence".into()).execute().await?;
     // let r = release::Release::search("query=visions milet".into()).execute().await?;
     // let r = release_group::ReleaseGroup::search("query=visions milet".into())
@@ -669,16 +714,16 @@ pub async fn api_test() -> anyhow::Result<()> {
 
     // println!("{}", serde_json::to_string_pretty(&r)?);
 
-    let r = Artist::search(SearchQuery::Search {
-        query: "aimer".into(),
-        page_size: 10,
-    })
-    .await?;
-    dbg!(&r);
-    let r2 = Artist::search(SearchQuery::Continuation(r.continuation.unwrap())).await?;
-    dbg!(&r2);
-    let r3 = WithUrlRels::<Artist>::get(&r.items[0].id).await?;
-    dbg!(&r3);
+    // let r = Artist::search(SearchQuery::Search {
+    //     query: "aimer".into(),
+    //     page_size: 10,
+    // })
+    // .await?;
+    // dbg!(&r);
+    // let r2 = Artist::search(SearchQuery::Continuation(r.continuation.unwrap())).await?;
+    // dbg!(&r2);
+    // let r3 = WithUrlRels::<Artist>::get(&r.items[0].id).await?;
+    // dbg!(&r3);
 
     Ok(())
 }
