@@ -13,3 +13,4 @@ export type WithUrlRels<T> = { item: T; urls: Url[] };
 export type SearchQuery = { type: "Search"; content: { query: string; page_size: number } } | { type: "Continuation"; content: SearchContinuation };
 export type SearchContinuation = { query: string; offset: number; count: number; page_size: number };
 export type SearchResults<T> = { items: T[]; continuation: SearchContinuation | null };
+export type RadioSong = { album: string | null; creator: string; duration: number | null; identifier: string[]; title: string };

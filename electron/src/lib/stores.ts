@@ -65,6 +65,7 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
     { name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
     { name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
+    { name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
     { name: "Covau Group", content_type: "list", type: "covau-group" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
@@ -159,6 +160,7 @@ selected_menubar_option.subscribe(async (option) => {
                         },
                     });
                 } break;
+                case "MbzRadioSong":
                 case "MbzReleaseWithInfo":
                 case "MbzReleaseGroupWithInfo":
                 case "MbzArtist":

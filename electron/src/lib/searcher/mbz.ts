@@ -19,6 +19,7 @@ export type Artist = MBZ.Artist;
 export type ArtistWithUrls = MBZ.WithUrlRels<MBZ.Artist>;
 export type Recording = MBZ.Recording;
 export type RecordingWithInfo = MBZ.RecordingWithInfo;
+export type RadioSong = MBZ.RadioSong;
 
 export type MusicListItem = Keyed & { data: Keyed } & (
     | { typ: "MbzReleaseWithInfo", data: ReleaseWithInfo }
@@ -28,10 +29,11 @@ export type MusicListItem = Keyed & { data: Keyed } & (
     | { typ: "MbzRecordingWithInfo", data: RecordingWithInfo }
     | { typ: "MbzRecording", data: Recording }
     | { typ: "MbzArtist", data: Artist }
+    | { typ: "MbzRadioSong", data: RadioSong }
 );
 
-export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecordingWithInfo";
-export type IdFetchTyp = SearchTyp | "MbzArtistWithUrls";
+export type SearchTyp = "MbzReleaseWithInfo" | "MbzReleaseGroupWithInfo" | "MbzArtist" | "MbzRecordingWithInfo" | "MbzRadioSong";
+export type IdFetchTyp = Exclude<SearchTyp, "MbzRadioSong"> | "MbzArtistWithUrls";
 export type LinkedTyp = (
     | "MbzReleaseGroup_MbzArtist"
     | "MbzRelease_MbzArtist"
@@ -70,6 +72,8 @@ export class MbzListItem extends ListItem {
                 return this.data.data.title;
             case "MbzRecordingWithInfo":
                 return this.data.data.title;
+            case "MbzRadioSong":
+                return this.data.data.title;
             default:
                 throw exhausted(this.data);
         }
@@ -83,6 +87,7 @@ export class MbzListItem extends ListItem {
             case "MbzRelease":
             case "MbzReleaseGroup":
             case "MbzArtist":
+            case "MbzRadioSong":
             case "MbzRecording":
                 return null;
             default:
@@ -127,6 +132,8 @@ export class MbzListItem extends ListItem {
                 return null;
             case "MbzRecordingWithInfo":
                 return authors(this.data.data.credit);
+            case "MbzRadioSong":
+                return this.data.data.creator;
             default:
                 throw exhausted(this.data);
         }
@@ -135,6 +142,7 @@ export class MbzListItem extends ListItem {
         switch (ctx) {
             case "Queue": {
                 switch (this.data.typ) {
+                    case "MbzRadioSong":
                     case "MbzRecording":
                     case "MbzRecordingWithInfo": {
                         return [
@@ -299,6 +307,7 @@ export class MbzListItem extends ListItem {
                         ];
                     } break;
                     case "MbzRecordingWithInfo":
+                    case "MbzRadioSong":
                     case "MbzRecording": {
                         return [
                             {
@@ -383,6 +392,23 @@ export class MbzListItem extends ListItem {
         }
     }
     async audio_uri(): Promise<string | null> {
+        const search_and_get = async (query: string) => {
+            let searcher = st.SongTube.new({
+                type: "Search",
+                content: {
+                    search: "YtSong",
+                    query: query,
+                },
+            });
+
+            stores.push_tab(searcher, query);
+            stores.query_input.set(query);
+            stores.curr_tab_index.set(get(stores.tabs).length - 2);
+
+            let songs = await searcher.next_page();
+            let song = songs.at(0) ?? null;
+            return song;
+        };
         const play_recording = async (recording: RecordingWithInfo) => {
             let query: string | null = null;
 
@@ -408,20 +434,7 @@ export class MbzListItem extends ListItem {
                 return null;
             }
 
-            let searcher = st.SongTube.new({
-                type: "Search",
-                content: {
-                    search: "YtSong",
-                    query: query,
-                },
-            });
-
-            stores.push_tab(searcher, query);
-            stores.query_input.set(query);
-            stores.curr_tab_index.set(get(stores.tabs).length - 2);
-
-            let songs = await searcher.next_page();
-            let song = songs.at(0) ?? null;
+            let song = await search_and_get(query);
 
             recording.cover_art = song?.thumbnail() ?? null;
 
@@ -437,6 +450,11 @@ export class MbzListItem extends ListItem {
             } break;
             case "MbzRecordingWithInfo": {
                 return await play_recording(this.data.data);
+            } break;
+            case "MbzRadioSong": {
+                let query = this.data.data.title + " by " + this.data.data.creator;
+                let song = await search_and_get(query);
+                return song?.audio_uri() ?? null;
             } break;
             case "MbzReleaseWithInfo":
             case "MbzRelease":
@@ -545,8 +563,8 @@ export const mbz = {
         let set = new Set();
         let deduped: MbzListItem[] = [];
         for (let rec of recordings) {
-            if (!set.has(rec.data.data.id)) {
-                set.add(rec.data.data.id);
+            if (!set.has(rec.data.data.get_key())) {
+                set.add(rec.data.data.get_key());
                 deduped.push(rec);
             }
         }
@@ -563,6 +581,8 @@ export const mbz = {
                 return server_base + "mbz/search/artists";
             case "MbzRecordingWithInfo":
                 return server_base + "mbz/search/recordings_with_info";
+            case "MbzRadioSong":
+                return server_base + "mbz/radio";
             default:
                 throw exhausted(type);
         }
@@ -654,26 +674,40 @@ export class Mbz<T> extends Unpaged<T> {
         }
 
         if (this.query.query_type === 'search') {
-            let items;
-            if (this.cont) {
-                let q: MBZ.SearchQuery = {
-                    type: "Continuation",
-                    content: this.cont,
-                };
-                let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
-                this.cont = matches.continuation;
-                if (!this.cont) {
-                    this.has_next_page = false;
-                }
-                items = matches.items;
-            } else {
+            if (this.query.type == "MbzRadioSong") {
+                this.has_next_page = false;
                 this.route = mbz.search_route(this.query.type);
-                items = await this.fetch(this.query.query);
+                let songs: RadioSong[] = await server.api_request(this.route, this.query.query);
+                let k: (RadioSong & Keyed)[] = songs.map(s => {
+                    let p = s as unknown as RadioSong & Keyed;
+                    p.get_key = () => {
+                        return p.identifier.at(0) ?? (p.title + p.creator + p.album);
+                    };
+                    return p;
+                });
+                return k as unknown as (T & Keyed)[];
+            } else {
+                let items;
+                if (this.cont) {
+                    let q: MBZ.SearchQuery = {
+                        type: "Continuation",
+                        content: this.cont,
+                    };
+                    let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
+                    this.cont = matches.continuation;
+                    if (!this.cont) {
+                        this.has_next_page = false;
+                    }
+                    items = matches.items;
+                } else {
+                    this.route = mbz.search_route(this.query.type);
+                    items = await this.fetch(this.query.query);
+                }
+
+                let k = keyed(items, "id");
+
+                return k as (T & Keyed)[];
             }
-
-            let k = keyed(items, "id");
-
-            return k as (T & Keyed)[];
         } else if (this.query.query_type === "linked") {
             let items;
             if (this.cont) {
