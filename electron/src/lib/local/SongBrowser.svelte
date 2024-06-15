@@ -5,6 +5,7 @@
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
     import { onDestroy } from "svelte";
+    import { get } from "svelte/store";
 
     export let columns: number;
     export let item_height: number;
@@ -58,6 +59,7 @@
                     bind:input_element={search_input_element}
                     on_enter={async (e) => {
                         stores.query_input.set(search_query);
+                        stores.refresh_tab();
 
                         e.preventDefault();
                     }}

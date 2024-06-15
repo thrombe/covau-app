@@ -69,9 +69,13 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Related", content_type: "related-music", id: null },
 ]);
 export let selected_menubar_option_index = writable(0);
+let tab_updater = writable(1);
+export const refresh_tab = () => {
+    tab_updater.update(t => t+1);
+};
 export let selected_menubar_option: Readable<MenubarOption> = derived(
-    [menubar_options, selected_menubar_option_index, query_input, tube],
-    ([$options, $index, _q, _t]) => $options[$index],
+    [menubar_options, selected_menubar_option_index, tab_updater, tube],
+    ([$options, $index, _u, _t]) => $options[$index],
 );
 
 export let tabs: Writable<Tab[]> = writable([{
