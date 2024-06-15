@@ -4,6 +4,7 @@
     import InputBar from "$lib/components/InputBar.svelte";
     import * as stores from "$lib/stores.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
+    import { onDestroy } from "svelte";
 
     export let columns: number;
     export let item_height: number;
@@ -34,8 +35,17 @@
         // }
     };
 
-    let tabs = stores.tabs;
-    let curr_tab = stores.curr_tab;
+    let tabs: stores.Tab[] = [];
+    let curr_tab: stores.Tab;
+
+    let unsub = stores.tabs.subscribe(t => {
+        tabs = t;
+    });
+    onDestroy(unsub);
+    unsub = stores.curr_tab.subscribe(t => {
+        curr_tab = t;
+    });
+    onDestroy(unsub);
 </script>
 
 <div class="w-full h-full flex flex-col">
@@ -64,10 +74,10 @@
         <browse-tab-bar
             class="flex flex-row overflow-x-auto gap-1 px-1 justify-center"
         >
-            {#each $tabs as tab, i}
+            {#each tabs as tab, i}
                 <button
                     class="border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
-                        {$curr_tab == tab
+                        {curr_tab == tab
                         ? 'font-bold border-gray-200'
                         : 'border-gray-600'}
                     "
@@ -82,8 +92,8 @@
         </browse-tab-bar>
     </bar-area>
 
-    {#each $tabs as tab (tab.name)}
-        <browse-area class={$curr_tab == tab ? "" : "hidden"}>
+    {#each tabs as tab (tab.name)}
+        <browse-area class={curr_tab == tab ? "" : "hidden"}>
             <Explorer
                 searcher={tab.searcher}
                 {columns}
