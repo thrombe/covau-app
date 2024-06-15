@@ -142,20 +142,12 @@ export class MbzListItem extends ListItem {
                             },
                         ];
                     } break;
-                    case "MbzReleaseGroupWithInfo": {
-                        return [];
-                    } break;
-                    case "MbzReleaseGroup": {
-                        return [];
-                    } break;
-                    case "MbzRelease": {
-                        return [];
-                    } break;
-                    case "MbzRecording": {
-                        return [];
-                    } break;
+                    case "MbzReleaseGroupWithInfo":
+                    case "MbzReleaseGroup":
+                    case "MbzRelease":
+                    case "MbzRecording":
                     case "MbzArtist": {
-                        return [];
+                        throw new Error("Can't display this item in queue");
                     } break;
                     default:
                         throw exhausted(this.data);
