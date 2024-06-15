@@ -157,7 +157,7 @@ selected_menubar_option.subscribe(async (option) => {
                             query: get(query_input),
                             search: option.type
                         },
-                    }, get(tube));
+                    });
                 } break;
                 case "MbzReleaseWithInfo":
                 case "MbzReleaseGroupWithInfo":
@@ -194,7 +194,7 @@ selected_menubar_option.subscribe(async (option) => {
                             ids,
                             batch_size: 10,
                         },
-                    }, get(tube));
+                    });
                 } break;
                 default:
                     throw exhausted(option.type);
@@ -216,7 +216,7 @@ selected_menubar_option.subscribe(async (option) => {
             let st = await import("$lib/searcher/song_tube.ts");
             let s = st.SongTube.new({
                 type: "HomeFeed",
-            }, get(tube));
+            });
             tabs.update(t => {
                 t = [t[0]];
                 t[0].searcher.set(s);

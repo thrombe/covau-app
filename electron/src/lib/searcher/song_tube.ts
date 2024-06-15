@@ -245,7 +245,7 @@ export class StListItem extends ListItem {
                                     let s = SongTube.new({
                                         type: "Album",
                                         content: a.id,
-                                    }, get(stores.tube));
+                                    });
                                     stores.push_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
@@ -257,7 +257,7 @@ export class StListItem extends ListItem {
                                     let s = SongTube.new({
                                         type: "Album",
                                         content: a.id,
-                                    }, get(stores.tube));
+                                    });
                                     let items = await s.next_page();
                                     stores.queue.update(q => {
                                         q.add(...items);
@@ -278,7 +278,7 @@ export class StListItem extends ListItem {
                                     let s = SongTube.new({
                                         type: "Playlist",
                                         content: p.id,
-                                    }, get(stores.tube));
+                                    });
                                     stores.push_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
                                 },
                             },
@@ -295,7 +295,7 @@ export class StListItem extends ListItem {
                                     let s = SongTube.new({
                                         type: "Artist",
                                         content: a.id,
-                                    }, get(stores.tube));
+                                    });
                                     stores.push_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
@@ -341,20 +341,20 @@ export class SongTube extends Unpaged<MusicListItem> {
     tube: Innertube;
     query: BrowseQuery;
 
-    constructor(query: BrowseQuery, tube: Innertube) {
+    constructor(query: BrowseQuery) {
         super();
-        this.tube = tube;
+        this.tube = get(stores.tube);
         this.query = query;
     }
 
-    static new(query: BrowseQuery, tube: Innertube) {
-        return ClassTypeWrapper(SongTube.unwrapped(query, tube));
+    static new(query: BrowseQuery) {
+        return ClassTypeWrapper(SongTube.unwrapped(query));
     }
 
-    static unwrapped(query: BrowseQuery, tube: Innertube) {
+    static unwrapped(query: BrowseQuery) {
         const US = UniqueSearch<MusicListItem, typeof SongTube>(SongTube);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
-        return new SS(query, tube);
+        return new SS(query);
     }
 
     results: Search | null = null;

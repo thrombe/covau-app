@@ -414,7 +414,7 @@ export class MbzListItem extends ListItem {
                     search: "YtSong",
                     query: query,
                 },
-            }, get(stores.tube));
+            });
 
             stores.push_tab(searcher, query);
             stores.query_input.set(query);

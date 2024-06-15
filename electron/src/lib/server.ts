@@ -1,11 +1,8 @@
 import type { ErrorMessage, Message } from '$types/server.ts';
 import { toast } from './toast/toast.ts';
-import * as stores from "$lib/stores.ts";
-import { get } from 'svelte/store';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
 import { exhausted } from './virtual.ts';
-import type Innertube from 'youtubei.js';
 
 export const utils = {
     async api_request<P, T>(url: string, json_payload: P) {
@@ -55,11 +52,9 @@ export const utils = {
 
 class Server {
     ws: WebSocket;
-    tube: Innertube;
 
     constructor() {
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/serve`);
-        this.tube = get(stores.tube);
 
         this.ws.addEventListener('message', async (e) => {
             let mesg: Message<yt.YtiRequest> = JSON.parse(e.data);
@@ -105,7 +100,7 @@ class Server {
     async handle_req(req: yt.YtiRequest): Promise<Object | null | undefined> {
         switch (req.type) {
             case 'CreateSongTube': {
-                let tube = new St.SongTube(req.content.query, this.tube);
+                let tube = new St.SongTube(req.content.query);
                 this.tubes.set(req.content.id, tube);
                 return null;
             } break;
