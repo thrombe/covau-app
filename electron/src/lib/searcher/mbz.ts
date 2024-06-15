@@ -364,6 +364,9 @@ export class MbzListItem extends ListItem {
                         query: query,
                     },
                 }, get(stores.tube));
+                stores.push_tab(searcher, query);
+                stores.query_input.set(query);
+                stores.curr_tab_index.set(get(stores.tabs).length - 2);
                 let songs = await searcher.next_page();
                 console.log(songs);
                 recording.cover_art = songs.at(0)?.thumbnail() ?? null;
