@@ -10,6 +10,7 @@ import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
 import { db, type AlmostDbItem } from "$lib/local/db.ts";
+import { utils as server } from "$lib/server.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<Musi.SongId>;
@@ -839,7 +840,7 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await db.api_request(
+        let matches: DB.SearchMatches<unknown> = await server.api_request(
             db.route(this.query.type, "search"),
             q,
         );
@@ -864,7 +865,7 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await db.api_request(
+                let matches: DB.SearchMatches<unknown> = await server.api_request(
                     db.route(this.query.type, "search"),
                     q,
                 );
@@ -891,7 +892,7 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await db.api_request(
+            let matches: DB.DbItem<unknown>[] = await server.api_request(
                 db.route(this.query.type, "search") + "/refid",
                 ids,
             );
@@ -909,7 +910,7 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await db.api_request(
+            let matches: DB.DbItem<unknown>[] = await server.api_request(
                 db.route(this.query.type, "search") + "/dbid",
                 ids,
             );
