@@ -139,6 +139,87 @@ where
     async fn get(id: &str) -> anyhow::Result<Self>;
 }
 
+pub mod listenbrainz {
+    use serde::{Deserialize, Serialize};
+
+    const BASE_URL: &'static str = "https://api.listenbrainz.org/1/explore/lb-radio";
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    #[serde(untagged)]
+    pub enum QueryResult {
+        Ok {
+            payload: Payload,
+        },
+        Err {
+            code: u32,
+            error: String,
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub enum Mode {
+        Easy,
+        Medium,
+        Hard,
+    }
+    impl Mode {
+        fn path(&self) -> &'static str {
+            match self {
+                Mode::Easy => "easy",
+                Mode::Medium => "medium",
+                Mode::Hard => "hard",
+            }
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Payload {
+        pub feedback: Vec<String>,
+        pub jspf: Jspf,
+    }
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Jspf {
+        pub playlist: Playlist,
+    }
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    pub struct Playlist {
+        pub annotation: String,
+        pub creator: String,
+        // extension: {
+        //   "https://musicbrainz.org/doc/jspf#playlist": {
+        //     "public": true
+        //   }
+        // },
+        pub title: String,
+        pub track: Vec<RadioSong>,
+    }
+    
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct RadioSong {
+        pub album: String,
+        pub creator: String,
+        pub duration: u32,
+        // extension: {
+        //   "https://musicbrainz.org/doc/jspf#track": {
+        //     "artist_identifiers": [
+        //       "741a8da6-9b87-4b49-acda-6cc6d9f579ac",
+        //       "9388cee2-7d57-4598-905f-106019b267d3"
+        //     ],
+        //     "release_identifier": "https://musicbrainz.org/release/6c73de8b-3c61-4ab7-b7fa-9aeb4e3946c6"
+        //   }
+        // },
+        pub identifier: Vec<String>, // mbz links
+        pub title: String,
+    }
+
+    pub async fn explore(client: reqwest::Client, query: String, mode: Mode) -> anyhow::Result<QueryResult> {
+        let req = client.get(format!("{BASE_URL}?mode={}prompt={}", mode.path(), &query));
+        let res = client.execute(req.build()?).await?;
+        let res = res.json().await?;
+        Ok(res)
+    }
+}
+
 #[cfg(feature = "bindeps")]
 pub use trait_impls::*;
 #[cfg(feature = "bindeps")]
@@ -675,6 +756,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<SearchContinuation>(config)?;
     types += ";\n";
     types += &specta::ts::export::<SearchResults<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<listenbrainz::RadioSong>(config)?;
     types += ";\n";
 
     Ok(types)
