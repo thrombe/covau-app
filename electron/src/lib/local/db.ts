@@ -1,6 +1,6 @@
 import { exhausted } from "$lib/virtual.ts";
 import * as DB from "$types/db.ts";
-import * as server from "$types/server.ts";
+import * as server from "$lib/server.ts";
 
 export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
 
@@ -9,20 +9,20 @@ export const db = {
     async insert<T>(t: AlmostDbItem<T>): Promise<DB.DbItem<T>> {
         let route = this.route(t.typ, "insert");
 
-        let dbitem: DB.DbItem<T> = await this.api_request(server_base + route, t.t);
+        let dbitem: DB.DbItem<T> = await server.utils.api_request(server_base + route, t.t);
         return dbitem;
     },
 
     async update<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "update");
 
-        await this.api_request_no_resp(server_base + route, item);
+        await server.utils.api_request_no_resp(server_base + route, item);
     },
 
     async delete<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "delete");
 
-        await this.api_request_no_resp(server_base + route, item);
+        await server.utils.api_request_no_resp(server_base + route, item);
     },
 
     route(type: DB.Typ, op: "search" | "insert" | "update" | "delete") {
@@ -57,50 +57,6 @@ export const db = {
                 return server_base + `song_tube/${op}/artists`;
             default:
                 throw exhausted(type);
-        }
-    },
-
-    async api_request<P, T>(url: string, json_payload: P) {
-        let res = await fetch(
-            url,
-            {
-                method: "POST",
-                body: JSON.stringify(json_payload),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        // console.log(res);
-
-        let body = await res.text();
-
-        if (!res.ok) {
-            let err: server.ErrorMessage = JSON.parse(body);
-            console.error(err.stack_trace);
-            throw new Error(err.message);
-        }
-
-        let resp: T = JSON.parse(body);
-        // console.log(resp);
-        return resp;
-    },
-
-    async api_request_no_resp<P, T>(url: string, json_payload: P) {
-        let res = await fetch(
-            url,
-            {
-                method: "POST",
-                body: JSON.stringify(json_payload),
-                headers: { "Content-Type": "application/json" },
-            }
-        );
-        // console.log(res);
-
-        let body = await res.text();
-
-        if (!res.ok) {
-            let err: server.ErrorMessage = JSON.parse(body);
-            console.error(err.stack_trace);
-            throw new Error(err.message);
         }
     },
 };

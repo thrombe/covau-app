@@ -1,13 +1,57 @@
-import type { Message } from '$types/server';
-import { toast } from './toast/toast';
+import type { ErrorMessage, Message } from '$types/server.ts';
+import { toast } from './toast/toast.ts';
 import * as stores from "$lib/stores.ts";
 import { get } from 'svelte/store';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
-import * as covau from "$types/covau.ts";
-import { exhausted } from './virtual';
+import { exhausted } from './virtual.ts';
 import type Innertube from 'youtubei.js';
-import { Db } from './searcher/db';
+
+export const utils = {
+    async api_request<P, T>(url: string, json_payload: P) {
+        let res = await fetch(
+            url,
+            {
+                method: "POST",
+                body: JSON.stringify(json_payload),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        // console.log(res);
+
+        let body = await res.text();
+
+        if (!res.ok) {
+            let err: ErrorMessage = JSON.parse(body);
+            console.error(err.stack_trace);
+            throw new Error(err.message);
+        }
+
+        let resp: T = JSON.parse(body);
+        // console.log(resp);
+        return resp;
+    },
+
+    async api_request_no_resp<P, T>(url: string, json_payload: P) {
+        let res = await fetch(
+            url,
+            {
+                method: "POST",
+                body: JSON.stringify(json_payload),
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        // console.log(res);
+
+        let body = await res.text();
+
+        if (!res.ok) {
+            let err: ErrorMessage = JSON.parse(body);
+            console.error(err.stack_trace);
+            throw new Error(err.message);
+        }
+    },
+};
 
 class Server {
     ws: WebSocket;
