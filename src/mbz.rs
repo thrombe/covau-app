@@ -196,9 +196,9 @@ pub mod listenbrainz {
     
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct RadioSong {
-        pub album: String,
+        pub album: Option<String>,
         pub creator: String,
-        pub duration: u32,
+        pub duration: Option<u32>,
         // extension: {
         //   "https://musicbrainz.org/doc/jspf#track": {
         //     "artist_identifiers": [
@@ -213,8 +213,11 @@ pub mod listenbrainz {
     }
 
     pub async fn explore(client: reqwest::Client, query: String, mode: Mode) -> anyhow::Result<QueryResult> {
-        let req = client.get(format!("{BASE_URL}?mode={}prompt={}", mode.path(), &query));
+        let req = client.get(format!("{BASE_URL}?mode={}&prompt={}", mode.path(), &query));
         let res = client.execute(req.build()?).await?;
+        // let res = res.text().await?;
+        // dbg!(&res);
+        // let res = serde_json::from_str(&res)?;
         let res = res.json().await?;
         Ok(res)
     }
