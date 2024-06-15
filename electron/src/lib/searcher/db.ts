@@ -459,16 +459,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: list.songs,
                                     }, 30);
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: list.name,
-                                            searcher: writable(s),
-                                            thumbnail: null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, list.name);
                                 },
                             },
                             {
@@ -503,16 +494,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: a.songs,
                                     }, 30);
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: a.name + " saved",
-                                            searcher: writable(s),
-                                            thumbnail: null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, a.name + " saved");
                                 },
                             },
                             {
@@ -525,16 +507,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: a.unexplored_songs ?? [],
                                     }, 30);
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: a.name + " unexplored",
-                                            searcher: writable(s),
-                                            thumbnail: null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, a.name + " unexplored");
                                 },
                             },
                             {
@@ -588,16 +561,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: list.data_list,
                                     }, 30);
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: list.name,
-                                            searcher: writable(s),
-                                            thumbnail: null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, list.name);
                                 },
                             },
                             {
@@ -632,16 +596,7 @@ export class DbListItem extends ListItem {
                                         type: "Song",
                                         ids: queue.queue.songs,
                                     }, 30);
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: queue.queue.title,
-                                            searcher: writable(s),
-                                            thumbnail: null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, queue.queue.title);
                                 },
                             },
                             {

@@ -246,16 +246,7 @@ export class StListItem extends ListItem {
                                         type: "Album",
                                         content: a.id,
                                     }, get(stores.tube));
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: "Album " + a.title,
-                                            searcher: writable(s),
-                                            thumbnail: a.thumbnails.at(0)?.url ?? null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                             {
@@ -288,16 +279,7 @@ export class StListItem extends ListItem {
                                         type: "Playlist",
                                         content: p.id,
                                     }, get(stores.tube));
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: "Playlist " + p.title,
-                                            searcher: writable(s),
-                                            thumbnail: p.thumbnails.at(0)?.url ?? null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                         ];
@@ -314,16 +296,7 @@ export class StListItem extends ListItem {
                                         type: "Artist",
                                         content: a.id,
                                     }, get(stores.tube));
-                                    stores.tabs.update(t => {
-                                        t = [t[0]];
-                                        t.push({
-                                            name: "Artist " + a.name + " songs",
-                                            searcher: writable(s),
-                                            thumbnail: a.thumbnails.at(0)?.url ?? null,
-                                        });
-                                        return t;
-                                    });
-                                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                                    stores.push_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                         ];
