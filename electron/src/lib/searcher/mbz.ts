@@ -74,7 +74,19 @@ export class MbzListItem extends ListItem {
         }
     }
     thumbnail(): string | null {
-        return null;
+        switch (this.data.typ) {
+            case "MbzRecordingWithInfo":
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+                return this.data.data.cover_art;
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+            case "MbzRecording":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
     }
     default_thumbnail(): string {
         return "/static/default-music-icon.svg";
