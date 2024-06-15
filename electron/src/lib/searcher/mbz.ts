@@ -320,18 +320,50 @@ export class MbzListItem extends ListItem {
         }
     }
     async audio_uri(): Promise<string | null> {
-        switch (this.data.typ) {
-            case "MbzRecording": {
-                // TODO: fetch more details for it? and then search "{song} by {artist}"
+        const play_recording = async (recording: RecordingWithInfo) => {
+                let query: string | null = null;
+
+                let artist = recording.credit.at(0)?.name ?? null;
+                if (artist) {
+                    query = recording.title + " by " + artist;
+                }
+
+                let release_id = recording.releases.at(0)?.id ?? null;
+                if (release_id) {
+                    let release: ReleaseWithInfo = await mbz.id_fetch(release_id, "MbzReleaseWithInfo");
+                    let release_group = release.release_group?.title;
+
+                    if (!query && release_group) {
+                        query = recording.title + release_group;
+                    }
+                }
+
+                if (!query) {
+                    query = await prompt("Enter a search query");
+                }
+                if (!query) {
+                    return null;
+                }
+
                 let searcher = st.SongTube.new({
                     type: "Search",
                     content: {
                         search: "YtSong",
-                        query: this.data.data.title,
+                        query: query,
                     },
                 }, get(stores.tube));
                 let songs = await searcher.next_page();
+                console.log(songs);
                 return songs.at(0)?.audio_uri() ?? null;
+        };
+
+        switch (this.data.typ) {
+            case "MbzRecording": {
+                let recording: RecordingWithInfo = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
+                return await play_recording(recording);
+            } break;
+            case "MbzRecordingWithInfo": {
+                return await play_recording(this.data.data);
             } break;
             case "MbzReleaseWithInfo":
             case "MbzRelease":
