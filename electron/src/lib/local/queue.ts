@@ -6,15 +6,16 @@ import { prompt } from "$lib/prompt/prompt.ts";
 import type { Searcher } from "$lib/searcher/searcher.ts";
 
 import * as covau from "$types/covau.ts";
+import * as DB from "$types/db.ts";
 
 
 export class QueueManager implements Searcher {
     items: ListItem[] = [];
-    has_next_page: boolean = true;;
-
     playing_index: number | null = null;
+
     state: "Unstarted" | "Playing" | "Detour" | "Finished" = "Unstarted";
 
+    has_next_page: boolean = true;
     async next_page(): Promise<ListItem[]> {
         this.has_next_page = false;
         return this.items;

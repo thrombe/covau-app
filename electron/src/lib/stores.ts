@@ -17,7 +17,7 @@ export type Tab = {
 };
 
 export type MenubarOption = { name: string } & (
-    | { content_type: "list"; type: Db.Typ | St.Typ | "covau-group" }
+    | { content_type: "list"; type: Db.Typ | St.Typ | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music"; id: string | null }
@@ -61,6 +61,10 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Playlist", content_type: "list", type: "Playlist" },
     { name: "Queue", content_type: "list", type: "Queue" },
     { name: "Updater", content_type: "list", type: "Updater" },
+    { name: "Mbz Recording", content_type: "list", type: "MbzRecording" },
+    { name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
+    { name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
+    { name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
     { name: "Covau Group", content_type: "list", type: "covau-group" },
     { name: "Related", content_type: "related-music", id: null },
 ]);
@@ -131,18 +135,18 @@ selected_menubar_option.subscribe(async (option) => {
                 case "StVideo":
                 case "StAlbum":
                 case "StPlaylist":
-                case "StArtist":
+                case "StArtist": {
                     s = Db.Db.new({
                         query_type: "search",
                         type: option.type,
                         query: get(query_input),
                     }, page_size);
-                    break;
+                } break;
                 case "YtSong":
                 case "YtVideo":
                 case "YtAlbum":
                 case "YtPlaylist":
-                case "YtArtist":
+                case "YtArtist": {
                     s = St.SongTube.new({
                         type: "Search",
                         content: {
@@ -150,7 +154,17 @@ selected_menubar_option.subscribe(async (option) => {
                             search: option.type
                         },
                     }, get(tube));
-                    break;
+                } break;
+                case "MbzReleaseWithInfo":
+                case "MbzReleaseGroupWithInfo":
+                case "MbzArtist":
+                case "MbzRecording": {
+                    s = Mbz.Mbz.new({
+                        query_type: "search",
+                        type: option.type,
+                        query: get(query_input),
+                    }, 30);
+                } break;
                 case "covau-group": {
                     if (!get(query_input)) {
                         s = fused_searcher;
