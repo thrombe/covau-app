@@ -131,15 +131,18 @@ where
 }
 
 #[cfg(feature = "bindeps")]
+pub use trait_impls::*;
+#[cfg(feature = "bindeps")]
 mod trait_impls {
+    use super::*;
     use musicbrainz_rs::{
         entity::{
             alias, area, artist, artist_credit, coverart, recording, relations, release,
-            release_group, work::Work,
+            release_group, search::Searchable, work::Work, Browsable, BrowseResult,
         },
-        Fetch, FetchCoverart, Search,
+        Browse, Fetch, FetchCoverart, Path, Search,
     };
-    use super::*;
+    use serde::de::DeserializeOwned;
 
     impl From<recording::Recording> for Recording {
         fn from(r: recording::Recording) -> Self {
@@ -281,6 +284,155 @@ mod trait_impls {
                 name: a.name,
                 typ: a.alias_type.map(type_to_string),
             }
+        }
+    }
+
+    #[async_trait::async_trait]
+    pub trait Linked<A>
+    where
+        Self: Sized,
+    {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>>;
+    }
+
+    #[async_trait::async_trait]
+    impl Linked<artist::Artist> for ReleaseGroup {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+            let r = release_group::ReleaseGroup::browse()
+            .by_artist(&query)
+            .limit(page_size as _)
+            .offset(offset as _)
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+    #[async_trait::async_trait]
+    impl Linked<artist::Artist> for Release {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+            let r = release::Release::browse()
+            .by_artist(&query)
+            .limit(page_size as _)
+            .offset(offset as _)
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+    #[async_trait::async_trait]
+    impl Linked<artist::Artist> for Recording {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+            let r = recording::Recording::browse()
+            .by_artist(&query)
+            .limit(page_size as _)
+            .offset(offset as _)
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+    #[async_trait::async_trait]
+    impl Linked<release_group::ReleaseGroup> for Release {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+            let r = release::Release::browse()
+            .by_release_group(&query)
+            .limit(page_size as _)
+            .offset(offset as _)
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
+        }
+    }
+    #[async_trait::async_trait]
+    impl Linked<release::Release> for Recording {
+        async fn search(query: SearchQuery) -> anyhow::Result<SearchResults<Self>> {
+            let (query, page_size, offset) = match query {
+                SearchQuery::Search { query, page_size } => (query, page_size, 0),
+                SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
+            };
+            let r = recording::Recording::browse()
+            .by_release(&query)
+            .limit(page_size as _)
+            .offset(offset as _)
+            .execute()
+            .await?;
+
+            let offset = r.offset + r.entities.len() as i32;
+            let items = r.entities.into_iter().map(Into::into).collect();
+            let res = SearchResults {
+                continuation: (offset < r.count).then_some(SearchContinuation {
+                    query,
+                    offset,
+                    count: r.count,
+                    page_size,
+                }),
+                items,
+            };
+            Ok(res)
         }
     }
 
