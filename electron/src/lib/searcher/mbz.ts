@@ -366,12 +366,15 @@ export class MbzListItem extends ListItem {
                 }, get(stores.tube));
                 let songs = await searcher.next_page();
                 console.log(songs);
+                recording.cover_art = songs.at(0)?.thumbnail() ?? null;
                 return songs.at(0)?.audio_uri() ?? null;
         };
 
         switch (this.data.typ) {
             case "MbzRecording": {
                 let recording: RecordingWithInfo = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
+                this.data.data = keyed([recording], "id")[0];
+                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
                 return await play_recording(recording);
             } break;
             case "MbzRecordingWithInfo": {
