@@ -8,6 +8,7 @@
     import BlobBg from "$lib/components/BlobBg.svelte";
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
+    import { get } from "svelte/store";
 
     let item_height: number = 75;
     let item_min_width = 290;
@@ -98,7 +99,8 @@
                         on:click={() => {
                             if (
                                 typ.content_type === "related-music" &&
-                                menubar_related_option.id == null
+                                // menubar_related_option.id == null
+                                !get(stores.playing_item)
                             ) {
                                 toast("no queue item selected", "info");
                                 return;

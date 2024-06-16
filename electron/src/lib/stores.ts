@@ -7,7 +7,7 @@ import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
-import { QueueManager } from "./local/queue.ts";
+import { QueueManager, type AutoplayQueryInfo, autoplay_searcher } from "./local/queue.ts";
 import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
 
 export type Tab = {
@@ -28,7 +28,7 @@ export type MenubarOption = { name: string } & (
     | { content_type: "list"; type: Db.Typ | St.Typ | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
-    | { content_type: "related-music"; id: string | null }
+    | { content_type: "related-music", source: "Yt" | "Mbz" }
     | { content_type: "home-feed" }
 );
 
@@ -75,7 +75,8 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
     { name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
     { name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
     { name: "Covau Group", content_type: "list", type: "covau-group" },
-    { name: "Related", content_type: "related-music", id: null },
+    { name: "Related", content_type: "related-music", source: "Yt" },
+    { name: "Radio", content_type: "related-music", source: "Mbz" },
 ]);
 export let selected_menubar_option_index = writable(0);
 export let selected_menubar_option: Readable<MenubarOption> = derived(
@@ -141,7 +142,7 @@ selected_menubar_option.subscribe(async (option) => {
     if (!get(tube)) {
         return;
     }
-    let s: Searcher;
+    let s: Searcher = fused_searcher;
     let new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null = null;
     switch (option.content_type) {
         case "list": {
@@ -253,27 +254,44 @@ selected_menubar_option.subscribe(async (option) => {
             break
         case "watch":
             break
-        case "related-music":
-            break
-        case "home-feed": {
-            let st = await import("$lib/searcher/song_tube.ts");
-            let s = st.SongTube.new({
-                type: "HomeFeed",
-            });
+        case "related-music": {
+            let item = get(playing_item);
+            let query: AutoplayQueryInfo | null = null;
+
+            switch (option.source) {
+                case "Yt": {
+                    query = await item.autoplay_query("StRelated");
+                    if (!query) {
+                        query = await item.autoplay_query("StSearchRelated");
+                    }
+                } break;
+                case "Mbz": {
+                    query = await item.autoplay_query("MbzRadio");
+                } break;
+                default:
+                    throw exhausted(option.source);
+            }
+
+            if (query) {
+                s = await autoplay_searcher(query);
+            } else {
+                toast("could not find related for " + item.title(), "error");
+            }
             tabs.update(t => {
-                t = [{
-                    name: "Home",
+                let tab: Tab = {
+                    name: "Related",
                     searcher: writable(s),
-                    new_searcher: null,
-                    key: new_tab_key(),
                     thumbnail: null,
                     query: writable(""),
-                }];
+                    key: new_tab_key(),
+                    new_searcher: null,
+                };
+                t = [tab];
                 return t;
             });
             curr_tab_index.set(0);
         } break;
         default:
-            exhausted(option);
+            throw exhausted(option);
     }
 });
