@@ -11,6 +11,7 @@ import { get, writable } from "svelte/store";
 import { get_uri } from "./song_tube.ts";
 import { db, type AlmostDbItem } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
+import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<Musi.SongId>;
@@ -261,6 +262,98 @@ export class DbListItem extends ListItem {
             case "Queue":
             case "Updater":
                 return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
+    async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
+        switch (this.data.typ) {
+            case "MmSong": {
+                let song = this.data.t;
+                switch (typ) {
+                    case "MbzRadio":
+                    case "StSearchRelated":
+                        return {
+                            type: typ,
+                            title: song.title ?? "",
+                            artists: song.artist_name ? [song.artist_name] : [],
+                        };
+                    case "StRelated": {
+                        let song = this.data.t;
+                        return {
+                            type: "StRelated",
+                            id: song.key,
+                        };
+                    } break;
+                    default:
+                        throw exhausted(typ);
+                }
+            } break;
+            case "StVideo":
+            case "StSong": {
+                switch (typ) {
+                    case "MbzRadio":
+                    case "StSearchRelated":
+                        return {
+                            type: typ,
+                            title: this.data.t.title ?? "",
+                            artists: this.data.t.authors.map(a => a.name),
+                        };
+                    case "StRelated": {
+                        let song = this.data.t;
+                        return {
+                            type: "StRelated",
+                            id: song.id,
+                        };
+                    } break;
+                    default:
+                        throw exhausted(typ);
+                }
+            } break;
+            case "Song": {
+                switch (typ) {
+                    case "MbzRadio":
+                    case "StSearchRelated":
+                        return {
+                            type: typ,
+                            title: this.title(),
+                            artists: this.data.t.haystacks.slice(1),
+                        };
+                    case "StRelated": {
+                        let song = this.data.t;
+                        for (let source of song.info_sources) {
+                            switch (source.type) {
+                                case "MbzId":
+                                    break;
+                                case "YtId": {
+                                    return {
+                                        type: "StRelated",
+                                        id: source.content,
+                                    };
+                                } break;
+                                default:
+                                    throw exhausted(source);
+                            }
+                        }
+                        return null;
+                    } break;
+                    default:
+                        throw exhausted(typ);
+
+                }
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                throw new Error("can't play this. so no autoplay.");
             default:
                 throw exhausted(this.data);
         }

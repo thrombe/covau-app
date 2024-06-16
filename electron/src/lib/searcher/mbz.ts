@@ -10,6 +10,7 @@ import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
 import { prompt } from "$lib/prompt/prompt.ts";
 import { StaticSearcher } from "./searcher.ts";
+import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -467,6 +468,67 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+
+    async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
+        const recording_autoplay = (s: RecordingWithInfo) => {
+            switch (typ) {
+                case "StSearchRelated":
+                    return {
+                        type: "StSearchRelated",
+                        title: s.title,
+                        artists: s.credit.map(a => a.name),
+                    };
+                case "StRelated":
+                    return null;
+                case "MbzRadio":
+                    return {
+                        type: "MbzRadio",
+                        title: s.title,
+                        artists: s.credit.map(a => a.id),
+                    };
+                default:
+                    throw exhausted(typ);
+            }
+        };
+
+        switch (this.data.typ) {
+            case "MbzRecordingWithInfo": {
+                let s = this.data.data;
+                return recording_autoplay(s) as AutoplayQueryInfo;
+            } break;
+            case "MbzRecording": {
+                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
+                this.data.data = recording;
+                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+                return recording_autoplay(recording) as AutoplayQueryInfo;
+            } break;
+            case "MbzRadioSong": {
+                let s = this.data.data;
+                switch (typ) {
+                    case "MbzRadio":
+                    case "StSearchRelated":
+                        return {
+                            type: "StSearchRelated",
+                            title: s.title,
+                            artists: [s.creator],
+                        };
+                    case "StRelated":
+                        return null;
+                    default:
+                        throw exhausted(typ);
+                }
+            } break;
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzArtist":
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+                throw new Error("can't play this. so no autoplay.");
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     savable(): AlmostDbItem<unknown> | null {
         return null;
     }

@@ -1,4 +1,6 @@
 import type { AlmostDbItem } from "$lib/local/db.ts";
+import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
+import { exhausted } from "$lib/virtual";
 
 export abstract class ListItem {
     abstract key(): unknown;
@@ -9,12 +11,14 @@ export abstract class ListItem {
     abstract options(ctx: RenderContext): Option[];
     abstract audio_uri(): Promise<string | null>;
     abstract savable(): AlmostDbItem<unknown> | null;
+    abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
 }
 
 export class CustomListItem extends ListItem {
     _key: string;
     _title: string;
     _title_sub: string | null = null;
+    _artists: string[] = [];
     _thumbnail: string | null = null;
     _default_thumbnail: string = "/static/default-music-icon.svg"
     _options: Option[] = [];
@@ -55,6 +59,23 @@ export class CustomListItem extends ListItem {
 
     savable() {
         return null;
+    }
+
+    async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
+        let artists = this._artists.length > 0 ? this._artists : (this._title_sub !== null ? [this._title_sub] : []);
+        switch (typ) {
+            case "MbzRadio":
+            case "StSearchRelated":
+                return {
+                    type: typ,
+                    title: this._title,
+                    artists,
+                };
+            case "StRelated":
+                return null;
+            default:
+                throw exhausted(typ);
+        }
     }
 }
 

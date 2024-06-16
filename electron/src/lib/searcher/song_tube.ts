@@ -7,7 +7,9 @@ import { get, writable } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
-import { type AlmostDbItem } from "$lib/local/db.ts"; 
+import { type AlmostDbItem } from "$lib/local/db.ts";
+import type { Searcher } from "./searcher.ts";
+import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -109,7 +111,35 @@ export class StListItem extends ListItem {
             case "Artist":
                 return null;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
+        }
+    }
+
+    async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
+        switch (this.data.type) {
+            case "Song":
+            case "Video": {
+                let s = this.data.content;
+                switch (typ) {
+                    case "MbzRadio":
+                    case "StSearchRelated":
+                        return {
+                            type: typ,
+                            title: s.title ?? "",
+                            artists: s.authors.map(a => a.name),
+                        };
+                    case "StRelated":
+                        return { type: "StRelated", id: s.id };
+                    default:
+                        throw exhausted(typ);
+                }
+            } break;
+            case "Album":
+            case "Playlist":
+            case "Artist":
+                throw new Error("can't play this. so no autoplay.");
+            default:
+                throw exhausted(this.data);
         }
     }
 
@@ -139,7 +169,7 @@ export class StListItem extends ListItem {
                 return null;
             } break;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 

@@ -7,6 +7,9 @@ import type { Searcher } from "$lib/searcher/searcher.ts";
 
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
+import { exhausted } from "$lib/virtual.ts";
+import { SongTube } from "$lib/searcher/song_tube.ts";
+import * as mbz from "$lib/searcher/mbz.ts";
 
 
 export class QueueManager implements Searcher {
@@ -258,3 +261,57 @@ export class QueueManager implements Searcher {
         ];
     }
 };
+
+export type AutoplayQueryInfo = {
+    type: "StSearchRelated",
+    title: string,
+    artists: string[],
+} | {
+    type: "StRelated",
+    id: string,
+} | {
+    type: "MbzRadio",
+    title: string | null,
+    artists: string[], // name (or id) straight from mbz
+};
+export type AutoplayTyp = "StSearchRelated" | "StRelated" | "MbzRadio";
+
+export async function autoplay_searcher(q: AutoplayQueryInfo) {
+    switch (q.type) {
+        case "StSearchRelated": {
+            let query: string;
+            if (q.artists.length > 0) {
+                query = `${q.title} by ${q.artists.reduce((a, b) => a + ", " + b)}`;
+            } else {
+                query = q.title;
+            }
+            let songs = await SongTube.new({
+                type: "Search",
+                content: {
+                    query: query,
+                    search: "YtSong",
+                },
+            }).next_page();
+            return SongTube.new({
+                type: "UpNext",
+                content: songs[0].data.content.id,
+            });
+        } break;
+        case "StRelated": {
+            return SongTube.new({
+                type: "UpNext",
+                content: q.id,
+            });
+        } break;
+        case "MbzRadio": {
+            let query = q.artists.reduce((a, b) => a + ", " + b);
+            return mbz.Mbz.new({
+                query_type: "search",
+                type: "MbzRadioSong",
+                query: query
+            }, 30);
+        } break;
+        default:
+            throw exhausted(q);
+    }
+}
