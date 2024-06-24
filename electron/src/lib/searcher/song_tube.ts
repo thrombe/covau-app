@@ -469,6 +469,8 @@ export class SongTube extends Unpaged<MusicListItem> {
     protected async next_page_up_next(video_id: string) {
         this.has_next_page = false;
         let r = await this.tube.music.getUpNext(video_id);
+        // OOF: does not work. this playlist_id is not a normal playlist :/
+        // return await this.next_page_playlist(r.playlist_id);
         let k = r.contents.filterType(YTNodes.PlaylistPanelVideo);
 
         let mli: MusicListItem[] = k.map(s => ({

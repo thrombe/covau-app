@@ -291,6 +291,24 @@ selected_menubar_option.subscribe(async (option) => {
             });
             curr_tab_index.set(0);
         } break;
+        case "home-feed": {
+            // let st = await import("$lib/searcher/song_tube.ts");
+            // let s = st.SongTube.new({
+            //     type: "HomeFeed",
+            // });
+            // tabs.update(t => {
+            //     t = [{
+            //         name: "Home",
+            //         searcher: writable(s),
+            //         new_searcher: null,
+            //         key: new_tab_key(),
+            //         thumbnail: null,
+            //         query: writable(""),
+            //     }];
+            //     return t;
+            // });
+            // curr_tab_index.set(0);
+        } break;
         default:
             throw exhausted(option);
     }

@@ -17,6 +17,23 @@ use anyhow::Result;
 //  - ff basically does not seem to need virtual scrolling (except for memory usage (cheap))
 //  - chrome (and ff to a lesser degree) does not like frequent DOM changes
 //    - just change the virtual scrolling to add/remove items in big chunks
+//
+// - frontend as a server for backend
+// - saving stuff
+// - packaging
+//
+// add autoplay
+//  - QueueManager has a AutoPlay Searcher
+//    - autoplay on
+//      - related on last item in queue
+//      - search last item's artist :/
+//      - is this api free? https://listenbrainz.org/explore/lb-radio/
+//    - it also manages a field with next_item in this searcher
+//    - store the Queue items list as Unique<ListItem | QueuOptions, string>
+//      - second last item always next item to play (by autoplay) (grayed)
+//      - last item always this options
+//
+//  - transaction for database over api
 
 pub mod covau_types;
 pub mod db;
@@ -93,6 +110,7 @@ async fn main() -> Result<()> {
     // parse_test().await?;
     // db::db_test().await?;
     // mbz::api_test().await?;
+    // std::process::exit(1);
 
     #[cfg(build_mode = "DEV")]
     dump_types()?;
