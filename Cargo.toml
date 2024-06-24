@@ -86,7 +86,7 @@ bindeps = [
 name = "covau-app"
 required-features = ["bindeps"]
 
-[lib]
-name = "covau_app_wasm"
-crate-type = ["cdylib", "rlib"]
-required-features = ["wasmdeps"]
+# [lib]
+# name = "covau_app_wasm"
+# crate-type = ["cdylib", "rlib"]
+# required-features = ["wasmdeps"]
