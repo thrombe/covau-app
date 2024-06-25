@@ -54,7 +54,7 @@ export class StListItem extends ListItem {
         switch (this.data.type) {
             case "Song":
             case "Video":
-                return this.data.content.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.content.id}/maxresdefault.jpg`;
+                return this.data.content.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.content.id);
             case "Album":
             case "Playlist":
             case "Artist":
@@ -98,7 +98,7 @@ export class StListItem extends ListItem {
             case "Song":
             case "Video": {
                 let s = this.data.content;
-                let data = await get_uri(this.data.content.id);
+                let data = await st.get_uri(this.data.content.id);
                 if (!data) {
                     return null;
                 }
@@ -155,7 +155,7 @@ export class StListItem extends ListItem {
                 let t: covau.Song = {
                     title: song.title ?? song.id,
                     artists: song.authors.map(a => a.name),
-                    thumbnails: [`https://i.ytimg.com/vi/${song.id}/maxresdefault.jpg`],
+                    thumbnails: [st.get_thumbnail(song.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
@@ -369,6 +369,77 @@ function ClassTypeWrapper<D extends {
     } as unknown as IClassTypeWrapper<D>;
 }
 
+export const st = {
+    async get_uri(id: string) {
+        let itube = get(stores.tube);
+        try {
+            let d = await itube.getInfo(id);
+            console.log(d);
+            let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+            // let url = d.getStreamingInfo();
+            let uri = f.decipher(itube.session.player);
+            console.log(uri)
+            return { info: d, uri: uri };
+        } catch {
+            return null;
+        }
+    },
+
+    async get_video(id: string) {
+        let s = await get(stores.tube).getBasicInfo(id);
+        return {
+            id: id,
+            title: s.basic_info.title ?? null,
+            thumbnails: SongTube.get_thumbnail(s.basic_info.thumbnail),
+            album: null,
+            authors: s.basic_info.author ? [
+                {
+                    name: s.basic_info.author,
+                    channel_id: s.basic_info.channel_id ?? null
+                }
+            ] : [],
+        }
+    },
+
+    get_thumbnail(id: string) {
+        return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+    },
+
+    get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem) {
+        if (s.is(YTNodes.MusicResponsiveListItem)) {
+            return {
+                id: s.id!,
+                title: s.title ?? null,
+                thumbnails: SongTube.get_thumbnail(s.thumbnail),
+                album: s.album?.id ? {
+                    name: s.album.name,
+                    id: s.album.id,
+                } : null,
+                authors: s.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
+            } as yt.Song;
+        } else if (s.is(YTNodes.PlaylistPanelVideo)) {
+            return {
+                id: s.video_id,
+                title: s.title.text ?? null,
+                thumbnails: SongTube.get_thumbnail(s.thumbnail),
+                album: s.album?.id ? {
+                    name: s.album.name,
+                    id: s.album.id,
+                } : null,
+                authors: s.artists?.map(a => ({
+                    name: a.name,
+                    channel_id: a.channel_id ?? null,
+                })) ?? [],
+            } as yt.Song;
+        } else {
+            throw exhausted(s);
+        }
+    },
+};
+
 export class SongTube extends Unpaged<MusicListItem> {
     tube: Innertube;
     query: BrowseQuery;
@@ -435,20 +506,9 @@ export class SongTube extends Unpaged<MusicListItem> {
         }
 
         let promises = batch.map(id => {
-            return this.tube.getBasicInfo(id).then(s => ({
+            return st.get_video(id).then(s => ({
                 type: 'Song',
-                content: {
-                    id: id,
-                    title: s.basic_info.title ?? null,
-                    thumbnails: SongTube.get_thumbnail(s.basic_info.thumbnail),
-                    album: null,
-                    authors: s.basic_info.author ? [
-                        {
-                            name: s.basic_info.author,
-                            channel_id: s.basic_info.channel_id ?? null
-                        }
-                    ] : [],
-                }
+                content: s,
             } as MusicListItem)).catch(reason => ({
                 type: 'Song',
                 content: {
@@ -477,19 +537,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let mli: MusicListItem[] = k.map(s => ({
             type: 'Song',
-            content: {
-                id: s.video_id,
-                title: s.title.text ?? null,
-                thumbnails: SongTube.get_thumbnail(s.thumbnail),
-                album: s.album?.id ? {
-                    name: s.album.name,
-                    id: s.album.id,
-                } : null,
-                authors: s.artists?.map(a => ({
-                    name: a.name,
-                    channel_id: a.channel_id ?? null,
-                })) ?? [],
-            }
+            content: st.get_st_song(s),
         }));
         return keyed(mli) as RObject[];
     }
@@ -502,19 +550,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let mli: MusicListItem[] = k.map(s => ({
             type: 'Song',
-            content: {
-                id: s.id!,
-                title: s.title ?? null,
-                thumbnails: SongTube.get_thumbnail(s.thumbnail),
-                album: s.album?.id ? {
-                    name: s.album.name,
-                    id: s.album.id,
-                } : null,
-                authors: s.artists?.map(a => ({
-                    name: a.name,
-                    channel_id: a.channel_id ?? null,
-                })) ?? [],
-            }
+            content: st.get_st_song(s),
         }));
         return keyed(mli) as RObject[];
     }
@@ -537,19 +573,7 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         let mli: MusicListItem[] = arr.map(s => ({
             type: 'Song',
-            content: {
-                id: s.id!,
-                title: s.title ?? null,
-                thumbnails: SongTube.get_thumbnail(s.thumbnail),
-                album: s.album?.id ? {
-                    name: s.album.name,
-                    id: s.album.id,
-                } : null,
-                authors: s.artists?.map(a => ({
-                    name: a.name,
-                    channel_id: a.channel_id ?? null,
-                })) ?? [],
-            }
+            content: st.get_st_song(s),
         }));
         return keyed(mli) as RObject[];
     }
@@ -558,19 +582,7 @@ export class SongTube extends Unpaged<MusicListItem> {
         let a = await this.tube.music.getAlbum(album_id);
         let mli: MusicListItem[] = a.contents.map(a => ({
             type: 'Song',
-            content: {
-                id: a.id!,
-                title: a.title ?? null,
-                thumbnails: SongTube.get_thumbnail(a.thumbnail),
-                album: a.album?.id ? {
-                    name: a.album.name,
-                    id: a.album.id,
-                } : null,
-                authors: a.artists?.map(a => ({
-                    name: a.name,
-                    channel_id: a.channel_id ?? null,
-                })) ?? [],
-            }
+            content: st.get_st_song(a),
         }));
         return keyed(mli) as RObject[];
     }
@@ -664,19 +676,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             if (e.item_type === 'song') {
                 return {
                     type: 'Song',
-                    content: {
-                        id: e.id!,
-                        title: e.title ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
-                        album: e.album?.id ? {
-                            name: e.album.name,
-                            id: e.album.id,
-                        } : null,
-                        authors: e.artists?.map(a => ({
-                            name: a.name,
-                            channel_id: a.channel_id ?? null,
-                        })) ?? [],
-                    }
+                    content: st.get_st_song(e),
                 }
             } else if (e.item_type === 'video') {
                 return {
@@ -776,19 +776,4 @@ const keyed = <T extends { content: { id?: any } }>(items: T[]): (T & Keyed)[] =
         });
 
     return res;
-}
-
-export async function get_uri(id: string) {
-    let itube = get(stores.tube);
-    try {
-        let d = await itube.getInfo(id);
-        console.log(d);
-        let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
-        // let url = d.getStreamingInfo();
-        let uri = f.decipher(itube.session.player);
-        console.log(uri)
-        return { info: d, uri: uri };
-    } catch {
-        return null;
-    }
 }

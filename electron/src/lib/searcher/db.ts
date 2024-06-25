@@ -8,7 +8,7 @@ import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { get, writable } from "svelte/store";
-import { get_uri } from "./song_tube.ts";
+import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
@@ -92,7 +92,7 @@ export class DbListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MmSong":
-                return this.data.t.info?.thumbnail_url ?? `https://i.ytimg.com/vi/${this.data.t.key}/maxresdefault.jpg`;
+                return this.data.t.info?.thumbnail_url ?? st.get_thumbnail(this.data.t.key);
             case "MmAlbum":
                 return null;
             case "MmArtist":
@@ -102,9 +102,9 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.id}/maxresdefault.jpg`;
+                return this.data.t.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.t.id);
             case "StVideo":
-                return this.data.t.thumbnails.at(0)?.url ?? `https://i.ytimg.com/vi/${this.data.id}/maxresdefault.jpg`;
+                return this.data.t.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.t.id);
             case "StAlbum":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "StPlaylist":
@@ -179,7 +179,7 @@ export class DbListItem extends ListItem {
                 if (song.last_known_path) {
                     return "file://" + song.last_known_path;
                 } else {
-                    let data = await get_uri(song.key);
+                    let data = await st.get_uri(song.key);
                     if (!data) {
                         return null;
                     }
@@ -206,7 +206,7 @@ export class DbListItem extends ListItem {
             } break;
             case "StSong": {
                 let song = this.data.t;
-                let data = await get_uri(song.id);
+                let data = await st.get_uri(song.id);
                 if (!data) {
                     return null;
                 }
@@ -214,7 +214,7 @@ export class DbListItem extends ListItem {
             } break;
             case "StVideo": {
                 let song = this.data.t;
-                let data = await get_uri(song.id);
+                let data = await st.get_uri(song.id);
                 if (!data) {
                     return null;
                 }
@@ -227,7 +227,7 @@ export class DbListItem extends ListItem {
                         case "File":
                             return "file://" + source.content;
                         case "YtId": {
-                            let data = await get_uri(source.content);
+                            let data = await st.get_uri(source.content);
                             if (!data) {
                                 continue;
                             }
