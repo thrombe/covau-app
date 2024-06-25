@@ -79,7 +79,7 @@
 
           export SERVER_PORT=6173
           export WEBUI_PORT=6174
-          export DEV_VITE_PORT=5173
+          export DEV_VITE_PORT=6175
 
           cd electron
           ln -s ${yarn-modules}/node_modules ./node_modules
@@ -115,7 +115,7 @@
 
           export SERVER_PORT=6173
           export WEBUI_PORT=6174
-          export DEV_VITE_PORT=5173
+          export DEV_VITE_PORT=6175
 
           cd electron
           ln -s ${yarn-modules}/node_modules ./node_modules
@@ -291,7 +291,7 @@
 
             export SERVER_PORT=6173
             export WEBUI_PORT=6174
-            export DEV_VITE_PORT=5173
+            export DEV_VITE_PORT=6175
 
             export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"
           '';
