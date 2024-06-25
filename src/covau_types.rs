@@ -35,7 +35,9 @@ pub struct Queue(pub ListenQueue<Playlist>);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Song {
-    pub haystacks: Vec<String>,
+    pub title: String,
+    pub artists: Vec<String>,
+    pub thumbnails: Vec<String>,
     pub info_sources: Vec<InfoSource>,
     pub play_sources: Vec<PlaySource>,
 }

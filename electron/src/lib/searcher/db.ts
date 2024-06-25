@@ -77,7 +77,7 @@ export class DbListItem extends ListItem {
             case "StArtist":
                 return this.data.t.name ?? this.data.t.id;
             case "Song":
-                return this.data.t.haystacks.at(0) ?? this.data.id.toString();
+                return this.data.t.title;
             case "Playlist":
                 return this.data.t.title;
             case "Queue":
@@ -113,18 +113,7 @@ export class DbListItem extends ListItem {
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "Song": {
                 let song = this.data.t;
-                for (let source of song.info_sources) {
-                    switch (source.type) {
-                        case "MbzId":
-                            break;
-                        case "YtId": {
-                            return `https://i.ytimg.com/vi/${source.content}/maxresdefault.jpg`;
-                        } break;
-                        default:
-                            throw exhausted(source);
-                    }
-                }
-                return null;
+                return song.thumbnails.at(0) ?? null;
             } break;
             case "Playlist":
                 return null;
@@ -142,12 +131,11 @@ export class DbListItem extends ListItem {
     }
 
     title_sub(): string | null {
-        function authors(a: yt.Author[]) {
+        function authors(a: string[]) {
             if (a.length == 0) {
                 return '';
             } else {
                 return a
-                    .map(a => a.name)
                     .reduce((p, c) => p + ", " + c);
             }
         }
@@ -164,9 +152,9 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return this.data.t.data_list.length.toString() + " songs";
             case "StSong":
-                return authors(this.data.t.authors);
+                return authors(this.data.t.authors.map(a => a.name));
             case "StVideo":
-                return authors(this.data.t.authors);
+                return authors(this.data.t.authors.map(a => a.name));
             case "StAlbum":
                 return this.data.t.author?.name ?? null;
             case "StPlaylist":
@@ -174,7 +162,7 @@ export class DbListItem extends ListItem {
             case "StArtist":
                 return this.data.t.subscribers ?? null;
             case "Song":
-                return this.data.t.haystacks.at(1) ?? null;
+                return authors(this.data.t.artists);
             case "Playlist":
             case "Queue":
             case "Updater":
@@ -317,8 +305,8 @@ export class DbListItem extends ListItem {
                     case "StSearchRelated":
                         return {
                             type: typ,
-                            title: this.title(),
-                            artists: this.data.t.haystacks.slice(1),
+                            title: this.data.t.title,
+                            artists: this.data.t.artists,
                         };
                     case "StRelated": {
                         let song = this.data.t;

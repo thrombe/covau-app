@@ -217,10 +217,12 @@ pub mod db {
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                self.haystacks
+                let mut h = self.artists
                     .iter()
                     .map(String::as_str)
-                    .collect::<Vec<_>>()
+                    .collect::<Vec<_>>();
+                h.push(&self.title);
+                h
             }
 
             fn refids(&self) -> impl IntoIterator<Item = &str> {

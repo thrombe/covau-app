@@ -153,9 +153,11 @@ export class StListItem extends ListItem {
                 let song = this.data.content;
                 let id: covau.PlaySource = { type: "YtId", content: song.id };
                 let t: covau.Song = {
-                    haystacks: not_null([song.title, ...song.authors.map(a => a.name)]),
+                    title: song.title ?? song.id,
+                    artists: song.authors.map(a => a.name),
+                    thumbnails: [`https://i.ytimg.com/vi/${song.id}/maxresdefault.jpg`],
                     play_sources: [id],
-                    info_sources: [id]
+                    info_sources: [id],
                 };
                 return { typ: "Song", t };
             } break;
