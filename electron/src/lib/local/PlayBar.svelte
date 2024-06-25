@@ -31,7 +31,7 @@
                 break;
             case "Finished":
                 is_playing = false;
-                if ($queue.has_next()) {
+                if (await $queue.has_next()) {
                     await $queue.play_next();
                 } else {
                     $queue.finished();

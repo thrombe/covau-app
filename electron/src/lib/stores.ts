@@ -7,7 +7,7 @@ import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
-import { QueueManager, type AutoplayQueryInfo, autoplay_searcher } from "./local/queue.ts";
+import { QueueManager, type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
 import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
 
 export type Tab = {
@@ -136,7 +136,7 @@ export let player: Writable<Musiplayer> = writable();
     player.set(pl);
 })()
 
-export let queue: Writable<QueueManager> = writable(new QueueManager());
+export let queue: Writable<QueueManager> = writable(new AutoplayQueueManager());
 
 selected_menubar_option.subscribe(async (option) => {
     if (!get(tube)) {

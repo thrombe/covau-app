@@ -34,7 +34,7 @@ export class QueueManager implements Searcher {
             return p;
         });
     }
-    async play_item(item: ListItem) {
+    async play_queue_item(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
             if (this.items[i].key() == item.key()) {
                 this.playing_index = i;
@@ -45,7 +45,7 @@ export class QueueManager implements Searcher {
 
         toast(`item "${item.title()}" not in queue`, "error");
     }
-    async remove_item(item: ListItem) {
+    async remove_queue_item(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
             if (this.items[i].key() == item.key()) {
                 await this.remove(i);
@@ -175,14 +175,14 @@ export class QueueManager implements Searcher {
             await this.play(this.playing_index);
         }
     }
-    has_prev() {
+    async has_prev() {
         if (this.playing_index != null) {
             return this.playing_index > 0;
         } else {
             return false;
         }
     }
-    has_next() {
+    async has_next() {
         if (this.playing_index != null) {
             return this.items.length > this.playing_index + 1;
         } else {
@@ -192,22 +192,25 @@ export class QueueManager implements Searcher {
     async play(index: number) {
         let item = this.items.at(index);
         if (item) {
-            let uri = await item.audio_uri().catch(e => {
-                toast(e, "error");
-                return null;
-            });
-            if (uri) {
-                player.update(p => {
-                    p.play(uri);
-                    return p;
-                });
-                playing_item.set(item);
-                this.state = "Playing";
-            } else {
-                toast("could not play item", "error");
-            }
+            await this.play_item(item);
         } else {
             toast(`no item at index ${index}`, "error");
+        }
+    }
+    protected async play_item(item: ListItem) {
+        let uri = await item.audio_uri().catch(e => {
+            toast(e, "error");
+            return null;
+        });
+        if (uri) {
+            player.update(p => {
+                p.play(uri);
+                return p;
+            });
+            playing_item.set(item);
+            this.state = "Playing";
+        } else {
+            toast("could not play item", "error");
         }
     }
 
@@ -315,3 +318,133 @@ export async function autoplay_searcher(q: AutoplayQueryInfo) {
             throw exhausted(q);
     }
 }
+
+export async function autoplay_try_all(item: ListItem) {
+    let r1 = await item.autoplay_query("StRelated");
+    if (r1) {
+        return r1;
+    }
+    let r2 = await item.autoplay_query("StSearchRelated");
+    if (r2) {
+        return r2;
+    }
+    let r3 = await item.autoplay_query("MbzRadio");
+    if (r3) {
+        return r3;
+    }
+    return null;
+}
+
+export class AutoplayQueueManager extends QueueManager {
+    autoplay_searcher: Searcher | null = null;
+    autoplay_items: ListItem[] = [];
+    autoplay_index: number | null = null;
+    autoplayed_cache: Set<string> = new Set();
+
+    protected reset_autoplay() {
+        this.autoplay_searcher = null;
+        this.autoplay_items = [];
+        this.autoplay_index = null;
+
+        // NOTE: don't reset cache
+        // this.autoplayed_cache = new Set();
+    }
+
+    // TODO: consider cache
+    protected async has_next_autoplay(): Promise<boolean> {
+        if (this.autoplay_index == null) {
+            if (this.autoplay_items.length > 0) {
+                return true;
+            }
+        } else {
+            if (this.autoplay_items.length - 1 > this.autoplay_index) {
+                return true;
+            }
+        }
+
+        if (!this.autoplay_searcher) {
+            return false;
+        }
+
+        if (!this.autoplay_searcher.has_next_page) {
+            return false;
+        } else {
+            this.autoplay_items = await this.autoplay_searcher.next_page();
+            return await this.has_next_autoplay();
+        }
+    }
+
+    protected autoplay_get_item() {
+        if (this.autoplay_index != null) {
+            return this.autoplay_items[this.autoplay_index];
+        } else {
+            return null;
+        }
+    }
+
+    protected autoplay_peek_item() {
+        if (this.autoplay_index != null) {
+            return this.autoplay_items.at(this.autoplay_index + 1) ?? null;
+        } else {
+            return this.autoplay_items.at(0) ?? null;
+        }
+    }
+
+    protected async autoplay_next_item() {
+        if (await this.has_next_autoplay()) {
+            if (this.autoplay_index != null) {
+                this.autoplay_index += 1;
+                return this.autoplay_get_item();
+            } else {
+                this.autoplay_index = 0;
+                return this.autoplay_get_item();
+            }
+        }
+        return null;
+    }
+
+    protected async play_item(item: ListItem): Promise<void> {
+        await super.play_item(item);
+
+        if (await this.has_next_autoplay()) {
+            return;
+        }
+
+        let playing_index = this.playing_index ?? this.items.length - 1;
+        let query = await autoplay_try_all(this.items[playing_index]);
+        if (!query) {
+            return;
+        }
+
+        this.reset_autoplay();
+        this.autoplay_searcher = await autoplay_searcher(query);
+    }
+
+    async has_next(): Promise<boolean> {
+        if (await super.has_next()) {
+            return true;
+        } else if (await this.has_next_autoplay()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    async play_next(): Promise<void> {
+        if (!await super.has_next()) {
+            let item = await this.autoplay_next_item();
+            if (item) {
+                await this.add(item);
+            }
+        }
+        await super.play_next();
+    }
+}
+
+// export class DbQueueManager extends QueueManager {
+//     queue: DB.DbItem<covau.Queue> = { current_index: null, queue: { title: "Queue", songs: []}};
+
+//     async new() {
+        
+//     }
+// }

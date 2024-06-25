@@ -366,7 +366,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "play",
                                 onclick: async () => {
                                     stores.queue.update(q => {
-                                        q.play_item(this);
+                                        q.play_queue_item(this);
                                         return q;
                                     });
                                     stores.playing_item.set(this);
@@ -378,7 +378,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove item",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
@@ -404,7 +404,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "play",
                                 onclick: async () => {
                                     stores.queue.update(q => {
-                                        q.play_item(this);
+                                        q.play_queue_item(this);
                                         return q;
                                     });
                                     stores.playing_item.set(this);
@@ -416,7 +416,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove item",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
@@ -440,7 +440,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "play",
                                 onclick: async () => {
                                     stores.queue.update(q => {
-                                        q.play_item(this);
+                                        q.play_queue_item(this);
                                         return q;
                                     });
                                     stores.playing_item.set(this);
@@ -452,7 +452,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove item",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
@@ -512,7 +512,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove from queue",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
@@ -737,7 +737,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove from queue",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
@@ -782,7 +782,7 @@ export class DbListItem extends ListItem {
                                 tooltip: "remove from queue",
                                 onclick: () => {
                                     stores.queue.update(q => {
-                                        q.remove_item(this);
+                                        q.remove_queue_item(this);
                                         return q;
                                     });
                                 },
