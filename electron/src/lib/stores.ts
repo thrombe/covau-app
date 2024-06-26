@@ -138,19 +138,38 @@ export let player: Writable<Musiplayer> = writable();
 
 export let queue: Writable<AutoplayQueueManager> = writable(new AutoplayQueueManager());
 
-export async function play_item(item: ListItem) {
-    let uri = await item.audio_uri();
-    if (uri) {
-        get(player).play(uri);
-        queue.update(q => {
-            q.detour();
-            return q;
-        });
+export const queue_ops = {
+    async detour(item: ListItem) {
+        let uri = await item.audio_uri();
+        if (uri) {
+            get(player).play(uri);
+            queue.update(q => {
+                q.detour();
+                return q;
+            });
+            playing_item.set(item);
+        } else {
+            toast("could not play item", "error");
+        }
+    },
+
+    async add_item(...items: ListItem[]) {
+        await get(queue).add(...items);
+        queue.update(q => q);
+    },
+
+    async remove_item(item: ListItem) {
+        await get(queue).remove_queue_item(item);
+        queue.update(q => q);
+    },
+
+    async play_item(item: ListItem) {
+        await get(queue).play_queue_item(item);
+        queue.update(q => q);
         playing_item.set(item);
-    } else {
-        toast("could not play item", "error");
     }
-}
+};
+
 
 selected_menubar_option.subscribe(async (option) => {
     if (!get(tube)) {

@@ -467,22 +467,15 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    stores.queue.update(q => {
-                                        q.play_queue_item(this);
-                                        return q;
-                                    });
-                                    stores.playing_item.set(this);
+                                    await stores.queue_ops.play_item(this);
                                 },
                             },
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
                                 tooltip: "remove item",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.remove_queue_item(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
                                 },
                             },
                         ];
@@ -510,29 +503,23 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    await stores.play_item(this);
+                                    await stores.queue_ops.detour(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.add(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.add_item(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
                                 tooltip: "remove from queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.remove_queue_item(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
                                 },
                             },
                             {
@@ -573,10 +560,7 @@ export class DbListItem extends ListItem {
                                         ids: list.songs,
                                     }, list.songs.length);
                                     let items = await s.next_page();
-                                    stores.queue.update(q => {
-                                        q.add(...items);
-                                        return q;
-                                    });
+                                    await stores.queue_ops.add_item(...items);
                                 },
                             },
                         ];
@@ -725,29 +709,23 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    await stores.play_item(this);
+                                    await stores.queue_ops.detour(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.add(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.add_item(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
                                 tooltip: "remove from queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.remove_queue_item(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
                                 },
                             },
                         ];
@@ -760,29 +738,23 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    await stores.play_item(this);
+                                    await stores.queue_ops.detour(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.add(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.add_item(this);
                                 },
                             },
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
                                 tooltip: "remove from queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.remove_queue_item(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
                                 },
                             },
                             {

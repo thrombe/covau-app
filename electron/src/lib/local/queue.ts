@@ -24,6 +24,13 @@ export class QueueManager implements Searcher {
         return this.items;
     }
 
+    protected reset() {
+        this.items = [];
+        this.playing_index = null;
+        this.state = "Unstarted";
+        this.has_next_page = true;
+    }
+
     detour() {
         this.state = "Detour";
     }
@@ -222,11 +229,12 @@ export class QueueManager implements Searcher {
                 location: "OnlyMenu",
                 onclick: () => {
                     queue.update(q => {
-                        let new_q = new QueueManager();
-                        if (q.state == "Playing") {
-                            new_q.detour();
+                        let state = q.state;
+                        q.reset();
+                        if (state == "Playing") {
+                            q.detour();
                         }
-                        return new_q;
+                        return q;
                     })
                 },
             },
@@ -352,7 +360,8 @@ export class AutoplayQueueManager extends QueueManager {
     autoplay_state: AutoplayState = { state: "Uninit" };
     autoplayed_ids: Set<string> = new Set();
 
-    protected reset_autoplay() {
+    protected reset() {
+        super.reset();
         this.autoplay_state = { state: "Uninit" };
     }
 

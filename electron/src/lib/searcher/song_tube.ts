@@ -250,11 +250,8 @@ export class StListItem extends ListItem {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.add(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    stores.queue_ops.add_item(this);
                                 },
                             },
                             {
@@ -262,7 +259,7 @@ export class StListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    await stores.play_item(this);
+                                    await stores.queue_ops.detour(this);
                                 },
                             },
                             {
