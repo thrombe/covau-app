@@ -24,7 +24,7 @@ export class QueueManager implements Searcher {
         return this.items;
     }
 
-    protected reset() {
+    reset() {
         this.items = [];
         this.playing_index = null;
         this.state = "Unstarted";
@@ -360,7 +360,7 @@ export class AutoplayQueueManager extends QueueManager {
     autoplay_state: AutoplayState = { state: "Uninit" };
     autoplayed_ids: Set<string> = new Set();
 
-    protected reset() {
+    reset() {
         super.reset();
         this.autoplay_state = { state: "Uninit" };
     }

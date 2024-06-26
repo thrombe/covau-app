@@ -152,22 +152,15 @@ export class MbzListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    stores.queue.update(q => {
-                                        q.play_queue_item(this);
-                                        return q;
-                                    });
-                                    stores.playing_item.set(this);
+                                    await stores.queue_ops.play_item(this);
                                 },
                             },
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
                                 tooltip: "remove from queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.remove_queue_item(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
                                 },
                             },
                         ];
@@ -309,11 +302,8 @@ export class MbzListItem extends ListItem {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
                                 tooltip: "add to queue",
-                                onclick: () => {
-                                    stores.queue.update(q => {
-                                        q.add(this);
-                                        return q;
-                                    });
+                                onclick: async () => {
+                                    await stores.queue_ops.add_item(this);
                                 },
                             },
                             {
@@ -321,13 +311,7 @@ export class MbzListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let uri = await this.audio_uri();
-                                    if (!uri) {
-                                        toast("could not play item", "error");
-                                        return;
-                                    }
-                                    get(stores.player).play(uri);
-                                    stores.playing_item.set(this);
+                                    await stores.queue_ops.detour(this);
                                 },
                             },
                         ];

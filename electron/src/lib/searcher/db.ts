@@ -591,10 +591,7 @@ export class DbListItem extends ListItem {
                                         ids: a.songs,
                                     }, a.songs.length);
                                     let items = await s.next_page();
-                                    stores.queue.update(q => {
-                                        q.add(...items);
-                                        return q;
-                                    });
+                                    await stores.queue_ops.add_item(...items);
                                 },
                             },
                             {
@@ -609,10 +606,7 @@ export class DbListItem extends ListItem {
                                         ids: songs,
                                     }, songs.length);
                                     let items = await s.next_page();
-                                    stores.queue.update(q => {
-                                        q.add(...items);
-                                        return q;
-                                    });
+                                    await stores.queue_ops.add_item(...items);
                                 },
                             },
                         ];
