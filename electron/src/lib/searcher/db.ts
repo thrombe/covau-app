@@ -510,17 +510,7 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let uri = await this.audio_uri();
-                                    if (uri) {
-                                        get(stores.player).play(uri);
-                                        stores.queue.update(q => {
-                                            q.detour();
-                                            return q;
-                                        });
-                                        stores.playing_item.set(this);
-                                    } else {
-                                        toast("could not play item", "error");
-                                    }
+                                    await stores.play_item(this);
                                 },
                             },
                             {
@@ -735,17 +725,7 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let uri = await this.audio_uri();
-                                    if (uri) {
-                                        get(stores.player).play(uri);
-                                        stores.queue.update(q => {
-                                            q.detour();
-                                            return q;
-                                        });
-                                        stores.playing_item.set(this);
-                                    } else {
-                                        toast("could not play item", "error");
-                                    }
+                                    await stores.play_item(this);
                                 },
                             },
                             {
@@ -780,17 +760,7 @@ export class DbListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let uri = await this.audio_uri();
-                                    if (uri) {
-                                        get(stores.player).play(uri);
-                                        stores.queue.update(q => {
-                                            q.detour();
-                                            return q;
-                                        });
-                                        stores.playing_item.set(this);
-                                    } else {
-                                        toast("could not play item", "error");
-                                    }
+                                    await stores.play_item(this);
                                 },
                             },
                             {

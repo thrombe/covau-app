@@ -335,92 +335,121 @@ export async function autoplay_try_all(item: ListItem) {
     return null;
 }
 
+type AutoplayState = {
+    state: 'Uninit';
+} | {
+    state: 'Init';
+    searcher: Searcher;
+    seed_item: ListItem;
+    items: ListItem[];
+    index: number; // index is always valid
+} | {
+    state: "Finished";
+    items: ListItem[];
+};
+
 export class AutoplayQueueManager extends QueueManager {
-    autoplay_searcher: Searcher | null = null;
-    autoplay_items: ListItem[] = [];
-    autoplay_index: number | null = null;
-    autoplay_seed_item: ListItem | null = null;
+    autoplay_state: AutoplayState = { state: "Uninit" };
+    autoplayed_ids: Set<string> = new Set();
 
     protected reset_autoplay() {
-        this.autoplay_searcher = null;
-        this.autoplay_items = [];
-        this.autoplay_index = null;
-        this.autoplay_seed_item = null;
+        this.autoplay_state = { state: "Uninit" };
     }
 
-    protected async has_next_autoplay(): Promise<boolean> {
-        if (this.autoplay_index == null) {
-            if (this.autoplay_items.length > 0) {
-                return true;
-            }
-        } else {
-            if (this.autoplay_items.length - 1 > this.autoplay_index) {
-                return true;
-            }
+    async init_with_seed(item: ListItem) {
+        let query = await autoplay_try_all(item);
+        if (!query) {
+            return false;
         }
-
-        if (!this.autoplay_searcher) {
+        let searcher = await autoplay_searcher(query);
+        if (!searcher) {
+            return false;
+        }
+        let items = await searcher.next_page();
+        if (items.length == 0) {
             return false;
         }
 
-        if (!this.autoplay_searcher.has_next_page) {
-            return false;
-        } else {
-            this.autoplay_items = await this.autoplay_searcher.next_page();
-            return await this.has_next_autoplay();
+        let ids = item.song_ids();
+        for (let id of ids) {
+            this.autoplayed_ids.add(id);
         }
+
+        this.autoplay_state = {
+            state: "Init",
+            searcher,
+            seed_item: item,
+            items,
+            index: 0,
+        };
+
+        await this.skip_dups();
+
+        return true;
     }
 
-    protected autoplay_get_item() {
-        if (this.autoplay_index != null) {
-            return this.autoplay_items.at(this.autoplay_index) ?? null;
+    protected autoplay_peek_item() {
+        if (this.autoplay_state.state === "Init") {
+            let item = this.autoplay_state.items.at(this.autoplay_state.index)!;
+            return item;
         } else {
             return null;
         }
     }
 
-    protected async autoplay_peek_item() {
-        if (this.autoplay_index != null) {
-            return this.autoplay_items.at(this.autoplay_index + 1) ?? null;
-        } else {
-            return this.autoplay_items.at(0) ?? null;
+    protected async skip_dups() {
+        if (this.autoplay_state.state != "Init") {
+            return;
+        }
+
+        while (true) {
+            let next = this.autoplay_state.items.at(this.autoplay_state.index) ?? null;
+            if (!next) {
+                if (this.autoplay_state.searcher.has_next_page) {
+                    this.autoplay_state.items = await this.autoplay_state.searcher.next_page();
+                    next = this.autoplay_state.items.at(this.autoplay_state.index) ?? null;
+                }
+                if (!next) {
+                    this.autoplay_state = { state: "Finished", items: this.autoplay_state.items };
+                    break;
+                }
+            }
+            let ids = next.song_ids();
+            if (ids.find(id => this.autoplayed_ids.has(id))) {
+                this.autoplay_state.index += 1;
+                continue;
+            } else {
+                break;
+            }
         }
     }
 
-    protected async autoplay_next_item_assumed() {
-        if (this.autoplay_index != null) {
-            this.autoplay_index += 1;
-            return this.autoplay_get_item();
-        } else {
-            this.autoplay_index = 0;
-            return this.autoplay_get_item();
+    protected async autoplay_consume() {
+        if (this.autoplay_state.state != "Init") {
+            return null;
         }
+        let item = this.autoplay_state.items.at(this.autoplay_state.index)!;
+
+        this.autoplay_state.index += 1;
+        await this.skip_dups();
+
+        return item;
     }
 
     protected async play_item(item: ListItem): Promise<void> {
         await super.play_item(item);
 
-        if (await this.has_next_autoplay()) {
+        if (this.autoplay_state.state === "Init") {
             return;
         }
 
-        let playing_index = this.playing_index ?? this.items.length - 1;
-        let seed = this.items[playing_index];
-        let query = await autoplay_try_all(seed);
-        if (!query) {
-            return;
-        }
-
-        this.reset_autoplay();
-        this.autoplay_seed_item = seed;
-        this.autoplay_searcher = await autoplay_searcher(query);
-        this.autoplay_items = await this.autoplay_searcher.next_page();
+        await this.init_with_seed(item);
     }
 
     async has_next(): Promise<boolean> {
         if (await super.has_next()) {
             return true;
-        } else if (await this.has_next_autoplay()) {
+        } else if (this.autoplay_state.state === "Init") {
             return true;
         } else {
             return false;
@@ -429,71 +458,30 @@ export class AutoplayQueueManager extends QueueManager {
 
     async play_next(): Promise<void> {
         if (!await super.has_next()) {
-            if (!await this.has_next_autoplay()) {
-                return;
-            }
-            let item = await this.autoplay_next_item_assumed();
+            let item = await this.autoplay_consume();
             if (item) {
                 await this.add(item);
             }
         }
         await super.play_next();
     }
-}
-
-export class DedupedAutoplayQueueManager extends AutoplayQueueManager {
-    autoplayed_ids: Set<string> = new Set();
-
-    protected async has_next_autoplay(): Promise<boolean> {
-        if (await super.has_next_autoplay()) {
-            let maybe_item = await super.autoplay_peek_item();
-            let item = maybe_item!;
-            let ids = item.song_ids();
-            for (let id of ids) {
-                if (this.autoplayed_ids.has(id)) {
-                    let _ignored = await super.autoplay_next_item_assumed();
-                    return await this.has_next_autoplay();
-                }
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    protected async autoplay_peek_item(): Promise<ListItem | null> {
-        let item = await super.autoplay_peek_item();
-        if (!item) {
-            return item;
-        }
-
-        let ids = item.song_ids();
-        for (let id of ids) {
-            if (this.autoplayed_ids.has(id)) {
-                let _ignored = await super.autoplay_next_item_assumed();
-                return await this.autoplay_peek_item();
-            }
-        }
-
-        return item;
-    }
 
     async add(...items: ListItem[]): Promise<void> {
-        await super.add(...items);
         items.forEach(e => {
             let ids = e.song_ids();
             for (let id of ids) {
                 this.autoplayed_ids.add(id);
             }
         });
+        await super.add(...items);
     }
 
     async insert(index: number, item: ListItem) {
-        await super.insert(index, item);
         let ids = item.song_ids();
         for (let id of ids) {
             this.autoplayed_ids.add(id);
         }
+        await super.insert(index, item);
     }
 }
 

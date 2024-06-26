@@ -262,13 +262,7 @@ export class StListItem extends ListItem {
                                 location: "IconTop",
                                 tooltip: "play",
                                 onclick: async () => {
-                                    let uri = await this.audio_uri();
-                                    if (!uri) {
-                                        toast("could not play item", "error");
-                                        return;
-                                    }
-                                    get(stores.player).play(uri);
-                                    stores.playing_item.set(this);
+                                    await stores.play_item(this);
                                 },
                             },
                             {
@@ -401,6 +395,7 @@ export const st = {
         }
     },
 
+    // TODO: fetch info from cache first. sqlite db cache on app, browser storage on web
     async get_video(id: string) {
         let s = await get(stores.tube).getBasicInfo(id);
         return {
