@@ -122,10 +122,6 @@ export let curr_tab = derived(
     [tabs, curr_tab_index],
     ([$tabs, $index]) => $tabs[$index],
 );
-// export let searcher = derived(
-//     curr_tab,
-//     ($curr_tab) => get($curr_tab.searcher),
-// );
 
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player

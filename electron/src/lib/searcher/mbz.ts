@@ -235,10 +235,7 @@ export class MbzListItem extends ListItem {
                                 tooltip: "add all to queue",
                                 onclick: async () => {
                                     let releases = await mbz.recordings_from_releases(a.releases);
-                                    stores.queue.update(q => {
-                                        q.add(...releases);
-                                        return q;
-                                    });
+                                    await stores.queue_ops.add_item(...releases);
                                 },
                             },
                         ];
@@ -281,10 +278,7 @@ export class MbzListItem extends ListItem {
                                     this.data.data = rel;
                                     this.data.typ = "MbzReleaseGroupWithInfo";
                                     let releases = await mbz.recordings_from_releases(rel.releases);
-                                    stores.queue.update(q => {
-                                        q.add(...releases);
-                                        return q;
-                                    });
+                                    await stores.queue_ops.add_item(...releases);
                                 },
                             },
                         ];
