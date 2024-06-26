@@ -36,6 +36,22 @@ export class StListItem extends ListItem {
         return this.data.get_key();
     }
 
+    song_ids(): string[] {
+        switch (this.data.type) {
+            case "Song":
+            case "Video": {
+                let song = this.data.content;
+                return [song.id];
+            } break;
+            case "Album":
+            case "Playlist":
+            case "Artist":
+                return [];
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     title(): string {
         switch (this.data.type) {
             case "Song":

@@ -3,7 +3,8 @@ import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted } from "$lib/virtual";
 
 export abstract class ListItem {
-    abstract key(): unknown;
+    abstract key(): unknown; // literally anything unique
+    abstract song_ids(): string[]; // a id that might identify this song
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
@@ -16,6 +17,7 @@ export abstract class ListItem {
 
 export class CustomListItem extends ListItem {
     _key: string;
+    _ids: string[] = [];
     _title: string;
     _title_sub: string | null = null;
     _artists: string[] = [];
@@ -31,6 +33,10 @@ export class CustomListItem extends ListItem {
 
     key() {
         return this._key;
+    }
+
+    song_ids() {
+        return this._ids;
     }
 
     title() {

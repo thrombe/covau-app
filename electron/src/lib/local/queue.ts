@@ -339,18 +339,15 @@ export class AutoplayQueueManager extends QueueManager {
     autoplay_searcher: Searcher | null = null;
     autoplay_items: ListItem[] = [];
     autoplay_index: number | null = null;
-    autoplayed_cache: Set<string> = new Set();
+    autoplay_seed_item: ListItem | null = null;
 
     protected reset_autoplay() {
         this.autoplay_searcher = null;
         this.autoplay_items = [];
         this.autoplay_index = null;
-
-        // NOTE: don't reset cache
-        // this.autoplayed_cache = new Set();
+        this.autoplay_seed_item = null;
     }
 
-    // TODO: consider cache
     protected async has_next_autoplay(): Promise<boolean> {
         if (this.autoplay_index == null) {
             if (this.autoplay_items.length > 0) {
@@ -376,13 +373,13 @@ export class AutoplayQueueManager extends QueueManager {
 
     protected autoplay_get_item() {
         if (this.autoplay_index != null) {
-            return this.autoplay_items[this.autoplay_index];
+            return this.autoplay_items.at(this.autoplay_index) ?? null;
         } else {
             return null;
         }
     }
 
-    protected autoplay_peek_item() {
+    protected async autoplay_peek_item() {
         if (this.autoplay_index != null) {
             return this.autoplay_items.at(this.autoplay_index + 1) ?? null;
         } else {
@@ -390,17 +387,14 @@ export class AutoplayQueueManager extends QueueManager {
         }
     }
 
-    protected async autoplay_next_item() {
-        if (await this.has_next_autoplay()) {
-            if (this.autoplay_index != null) {
-                this.autoplay_index += 1;
-                return this.autoplay_get_item();
-            } else {
-                this.autoplay_index = 0;
-                return this.autoplay_get_item();
-            }
+    protected async autoplay_next_item_assumed() {
+        if (this.autoplay_index != null) {
+            this.autoplay_index += 1;
+            return this.autoplay_get_item();
+        } else {
+            this.autoplay_index = 0;
+            return this.autoplay_get_item();
         }
-        return null;
     }
 
     protected async play_item(item: ListItem): Promise<void> {
@@ -411,13 +405,16 @@ export class AutoplayQueueManager extends QueueManager {
         }
 
         let playing_index = this.playing_index ?? this.items.length - 1;
-        let query = await autoplay_try_all(this.items[playing_index]);
+        let seed = this.items[playing_index];
+        let query = await autoplay_try_all(seed);
         if (!query) {
             return;
         }
 
         this.reset_autoplay();
+        this.autoplay_seed_item = seed;
         this.autoplay_searcher = await autoplay_searcher(query);
+        this.autoplay_items = await this.autoplay_searcher.next_page();
     }
 
     async has_next(): Promise<boolean> {
@@ -432,12 +429,71 @@ export class AutoplayQueueManager extends QueueManager {
 
     async play_next(): Promise<void> {
         if (!await super.has_next()) {
-            let item = await this.autoplay_next_item();
+            if (!await this.has_next_autoplay()) {
+                return;
+            }
+            let item = await this.autoplay_next_item_assumed();
             if (item) {
                 await this.add(item);
             }
         }
         await super.play_next();
+    }
+}
+
+export class DedupedAutoplayQueueManager extends AutoplayQueueManager {
+    autoplayed_ids: Set<string> = new Set();
+
+    protected async has_next_autoplay(): Promise<boolean> {
+        if (await super.has_next_autoplay()) {
+            let maybe_item = await super.autoplay_peek_item();
+            let item = maybe_item!;
+            let ids = item.song_ids();
+            for (let id of ids) {
+                if (this.autoplayed_ids.has(id)) {
+                    let _ignored = await super.autoplay_next_item_assumed();
+                    return await this.has_next_autoplay();
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected async autoplay_peek_item(): Promise<ListItem | null> {
+        let item = await super.autoplay_peek_item();
+        if (!item) {
+            return item;
+        }
+
+        let ids = item.song_ids();
+        for (let id of ids) {
+            if (this.autoplayed_ids.has(id)) {
+                let _ignored = await super.autoplay_next_item_assumed();
+                return await this.autoplay_peek_item();
+            }
+        }
+
+        return item;
+    }
+
+    async add(...items: ListItem[]): Promise<void> {
+        await super.add(...items);
+        items.forEach(e => {
+            let ids = e.song_ids();
+            for (let id of ids) {
+                this.autoplayed_ids.add(id);
+            }
+        });
+    }
+
+    async insert(index: number, item: ListItem) {
+        await super.insert(index, item);
+        let ids = item.song_ids();
+        for (let id of ids) {
+            this.autoplayed_ids.add(id);
+        }
     }
 }
 

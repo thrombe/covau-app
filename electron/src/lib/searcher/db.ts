@@ -54,6 +54,34 @@ export class DbListItem extends ListItem {
         return this.data.get_key();
     }
 
+    song_ids(): string[] {
+        switch (this.data.typ) {
+            case "MmSong":
+                return [this.data.t.key];
+            case "StSong":
+                return [this.data.t.id];
+            case "StVideo":
+                return [this.data.t.id];
+            case "Song": {
+                let song = this.data.t;
+                return song.info_sources.map(s => s.content)
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                return [];
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     title(): string {
         switch (this.data.typ) {
             case "MmSong":
