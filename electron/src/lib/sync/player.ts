@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore';
 import * as firestore from "firebase/firestore";
 import { Mutex } from 'async-mutex';
+import { exhausted } from '$lib/virtual';
 
 type PlayerSyncedData = {
     state: 'Initialised';
@@ -223,7 +224,7 @@ export class SyncPlayer {
                 this.maybe_seek_player(this.synced_data.started_at);
                 break;
             default:
-                throw 'unhandled state!!';
+                throw exhausted(this.synced_data);
         }
     }
 
@@ -302,7 +303,7 @@ export class SyncPlayer {
                     await this.update_state(data);
                     break;
                 default:
-                    throw 'unhandled state!!';
+                    throw exhausted(this.synced_data);
             }
         });
     }
@@ -320,7 +321,7 @@ export class SyncPlayer {
                     index = this.synced_data.playing_index;
                     break;
                 default:
-                    throw 'unhandled state!!';
+                    throw exhausted(this.synced_data);
             }
             index += 1;
             if (this.synced_data.queue.length > index) {
@@ -349,7 +350,7 @@ export class SyncPlayer {
                     index = this.synced_data.playing_index;
                     break;
                 default:
-                    throw 'unhandled state!!';
+                    throw exhausted(this.synced_data);
             }
             index -= 1;
             if (this.synced_data.queue.length > index && index >= 0) {
@@ -561,7 +562,7 @@ export class SyncPlayer {
                 }
                 // break;
             default:
-                throw 'case not handled';
+                throw exhausted(d);
         }
     }
 
@@ -582,7 +583,7 @@ export class SyncPlayer {
                 }
                 // break;
             default:
-                throw 'case not handled';
+                throw exhausted(d);
         }
     }
 

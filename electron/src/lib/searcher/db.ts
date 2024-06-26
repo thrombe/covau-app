@@ -7,7 +7,6 @@ import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
-import { get, writable } from "svelte/store";
 import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";

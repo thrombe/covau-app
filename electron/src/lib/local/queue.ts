@@ -6,7 +6,6 @@ import { prompt } from "$lib/prompt/prompt.ts";
 import type { Searcher } from "$lib/searcher/searcher.ts";
 
 import * as covau from "$types/covau.ts";
-import * as DB from "$types/db.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
