@@ -11,8 +11,6 @@
     export let item_height: number;
     export let queue_dragend: (e: DragEvent) => void = () => {};
 
-    let browse_type = stores.selected_menubar_option;
-
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
 

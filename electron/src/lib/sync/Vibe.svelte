@@ -13,7 +13,7 @@
     import InputBar from "$lib/components/InputBar.svelte";
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
-    import SongBrowser from "./SongBrowser.svelte";
+    import SongBrowser from "$lib/local/SongBrowser.svelte";
     import Video from "./Video.svelte";
     import { SyncPlayer } from "./player.ts";
     import type { Unique } from "$lib/virtual.ts";
@@ -127,11 +127,11 @@
     let menubar_options: MenubarOption[] = [
         { name: "Watch", content_type: "watch" },
         { name: "Home", content_type: "home-feed" },
-        { name: "Song", content_type: "music", type: "song" },
-        { name: "Music Video", content_type: "music", type: "video" },
-        { name: "Music Playlist", content_type: "music", type: "playlist" },
-        { name: "Artist", content_type: "music", type: "artist" },
-        { name: "Album", content_type: "music", type: "album" },
+        { name: "Song", content_type: "music", type: "YtSong" },
+        { name: "Music Video", content_type: "music", type: "YtVideo" },
+        { name: "Music Playlist", content_type: "music", type: "YtPlaylist" },
+        { name: "Artist", content_type: "music", type: "YtArtist" },
+        { name: "Album", content_type: "music", type: "YtAlbum" },
         { name: "Related", content_type: "related-music", id: null },
     ];
     let menubar_home_option = menubar_options[1];
@@ -386,10 +386,7 @@
                             <SongBrowser
                                 bind:item_height
                                 columns={browse_columns}
-                                bind:tube
                                 {queue_dragend}
-                                queue_item_add={on_queue_item_add}
-                                browse_type={menubar_option}
                             />
                         </div>
                     </div>
