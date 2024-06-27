@@ -1,5 +1,5 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
-import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
@@ -347,7 +347,6 @@ interface IClassTypeWrapper<D> {
     has_next_page: boolean;
 };
 function ClassTypeWrapper<D extends {
-    query: BrowseQuery;
     next_page(): Promise<(MusicListItem & Keyed)[]>;
     has_next_page: boolean;
 }>(d: D) {
@@ -449,7 +448,9 @@ export class SongTube extends Unpaged<MusicListItem> {
     }
 
     static new(query: BrowseQuery) {
-        return ClassTypeWrapper(SongTube.unwrapped(query));
+        let w1 = ClassTypeWrapper(SongTube.unwrapped(query));
+        let w2 = AsyncWrapper<StListItem, typeof w1>(w1);
+        return w2;
     }
 
     static unwrapped(query: BrowseQuery) {

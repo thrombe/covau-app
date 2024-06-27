@@ -1,4 +1,4 @@
-import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
@@ -676,7 +676,8 @@ export class Mbz<T> extends Unpaged<T> {
         let w0 = Mbz.unwrapped<T>(query, page_size);
         let w1 = UnionTypeWrapper(w0);
         let w2 = ClassTypeWrapper(w1);
-        return w2
+        let w3 = AsyncWrapper<MbzListItem, typeof w2>(w2);
+        return w3
     }
 
     static unwrapped<T>(query: BrowseQuery, page_size: number) {

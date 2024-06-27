@@ -1,4 +1,4 @@
-import { SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -762,17 +762,14 @@ interface IClassTypeWrapper<D> {
     next_page(): Promise<DbListItem[]>;
     inner: D;
     has_next_page: boolean;
-    query: BrowseQuery;
 };
 function ClassTypeWrapper<D extends {
-    query: BrowseQuery;
     next_page(): Promise<MusicListItem[]>;
     has_next_page: boolean;
 }>(d: D) {
     return {
         inner: d,
         has_next_page: d.has_next_page,
-        query: d.query,
 
         async next_page(): Promise<DbListItem[]> {
             let res = await d.next_page();
@@ -789,44 +786,6 @@ function ClassTypeWrapper<D extends {
     } as unknown as IClassTypeWrapper<D>;
 }
 
-interface IAsyncProtWrapper<D> {
-    next_page(): Promise<DbListItem[]>;
-    inner: D;
-    has_next_page: boolean;
-    query: BrowseQuery;
-    promise: Promise<DbListItem[]> | null,
-};
-function AsyncProtWrapper<D extends {
-    query: BrowseQuery;
-    next_page(): Promise<DbListItem[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-        query: d.query,
-        promise: null,
-
-        async next_page(): Promise<DbListItem[]> {
-            let self = this as unknown as IAsyncProtWrapper<D>;
-
-            if (!self.promise) {
-                self.promise = d.next_page();
-            }
-            let res = await self.promise;
-            self.promise = null;
-
-            self.has_next_page = d.has_next_page;
-
-            if (res.length === 0) {
-                return [];
-            }
-
-            return res;
-        }
-    } as unknown as IAsyncProtWrapper<D>;
-}
-
 
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
@@ -840,8 +799,8 @@ export class Db extends Unpaged<MusicListItem> {
 
     static new(query: BrowseQuery, page_size: number) {
         let w2 = ClassTypeWrapper(Db.unwrapped(query, page_size));
-        // let w3 = AsyncProtWrapper(w2);
-        return w2;
+        let w3 = AsyncWrapper<DbListItem, typeof w2>(w2);
+        return w3;
     }
 
     static unwrapped(query: BrowseQuery, page_size: number) {

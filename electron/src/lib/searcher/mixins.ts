@@ -1,4 +1,5 @@
-import { type Keyed } from "$lib/virtual";
+import { type Keyed } from "$lib/virtual.ts";
+import type { ListItem } from "./item.ts";
 
 type Constructor<T> = new (...args: any[]) => T;
 
@@ -43,6 +44,33 @@ export function SlowSearch<T, Q, S extends Constructor<{
 }
 
 
+export interface IAsyncWrapper<T, D> {
+    next_page(): Promise<T[]>;
+    inner: D;
+    has_next_page: boolean;
+    promise: Promise<T[]> | null;
+};
+export function AsyncWrapper<T, D extends {
+    next_page(): Promise<T[]>;
+    has_next_page: boolean;
+}>(d: D) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+
+        promise: null,
+        async next_page(): Promise<T[]> {
+            let self = this as unknown as IAsyncWrapper<T, D>;
+            if (!self.promise) {
+                self.promise = d.next_page();
+            }
+            let res = await self.promise;
+            self.promise = null;
+            self.has_next_page = d.has_next_page;
+            return res;
+        }
+    } as unknown as IAsyncWrapper<T, D>;
+}
 
 export interface ISaved<T> {
     next_page(): Promise<(T & Keyed)[]>;
