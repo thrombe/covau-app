@@ -127,6 +127,12 @@ export interface Player {
     play(uri: string): (Promise<void> | void);
     pause(): void;
 }
+export interface Queue {
+    play_item(item: ListItem): Promise<void>;
+    add(...item: ListItem[]): Promise<void>;
+    play_queue_item(item: ListItem): Promise<void>;
+    remove_queue_item(item: ListItem): Promise<void>;
+}
 
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
@@ -137,7 +143,7 @@ export let player: Writable<Player> = writable();
     player.set(pl);
 })()
 
-export let queue: Writable<AutoplayQueueManager> = writable(new AutoplayQueueManager());
+export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
 
 export const queue_ops = {
     async detour(item: ListItem) {

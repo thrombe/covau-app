@@ -224,14 +224,13 @@ export class QueueManager implements Searcher {
                 icon: "/static/remove.svg",
                 location: "OnlyMenu",
                 onclick: () => {
-                    queue.update(q => {
-                        let state = q.state;
-                        q.reset();
-                        if (state == "Playing") {
-                            q.detour();
-                        }
-                        return q;
-                    })
+                    let q = get(queue) as AutoplayQueueManager;
+                    let state = q.state;
+                    q.reset();
+                    if (state == "Playing") {
+                        q.detour();
+                    }
+                    queue.update(q => q);
                 },
             },
             {
