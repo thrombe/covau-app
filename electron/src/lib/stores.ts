@@ -123,9 +123,14 @@ export let curr_tab = derived(
     ([$tabs, $index]) => $tabs[$index],
 );
 
+export interface Player {
+    play(uri: string): (Promise<void> | void);
+    pause(): void;
+}
+
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
-export let player: Writable<Musiplayer> = writable();
+export let player: Writable<Player> = writable();
 (async () => {
     let musiplayer = await import("$lib/local/player.ts");
     let pl = new musiplayer.Musiplayer();
@@ -136,17 +141,8 @@ export let queue: Writable<AutoplayQueueManager> = writable(new AutoplayQueueMan
 
 export const queue_ops = {
     async detour(item: ListItem) {
-        let uri = await item.audio_uri();
-        if (uri) {
-            get(player).play(uri);
-            queue.update(q => {
-                q.detour();
-                return q;
-            });
-            playing_item.set(item);
-        } else {
-            toast("could not play item", "error");
-        }
+        await get(queue).play_item(item);
+        queue.update(q => q);
     },
 
     async add_item(...items: ListItem[]) {
@@ -162,7 +158,6 @@ export const queue_ops = {
     async play_item(item: ListItem) {
         await get(queue).play_queue_item(item);
         queue.update(q => q);
-        playing_item.set(item);
     }
 };
 

@@ -1,5 +1,4 @@
 import { type Keyed } from "$lib/virtual.ts";
-import type { ListItem } from "./item.ts";
 
 type Constructor<T> = new (...args: any[]) => T;
 

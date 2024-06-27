@@ -9,6 +9,7 @@ import * as covau from "$types/covau.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
+import { get } from "svelte/store";
 
 
 export class QueueManager implements Searcher {
@@ -35,10 +36,8 @@ export class QueueManager implements Searcher {
     }
     finished() {
         this.state = "Finished";
-        player.update(p => {
-            p.pause();
-            return p;
-        });
+        get(player).pause();
+        player.update(p => p);
     }
     async play_queue_item(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
@@ -199,22 +198,20 @@ export class QueueManager implements Searcher {
         let item = this.items.at(index);
         if (item) {
             await this.play_item(item);
+            this.state = "Playing";
         } else {
             toast(`no item at index ${index}`, "error");
         }
     }
-    protected async play_item(item: ListItem) {
+    async play_item(item: ListItem) {
         let uri = await item.audio_uri().catch(e => {
             toast(e, "error");
             return null;
         });
         if (uri) {
-            player.update(p => {
-                p.play(uri);
-                return p;
-            });
+            await get(player).play(uri);
+            player.update(p => p);
             playing_item.set(item);
-            this.state = "Playing";
         } else {
             toast("could not play item", "error");
         }
@@ -444,7 +441,7 @@ export class AutoplayQueueManager extends QueueManager {
         return item;
     }
 
-    protected async play_item(item: ListItem): Promise<void> {
+    async play_item(item: ListItem): Promise<void> {
         await super.play_item(item);
 
         if (this.autoplay_state.state === "Init") {
