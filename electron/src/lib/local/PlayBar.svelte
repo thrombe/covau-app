@@ -5,13 +5,15 @@
     import * as stores from "$lib/stores.ts";
     import { exhausted } from "$lib/virtual.ts";
     import { CustomListItem } from "$lib/searcher/item";
+    import type { Musiplayer } from "./player.ts";
+    import type { Writable } from "svelte/store";
 
     export let mobile = false;
     export let keyboard_control = true;
 
     let playing_item = stores.playing_item;
 
-    let player = stores.player;
+    let player = stores.player as unknown as Writable<Musiplayer>;
     let queue = stores.queue;
 
     let video_pos = 0;
