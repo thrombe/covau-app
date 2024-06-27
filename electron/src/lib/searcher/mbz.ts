@@ -57,6 +57,23 @@ export class MbzListItem extends ListItem {
     key(): unknown {
         return this.data.get_key();
     }
+    song_ids(): string[] {
+        switch (this.data.typ) {
+            case "MbzRadioSong":
+                return this.data.data.identifier
+            case "MbzRecording":
+            case "MbzRecordingWithInfo":
+                return [this.data.data.id];
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+                return [];
+            default:
+                throw exhausted(this.data);
+        }
+    }
     title(): string {
         switch (this.data.typ) {
             case "MbzReleaseWithInfo":
