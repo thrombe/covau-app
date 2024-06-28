@@ -238,30 +238,31 @@ export class QueueManager implements Searcher {
                 icon: "/static/floppy-disk.svg",
                 location: "OnlyMenu",
                 onclick: async () => {
-                    let name = await prompt("Enter queue name");
-                    if (!name) {
+                    let _name = await prompt("Enter queue name");
+                    if (!_name) {
                         return;
                     }
+                    let name = _name;
 
-                    // TODO: this should be atomic
-
-                    let items = await Promise.all(this.items.map(async (item) => {
-                        let song = item.savable();
-                        if (!song || song.typ != "Song") {
-                            let msg = `item: ${item.title()} can't be saved in db`;
-                            toast(msg, "error");
-                            throw new Error(msg);
-                        }
-                        return await db.insert(song);
-                    }));
-                    let queue: covau.Queue = {
-                        current_index: this.playing_index,
-                        queue: {
-                            title: name,
-                            songs: items.map(t => t.content.id),
-                        },
-                    };
-                    await db.insert({ typ: "Queue", t: queue });
+                    await db.txn(async (db) => {
+                        let items = await Promise.all(this.items.map(async (item) => {
+                            let song = item.savable();
+                            if (!song || song.typ != "Song") {
+                                let msg = `item: ${item.title()} can't be saved in db`;
+                                toast(msg, "error");
+                                throw new Error(msg);
+                            }
+                            return await db.insert(song);
+                        }));
+                        let queue: covau.Queue = {
+                            current_index: this.playing_index,
+                            queue: {
+                                title: name,
+                                songs: items.map(t => t.content.id),
+                            },
+                        };
+                        await db.insert({ typ: "Queue", t: queue });
+                    });
                 },
             },
         ];
@@ -492,7 +493,6 @@ export class AutoplayQueueManager extends QueueManager {
 // export class DbQueueManager extends QueueManager {
 //     queue: DB.DbItem<covau.Queue> = { current_index: null, queue: { title: "Queue", songs: []}};
 
-//     async new() {
-        
+//     async 
 //     }
 // }

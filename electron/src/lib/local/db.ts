@@ -6,26 +6,44 @@ import { utils } from "$lib/server.ts";
 export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
+function db_cud(id: number) {
+    return {
+        id: id,
+
+        async insert<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
+            let route = db.route(t.typ, "insert");
+
+            let txn: server.WithTransaction<T> = {
+                transaction_id: this.id,
+                t: t.t,
+            };
+            let dbitem: server.InsertResponse<DB.DbItem<T>> = await utils.api_request(route, txn);
+            return dbitem;
+        },
+
+        async update<T>(item: DB.DbItem<T>) {
+            let route = db.route(item.typ, "update");
+
+            let txn: server.WithTransaction<DB.DbItem<T>> = {
+                transaction_id: this.id,
+                t: item,
+            };
+            await utils.api_request_no_resp(route, txn);
+        },
+
+        async delete<T>(item: DB.DbItem<T>) {
+            let route = db.route(item.typ, "delete");
+
+            let txn: server.WithTransaction<DB.DbItem<T>> = {
+                transaction_id: this.id,
+                t: item,
+            };
+            await utils.api_request_no_resp(route, txn);
+        },
+    }
+};
+
 export const db = {
-    async insert<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
-        let route = this.route(t.typ, "insert");
-
-        let dbitem: server.InsertResponse<DB.DbItem<T>> = await utils.api_request(server_base + route, t.t);
-        return dbitem;
-    },
-
-    async update<T>(item: DB.DbItem<T>) {
-        let route = this.route(item.typ, "update");
-
-        await utils.api_request_no_resp(server_base + route, item);
-    },
-
-    async delete<T>(item: DB.DbItem<T>) {
-        let route = this.route(item.typ, "delete");
-
-        await utils.api_request_no_resp(server_base + route, item);
-    },
-
     route(type: DB.Typ, op: "search" | "insert" | "update" | "delete") {
         switch (type) {
             case "MmSong":
@@ -58,6 +76,31 @@ export const db = {
                 return server_base + `song_tube/${op}/artists`;
             default:
                 throw exhausted(type);
+        }
+    },
+
+    async begin() {
+        let id: number = await utils.api_request(server_base + "db/transaction/begin", null);
+        return id;
+    },
+
+    async commit(id: number) {
+        await utils.api_request_no_resp(server_base + "db/transaction/commit", id);
+    },
+
+    async rollback(id: number) {
+        await utils.api_request_no_resp(server_base + "db/transaction/rollback", id);
+    },
+
+    async txn(fn: ((db_ops: ReturnType<typeof db_cud>) => Promise<void>)) {
+        let id = await this.begin();
+        try {
+            await fn(db_cud(id));
+            await this.commit(id);
+        } catch (e: any) {
+            await this.rollback(id);
+
+            throw e;
         }
     },
 };
