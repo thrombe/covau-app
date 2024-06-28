@@ -92,7 +92,7 @@ pub enum SearchQuery {
 pub use db::*;
 #[cfg(feature = "bindeps")]
 pub mod db {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::{entity::prelude::*, Schema};
@@ -217,10 +217,7 @@ pub mod db {
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                let mut h = self.artists
-                    .iter()
-                    .map(String::as_str)
-                    .collect::<Vec<_>>();
+                let mut h = self.artists.iter().map(String::as_str).collect::<Vec<_>>();
                 h.push(&self.title);
                 h
             }
@@ -286,7 +283,8 @@ pub mod db {
                         rids.push(artist_id.as_str());
                     }
                     UpdateSource::MusimanagerSearch { artist_keys, .. } => {
-                        rids.extend(artist_keys.iter().map(String::as_str));
+                        // OOF: it's all messed up
+                        // rids.extend(artist_keys.iter().map(String::as_str));
                     }
                     UpdateSource::SongTubeSearch { artist_keys, .. } => {
                         rids.extend(artist_keys.iter().map(String::as_str));
@@ -610,6 +608,14 @@ pub mod db {
                     .to_owned(),
             );
             let _ = self.db.execute(s).await?;
+            let s = builder.build(
+                &sea_orm::sea_query::Index::create()
+                    .name("id_index")
+                    .table(object::Entity)
+                    .col(object::Column::Id)
+                    .to_owned(),
+            );
+            let _ = self.db.execute(s).await?;
 
             {
                 let path = "/home/issac/0Git/musimanager/db/musitracker.json";
@@ -618,7 +624,7 @@ pub mod db {
                 let txn = self.db.begin().await?;
 
                 let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
-                for s in tracker.songs.into_iter() {
+                for s in tracker.songs.iter() {
                     s.insert(&txn).await?;
                 }
                 println!("songs added");
@@ -638,6 +644,70 @@ pub mod db {
                     q.insert(&txn).await?;
                 }
                 println!("queues added");
+
+                let mut songs = HashMap::new();
+                for s in tracker.songs.iter() {
+                    songs.insert(
+                        s.key.as_str(),
+                        crate::yt::Video {
+                            title: s.title.clone(),
+                            id: s.key.clone(),
+                            album: None,
+                        },
+                    );
+                }
+                let mut albums = HashMap::new();
+                for a in tracker.albums.iter() {
+                    let album = crate::yt::Album {
+                        name: a.name.clone(),
+                        id: a.browse_id.clone(),
+                    };
+                    albums.insert(a.browse_id.as_str(), album.clone());
+                    for s in a.songs.iter() {
+                        songs.get_mut(s.0.as_str()).unwrap().album = Some(album.clone());
+                    }
+                }
+                for a in tracker.artists.iter() {
+                    if !a.known_albums.is_empty() || !a.unexplored_songs.is_empty() {
+                        let u = crate::covau_types::Updater {
+                            title: a.name.clone(),
+                            source: crate::covau_types::UpdateSource::MusimanagerSearch {
+                                search_words: a.search_keywords.clone(),
+                                artist_keys: a.keys.clone(),
+                                non_search_words: a.non_keywords.clone(),
+                                known_albums: a
+                                    .known_albums
+                                    .iter()
+                                    .map(|id| albums.get(id.0.as_str()).unwrap().to_owned())
+                                    .map(|e| crate::covau_types::UpdateItem {
+                                        done: false,
+                                        points: 0,
+                                        item: e,
+                                    })
+                                    .collect(),
+                                songs: crate::covau_types::ListenQueue {
+                                    queue: a
+                                        .unexplored_songs
+                                        .iter()
+                                        .map(|id| songs.get(id.0.as_str()).unwrap().to_owned())
+                                        .map(|e| crate::covau_types::UpdateItem {
+                                            done: false,
+                                            points: 0,
+                                            item: e,
+                                        })
+                                        .collect(),
+                                    current_index: None,
+                                },
+                            },
+                            last_update_ts: a.last_auto_search.unwrap_or(0),
+                            enabled: a.last_auto_search.is_some(),
+                        };
+                        u.insert(&txn).await?;
+                    } else {
+                        assert_eq!(a.last_auto_search.is_none(), true);
+                    }
+                }
+                println!("updaters added");
 
                 txn.commit().await?;
             }
@@ -795,10 +865,7 @@ pub mod db {
             Ok(e)
         }
 
-        pub async fn search_by_id<T: DbAble>(
-            &self,
-            id: DbId,
-        ) -> anyhow::Result<Option<DbItem<T>>> {
+        pub async fn search_by_id<T: DbAble>(&self, id: DbId) -> anyhow::Result<Option<DbItem<T>>> {
             let e = object::Entity::find()
                 .filter(object::Column::Typ.eq(T::typ()))
                 .filter(object::Column::Id.eq(id))
