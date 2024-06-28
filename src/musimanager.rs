@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -25,17 +25,11 @@ impl Tracker<Song> {
     pub fn clean(&self) -> EntityTracker {
         let mut et = EntityTracker::default();
 
-        fn b_minus_a(a: &[String], b: &[String]) -> Vec<String> {
-            let mut unique = Vec::new();
-            'first: for t in b.iter() {
-                for t2 in a.iter() {
-                    if t == t2 || t.is_empty() {
-                        continue 'first;
-                    }
-                }
-                unique.push(t.clone());
-            }
-            unique
+        fn unique(a: &[String], b: &[String]) -> Vec<String> {
+            let mut s = HashSet::<&str>::from_iter(b.iter().map(|s| s.as_str()));
+            s.extend(a.iter().map(|s| s.as_str()));
+
+            s.into_iter().map(ToString::to_string).collect()
         }
 
         fn take_from(so: &mut Song, s: &Song) {
@@ -50,13 +44,11 @@ impl Tracker<Song> {
                 .or(s.last_known_path.as_ref())
                 .map(|s| s.to_owned());
 
-            so.info
-                .titles
-                .extend(b_minus_a(&so.info.titles, &s.info.titles));
+            so.info.titles = unique(&so.info.titles, &s.info.titles);
 
             so.info.duration = so.info.duration.or(s.info.duration);
 
-            so.info.tags.extend(b_minus_a(&so.info.tags, &s.info.tags));
+            so.info.tags = unique(&so.info.tags, &s.info.tags);
 
             if so.info.thumbnail_url.is_empty() {
                 so.info.thumbnail_url = s.info.thumbnail_url.clone();
@@ -80,9 +72,7 @@ impl Tracker<Song> {
                 .or(s.info.album.as_ref())
                 .map(|s| s.to_owned());
 
-            so.info
-                .artist_names
-                .extend(b_minus_a(&so.info.artist_names, &s.info.artist_names));
+            so.info.artist_names = unique(&so.info.artist_names, &s.info.artist_names);
         }
 
         let Tracker {
@@ -233,8 +223,7 @@ impl Tracker<Song> {
                     }
                     alo.songs = songs.into_values().collect();
 
-                    alo.artist_keys
-                        .extend(b_minus_a(&alo.artist_keys, &al.artist_keys));
+                    alo.artist_keys = unique(&alo.artist_keys, &al.artist_keys);
 
                     if alo.artist_name.is_empty() {
                         alo.artist_name = al.artist_name.clone();
@@ -265,12 +254,10 @@ impl Tracker<Song> {
         }
         for a in auto_search_artists {
             if let Some(ao) = m_artists.get_mut(&a.name) {
-                ao.keys.extend(b_minus_a(&ao.keys, &a.keys));
-                ao.search_keywords
-                    .extend(b_minus_a(&ao.search_keywords, &a.search_keywords));
-                ao.non_keywords
-                    .extend(b_minus_a(&ao.non_keywords, &a.non_keywords));
-                ao.keywords.extend(b_minus_a(&ao.keywords, &a.keywords));
+                ao.keys = unique(&ao.keys, &a.keys);
+                ao.search_keywords = unique(&ao.search_keywords, &a.search_keywords);
+                ao.non_keywords = unique(&ao.non_keywords, &a.non_keywords);
+                ao.keywords = unique(&ao.keywords, &a.keywords);
 
                 let mut albums = HashMap::new();
                 for al in ao.known_albums.iter() {
@@ -351,7 +338,11 @@ impl Tracker<Song> {
         for pl in playlists.iter() {
             et.playlists.push(Playlist(SongProvider {
                 name: pl.name.to_string(),
-                data_list: pl.data_list.iter().map(|s| SongId(s.key.to_string())).collect(),
+                data_list: pl
+                    .data_list
+                    .iter()
+                    .map(|s| SongId(s.key.to_string()))
+                    .collect(),
                 current_index: pl.current_index,
             }));
         }
@@ -359,7 +350,11 @@ impl Tracker<Song> {
         for q in queues.iter() {
             et.queues.push(Queue(SongProvider {
                 name: q.name.to_string(),
-                data_list: q.data_list.iter().map(|s| SongId(s.key.to_string())).collect(),
+                data_list: q
+                    .data_list
+                    .iter()
+                    .map(|s| SongId(s.key.to_string()))
+                    .collect(),
                 current_index: q.current_index,
             }));
         }
