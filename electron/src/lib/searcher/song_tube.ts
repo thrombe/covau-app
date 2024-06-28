@@ -171,7 +171,7 @@ export class StListItem extends ListItem {
                 let t: covau.Song = {
                     title: song.title ?? song.id,
                     artists: song.authors.map(a => a.name),
-                    thumbnails: [st.get_thumbnail(song.id)],
+                    thumbnails: [...song.thumbnails.map(t => t.url), st.get_thumbnail(song.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
