@@ -114,6 +114,7 @@ export class QueueManager implements Searcher {
         if (this.playing_index != null) {
             if (this.playing_index > index) {
                 this.playing_index -= 1;
+                this.items.splice(index, 1);
             } else if (this.playing_index == index) {
                 if (this.items.length <= 1) {
                     // queue will have no items after removing
@@ -139,6 +140,8 @@ export class QueueManager implements Searcher {
                 // if removed item comes after the currently playing one
                 this.items.splice(index, 1);
             }
+        } else {
+            this.items.splice(index, 1);
         }
     }
     async play_prev() {
