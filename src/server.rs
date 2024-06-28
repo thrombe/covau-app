@@ -505,6 +505,12 @@ fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     redirect.boxed()
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+#[serde(tag = "type", content = "content")]
+pub enum InsertResponse<T> {
+    New(T),
+    Old(T),
+}
 fn db_insert_route<T: DbAble + Send + Sync + 'static>(
     db: Db,
     path: &'static str,
@@ -515,6 +521,22 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: T| async move {
+            for refid in item
+                .refids()
+                .into_iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .into_iter()
+            {
+                if let Some(e) = db
+                    .search_by_ref_id::<T>(refid)
+                    .await
+                    .map_err(custom_reject)?
+                {
+                    return Ok(warp::reply::json(&InsertResponse::Old(e)));
+                }
+            }
+
             let txn = db.db.begin().await.map_err(custom_reject)?;
             let id = match item.insert(&txn).await {
                 Ok(id) => {
@@ -531,7 +553,7 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
                 typ: T::typ(),
                 t: item,
             };
-            Ok::<_, warp::Rejection>(warp::reply::json(&db_item))
+            Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
         });
     let insert = insert.with(warp::cors().allow_any_origin());
     insert.boxed()
@@ -1081,6 +1103,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlayerMessage>(config)?;
     types += ";\n";
     types += &specta::ts::export::<FetchRequest>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<InsertResponse<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<ErrorMessage>(config)?;
     types += ";\n";

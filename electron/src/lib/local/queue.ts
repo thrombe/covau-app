@@ -258,7 +258,7 @@ export class QueueManager implements Searcher {
                         current_index: this.playing_index,
                         queue: {
                             title: name,
-                            songs: items.map(t => t.id),
+                            songs: items.map(t => t.content.id),
                         },
                     };
                     await db.insert({ typ: "Queue", t: queue });

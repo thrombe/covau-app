@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
+// :skull. warp types got so huge that it refuses too compile
+#![recursion_limit = "256"]
+
 use std::path::PathBuf;
 
 use anyhow::Result;

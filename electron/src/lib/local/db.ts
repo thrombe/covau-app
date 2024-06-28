@@ -1,28 +1,29 @@
 import { exhausted } from "$lib/virtual.ts";
 import * as DB from "$types/db.ts";
-import * as server from "$lib/server.ts";
+import * as server from "$types/server.ts";
+import { utils } from "$lib/server.ts";
 
 export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 export const db = {
-    async insert<T>(t: AlmostDbItem<T>): Promise<DB.DbItem<T>> {
+    async insert<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
         let route = this.route(t.typ, "insert");
 
-        let dbitem: DB.DbItem<T> = await server.utils.api_request(server_base + route, t.t);
+        let dbitem: server.InsertResponse<DB.DbItem<T>> = await utils.api_request(server_base + route, t.t);
         return dbitem;
     },
 
     async update<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "update");
 
-        await server.utils.api_request_no_resp(server_base + route, item);
+        await utils.api_request_no_resp(server_base + route, item);
     },
 
     async delete<T>(item: DB.DbItem<T>) {
         let route = this.route(item.typ, "delete");
 
-        await server.utils.api_request_no_resp(server_base + route, item);
+        await utils.api_request_no_resp(server_base + route, item);
     },
 
     route(type: DB.Typ, op: "search" | "insert" | "update" | "delete") {
