@@ -197,8 +197,8 @@ export class QueueManager implements Searcher {
     async play(index: number) {
         let item = this.items.at(index);
         if (item) {
-            await this.play_item(item);
             this.state = "Playing";
+            await this.play_item(item);
         } else {
             toast(`no item at index ${index}`, "error");
         }
@@ -208,10 +208,10 @@ export class QueueManager implements Searcher {
             toast(e, "error");
             return null;
         });
+        playing_item.set(item);
         if (uri) {
             await get(player).play(uri);
             player.update(p => p);
-            playing_item.set(item);
         } else {
             toast("could not play item", "error");
         }
