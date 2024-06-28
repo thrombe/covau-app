@@ -506,6 +506,59 @@ fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+pub struct WithTransaction<T> {
+    transaction_id: u32,
+    t: T,
+}
+
+fn db_begin_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
+    let begin = warp::path("db")
+        .and(warp::path("transaction"))
+        .and(warp::path("begin"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and_then(|db: Db| async move {
+            let id = db.begin().await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&id))
+        });
+
+    let begin = begin.with(warp::cors().allow_any_origin());
+    begin.boxed()
+}
+
+fn db_commit_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
+    let begin = warp::path("db")
+        .and(warp::path("transaction"))
+        .and(warp::path("commit"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Db, id: u32| async move {
+            db.commit(id).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply())
+        });
+
+    let begin = begin.with(warp::cors().allow_any_origin());
+    begin.boxed()
+}
+
+fn db_rollback_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
+    let begin = warp::path("db")
+        .and(warp::path("transaction"))
+        .and(warp::path("rollback"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Db, id: u32| async move {
+            db.rollback(id).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply())
+        });
+
+    let begin = begin.with(warp::cors().allow_any_origin());
+    begin.boxed()
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum InsertResponse<T> {
     New(T),
@@ -520,8 +573,9 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Db, item: T| async move {
+        .and_then(|db: Db, item: WithTransaction<T>| async move {
             for refid in item
+                .t
                 .refids()
                 .into_iter()
                 .map(ToString::to_string)
@@ -537,17 +591,12 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
                 }
             }
 
-            let txn = db.db.begin().await.map_err(custom_reject)?;
-            let id = match item.insert(&txn).await {
-                Ok(id) => {
-                    txn.commit().await.map_err(custom_reject)?;
-                    id
-                }
-                Err(e) => {
-                    txn.rollback().await.map_err(custom_reject)?;
-                    return Err(custom_reject(e));
-                }
-            };
+            let mut txns = db.transactions.lock().await;
+            let txn = txns
+                .get(&item.transaction_id)
+                .context("Transaction not found")
+                .map_err(custom_reject)?;
+            let id = item.t.insert(txn).await.map_err(custom_reject)?;
             let db_item = crate::db::DbItem {
                 id,
                 typ: T::typ(),
@@ -568,20 +617,17 @@ fn db_update_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let txn = db.db.begin().await.map_err(custom_reject)?;
-            let _ = match item.update(&txn).await {
-                Ok(()) => {
-                    txn.commit().await.map_err(custom_reject)?;
-                }
-                Err(e) => {
-                    txn.rollback().await.map_err(custom_reject)?;
-                    return Err(custom_reject(e));
-                }
-            };
-
-            Ok::<_, warp::Rejection>(warp::reply())
-        });
+        .and_then(
+            |db: Db, item: WithTransaction<crate::db::DbItem<T>>| async move {
+                let mut txns = db.transactions.lock().await;
+                let txn = txns
+                    .get(&item.transaction_id)
+                    .context("Transaction not found")
+                    .map_err(custom_reject)?;
+                item.t.update(txn).await.map_err(custom_reject)?;
+                Ok::<_, warp::Rejection>(warp::reply())
+            },
+        );
     let update = update.with(warp::cors().allow_any_origin());
     update.boxed()
 }
@@ -595,20 +641,17 @@ fn db_delete_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Db, item: crate::db::DbItem<T>| async move {
-            let txn = db.db.begin().await.map_err(custom_reject)?;
-            let _ = match item.delete(&txn).await {
-                Ok(()) => {
-                    txn.commit().await.map_err(custom_reject)?;
-                }
-                Err(e) => {
-                    txn.rollback().await.map_err(custom_reject)?;
-                    return Err(custom_reject(e));
-                }
-            };
-
-            Ok::<_, warp::Rejection>(warp::reply())
-        });
+        .and_then(
+            |db: Db, item: WithTransaction<crate::db::DbItem<T>>| async move {
+                let mut txns = db.transactions.lock().await;
+                let txn = txns
+                    .get(&item.transaction_id)
+                    .context("Transaction not found")
+                    .map_err(custom_reject)?;
+                item.t.delete(txn).await.map_err(custom_reject)?;
+                Ok::<_, warp::Rejection>(warp::reply())
+            },
+        );
     let delete = delete.with(warp::cors().allow_any_origin());
     delete.boxed()
 }
@@ -1040,6 +1083,9 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         .or(musimanager_search_routes)
         .or(song_tube_search_routes)
         .or(covau_search_routes)
+        .or(db_begin_transaction_route(db.clone()))
+        .or(db_commit_transaction_route(db.clone()))
+        .or(db_rollback_transaction_route(db.clone()))
         .or(db_search_untyped_by_id_route(db.clone(), "object"))
         .or(mbz_search_routes)
         .or(webui_js_route(client.clone()))
@@ -1105,6 +1151,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<FetchRequest>(config)?;
     types += ";\n";
     types += &specta::ts::export::<InsertResponse<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<WithTransaction<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<ErrorMessage>(config)?;
     types += ";\n";
