@@ -94,6 +94,7 @@ pub use db::*;
 pub mod db {
     use std::collections::{HashMap, HashSet};
 
+    use anyhow::Context;
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::{entity::prelude::*, Schema};
     use sea_orm::{Condition, DeriveEntityModel, QuerySelect};
@@ -581,16 +582,62 @@ pub mod db {
         impl ActiveModelBehavior for ActiveModel {}
     }
 
+    pub type TransactionId = u32;
+
     #[derive(Clone)]
     pub struct Db {
         pub db: sea_orm::DatabaseConnection,
+        pub transaction_id: std::sync::Arc<std::sync::atomic::AtomicU32>,
+        pub transactions:
+            std::sync::Arc<tokio::sync::Mutex<HashMap<u32, sea_orm::DatabaseTransaction>>>,
     }
     impl Db {
         pub async fn new(path: impl AsRef<str>) -> anyhow::Result<Self> {
+            let mut opts = sea_orm::ConnectOptions::new(path.as_ref());
+
+            // a transaction blocks 1 connection completely
+            // a writer transaction blocks all writers (sqlite can't do multiple concurrent writers)
+            // - [Transaction](https://sqlite.org/lang_transaction.html)
+            opts.max_connections(10);
+            let db = sea_orm::Database::connect(opts).await?;
+
+            // enable wal so writers do not block reads
+            // - [Write-Ahead Logging](https://www.sqlite.org/wal.html)
+            db.execute_unprepared("PRAGMA journal_mode = wal;").await?;
+
             let db = Db {
-                db: sea_orm::Database::connect(path.as_ref()).await?,
+                db,
+                transaction_id: std::sync::Arc::new(0.into()),
+                transactions: std::sync::Arc::new(tokio::sync::Mutex::new(HashMap::new())),
             };
             Ok(db)
+        }
+
+        pub async fn begin(&self) -> anyhow::Result<TransactionId> {
+            let txn = self.db.begin().await?;
+            let id = self
+                .transaction_id
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let mut txns = self.transactions.lock().await;
+            txns.insert(id, txn)
+                .is_none()
+                .then_some(())
+                .expect("new id is generated");
+            Ok(id)
+        }
+
+        pub async fn commit(&self, id: TransactionId) -> anyhow::Result<()> {
+            let mut txns = self.transactions.lock().await;
+            let txn = txns.remove(&id).context("Transaction not found")?;
+            txn.commit().await?;
+            Ok(())
+        }
+
+        pub async fn rollback(&self, id: TransactionId) -> anyhow::Result<()> {
+            let mut txns = self.transactions.lock().await;
+            let txn = txns.remove(&id).context("Transaction not found")?;
+            txn.rollback().await?;
+            Ok(())
         }
 
         pub async fn init_tables(&self) -> anyhow::Result<()> {
@@ -987,9 +1034,7 @@ pub mod db {
 
     pub async fn db_test() -> anyhow::Result<()> {
         // let db = Db { db: sea_orm::Database::connect("sqlite::memory:").await? };
-        let db = Db {
-            db: sea_orm::Database::connect("sqlite:./test.db?mode=rwc").await?,
-        };
+        let db = Db::new("sqlite:./test.db?mode=rwc").await?;
 
         // let path = "/home/issac/0Git/musimanager/db/musitracker.json";
 
