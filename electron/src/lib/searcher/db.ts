@@ -721,8 +721,48 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     } break;
+                    case "Updater": {
+                        let u = this.data.t;
+                        switch (u.source.type) {
+                            case "Mbz":
+                                return [];
+                            case "MusimanagerSearch":
+                            case "SongTubeSearch":
+                                let ss = u.source.content;
+                                return [
+                                    {
+                                        icon: "/static/open-new-tab.svg",
+                                        location: "TopRight",
+                                        tooltip: "open",
+                                        onclick: async () => {
+                                            let s = Db.new({
+                                                query_type: "refids",
+                                                type: "Song",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            stores.push_tab(s, u.title);
+                                        },
+                                    },
+                                    {
+                                        icon: "/static/add.svg",
+                                        location: "OnlyMenu",
+                                        tooltip: "add all to queue",
+                                        onclick: async () => {
+                                            let s = Db.new({
+                                                query_type: "refids",
+                                                type: "Song",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            let items = await s.next_page();
+                                            await stores.queue_ops.add_item(...items);
+                                        },
+                                    },
+                                ];
+                            default:
+                                throw exhausted(u.source);
+                        }
+                    } break;
                     case "Playlist":
-                    case "Updater":
                     case "StAlbum":
                     case "StPlaylist":
                     case "StArtist":
