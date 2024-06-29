@@ -264,7 +264,7 @@ export class QueueManager implements Searcher {
                                 songs: items.map(t => t.content.id),
                             },
                         };
-                        await db.insert({ typ: "Queue", t: queue });
+                        await db.insert_or_get({ typ: "Queue", t: queue });
                     });
                 },
             },

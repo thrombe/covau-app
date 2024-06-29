@@ -10,7 +10,7 @@ function db_cud(id: number) {
     return {
         id: id,
 
-        async insert<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
+        async insert_or_get<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
             let route = db.route(t.typ, "insert");
 
             let txn: server.WithTransaction<T> = {
