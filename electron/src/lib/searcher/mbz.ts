@@ -170,6 +170,9 @@ export class MbzListItem extends ListItem {
                         query: q,
                     },
                 }), async (item) => {
+                        if (item.custom_options.length > 0) {
+                            return item;
+                        }
                         let stitem = item as st.StListItem;
                         item.custom_options.push((ctx, old) => {
                             if (ctx == "Playbar") {
