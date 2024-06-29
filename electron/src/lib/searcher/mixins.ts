@@ -1,4 +1,5 @@
 import { type Keyed } from "$lib/virtual.ts";
+import type { ListItem } from "./item";
 
 type Constructor<T> = new (...args: any[]) => T;
 
@@ -69,6 +70,30 @@ export function AsyncWrapper<T, D extends {
             return res;
         }
     } as unknown as IAsyncWrapper<T, D>;
+}
+
+export interface IMapWrapper<D> {
+    next_page(): Promise<ListItem[]>;
+    inner: D;
+    has_next_page: boolean;
+};
+export function MapWrapper<D extends {
+    next_page(): Promise<ListItem[]>;
+    has_next_page: boolean;
+}>(d: D, mapper: (item: ListItem) => Promise<ListItem>) {
+    return {
+        inner: d,
+        has_next_page: d.has_next_page,
+        async next_page(): Promise<ListItem[]> {
+            let self = this as unknown as IMapWrapper<D>;
+            let res = await d.next_page();
+            self.has_next_page = d.has_next_page;
+
+            let items = await Promise.all(res.map(e => mapper(e)));
+
+            return items;
+        }
+    } as unknown as IMapWrapper<D>;
 }
 
 export interface ISaved<T> {
