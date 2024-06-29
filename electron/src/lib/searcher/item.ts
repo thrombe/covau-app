@@ -9,11 +9,9 @@ export abstract class ListItem {
 
     options(ctx: RenderContext) {
         let ops = this.impl_options(ctx);
-        console.log(ops);
         for (let fn of this.custom_options) {
             ops = fn(ctx, ops);
         }
-        console.log(ops);
         return ops;
     }
 
