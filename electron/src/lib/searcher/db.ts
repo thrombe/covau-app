@@ -362,7 +362,7 @@ export class DbListItem extends ListItem {
         return null;
     }
 
-    options(ctx: RenderContext): Option[] {
+    impl_options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue":
                 switch (this.data.typ) {

@@ -1,15 +1,29 @@
-import type { AlmostDbItem } from "$lib/local/db.ts";
+import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted } from "$lib/virtual";
+import * as covau from "$types/covau.ts";
+import type { DbItem } from "$types/db";
 
 export abstract class ListItem {
+    custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
+
+    options(ctx: RenderContext) {
+        let ops = this.impl_options(ctx);
+        console.log(ops);
+        for (let fn of this.custom_options) {
+            ops = fn(ctx, ops);
+        }
+        console.log(ops);
+        return ops;
+    }
+
     abstract key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
     abstract title_sub(): string | null;
-    abstract options(ctx: RenderContext): Option[];
+    abstract impl_options(ctx: RenderContext): Option[];
     abstract audio_uri(): Promise<string | null>;
     abstract savable(): AlmostDbItem<unknown> | null;
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
@@ -59,7 +73,7 @@ export class CustomListItem extends ListItem {
         return null;
     }
 
-    options(_ctx: RenderContext) {
+    impl_options(_ctx: RenderContext) {
         return this._options;
     }
 

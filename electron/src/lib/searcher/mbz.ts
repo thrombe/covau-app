@@ -156,7 +156,7 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
-    options(ctx: RenderContext): Option[] {
+    impl_options(ctx: RenderContext): Option[] {
         switch (ctx) {
             case "Queue": {
                 switch (this.data.typ) {
