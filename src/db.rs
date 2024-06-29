@@ -332,30 +332,7 @@ pub mod db {
                 [self.id.to_owned()]
             }
         }
-        impl AutoDbAble for Video {
-            fn typ() -> db::Typ {
-                db::Typ::StVideo
-            }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                let mut hs = vec![];
-
-                self.title.as_deref().map(|a| {
-                    hs.push(a);
-                });
-
-                self.authors
-                    .iter()
-                    .map(|a| a.name.as_str())
-                    .for_each(|n| hs.push(n));
-
-                hs
-            }
-
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.id.as_ref()]
-            }
-        }
         impl AutoDbAble for Album {
             fn typ() -> db::Typ {
                 db::Typ::StAlbum

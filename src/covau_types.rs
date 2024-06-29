@@ -72,14 +72,14 @@ pub enum UpdateSource {
         search_words: Vec<String>,
         artist_keys: Vec<String>,
         non_search_words: Vec<String>,
-        known_albums: Vec<UpdateItem<yt::Album>>,
-        songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
+        known_albums: Vec<UpdateItem<yt::AlbumId>>,
+        songs: ListenQueue<Vec<UpdateItem<yt::VideoId>>>,
     },
     SongTubeSearch {
         search_words: Vec<String>,
         artist_keys: Vec<String>,
-        known_albums: Vec<UpdateItem<yt::Album>>,
-        songs: ListenQueue<Vec<UpdateItem<yt::Video>>>,
+        known_albums: Vec<UpdateItem<yt::AlbumId>>,
+        songs: ListenQueue<Vec<UpdateItem<yt::VideoId>>>,
     },
 }
 
@@ -134,7 +134,7 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     let mut types = String::new();
     types +=
         "import type { ReleaseGroupWithInfo, ReleaseWithInfo, Recording } from '$types/mbz.ts';\n";
-    types += "import type { Album, Video } from '$types/yt.ts';\n";
+    types += "import type { VideoId, AlbumId } from '$types/yt.ts';\n";
     types += "\n";
     types += &specta::ts::export::<LocalState>(config)?;
     types += ";\n";

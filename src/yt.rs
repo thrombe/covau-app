@@ -28,7 +28,6 @@ pub mod song_tube {
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub enum Typ {
         YtSong,
-        YtVideo,
         YtAlbum,
         YtPlaylist,
         YtArtist,
@@ -38,6 +37,7 @@ pub mod song_tube {
     #[serde(tag = "type", content = "content")]
     pub enum BrowseQuery {
         Search { search: Typ, query: String },
+        VideoSearch { query: String },
         Artist(ArtistId),
         Album(AlbumId),
         Playlist(PlaylistId),
@@ -50,7 +50,6 @@ pub mod song_tube {
     #[serde(tag = "type", content = "content")]
     pub enum MusicListItem {
         Song(Song),
-        Video(Video),
         Album(Album),
         Playlist(Playlist),
         Artist(Artist),
@@ -81,13 +80,7 @@ pub mod song_tube {
         pub authors: Vec<Author>,
         pub album: Option<SmolAlbum>,
     }
-    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-    pub struct Video {
-        pub id: String,
-        pub title: Option<String>,
-        pub thumbnails: Vec<Thumbnail>,
-        pub authors: Vec<Author>,
-    }
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Album {
         pub id: String,
@@ -128,18 +121,6 @@ pub mod song_tube {
         }
         fn assume(item: MusicListItem) -> Self {
             if let MusicListItem::Song(s) = item {
-                s
-            } else {
-                unreachable!()
-            }
-        }
-    }
-    impl TMusicListItem for Video {
-        fn typ() -> Typ {
-            Typ::YtVideo
-        }
-        fn assume(item: MusicListItem) -> Self {
-            if let MusicListItem::Video(s) = item {
                 s
             } else {
                 unreachable!()
@@ -338,8 +319,6 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<song_tube::Playlist>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::Song>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<song_tube::Video>(config)?;
     types += ";\n";
 
     types += &specta::ts::export::<VideoId>(config)?;

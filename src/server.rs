@@ -959,13 +959,6 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
                 .or(db_update_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
-                // TODO: searching for video separately is annoying. get rid of it
-                .or(db_search_route::<Video>(db.clone(), "videos"))
-                .or(db_search_by_refid_route::<Video>(db.clone(), "videos"))
-                .or(db_search_by_id_route::<Video>(db.clone(), "videos"))
-                .or(db_insert_route::<Video>(db.clone(), "videos"))
-                .or(db_update_route::<Video>(db.clone(), "videos"))
-                .or(db_delete_route::<Video>(db.clone(), "videos"))
                 .or(db_search_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_refid_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_id_route::<Album>(db.clone(), "albums"))
