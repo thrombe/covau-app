@@ -249,23 +249,24 @@ export class QueueManager implements Searcher {
 
                     await db.txn(async (db) => {
                         let items = await Promise.all(this.items.map(async (item) => {
-                            let song = item.savable();
-                            if (!song || song.typ != "Song") {
+                            let song = await item.saved_covau_song(db);
+                            if (!song) {
                                 let msg = `item: ${item.title()} can't be saved in db`;
                                 toast(msg, "error");
                                 throw new Error(msg);
                             }
-                            return await db.insert(song);
+                            return song
                         }));
                         let queue: covau.Queue = {
                             current_index: this.playing_index,
                             queue: {
                                 title: name,
-                                songs: items.map(t => t.content.id),
+                                songs: items.map(t => t.id),
                             },
                         };
                         await db.insert_or_get({ typ: "Queue", t: queue });
                     });
+                    toast(`queue ${name} saved`, "info")
                 },
             },
             {
