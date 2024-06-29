@@ -673,28 +673,6 @@ pub mod db {
                 }
                 println!("queues added");
 
-                let mut songs = HashMap::new();
-                for s in tracker.songs.iter() {
-                    songs.insert(
-                        s.key.as_str(),
-                        crate::yt::Video {
-                            title: s.title.clone(),
-                            id: s.key.clone(),
-                            album: None,
-                        },
-                    );
-                }
-                let mut albums = HashMap::new();
-                for a in tracker.albums.iter() {
-                    let album = crate::yt::Album {
-                        name: a.name.clone(),
-                        id: a.browse_id.clone(),
-                    };
-                    albums.insert(a.browse_id.as_str(), album.clone());
-                    for s in a.songs.iter() {
-                        songs.get_mut(s.0.as_str()).unwrap().album = Some(album.clone());
-                    }
-                }
                 for a in tracker.artists.iter() {
                     if !a.known_albums.is_empty() || !a.unexplored_songs.is_empty() {
                         let u = crate::covau_types::Updater {
@@ -706,22 +684,20 @@ pub mod db {
                                 known_albums: a
                                     .known_albums
                                     .iter()
-                                    .map(|id| albums.get(id.0.as_str()).unwrap().to_owned())
                                     .map(|e| crate::covau_types::UpdateItem {
                                         done: false,
                                         points: 0,
-                                        item: e,
+                                        item: e.clone(),
                                     })
                                     .collect(),
                                 songs: crate::covau_types::ListenQueue {
                                     queue: a
                                         .unexplored_songs
                                         .iter()
-                                        .map(|id| songs.get(id.0.as_str()).unwrap().to_owned())
                                         .map(|e| crate::covau_types::UpdateItem {
                                             done: false,
                                             points: 0,
-                                            item: e,
+                                            item: e.clone(),
                                         })
                                         .collect(),
                                     current_index: None,
