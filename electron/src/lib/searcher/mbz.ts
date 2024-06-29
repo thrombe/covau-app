@@ -1,8 +1,8 @@
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
-import type { AlmostDbItem } from "$lib/local/db.ts";
+import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
 import * as stores from "$lib/stores.ts";
@@ -11,6 +11,7 @@ import { utils as server } from "$lib/server.ts";
 import { prompt } from "$lib/prompt/prompt.ts";
 import { StaticSearcher } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
+import * as types from "$types/types.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -524,8 +525,51 @@ export class MbzListItem extends ListItem {
         }
     }
 
-    savable(): AlmostDbItem<unknown> | null {
-        return null;
+    async saved_covau_song(db: DbOps) {
+        switch (this.data.typ) {
+            case "MbzRadioSong": {
+                return null;
+            } break;
+            case "MbzRecording": {
+                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
+                this.data.data = recording;
+                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+            }; // no break
+            case "MbzRecordingWithInfo": {
+                let rec = this.data.data as RecordingWithInfo;
+                let info_source: types.covau.InfoSource[] = [{ type: "MbzId", content: rec.id }];
+
+                let playsource: types.covau.PlaySource[] = [];
+                let thumbnails: string[] = [];
+                if (this.yt_song) {
+                    playsource.push({
+                        type: "YtId",
+                        content: this.yt_song.id,
+                    })
+                    thumbnails = this.yt_song.thumbnails.map(t => t.url);
+                }
+
+                let t: types.covau.Song = {
+                    title: rec.title,
+                    artists: rec.credit.map(a => a.name),
+                    thumbnails: thumbnails,
+                    play_sources: playsource,
+                    info_sources: info_source,
+                };
+                let s: AlmostDbItem<types.covau.Song> = { typ: "Song", t };
+
+                let res =  await db.insert_or_get(s);
+                return res.content;
+            } break;
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+                return null;
+            default:
+                throw exhausted(this.data)
+        }
     }
 }
 

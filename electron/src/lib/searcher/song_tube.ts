@@ -3,13 +3,13 @@ import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
-import { get, writable } from "svelte/store";
+import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
-import { type AlmostDbItem } from "$lib/local/db.ts";
-import type { Searcher } from "./searcher.ts";
+import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
+import { db } from "$lib/local/db.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -153,7 +153,7 @@ export class StListItem extends ListItem {
         }
     }
 
-    savable(): AlmostDbItem<unknown> | null {
+    async saved_covau_song(db: DbOps) {
         function not_null<T>(a: (T | null)[]): T[] {
             return a.filter(t => !!t) as T[];
         }
@@ -168,17 +168,18 @@ export class StListItem extends ListItem {
                     play_sources: [id],
                     info_sources: [id],
                 };
-                return { typ: "Song", t };
+
+                let s1: AlmostDbItem<unknown> = {typ: "StSong", t: song };
+                let s2: AlmostDbItem<covau.Song> = { typ: "Song", t };
+
+                await db.insert_or_get(s1);
+                let res =  await db.insert_or_get(s2);
+                return res.content;
             } break;
-            case "Album": {
+            case "Album":
+            case "Playlist":
+            case "Artist":
                 return null;
-            } break;
-            case "Playlist": {
-                return null;
-            } break;
-            case "Artist": {
-                return null;
-            } break;
             default:
                 throw exhausted(this.data);
         }
@@ -373,7 +374,7 @@ export const st = {
     },
 
     // TODO: fetch info from cache first. sqlite db cache on app, browser storage on web
-    async get_video(id: string) {
+    async get_video(id: string): Promise<yt.Song> {
         let s = await get(stores.tube).getBasicInfo(id);
         return {
             id: id,
@@ -387,6 +388,11 @@ export const st = {
                 }
             ] : [],
         }
+    },
+
+    get_wrapped<T extends { id?: any }>(items: T[], typ: MusicListItem["type"]): StListItem[] {
+        let k = keyed(items.map(e => ({ type: typ, content: e as unknown } as MusicListItem)));
+        return k.map(e => new StListItem(e))
     },
 
     get_thumbnail(id: string) {

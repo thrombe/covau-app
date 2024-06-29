@@ -25,7 +25,7 @@ export abstract class ListItem {
     abstract title_sub(): string | null;
     abstract impl_options(ctx: RenderContext): Option[];
     abstract audio_uri(): Promise<string | null>;
-    abstract savable(): AlmostDbItem<unknown> | null;
+    abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
 }
 
@@ -77,7 +77,7 @@ export class CustomListItem extends ListItem {
         return this._options;
     }
 
-    savable() {
+    async saved_covau_song() {
         return null;
     }
 

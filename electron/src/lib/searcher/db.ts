@@ -8,7 +8,7 @@ import { type Option, ListItem, type RenderContext } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
-import { db, type AlmostDbItem } from "$lib/local/db.ts";
+import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 
@@ -356,10 +356,61 @@ export class DbListItem extends ListItem {
         }
     }
 
-    savable(): AlmostDbItem<unknown> | null {
-        // return this.data;
-        // return null here, as it's already saved.
-        return null;
+    async saved_covau_song(db: DbOps) {
+        switch (this.data.typ) {
+            case "Song": {
+                return this.data;
+            } break;
+            case "MmSong": {
+                let song = this.data.t;
+
+                let vid = await st.get_video(song.key);
+                let id: covau.PlaySource = { type: "YtId", content: vid.id };
+                let t: covau.Song = {
+                    title: vid.title ?? vid.id,
+                    artists: vid.authors.map(a => a.name),
+                    thumbnails: [...vid.thumbnails.map(t => t.url), st.get_thumbnail(vid.id)],
+                    play_sources: [id],
+                    info_sources: [id],
+                };
+
+                let s1: AlmostDbItem<yt.Song> = {typ: "StSong", t: vid };
+                let s2: AlmostDbItem<covau.Song> = { typ: "Song", t };
+
+                await db.insert_or_get(s1);
+                let res =  await db.insert_or_get(s2);
+                return res.content;
+            } break;
+            case "StSong": {
+                let vid = this.data.t;;
+
+                let id: covau.PlaySource = { type: "YtId", content: vid.id };
+                let t: covau.Song = {
+                    title: vid.title ?? vid.id,
+                    artists: vid.authors.map(a => a.name),
+                    thumbnails: [...vid.thumbnails.map(t => t.url), st.get_thumbnail(vid.id)],
+                    play_sources: [id],
+                    info_sources: [id],
+                };
+                let s: AlmostDbItem<covau.Song> = { typ: "Song", t };
+
+                let res =  await db.insert_or_get(s);
+                return res.content;
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
     }
 
     impl_options(ctx: RenderContext): Option[] {
