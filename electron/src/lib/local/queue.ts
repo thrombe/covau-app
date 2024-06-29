@@ -268,6 +268,21 @@ export class QueueManager implements Searcher {
                     });
                 },
             },
+            {
+                tooltip: "reseed autoplay",
+                icon: "/static/repeat.svg",
+                location: "OnlyMenu",
+                onclick: async () => {
+                    let q = get(queue) as AutoplayQueueManager;
+                    let item = q.items.at(q.playing_index??(q.items.length - 1)) ?? null;
+                    if (!item) {
+                        toast("no item in queue. can't pick autoplay seed", "error");
+                        return;
+                    }
+
+                    await q.init_with_seed(item);
+                },
+            },
         ];
     }
 };
