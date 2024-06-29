@@ -105,6 +105,12 @@ pub mod song_tube {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub struct WithLinked<T, Id> {
+        item: T,
+        linked: Vec<Id>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Artist {
         pub id: String,
         pub name: Option<String>,
@@ -179,40 +185,6 @@ pub mod song_tube {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Video {
-    pub title: String,
-    pub id: String,
-    pub album: Option<Album>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct VideoWithInfo {
-    #[serde(flatten)]
-    pub song: Video,
-
-    pub titles: Vec<String>, // track > alt_title > title
-    pub thumbnail_url: String,
-    pub album_name: Option<String>,
-    pub artist_names: Vec<String>,
-    pub channel_id: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Album {
-    pub name: String,
-    pub id: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct AlbumWithInfo {
-    #[serde(flatten)]
-    pub album: Album,
-    pub songs: Vec<Video>,
-    pub artist_name: String,
-    pub artist_keys: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum YtiRequest {
     CreateSongTube {
@@ -229,8 +201,8 @@ pub enum YtiRequest {
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct AlbumsFetchResult {
-    albums: Vec<AlbumWithInfo>,
-    songs: Vec<VideoWithInfo>,
+    albums: Vec<song_tube::WithLinked<song_tube::Album, VideoId>>,
+    songs: Vec<song_tube::Song>,
 }
 
 #[derive(Clone)]
@@ -370,14 +342,6 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<song_tube::Video>(config)?;
     types += ";\n";
 
-    // types += &specta::ts::export::<Video>(config)?;
-    // types += ";\n";
-    // types += &specta::ts::export::<VideoWithInfo>(config)?;
-    // types += ";\n";
-    // types += &specta::ts::export::<Album>(config)?;
-    // types += ";\n";
-    // types += &specta::ts::export::<AlbumWithInfo>(config)?;
-    // types += ";\n";
     types += &specta::ts::export::<VideoId>(config)?;
     types += ";\n";
     types += &specta::ts::export::<AlbumId>(config)?;
