@@ -578,7 +578,6 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
                 .t
                 .refids()
                 .into_iter()
-                .map(ToString::to_string)
                 .collect::<Vec<_>>()
                 .into_iter()
             {

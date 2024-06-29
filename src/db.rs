@@ -109,8 +109,8 @@ pub mod db {
     pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
         fn to_json(&self) -> String;
         fn typ() -> Typ;
-        fn haystack(&self) -> impl IntoIterator<Item = &str>;
-        fn refids(&self) -> impl IntoIterator<Item = &str>;
+        fn haystack(&self) -> impl IntoIterator<Item = String>;
+        fn refids(&self) -> impl IntoIterator<Item = String>;
 
         async fn insert<C>(&self, conn: &C) -> anyhow::Result<i32>
         where
@@ -185,8 +185,10 @@ pub mod db {
 
     pub trait AutoDbAble {
         fn typ() -> Typ;
-        fn haystack(&self) -> impl IntoIterator<Item = &str>;
-        fn refids(&self) -> impl IntoIterator<Item = &str> {
+        fn haystack(&self) -> impl IntoIterator<Item = String>;
+        fn refids(&self) -> impl IntoIterator<Item = String> {
+            []
+        }
             []
         }
     }
@@ -200,10 +202,10 @@ pub mod db {
         fn typ() -> Typ {
             <Self as AutoDbAble>::typ()
         }
-        fn haystack(&self) -> impl IntoIterator<Item = &str> {
+        fn haystack(&self) -> impl IntoIterator<Item = String> {
             <Self as AutoDbAble>::haystack(self)
         }
-        fn refids(&self) -> impl IntoIterator<Item = &str> {
+        fn refids(&self) -> impl IntoIterator<Item = String> {
             <Self as AutoDbAble>::refids(self)
         }
     }
@@ -217,32 +219,32 @@ pub mod db {
                 Typ::Song
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                let mut h = self.artists.iter().map(String::as_str).collect::<Vec<_>>();
-                h.push(&self.title);
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                let mut h = self.artists.iter().map(String::from).collect::<Vec<_>>();
+                h.push(self.title.clone());
                 h
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
+            fn refids(&self) -> impl IntoIterator<Item = String> {
                 let mut hs = vec![];
 
                 for id in self.info_sources.iter() {
                     match id {
                         InfoSource::YtId(id) => {
-                            hs.push(id.as_ref());
+                            hs.push(id.to_owned());
                         }
                         InfoSource::MbzId(id) => {
-                            hs.push(id.as_ref());
+                            hs.push(id.to_owned());
                         }
                     }
                 }
                 for id in self.play_sources.iter() {
                     match id {
                         PlaySource::File(id) => {
-                            hs.push(id.as_ref());
+                            hs.push(id.to_owned());
                         }
                         PlaySource::YtId(id) => {
-                            hs.push(id.as_ref());
+                            hs.push(id.to_owned());
                         }
                     }
                 }
@@ -255,17 +257,18 @@ pub mod db {
                 Typ::Playlist
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.title.as_ref()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.title.clone()]
             }
         }
+
         impl AutoDbAble for Queue {
             fn typ() -> Typ {
                 Typ::Queue
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.0.queue.title.as_ref()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.0.queue.title.clone()]
             }
         }
         impl AutoDbAble for Updater {
@@ -273,22 +276,22 @@ pub mod db {
                 Typ::Updater
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.title.as_ref()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.title.clone()]
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
+            fn refids(&self) -> impl IntoIterator<Item = String> {
                 let mut rids = vec![];
                 match &self.source {
                     UpdateSource::Mbz { artist_id, .. } => {
-                        rids.push(artist_id.as_str());
+                        rids.push(artist_id.to_owned());
                     }
                     UpdateSource::MusimanagerSearch { artist_keys, .. } => {
                         // OOF: it's all messed up
-                        // rids.extend(artist_keys.iter().map(String::as_str));
+                        // rids.extend(artist_keys.iter().map(String::from));
                     }
                     UpdateSource::SongTubeSearch { artist_keys, .. } => {
-                        rids.extend(artist_keys.iter().map(String::as_str));
+                        rids.extend(artist_keys.iter().map(String::from));
                     }
                 }
                 rids
@@ -305,28 +308,28 @@ pub mod db {
                 db::Typ::StSong
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
                 let mut hs = vec![];
 
                 self.title.as_deref().map(|a| {
-                    hs.push(a);
+                    hs.push(a.to_owned());
                 });
 
                 self.authors
                     .iter()
-                    .map(|a| a.name.as_str())
+                    .map(|a| a.name.clone())
                     .for_each(|n| hs.push(n));
 
                 self.album
                     .as_ref()
-                    .map(|a| a.name.as_str())
+                    .map(|a| a.name.clone())
                     .map(|n| hs.push(n));
 
                 hs
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.id.as_ref()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.id.to_owned()]
             }
         }
         impl AutoDbAble for Video {
@@ -358,23 +361,24 @@ pub mod db {
                 db::Typ::StAlbum
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
                 let mut hs = vec![];
 
                 self.title.as_deref().map(|a| {
-                    hs.push(a);
+                    hs.push(a.to_owned());
                 });
 
                 self.author
                     .as_ref()
-                    .map(|a| a.name.as_str())
+                    .map(|a| a.name.clone())
                     .map(|n| hs.push(n));
 
                 hs
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.id.as_ref()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.id.clone()]
+            }
             }
         }
         impl AutoDbAble for Playlist {
@@ -382,23 +386,23 @@ pub mod db {
                 db::Typ::StPlaylist
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
                 let mut hs = vec![];
 
                 self.title.as_deref().map(|a| {
-                    hs.push(a);
+                    hs.push(a.to_owned());
                 });
 
                 self.author
                     .as_ref()
-                    .map(|a| a.name.as_str())
+                    .map(|a| a.name.clone())
                     .map(|n| hs.push(n));
 
                 hs
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.id.as_ref()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.id.clone()]
             }
         }
         impl AutoDbAble for Artist {
@@ -406,18 +410,18 @@ pub mod db {
                 db::Typ::StArtist
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
                 let mut hs = vec![];
 
                 self.name.as_deref().map(|a| {
-                    hs.push(a);
+                    hs.push(a.to_owned());
                 });
 
                 hs
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.id.as_ref()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.id.clone()]
             }
         }
     }
@@ -431,18 +435,18 @@ pub mod db {
                 Typ::MmSong
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                let mut hs = vec![self.title.as_str()];
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                let mut hs = vec![self.title.clone()];
 
                 self.artist_name.as_deref().map(|a| {
-                    hs.push(a);
+                    hs.push(a.to_owned());
                 });
 
                 hs
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.key.as_str()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.key.clone()]
             }
         }
         impl AutoDbAble for Album<SongId> {
@@ -450,12 +454,12 @@ pub mod db {
                 Typ::MmAlbum
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.name.as_str(), self.artist_name.as_str()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.name.clone(), self.artist_name.clone()]
             }
 
-            fn refids(&self) -> impl IntoIterator<Item = &str> {
-                [self.browse_id.as_str()]
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.browse_id.clone()]
             }
         }
         impl AutoDbAble for Artist<SongId, AlbumId> {
@@ -463,12 +467,12 @@ pub mod db {
                 Typ::MmArtist
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.name.as_str()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.name.clone()]
             }
 
-            // fn refids(&self) -> impl IntoIterator<Item = &str> {
-            //     self.keys.iter().map(String::as_str).collect::<Vec<_>>()
+            // fn refids(&self) -> impl IntoIterator<Item = String> {
+            //     self.keys.iter().map(String::from).collect::<Vec<_>>()
             // }
         }
         impl AutoDbAble for Playlist<SongId> {
@@ -476,8 +480,8 @@ pub mod db {
                 Typ::MmPlaylist
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.0.name.as_str()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.0.name.clone()]
             }
         }
         impl AutoDbAble for Queue<SongId> {
@@ -485,8 +489,8 @@ pub mod db {
                 Typ::MmQueue
             }
 
-            fn haystack(&self) -> impl IntoIterator<Item = &str> {
-                [self.0.name.as_str()]
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.0.name.clone()]
             }
         }
     }
