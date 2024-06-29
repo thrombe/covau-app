@@ -38,8 +38,7 @@ export class StListItem extends ListItem {
 
     song_ids(): string[] {
         switch (this.data.type) {
-            case "Song":
-            case "Video": {
+            case "Song": {
                 let song = this.data.content;
                 return [song.id];
             } break;
@@ -55,7 +54,6 @@ export class StListItem extends ListItem {
     title(): string {
         switch (this.data.type) {
             case "Song":
-            case "Video":
             case "Album":
             case "Playlist":
                 return this.data.content.title ?? this.data.content.id;
@@ -69,7 +67,6 @@ export class StListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.type) {
             case "Song":
-            case "Video":
                 return this.data.content.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.content.id);
             case "Album":
             case "Playlist":
@@ -97,7 +94,6 @@ export class StListItem extends ListItem {
 
         switch (this.data.type) {
             case "Song":
-            case "Video":
                 return authors(this.data.content.authors);
             case "Album":
             case "Playlist":
@@ -111,8 +107,7 @@ export class StListItem extends ListItem {
 
     async audio_uri() {
         switch (this.data.type) {
-            case "Song":
-            case "Video": {
+            case "Song": {
                 let s = this.data.content;
                 let data = await st.get_uri(this.data.content.id);
                 if (!data) {
@@ -133,8 +128,7 @@ export class StListItem extends ListItem {
 
     async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
         switch (this.data.type) {
-            case "Song":
-            case "Video": {
+            case "Song": {
                 let s = this.data.content;
                 switch (typ) {
                     case "MbzRadio":
@@ -164,7 +158,6 @@ export class StListItem extends ListItem {
             return a.filter(t => !!t) as T[];
         }
         switch (this.data.type) {
-            case "Video":
             case "Song": {
                 let song = this.data.content;
                 let id: covau.PlaySource = { type: "YtId", content: song.id };
@@ -195,8 +188,7 @@ export class StListItem extends ListItem {
         switch (ctx) {
             case "Queue":
                 switch (this.data.type) {
-                    case "Song":
-                    case "Video": {
+                    case "Song": {
                         let s = this.data.content;
                         return [
                             {
@@ -235,8 +227,7 @@ export class StListItem extends ListItem {
                 }
             case "Browser":
                 switch (this.data.type) {
-                    case "Song":
-                    case "Video": {
+                    case "Song": {
                         let s = this.data.content;
                         return [
                             {
@@ -468,6 +459,8 @@ export class SongTube extends Unpaged<MusicListItem> {
         }
         if (this.query.type == 'Search') {
             return await this.next_page_search(this.query.content.query, this.query.content.search);
+        } else if (this.query.type == "VideoSearch") {
+            return await this.next_page_search(this.query.content.query, "YtVideo");
         } else if (this.query.type == 'Artist') {
             let r = await this.next_page_artist_songs(this.query.content);
             return r;
@@ -601,7 +594,7 @@ export class SongTube extends Unpaged<MusicListItem> {
             }
         }
     }
-    protected async next_page_search(query: string, typ: Typ) {
+    protected async next_page_search(query: string, typ: Typ | "YtVideo") {
         if (query.length == 0) {
             this.has_next_page = false;
             return [];
@@ -679,7 +672,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                 }
             } else if (e.item_type === 'video') {
                 return {
-                    type: 'Video',
+                    type: 'Song',
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
@@ -688,6 +681,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                             name: a.name,
                             channel_id: a.channel_id ?? null,
                         })) ?? [],
+                        album: null,
                     }
                 }
             } else if (e.item_type === 'album') {
@@ -728,12 +722,13 @@ export class SongTube extends Unpaged<MusicListItem> {
                 }
             } else {
                 return {
-                    type: 'Video',
+                    type: 'Song',
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
                         thumbnails: SongTube.get_thumbnail(e.thumbnail),
                         authors: [],
+                        album: null,
                     }
                 };
             }

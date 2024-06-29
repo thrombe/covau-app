@@ -25,7 +25,6 @@ export type MusicListItem = Keyed & (
     | { id: number, typ: "MmPlaylist", t: MmPlaylist }
     | { id: number, typ: "MmQueue", t: MmQueue }
     | { id: number, typ: "StSong", t: yt.Song }
-    | { id: number, typ: "StVideo", t: yt.Video }
     | { id: number, typ: "StAlbum", t: yt.Album }
     | { id: number, typ: "StPlaylist", t: yt.Playlist }
     | { id: number, typ: "StArtist", t: yt.Artist }
@@ -58,8 +57,6 @@ export class DbListItem extends ListItem {
             case "MmSong":
                 return [this.data.t.key];
             case "StSong":
-                return [this.data.t.id];
-            case "StVideo":
                 return [this.data.t.id];
             case "Song": {
                 let song = this.data.t;
@@ -95,8 +92,6 @@ export class DbListItem extends ListItem {
                 return this.data.t.name;
             case "StSong":
                 return this.data.t.title ?? this.data.t.id;
-            case "StVideo":
-                return this.data.t.title ?? this.data.t.id;
             case "StAlbum":
                 return this.data.t.title ?? this.data.t.id;
             case "StPlaylist":
@@ -129,8 +124,6 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.t.id);
-            case "StVideo":
                 return this.data.t.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.t.id);
             case "StAlbum":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
@@ -179,8 +172,6 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return this.data.t.data_list.length.toString() + " songs";
             case "StSong":
-                return authors(this.data.t.authors.map(a => a.name));
-            case "StVideo":
                 return authors(this.data.t.authors.map(a => a.name));
             case "StAlbum":
                 return this.data.t.author?.name ?? null;
@@ -232,14 +223,6 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StSong": {
-                let song = this.data.t;
-                let data = await st.get_uri(song.id);
-                if (!data) {
-                    return null;
-                }
-                return data.uri;
-            } break;
-            case "StVideo": {
                 let song = this.data.t;
                 let data = await st.get_uri(song.id);
                 if (!data) {
@@ -305,7 +288,6 @@ export class DbListItem extends ListItem {
                         throw exhausted(typ);
                 }
             } break;
-            case "StVideo":
             case "StSong": {
                 switch (typ) {
                     case "MbzRadio":
@@ -414,8 +396,7 @@ export class DbListItem extends ListItem {
                             },
                         ];
                     }
-                    case "StSong":
-                    case "StVideo": {
+                    case "StSong": {
                         let s = this.data.t;
                         return [
                             {
@@ -702,8 +683,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                         ];
-                    case "StSong":
-                    case "StVideo": {
+                    case "StSong": {
                         let s = this.data.t;
                         return [
                             {

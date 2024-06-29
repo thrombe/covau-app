@@ -25,7 +25,7 @@ export function new_tab_key() {
 }
 
 export type MenubarOption = { name: string } & (
-    | { content_type: "list"; type: Db.Typ | St.Typ | Mbz.SearchTyp | "covau-group" }
+    | { content_type: "list"; type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music", source: "Yt" | "Mbz" }
@@ -200,7 +200,6 @@ selected_menubar_option.subscribe(async (option) => {
                     s = new_searcher(get(query_input));
                 } break;
                 case "YtSong":
-                case "YtVideo":
                 case "YtAlbum":
                 case "YtPlaylist":
                 case "YtArtist": {
@@ -210,6 +209,15 @@ selected_menubar_option.subscribe(async (option) => {
                         content: {
                             query: q,
                             search: type, // trick it
+                        },
+                    });
+                    s = new_searcher(get(query_input));
+                } break;
+                case "YtVideo": {
+                    new_searcher = (q: string) => St.SongTube.new({
+                        type: "VideoSearch",
+                        content: {
+                            query: q,
                         },
                     });
                     s = new_searcher(get(query_input));
