@@ -43,6 +43,7 @@ function db_cud(id: number) {
     }
 };
 
+export type DbOps = ReturnType<typeof db_cud>;
 export const db = {
     route(type: DB.Typ, op: "search" | "insert" | "update" | "delete") {
         switch (type) {
@@ -92,11 +93,12 @@ export const db = {
         await utils.api_request_no_resp(server_base + "db/transaction/rollback", id);
     },
 
-    async txn(fn: ((db_ops: ReturnType<typeof db_cud>) => Promise<void>)) {
+    async txn<Ret>(fn: ((db_ops: DbOps) => Promise<Ret>)) {
         let id = await this.begin();
         try {
-            await fn(db_cud(id));
+            let res = await fn(db_cud(id));
             await this.commit(id);
+            return res;
         } catch (e: any) {
             await this.rollback(id);
 
