@@ -49,6 +49,7 @@ export type BrowseQuery =
 
 export class MbzListItem extends ListItem {
     data: MusicListItem;
+    yt_song: types.yt.Song | null = null;
 
     constructor(data: MusicListItem) {
         super();
@@ -100,6 +101,7 @@ export class MbzListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MbzRecordingWithInfo":
+                return this.data.data.cover_art ?? this.yt_song?.thumbnails.at(0)?.url ?? null;
             case "MbzReleaseWithInfo":
             case "MbzReleaseGroupWithInfo":
                 return this.data.data.cover_art;
@@ -157,13 +159,109 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+    protected ops() {
+        let self = this;
+        return {
+            async search_and_get(query: string, switch_tab: boolean = false)  {
+                let new_searcher = (q: string) => MapWrapper(st.SongTube.new({
+                    type: "Search",
+                    content: {
+                        search: "YtSong",
+                        query: q,
+                    },
+                }), async (item) => {
+                        let stitem = item as st.StListItem;
+                        item.custom_options.push((ctx, old) => {
+                            if (ctx == "Playbar") {
+                                return old;
+                            }
+                            let old_callback = old[1].onclick;
+                            old[1].onclick = async () => {
+                                await old_callback();
+                                self.yt_song = stitem.data.content as types.yt.Song;
+                                toast("song set as play source for Mbz item");
+                            };
+                            old.push({
+                                tooltip: "Set as play source",
+                                icon: "/static/floppy-disk.svg",
+                                location: "OnlyMenu",
+                                onclick: () => {
+                                    self.yt_song = stitem.data.content as types.yt.Song;
+                                    toast("song set as play source for Mbz item");
+                                },
+                            });
+                            return old;
+                        });
+                        return item;
+                    });
+
+                let searcher = new_searcher(query);
+                stores.push_tab(searcher, query, null, query, new_searcher);
+                stores.query_input.set(query);
+                if (switch_tab) {
+                    stores.curr_tab_index.set(get(stores.tabs).length - 1);
+                } else {
+                    stores.curr_tab_index.set(get(stores.tabs).length - 2);
+                }
+
+                let songs = await searcher.next_page();
+                let song = songs.at(0) ?? null;
+                return song;
+            },
+            async get_query(recording: RecordingWithInfo) {
+                let query: string | null = null;
+
+                let artist = recording.credit.at(0)?.name ?? null;
+                if (artist) {
+                    query = recording.title + " by " + artist;
+                }
+
+                let release_id = recording.releases.at(0)?.id ?? null;
+                if (release_id) {
+                    let release: ReleaseWithInfo = await mbz.id_fetch(release_id, "MbzReleaseWithInfo");
+                    let release_group = release.release_group?.title;
+
+                    if (!query && release_group) {
+                        query = recording.title + release_group;
+                    }
+                }
+
+                if (!query) {
+                    query = await prompt("Enter a search query");
+                }
+
+                return query;
+            },
+            async play_recording(recording: RecordingWithInfo) {
+                if (self.yt_song) {
+                    return st.st.get_wrapped([self.yt_song], "Song")[0].audio_uri();
+                }
+
+                let query = await this.get_query(recording);
+
+                if (!query) {
+                    return null;
+                }
+
+                let song = await this.search_and_get(query);
+
+                return song?.audio_uri() ?? null;
+            },
+            async upgrade_to_recording_with_info(rec: Recording) {
+                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(rec.id, "MbzRecordingWithInfo");
+                self.data.data = recording;
+                self.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+                return recording;
+            }
+        };
+    }
     impl_options(ctx: RenderContext): Option[] {
+        let ops = this.ops();
         switch (ctx) {
             case "Queue": {
                 switch (this.data.typ) {
-                    case "MbzRadioSong":
-                    case "MbzRecording":
-                    case "MbzRecordingWithInfo": {
+                    case "MbzRadioSong": {
+                        let song = this.data.data;
                         return [
                             {
                                 icon: "/static/play.svg",
@@ -179,6 +277,80 @@ export class MbzListItem extends ListItem {
                                 tooltip: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
+                                },
+                            },
+                            {
+                                icon: "/static/floppy-disk.svg",
+                                location: "OnlyMenu",
+                                tooltip: "Set play source",
+                                onclick: async () => {
+                                    let query = song.title + " by " + song.creator;
+                                    await ops.search_and_get(query, true);
+                                },
+                            },
+                        ];
+                    } break;
+                    case "MbzRecording": {
+                        let r = this.data.data;
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    await stores.queue_ops.play_item(this);
+                                },
+                            },
+                            {
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
+                                tooltip: "remove from queue",
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
+                                },
+                            },
+                            {
+                                icon: "/static/floppy-disk.svg",
+                                location: "OnlyMenu",
+                                tooltip: "Set play source",
+                                onclick: async () => {
+                                    let rec = await ops.upgrade_to_recording_with_info(r);
+                                    let query = await ops.get_query(rec)
+                                    if (query) {
+                                        await ops.search_and_get(query, true);
+                                    }
+                                },
+                            },
+                        ];
+                    } break;
+                    case "MbzRecordingWithInfo": {
+                        let rec = this.data.data;
+                        return [
+                            {
+                                icon: "/static/play.svg",
+                                location: "IconTop",
+                                tooltip: "play",
+                                onclick: async () => {
+                                    await stores.queue_ops.play_item(this);
+                                },
+                            },
+                            {
+                                icon: "/static/remove.svg",
+                                location: "TopRight",
+                                tooltip: "remove from queue",
+                                onclick: async () => {
+                                    await stores.queue_ops.remove_item(this);
+                                },
+                            },
+                            {
+                                icon: "/static/floppy-disk.svg",
+                                location: "OnlyMenu",
+                                tooltip: "Set play source",
+                                onclick: async () => {
+                                    let query = await ops.get_query(rec)
+                                    if (query) {
+                                        await ops.search_and_get(query, true);
+                                    }
                                 },
                             },
                         ];
@@ -389,69 +561,18 @@ export class MbzListItem extends ListItem {
         }
     }
     async audio_uri(): Promise<string | null> {
-        const search_and_get = async (query: string) => {
-            let new_searcher = (q: string) => st.SongTube.new({
-                type: "Search",
-                content: {
-                    search: "YtSong",
-                    query: q,
-                },
-            });
-
-            let searcher = new_searcher(query);
-            stores.push_tab(searcher, query, null, query, new_searcher);
-            stores.query_input.set(query);
-            stores.curr_tab_index.set(get(stores.tabs).length - 2);
-
-            let songs = await searcher.next_page();
-            let song = songs.at(0) ?? null;
-            return song;
-        };
-        const play_recording = async (recording: RecordingWithInfo) => {
-            let query: string | null = null;
-
-            let artist = recording.credit.at(0)?.name ?? null;
-            if (artist) {
-                query = recording.title + " by " + artist;
-            }
-
-            let release_id = recording.releases.at(0)?.id ?? null;
-            if (release_id) {
-                let release: ReleaseWithInfo = await mbz.id_fetch(release_id, "MbzReleaseWithInfo");
-                let release_group = release.release_group?.title;
-
-                if (!query && release_group) {
-                    query = recording.title + release_group;
-                }
-            }
-
-            if (!query) {
-                query = await prompt("Enter a search query");
-            }
-            if (!query) {
-                return null;
-            }
-
-            let song = await search_and_get(query);
-
-            recording.cover_art = song?.thumbnail() ?? null;
-
-            return song?.audio_uri() ?? null;
-        };
-
+        let ops = this.ops();
         switch (this.data.typ) {
             case "MbzRecording": {
-                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
-                this.data.data = recording;
-                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
-                return await play_recording(recording);
+                let recording = await ops.upgrade_to_recording_with_info(this.data.data);
+                return await ops.play_recording(recording);
             } break;
             case "MbzRecordingWithInfo": {
-                return await play_recording(this.data.data);
+                return await ops.play_recording(this.data.data);
             } break;
             case "MbzRadioSong": {
                 let query = this.data.data.title + " by " + this.data.data.creator;
-                let song = await search_and_get(query);
+                let song = await ops.search_and_get(query);
                 return song?.audio_uri() ?? null;
             } break;
             case "MbzReleaseWithInfo":
