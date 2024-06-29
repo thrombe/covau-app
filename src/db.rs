@@ -624,8 +624,18 @@ pub mod db {
         pub async fn init_tables(&self) -> anyhow::Result<()> {
             let builder = self.db.get_database_backend();
             let schema = Schema::new(builder);
+
             let s = builder.build(&schema.create_table_from_entity(object::Entity));
             let _ = self.db.execute(s).await?;
+            let s = builder.build(
+                &sea_orm::sea_query::Index::create()
+                    .name("id_index")
+                    .table(object::Entity)
+                    .col(object::Column::Id)
+                    .to_owned(),
+            );
+            let _ = self.db.execute(s).await?;
+
             let s = builder.build(&schema.create_table_from_entity(refid::Entity));
             let _ = self.db.execute(s).await?;
             let s = builder.build(
@@ -633,14 +643,6 @@ pub mod db {
                     .name("refid_index")
                     .table(refid::Entity)
                     .col(refid::Column::Refid)
-                    .to_owned(),
-            );
-            let _ = self.db.execute(s).await?;
-            let s = builder.build(
-                &sea_orm::sea_query::Index::create()
-                    .name("id_index")
-                    .table(object::Entity)
-                    .col(object::Column::Id)
                     .to_owned(),
             );
             let _ = self.db.execute(s).await?;
