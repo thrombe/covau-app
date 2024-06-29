@@ -5,22 +5,22 @@ use serde::{Deserialize, Serialize};
 use crate::server::{FrontendClient, MessageResult};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct VideoId(String);
+pub struct VideoId(pub String);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct AlbumId(String);
+pub struct AlbumId(pub String);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct PlaylistId(String);
+pub struct PlaylistId(pub String);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct ChannelId(String);
+pub struct ChannelId(pub String);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct ArtistId(ChannelId);
+pub struct ArtistId(pub ChannelId);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct ChannelOrUploaderId(String);
+pub struct ChannelOrUploaderId(pub String);
 
 pub mod song_tube {
     use super::*;
