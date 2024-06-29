@@ -904,48 +904,48 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "songs",
                 ))
-                .or(db_search_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(db_search_by_refid_route::<Album<SongId>>(
+                .or(db_search_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_search_by_refid_route::<Album<VideoId>>(
                     db.clone(),
                     "albums",
                 ))
-                .or(db_search_by_id_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(db_insert_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(db_update_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(db_delete_route::<Album<SongId>>(db.clone(), "albums"))
-                .or(db_search_route::<Artist<SongId, AlbumId>>(
+                .or(db_search_by_id_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_insert_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_update_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_delete_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_search_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(db_search_by_id_route::<Artist<SongId, AlbumId>>(
+                .or(db_search_by_id_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(db_insert_route::<Artist<SongId, AlbumId>>(
+                .or(db_insert_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(db_update_route::<Artist<SongId, AlbumId>>(
+                .or(db_update_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(db_delete_route::<Artist<SongId, AlbumId>>(
+                .or(db_delete_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
-                .or(db_search_route::<Playlist<SongId>>(db.clone(), "playlists"))
-                .or(db_search_by_id_route::<Playlist<SongId>>(
+                .or(db_search_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_search_by_id_route::<Playlist<VideoId>>(
                     db.clone(),
                     "playlists",
                 ))
-                .or(db_insert_route::<Playlist<SongId>>(db.clone(), "playlists"))
-                .or(db_update_route::<Playlist<SongId>>(db.clone(), "playlists"))
-                .or(db_delete_route::<Playlist<SongId>>(db.clone(), "playlists"))
-                .or(db_search_route::<Queue<SongId>>(db.clone(), "queues"))
-                .or(db_search_by_id_route::<Queue<SongId>>(db.clone(), "queues"))
-                .or(db_insert_route::<Queue<SongId>>(db.clone(), "queues"))
-                .or(db_update_route::<Queue<SongId>>(db.clone(), "queues"))
-                .or(db_delete_route::<Queue<SongId>>(db.clone(), "queues")),
+                .or(db_insert_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_update_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_delete_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_search_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_search_by_id_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_insert_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_update_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_delete_route::<Queue<VideoId>>(db.clone(), "queues")),
         )
     };
 

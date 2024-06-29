@@ -449,7 +449,7 @@ pub mod db {
                 [self.key.clone()]
             }
         }
-        impl AutoDbAble for Album<SongId> {
+        impl AutoDbAble for Album<VideoId> {
             fn typ() -> Typ {
                 Typ::MmAlbum
             }
@@ -462,7 +462,7 @@ pub mod db {
                 [self.browse_id.clone()]
             }
         }
-        impl AutoDbAble for Artist<SongId, AlbumId> {
+        impl AutoDbAble for Artist<VideoId, AlbumId> {
             fn typ() -> Typ {
                 Typ::MmArtist
             }
@@ -475,7 +475,7 @@ pub mod db {
             //     self.keys.iter().map(String::from).collect::<Vec<_>>()
             // }
         }
-        impl AutoDbAble for Playlist<SongId> {
+        impl AutoDbAble for Playlist<VideoId> {
             fn typ() -> Typ {
                 Typ::MmPlaylist
             }
@@ -484,7 +484,7 @@ pub mod db {
                 [self.0.name.clone()]
             }
         }
-        impl AutoDbAble for Queue<SongId> {
+        impl AutoDbAble for Queue<VideoId> {
             fn typ() -> Typ {
                 Typ::MmQueue
             }
@@ -556,7 +556,7 @@ pub mod db {
         use super::*;
 
         /// any other kind of id that we might need to match on
-        /// for example SongId -> Song
+        /// for example VideoId -> Song
 
         #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
         #[sea_orm(table_name = "ref_ids")]
@@ -814,7 +814,7 @@ pub mod db {
                     .haystack()
                     .into_iter()
                     .map(|h| {
-                        let s = sublime_fuzzy::best_match(needle.as_str(), h)
+                        let s = sublime_fuzzy::best_match(needle.as_str(), &h)
                             .map(|m| m.score())
                             .unwrap_or(0);
                         s

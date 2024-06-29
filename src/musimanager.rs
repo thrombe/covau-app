@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
+pub use crate::yt::{ VideoId, AlbumId };
+
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Tracker<S = Song, A = Album<Song>> {
     pub artists: Vec<Artist<S, A>>,
@@ -242,7 +244,7 @@ impl Tracker<Song> {
                 name: al.name,
                 browse_id: al.browse_id,
                 playlist_id: al.playlist_id,
-                songs: al.songs.into_iter().map(|s| SongId(s.key)).collect(),
+                songs: al.songs.into_iter().map(|s| VideoId(s.key)).collect(),
                 artist_name: al.artist_name,
                 artist_keys: al.artist_keys,
             })
@@ -317,11 +319,11 @@ impl Tracker<Song> {
                 check_stat: a.check_stat,
                 ignore_no_songs: a.ignore_no_songs,
                 name_confirmation_status: a.name_confirmation_status,
-                songs: a.songs.into_iter().map(|s| SongId(s.key)).collect(),
+                songs: a.songs.into_iter().map(|s| VideoId(s.key)).collect(),
                 unexplored_songs: a
                     .unexplored_songs
                     .into_iter()
-                    .map(|s| SongId(s.key))
+                    .map(|s| VideoId(s.key))
                     .collect(),
                 known_albums: a
                     .known_albums
@@ -341,7 +343,7 @@ impl Tracker<Song> {
                 data_list: pl
                     .data_list
                     .iter()
-                    .map(|s| SongId(s.key.to_string()))
+                    .map(|s| VideoId(s.key.to_string()))
                     .collect(),
                 current_index: pl.current_index,
             }));
@@ -353,7 +355,7 @@ impl Tracker<Song> {
                 data_list: q
                     .data_list
                     .iter()
-                    .map(|s| SongId(s.key.to_string()))
+                    .map(|s| VideoId(s.key.to_string()))
                     .collect(),
                 current_index: q.current_index,
             }));
@@ -366,11 +368,11 @@ impl Tracker<Song> {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
 pub struct EntityTracker {
     pub songs: Vec<Song<Option<SongInfo>>>,
-    pub albums: Vec<Album<SongId>>,
+    pub albums: Vec<Album<VideoId>>,
 
-    pub artists: Vec<Artist<SongId, AlbumId>>,
-    pub playlists: Vec<Playlist<SongId>>,
-    pub queues: Vec<Queue<SongId>>,
+    pub artists: Vec<Artist<VideoId, AlbumId>>,
+    pub playlists: Vec<Playlist<VideoId>>,
+    pub queues: Vec<Queue<VideoId>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -378,12 +380,6 @@ pub struct Playlist<S>(pub SongProvider<S>);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Queue<S>(pub SongProvider<S>);
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct SongId(pub String);
-
-#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct AlbumId(pub String);
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct SongProvider<S> {
@@ -445,13 +441,11 @@ pub struct SongInfo {
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
+    types += "import type { VideoId, AlbumId } from '$types/yt.ts';\n";
+    types += "\n";
     types += &specta::ts::export::<SongInfo>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Song>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<SongId>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<AlbumId>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Artist<(), ()>>(config)?;
     types += ";\n";
