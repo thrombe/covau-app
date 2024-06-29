@@ -13,10 +13,10 @@ import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
-export type MmAlbum = Musi.Album<Musi.SongId>;
-export type MmArtist = Musi.Artist<Musi.SongId, Musi.AlbumId>;
-export type MmPlaylist = Musi.Playlist<Musi.SongId>;
-export type MmQueue = Musi.Queue<Musi.SongId>;
+export type MmAlbum = Musi.Album<yt.VideoId>;
+export type MmArtist = Musi.Artist<yt.VideoId, yt.AlbumId>;
+export type MmPlaylist = Musi.Playlist<yt.VideoId>;
+export type MmQueue = Musi.Queue<yt.VideoId>;
 
 export type MusicListItem = Keyed & (
     | { id: number, typ: "MmSong", t: MmSong }
