@@ -6,6 +6,7 @@
     import type { ListItem } from "$lib/searcher/item.ts";
     import { onDestroy } from "svelte";
     import { get } from "svelte/store";
+    import * as icons from "$lib/icons.ts";
 
     export let columns: number;
     export let item_height: number;
@@ -80,19 +81,49 @@
             class="flex flex-row overflow-x-auto gap-1 px-1 justify-center"
         >
             {#each tabs as tab, i}
-                <button
-                    class="border-b-2 px-1 text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden
-                        {curr_tab == tab
-                        ? 'font-bold border-gray-200'
-                        : 'border-gray-600'}
-                    "
-                    style="max-width: 12rem;"
-                    on:click={async () => {
-                        stores.curr_tab_index.set(i);
-                    }}
+                <div
+                class="flex flex-row border-b-2 px-1 items-center content-center
+                            {curr_tab == tab
+                            ? 'font-bold border-gray-200'
+                            : 'border-gray-600'}"
                 >
-                    {tab.name}
-                </button>
+                    <button
+                        class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
+                        style="max-width: 12rem;"
+                        on:click={async () => {
+                            stores.curr_tab_index.set(i);
+                        }}
+                    >
+                        {tab.name}
+                    </button>
+                    <div
+                        class="h-5 w-5"
+                        class:hidden={i === 0}
+                    >
+                        <button
+                            class="h-full w-full flex items-center"
+                            on:click={() => {
+                                stores.tabs.update(t => {
+                                    t.splice(i, 1);
+                                    let len = t.length;
+                                    stores.curr_tab_index.update(i => {
+                                        return Math.min(len - 1, i)
+                                    })
+                                    return t;
+                                })
+                            }}
+                        >
+                            <div class="w-full h-full pt-[0.15rem] pl-2 pb-[0.2rem] rounded-md opacity-60 hover:opacity-100">
+                                <img
+                                    alt="play"
+                                    draggable={false}
+                                    class="scale-[70%]"
+                                    src={icons.xmark}
+                                />
+                            </div>
+                        </button>
+                    </div>
+                </div>
             {/each}
         </browse-tab-bar>
     </bar-area>
