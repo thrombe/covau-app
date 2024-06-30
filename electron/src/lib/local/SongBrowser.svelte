@@ -53,7 +53,7 @@
 
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
-        <search-bar>
+        <search-bar class="flex flex-row h-full">
             {#if curr_tab && curr_tab.new_searcher === null}
                 <div class="flex h-full items-center">
                     <div class="w-full text-center text-xl">
@@ -75,6 +75,24 @@
                     }}
                 />
             {/if}
+            <div class="relative h-full" class:hidden={false}>
+                <button
+                    class="absolute right-0 h-full aspect-square flex flex-col items-center"
+                    on:click={() => {
+                    }}
+                >
+                    <div
+                        class="w-full h-full flex flex-col pr-1 rounded-md opacity-60 hover:opacity-100"
+                    >
+                        <img
+                            alt="options"
+                            draggable={false}
+                            class="scale-[50%] max-h-full"
+                            src={icons.three_dot_menu}
+                        />
+                    </div>
+                </button>
+            </div>
         </search-bar>
 
         <browse-tab-bar
@@ -107,7 +125,7 @@
                                 class="w-full h-full pt-[0.15rem] pl-2 pb-[0.2rem] rounded-md opacity-60 hover:opacity-100"
                             >
                                 <img
-                                    alt="play"
+                                    alt="close"
                                     draggable={false}
                                     class="scale-[70%]"
                                     src={icons.xmark}
