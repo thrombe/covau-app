@@ -169,7 +169,7 @@
                         {/if}
 
                         <div
-                            class="w-full {$menubar_option.content_type ==
+                            class="w-full {$menubar_option?.content_type ==
                             'queue'
                                 ? 'h-0 overflow-hidden'
                                 : 'h-full'}"
