@@ -17,3 +17,5 @@ export const three_dot_menu = "/static/three-dot-menu.svg"
 export const volume_max = "/static/volume-max.svg"
 export const volume_mid = "/static/volume-mid.svg"
 export const volume_min = "/static/volume-min.svg"
+export const xmark = "/static/xmark.svg"
+
