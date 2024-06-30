@@ -86,12 +86,23 @@ export let selected_menubar_option: Readable<MenubarOption> = derived(
     ([$index, _t]) => get(menubar_options)[$index],
 );
 export const insert_menu_item = (
-    option: MenubarOption,
+    op: (MenubarOption | Omit<MenubarOption, "key">),
     index: number | null = null,
     switch_to: boolean = false,
 ) => {
     let i = index ?? get(menubar_options).length;
     let curr = get(selected_menubar_option_index);
+
+    let option: MenubarOption;
+    if ("key" in op) {
+        option = op;
+    } else {
+        // @ts-ignore
+        option = {
+            key: new_key(),
+            ...op,
+        };
+    }
 
     let options = get(menubar_options);
     options.splice(i, 0, option);
