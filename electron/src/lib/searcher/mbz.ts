@@ -12,6 +12,7 @@ import { prompt } from "$lib/prompt/prompt.ts";
 import { StaticSearcher } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import * as types from "$types/types.ts";
+import * as icons from "$lib/icons.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -116,7 +117,7 @@ export class MbzListItem extends ListItem {
         }
     }
     default_thumbnail(): string {
-        return "/static/default-music-icon.svg";
+        return icons.default_music_icon;
     }
     title_sub(): string | null {
         function authors(a: Artist[]) {
@@ -174,7 +175,7 @@ export class MbzListItem extends ListItem {
                         }
                         old.push({
                             title: "Set as play source",
-                            icon: "/static/floppy-disk.svg",
+                            icon: icons.floppy_disk,
                             location: "OnlyMenu",
                             onclick: () => {
                                 self.yt_song = stitem.data.content as types.yt.Song;
@@ -262,7 +263,7 @@ export class MbzListItem extends ListItem {
                         let song = this.data.data;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -270,7 +271,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -278,7 +279,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/floppy-disk.svg",
+                                icon: icons.floppy_disk,
                                 location: "OnlyMenu",
                                 title: "Set play source",
                                 onclick: async () => {
@@ -292,7 +293,7 @@ export class MbzListItem extends ListItem {
                         let r = this.data.data;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -300,7 +301,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -308,7 +309,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/floppy-disk.svg",
+                                icon: icons.floppy_disk,
                                 location: "OnlyMenu",
                                 title: "Set play source",
                                 onclick: async () => {
@@ -325,7 +326,7 @@ export class MbzListItem extends ListItem {
                         let rec = this.data.data;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -333,7 +334,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -341,7 +342,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/floppy-disk.svg",
+                                icon: icons.floppy_disk,
                                 location: "OnlyMenu",
                                 title: "Set play source",
                                 onclick: async () => {
@@ -370,7 +371,7 @@ export class MbzListItem extends ListItem {
                         let a = this.data.data;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore recordings",
                                 onclick: async () => {
@@ -388,7 +389,7 @@ export class MbzListItem extends ListItem {
                         let a = this.data.data;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore releases",
                                 onclick: async () => {
@@ -401,7 +402,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "OnlyMenu",
                                 title: "explore recordings",
                                 onclick: async () => {
@@ -411,7 +412,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -425,7 +426,7 @@ export class MbzListItem extends ListItem {
                         let a = this.data.data;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore releases",
                                 onclick: async () => {
@@ -438,7 +439,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "OnlyMenu",
                                 title: "explore recordings",
                                 onclick: async () => {
@@ -451,7 +452,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -468,7 +469,7 @@ export class MbzListItem extends ListItem {
                         let a = this.data.data;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore recordings",
                                 onclick: async () => {
@@ -487,7 +488,7 @@ export class MbzListItem extends ListItem {
                     case "MbzRecording": {
                         return [
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "TopRight",
                                 title: "add to queue",
                                 onclick: async () => {
@@ -495,7 +496,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -508,7 +509,7 @@ export class MbzListItem extends ListItem {
                         let a = this.data.data;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "OnlyMenu",
                                 title: "explore release groups",
                                 onclick: async () => {
@@ -521,7 +522,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "OnlyMenu",
                                 title: "explore releases",
                                 onclick: async () => {
@@ -534,7 +535,7 @@ export class MbzListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore recordings",
                                 onclick: async () => {

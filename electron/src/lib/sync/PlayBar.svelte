@@ -3,6 +3,7 @@
     import { SyncPlayer } from './player.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import ProgressBar from '$lib/components/ProgressBar.svelte';
+    import * as icons from "$lib/icons.ts";
 
     export let player: SyncPlayer;
     export let audio_info: { title: string; title_sub: string; img_src: string } | null;
@@ -115,7 +116,7 @@
         target='_blank'
         class='h-full flex justify-center items-center aspect-square bg-gray-200 bg-opacity-10 rounded-md p-1 scale-[90%]'
     >
-        <img alt="github" src='/static/github.svg' class='h-9 aspect-square' >
+        <img alt="github" src={icons.github} class='h-9 aspect-square' >
     </a>
     <audio-controls>
         <div class='flex flex-row items-center h-1/3 w-full py-1'>
@@ -139,7 +140,7 @@
                     await player.play_prev();
                 }}
             >
-                <img alt="prev" class='h-3' src='/static/prev.svg'>
+                <img alt="prev" class='h-3' src={icons.prev}>
             </button>
             <button
                 on:click={async () => {
@@ -147,14 +148,14 @@
                     is_playing = player.is_playing();
                 }}
             >
-                <img alt="play pause" class='h-3' src='/static/{is_playing ? 'pause' : 'play'}.svg'>
+                <img alt="play pause" class='h-3' src={is_playing ? icons.pause : icons.play}>
             </button>
             <button
                 on:click={async () => {
                     await player.play_next();
                 }}
             >
-                <img alt="next" class='h-3' src='/static/next.svg'>
+                <img alt="next" class='h-3' src={icons.next}>
             </button>
         </div>
     </audio-controls>

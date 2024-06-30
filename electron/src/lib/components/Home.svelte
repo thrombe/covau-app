@@ -2,6 +2,7 @@
     import BlobBg, { get_seed } from '$lib/components/BlobBg.svelte';
     import InputBar from '$lib/components/InputBar.svelte';
     import { nanoid } from 'nanoid';
+    import * as icons from "$lib/icons.ts";
 
     let group: string;
     let seed = get_seed();
@@ -29,7 +30,7 @@
                 Covau is a webapp for enjoying music and videos with friends in real-time.
             </div>
             <a href='https://github.com/thrombe/covau' target='_blank' class='px-6'>
-                <img src='/static/github.svg' class='h-8 aspect-square' >
+                <img alt='github icon' src={icons.github} class='h-8 aspect-square' >
             </a>
 
             <div class='absolute h-full w-full left-0 top-0 -z-20 brightness-[90%]'>

@@ -6,6 +6,7 @@
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';
     import type { VideoInfo } from '$lib/searcher/song_tube.ts';
     import { toast } from '$lib/toast/toast.ts';
+    import * as icons from "$lib/icons.ts";
 
     export let items: Array<Unique<string, string>>;
     export let item_height: number;
@@ -216,7 +217,7 @@
                         await delete_item(index, items[index].data);
                     }}
                 >
-                    <img alt="remove" draggable={false} class='h-3 opacity-50' src='/static/remove.svg'>
+                    <img alt="remove" draggable={false} class='h-3 opacity-50' src={icons.remove}>
                 </button>
                 <div class='absolute h-full flex flex-col justify-center left-0 top-0'>
                     <button
@@ -226,7 +227,7 @@
                             await play_item(index);
                         }}
                     >
-                        <img alt="play" draggable={false} class='scale-[50%]' src='/static/play.svg'>
+                        <img alt="play" draggable={false} class='scale-[50%]' src={icons.play}>
                     </button>
                 </div>
             {/if}

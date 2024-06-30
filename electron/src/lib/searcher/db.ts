@@ -12,6 +12,7 @@ import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
+import * as icons from "$lib/icons.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -148,7 +149,7 @@ export class DbListItem extends ListItem {
     }
 
     default_thumbnail(): string {
-        return "/static/default-music-icon.svg";
+        return icons.default_music_icon;
     }
 
     title_sub(): string | null {
@@ -422,7 +423,7 @@ export class DbListItem extends ListItem {
                         let s = this.data.t;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -430,7 +431,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove item",
                                 onclick: async () => {
@@ -438,7 +439,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -452,7 +453,7 @@ export class DbListItem extends ListItem {
                         let s = this.data.t;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -460,7 +461,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove item",
                                 onclick: async () => {
@@ -468,7 +469,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -481,7 +482,7 @@ export class DbListItem extends ListItem {
                     case "Song":
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -489,7 +490,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove item",
                                 onclick: async () => {
@@ -517,7 +518,7 @@ export class DbListItem extends ListItem {
                         let s = this.data.t;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -525,7 +526,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "TopRight",
                                 title: "add to queue",
                                 onclick: async () => {
@@ -533,7 +534,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -541,7 +542,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -555,7 +556,7 @@ export class DbListItem extends ListItem {
                         let list = this.data.t;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open",
                                 onclick: async () => {
@@ -568,7 +569,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -587,7 +588,7 @@ export class DbListItem extends ListItem {
                         let a = this.data.t;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open saved",
                                 onclick: async () => {
@@ -600,7 +601,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "OnlyMenu",
                                 title: "open unexplored",
                                 onclick: async () => {
@@ -613,7 +614,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all saved to queue",
                                 onclick: async () => {
@@ -627,7 +628,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all unexplored to queue",
                                 onclick: async () => {
@@ -648,7 +649,7 @@ export class DbListItem extends ListItem {
                         let list = this.data.t;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open",
                                 onclick: async () => {
@@ -661,7 +662,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -680,7 +681,7 @@ export class DbListItem extends ListItem {
                         let queue = this.data.t;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open",
                                 onclick: async () => {
@@ -693,7 +694,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -711,7 +712,7 @@ export class DbListItem extends ListItem {
                     case "Song":
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -719,7 +720,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "TopRight",
                                 title: "add to queue",
                                 onclick: async () => {
@@ -727,7 +728,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -739,7 +740,7 @@ export class DbListItem extends ListItem {
                         let s = this.data.t;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -747,7 +748,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "TopRight",
                                 title: "add to queue",
                                 onclick: async () => {
@@ -755,7 +756,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -763,7 +764,7 @@ export class DbListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -783,7 +784,7 @@ export class DbListItem extends ListItem {
                                 let ss = u.source.content;
                                 return [
                                     {
-                                        icon: "/static/open-new-tab.svg",
+                                        icon: icons.open_new_tab,
                                         location: "TopRight",
                                         title: "open",
                                         onclick: async () => {
@@ -796,7 +797,7 @@ export class DbListItem extends ListItem {
                                         },
                                     },
                                     {
-                                        icon: "/static/add.svg",
+                                        icon: icons.add,
                                         location: "OnlyMenu",
                                         title: "add all to queue",
                                         onclick: async () => {

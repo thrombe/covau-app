@@ -7,6 +7,8 @@
     import { CustomListItem } from "$lib/searcher/item";
     import type { Musiplayer } from "./player.ts";
     import type { Writable } from "svelte/store";
+    import * as icons from "$lib/icons.ts";
+    import type { QueueManager } from "./queue.ts";
 
     export let mobile = false;
     export let keyboard_control = true;
@@ -14,7 +16,7 @@
     let playing_item = stores.playing_item;
 
     let player = stores.player as unknown as Writable<Musiplayer>;
-    let queue = stores.queue;
+    let queue = stores.queue as Writable<QueueManager>;
 
     let video_pos = 0;
     // let has_prev = $queue.has_prev();
@@ -164,7 +166,7 @@
                     queue.update((q) => q);
                 }}
             >
-                <img alt="prev" class="h-3" src="/static/prev.svg" />
+                <img alt="prev" class="h-3" src={icons.prev} />
             </button>
             <button
                 on:click={async () => {
@@ -175,7 +177,7 @@
                 <img
                     alt="play pause"
                     class="h-3"
-                    src="/static/{is_playing ? 'pause' : 'play'}.svg"
+                    src={is_playing ? icons.pause : icons.play}
                 />
             </button>
             <button
@@ -184,7 +186,7 @@
                     queue.update((q) => q);
                 }}
             >
-                <img alt="next" class="h-3" src="/static/next.svg" />
+                <img alt="next" class="h-3" src={icons.next} />
             </button>
         </div>
     </audio-controls>

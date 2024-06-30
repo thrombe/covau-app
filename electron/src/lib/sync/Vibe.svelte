@@ -22,6 +22,7 @@
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
+    import * as icons from "$lib/icons.ts";
 
     export let params: { group?: string };
     export let tube: Innertube;
@@ -311,7 +312,7 @@
                                             <img
                                                 class="w-full h-full opacity-75"
                                                 alt="copy"
-                                                src="/static/copy.svg"
+                                                src={icons.copy}
                                             />
                                         </button>
                                     </div>
@@ -429,7 +430,7 @@
                                 <img
                                     class="w-full h-full opacity-75"
                                     alt="copy"
-                                    src="/static/copy.svg"
+                                    src={icons.copy}
                                 />
                             </button>
                         </div>

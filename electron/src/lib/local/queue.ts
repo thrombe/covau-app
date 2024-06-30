@@ -4,6 +4,7 @@ import type { ListItem, Option } from "$lib/searcher/item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { prompt } from "$lib/prompt/prompt.ts";
 import type { Searcher } from "$lib/searcher/searcher.ts";
+import * as icons from "$lib/icons.ts";
 
 import * as covau from "$types/covau.ts";
 import { exhausted } from "$lib/virtual.ts";
@@ -224,7 +225,7 @@ export class QueueManager implements Searcher {
         return [
             {
                 title: "empty queue",
-                icon: "/static/remove.svg",
+                icon: icons.remove,
                 location: "OnlyMenu",
                 onclick: () => {
                     let q = get(queue) as AutoplayQueueManager;
@@ -238,7 +239,7 @@ export class QueueManager implements Searcher {
             },
             {
                 title: "save queue",
-                icon: "/static/floppy-disk.svg",
+                icon: icons.floppy_disk,
                 location: "OnlyMenu",
                 onclick: async () => {
                     let _name = await prompt("Enter queue name");
@@ -271,7 +272,7 @@ export class QueueManager implements Searcher {
             },
             {
                 title: "reseed autoplay",
-                icon: "/static/repeat.svg",
+                icon: icons.repeat,
                 location: "OnlyMenu",
                 onclick: async () => {
                     let q = get(queue) as AutoplayQueueManager;

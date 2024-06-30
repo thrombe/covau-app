@@ -23,6 +23,7 @@
     import InputBar from "$lib/components/InputBar.svelte";
     import type Innertube from "youtubei.js/web";
     import type { MenubarOption } from "./Vibe.svelte";
+    import * as icons from "$lib/icons.ts";
 
     export let columns: number;
     export let item_height: number;
@@ -203,7 +204,7 @@
                                         draggable={false}
                                         class="h-3"
                                         alt="add"
-                                        src="/static/add.svg"
+                                        src={icons.add}
                                     />
                                 </button>
                             {:else if item.typ == "album" || item.typ == "playlist"}
@@ -262,7 +263,7 @@
                                         draggable={false}
                                         class="h-3"
                                         alt="new-tab"
-                                        src="/static/open-new-tab.svg"
+                                        src={icons.open_new_tab}
                                     />
                                 </button>
                             {:else if item.typ == "artist"}
@@ -304,7 +305,7 @@
                                         draggable={false}
                                         class="h-3"
                                         alt="new-tab"
-                                        src="/static/open-new-tab.svg"
+                                        src={icons.open_new_tab}
                                     />
                                 </button>
                             {/if}
@@ -356,7 +357,7 @@
                                         draggable={false}
                                         class="h-3"
                                         alt="add"
-                                        src="/static/add.svg"
+                                        src={icons.add}
                                     />
                                 </button>
                             {:else}

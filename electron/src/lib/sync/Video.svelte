@@ -17,6 +17,7 @@
     import { onDestroy } from 'svelte';
     import { writable } from 'svelte/store';
     import { firebase_config } from '../../firebase_config';
+    import * as icons from "$lib/icons.ts";
 
     export let group: string;
 
@@ -97,7 +98,7 @@
             class='py-3 px-6 rounded-2xl bg-[#513A61] h-20 text-lg font-bold text-center select-none'
             on:click={on_click} on:keydown={() => {}}
         >
-            <img alt="play" class='h-full' src='/static/play.svg'>
+            <img alt="play" class='h-full' src={icons.play}>
         </button>
     </div>
 </div>

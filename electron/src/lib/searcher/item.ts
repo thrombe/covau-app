@@ -3,6 +3,7 @@ import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted, type Keyed } from "$lib/virtual";
 import * as covau from "$types/covau.ts";
 import type { DbItem } from "$types/db";
+import * as icons from "$lib/icons.ts";
 
 export abstract class ListItem implements Keyed {
     custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
@@ -34,7 +35,7 @@ export class CustomListItem extends ListItem {
     _title_sub: string | null = null;
     _artists: string[] = [];
     _thumbnail: string | null = null;
-    _default_thumbnail: string = "/static/default-music-icon.svg"
+    _default_thumbnail: string = icons.default_music_icon
     _options: Option[] = [];
 
     constructor(key: string, title: string) {

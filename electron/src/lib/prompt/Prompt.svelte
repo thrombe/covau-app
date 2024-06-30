@@ -7,6 +7,7 @@
 <script lang="ts">
     import InputBar from "$lib/components/InputBar.svelte";
     import { onDestroy } from "svelte";
+    import * as icons from "$lib/icons.ts";
 
     let show: boolean = false;
     let placeholder: string;
@@ -63,7 +64,7 @@
             />
             <button class="px-4">
                 <img
-                    src="/static/floppy-disk.svg"
+                    src={icons.floppy_disk}
                     alt="enter"
                     class="h-10 opacity-40 text-center"
                 />

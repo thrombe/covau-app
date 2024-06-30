@@ -11,6 +11,7 @@ import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { db } from "$lib/local/db.ts";
 import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
+import * as icons from "$lib/icons.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -79,7 +80,7 @@ export class StListItem extends ListItem {
     }
 
     default_thumbnail(): string {
-        return "/static/default-music-icon.svg";
+        return icons.default_music_icon;
     }
 
     title_sub(): string | null {
@@ -194,7 +195,7 @@ export class StListItem extends ListItem {
                         let s = this.data.content;
                         return [
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -202,7 +203,7 @@ export class StListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/remove.svg",
+                                icon: icons.remove,
                                 location: "TopRight",
                                 title: "remove from queue",
                                 onclick: async () => {
@@ -210,7 +211,7 @@ export class StListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -233,7 +234,7 @@ export class StListItem extends ListItem {
                         let s = this.data.content;
                         return [
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "TopRight",
                                 title: "add to queue",
                                 onclick: async () => {
@@ -241,7 +242,7 @@ export class StListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/play.svg",
+                                icon: icons.play,
                                 location: "IconTop",
                                 title: "play",
                                 onclick: async () => {
@@ -249,7 +250,7 @@ export class StListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/copy.svg",
+                                icon: icons.copy,
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
@@ -263,7 +264,7 @@ export class StListItem extends ListItem {
                         let a = this.data.content;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open",
                                 onclick: async () => {
@@ -275,7 +276,7 @@ export class StListItem extends ListItem {
                                 },
                             },
                             {
-                                icon: "/static/add.svg",
+                                icon: icons.add,
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
@@ -293,7 +294,7 @@ export class StListItem extends ListItem {
                         let p = this.data.content;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "open",
                                 onclick: async () => {
@@ -310,7 +311,7 @@ export class StListItem extends ListItem {
                         let a = this.data.content;
                         return [
                             {
-                                icon: "/static/open-new-tab.svg",
+                                icon: icons.open_new_tab,
                                 location: "TopRight",
                                 title: "explore songs",
                                 onclick: async () => {

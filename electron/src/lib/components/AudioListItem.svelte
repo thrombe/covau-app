@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { ListItem, RenderContext } from "$lib/searcher/item";
     import ThreeDotMenu from "./ThreeDotMenu.svelte";
+    import * as icons from "$lib/icons.ts";
 
     export let item: ListItem;
     export let ctx: RenderContext;
@@ -113,7 +114,7 @@
                     on:click={on_menu_click}
                     class:menu-open={show_menu}
                 >
-                    <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
+                    <img alt="three dot menu icon" class="h-3 w-3" src={icons.three_dot_menu} />
                 </button>
             </ThreeDotMenu>
         </div>

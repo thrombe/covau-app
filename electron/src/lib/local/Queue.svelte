@@ -13,6 +13,7 @@
     import { type QueueManager } from "./queue.ts";
     import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
+    import * as icons from "$lib/icons.ts";
 
     export let item_height: number;
     export let dragend = (e: DragEvent) => {
@@ -141,7 +142,7 @@
                         <img
                             class="w-full h-full opacity-75"
                             alt="three dot menu icon"
-                            src="/static/three-dot-menu.svg"
+                            src={icons.three_dot_menu}
                         />
                     </button>
                 </ThreeDotMenu>
