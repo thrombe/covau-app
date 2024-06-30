@@ -9,9 +9,9 @@
     import type { Unique } from "../virtual";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import { toast } from "$lib/toast/toast.ts";
-    import { queue } from "$lib/stores.ts";
+    import * as stores from "$lib/stores.ts";
     import { type QueueManager } from "./queue.ts";
-    import { get, readable, type Readable } from "svelte/store";
+    import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
 
     export let item_height: number;
@@ -21,6 +21,8 @@
     };
     let items: Unique<ListItem, string>[] = [];
     export let mobile = false;
+
+    let queue = stores.queue as Writable<QueueManager>;
 
     let playing: number | null = null;
     let options = $queue.options();
