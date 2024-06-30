@@ -178,12 +178,6 @@ export class MbzListItem extends ListItem {
                             if (ctx == "Playbar") {
                                 return old;
                             }
-                            let old_callback = old[1].onclick;
-                            old[1].onclick = async () => {
-                                await old_callback();
-                                self.yt_song = stitem.data.content as types.yt.Song;
-                                toast("song set as play source for Mbz item");
-                            };
                             old.push({
                                 tooltip: "Set as play source",
                                 icon: "/static/floppy-disk.svg",
