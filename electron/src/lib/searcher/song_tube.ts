@@ -456,6 +456,10 @@ export class SongTube extends Unpaged<MusicListItem> {
         return new AW(query);
     }
 
+    options(): Option[] {
+        return [];
+    }
+
     results: Search | null = null;
     cont: SearchContinuation | null = null;
     pages: Array<MusicShelfContinuation> = new Array();

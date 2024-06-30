@@ -4,10 +4,12 @@ import type { Constructor } from "./mixins.ts";
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
     has_next_page: boolean;
+    options(): Option[];
 };
 export let fused_searcher = {
     async next_page() { return [] },
     has_next_page: false,
+    options: () => [],
 };
 
 export type SearcherConstructorMapper = (s: Constructor<Searcher>) => Constructor<Searcher>;

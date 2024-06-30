@@ -870,6 +870,10 @@ export class Mbz<T> extends Unpaged<T> {
         return matches.items;
     }
 
+    options(): Option[] {
+        return [];
+    }
+
     cont: MBZ.SearchContinuation | null = null;
     route: string = '';
     page_end_index: number = 0;
