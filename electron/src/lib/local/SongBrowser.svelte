@@ -38,11 +38,11 @@
     let tabs: stores.Tab[] = [];
     let curr_tab: stores.Tab;
 
-    let unsub = stores.tabs.subscribe(t => {
+    let unsub = stores.tabs.subscribe((t) => {
         tabs = t;
     });
     onDestroy(unsub);
-    unsub = stores.curr_tab.subscribe(t => {
+    unsub = stores.curr_tab.subscribe((t) => {
         curr_tab = t;
         if (t?.query) {
             search_query = get(t.query);
@@ -54,27 +54,27 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar>
-                {#if curr_tab && curr_tab.new_searcher === null}
-                    <div class="flex h-full items-center">
-                        <div class="w-full text-center text-xl">
-                            {curr_tab.name}
-                        </div>
+            {#if curr_tab && curr_tab.new_searcher === null}
+                <div class="flex h-full items-center">
+                    <div class="w-full text-center text-xl">
+                        {curr_tab.name}
                     </div>
-                {:else}
-                    <InputBar
-                        placeholder={"Search"}
-                        bind:value={search_query}
-                        bind:input_element={search_input_element}
-                        on_enter={async (e) => {
-                            stores.query_input.set(search_query);
-                            if (curr_tab.query) {
-                                curr_tab.query.set(search_query);
-                            }
+                </div>
+            {:else}
+                <InputBar
+                    placeholder={"Search"}
+                    bind:value={search_query}
+                    bind:input_element={search_input_element}
+                    on_enter={async (e) => {
+                        stores.query_input.set(search_query);
+                        if (curr_tab.query) {
+                            curr_tab.query.set(search_query);
+                        }
 
-                            e.preventDefault();
-                        }}
-                    />
-                {/if}
+                        e.preventDefault();
+                    }}
+                />
+            {/if}
         </search-bar>
 
         <browse-tab-bar
@@ -82,10 +82,10 @@
         >
             {#each tabs as tab, i}
                 <div
-                class="flex flex-row border-b-2 px-1 items-center content-center
+                    class="flex flex-row border-b-2 px-1 items-center content-center
                             {curr_tab == tab
-                            ? 'font-bold border-gray-200'
-                            : 'border-gray-600'}"
+                        ? 'font-bold border-gray-200'
+                        : 'border-gray-600'}"
                 >
                     <button
                         class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
@@ -96,24 +96,23 @@
                     >
                         {tab.name}
                     </button>
-                    <div
-                        class="h-5 w-5"
-                        class:hidden={i === 0}
-                    >
+                    <div class="h-5 w-5" class:hidden={i === 0}>
                         <button
                             class="h-full w-full flex items-center"
                             on:click={() => {
-                                stores.tabs.update(t => {
+                                stores.tabs.update((t) => {
                                     t.splice(i, 1);
                                     let len = t.length;
-                                    stores.curr_tab_index.update(i => {
-                                        return Math.min(len - 1, i)
-                                    })
+                                    stores.curr_tab_index.update((i) => {
+                                        return Math.min(len - 1, i);
+                                    });
                                     return t;
-                                })
+                                });
                             }}
                         >
-                            <div class="w-full h-full pt-[0.15rem] pl-2 pb-[0.2rem] rounded-md opacity-60 hover:opacity-100">
+                            <div
+                                class="w-full h-full pt-[0.15rem] pl-2 pb-[0.2rem] rounded-md opacity-60 hover:opacity-100"
+                            >
                                 <img
                                     alt="play"
                                     draggable={false}
@@ -152,7 +151,7 @@
                         class="item-bg"
                     >
                         <AudioListItem
-                            item={item}
+                            {item}
                             ctx="Browser"
                             show_buttons={selected}
                             alt_thumbnail={tab.thumbnail}
