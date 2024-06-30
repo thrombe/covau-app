@@ -100,14 +100,7 @@
                         <button
                             class="h-full w-full flex items-center"
                             on:click={() => {
-                                stores.tabs.update((t) => {
-                                    t.splice(i, 1);
-                                    let len = t.length;
-                                    stores.curr_tab_index.update((i) => {
-                                        return Math.min(len - 1, i);
-                                    });
-                                    return t;
-                                });
+                                stores.pop_tab(i);
                             }}
                         >
                             <div

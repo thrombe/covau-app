@@ -117,6 +117,21 @@ export const push_tab = (
     });
     curr_tab_index.set(get(tabs).length - 1);
 };
+export const pop_tab = (index: number | null = null) => {
+    let i = index ?? get(tabs).length - 1;
+
+    let curr_key = get(curr_tab).key;
+    let tabbs = get(tabs);
+    tabbs.splice(i, 1);
+
+    let new_curr = tabbs.findIndex(t => t.key === curr_key);
+    if (new_curr === -1) {
+        new_curr = 0;
+    }
+
+    tabs.set(tabbs);
+    curr_tab_index.set(new_curr);
+};
 
 export let curr_tab = derived(
     [tabs, curr_tab_index],
