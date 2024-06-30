@@ -82,8 +82,8 @@ export let menubar_options: Writable<MenubarOption[]> = writable([
 ]);
 export let selected_menubar_option_index = writable(0);
 export let selected_menubar_option: Readable<MenubarOption> = derived(
-    [menubar_options, selected_menubar_option_index, tube],
-    ([$options, $index, _t]) => $options[$index],
+    [selected_menubar_option_index, tube],
+    ([$index, _t]) => get(menubar_options)[$index],
 );
 export const insert_menu_item = (
     option: MenubarOption,

@@ -27,10 +27,8 @@
     let queue_dragend: (e: DragEvent) => void;
 
     let menubar_options = stores.menubar_options;
-    let menubar_related_option = $menubar_options[6] as unknown as {
-        id: string | null;
-    };
     let menubar_queue_option: stores.MenubarOption = {
+        key: stores.new_key(),
         name: "Queue",
         content_type: "queue",
     };
@@ -41,14 +39,12 @@
     $: if (width) {
         if (width < item_min_width + 330 + 50) {
             if (!mobile) {
-                $menubar_options = [menubar_queue_option, ...$menubar_options];
+                stores.insert_menu_item(menubar_queue_option, 0);
             }
             mobile = true;
         } else {
             if (mobile) {
-                $menubar_options = $menubar_options.filter(
-                    (o) => o.content_type != "queue"
-                );
+                stores.pop_menu_item(menubar_queue_option.key);
             }
             mobile = false;
         }
