@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import { type ListItem } from "$lib/searcher/item.ts";
+import { type ListItem, type Option } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
@@ -8,6 +8,8 @@ import { exhausted } from "$lib/virtual.ts";
 import { toast } from "./toast/toast";
 import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
 import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
+import { OptionsWrapper } from "./searcher/mixins.ts";
+import * as icons from "$lib/icons.ts";
 
 export type Tab = {
     name: string;
@@ -16,6 +18,7 @@ export type Tab = {
     thumbnail: string | null;
     query: Writable<string>;
     key: number;
+    options: Readable<Option[]>;
 };
 
 export type MenubarOption = { name: string } & (
@@ -97,13 +100,17 @@ export const push_tab = (
         t = [...t.slice(0, index + 1)];
 
         let q = writable(query ?? "");
+        let searcher = writable(s);
+        let ops = derived([searcher], ([s]) => s.options());
+        ops.subscribe(() => update_current_tab());
         let tab: Tab = {
             name: title,
-            searcher: writable(s),
+            searcher: searcher,
             new_searcher: new_searcher,
             thumbnail: thumb,
             query: q,
             key: new_tab_key(),
+            options: ops,
         };
         q.subscribe(async (q) => {
             if (tab.new_searcher) {
@@ -134,9 +141,13 @@ export const pop_tab = (index: number | null = null) => {
     curr_tab_index.set(new_curr);
 };
 
+let tab_updater = writable(0);
+export let update_current_tab = () => {
+    tab_updater.update(t => t+1);
+};
 export let curr_tab = derived(
-    [tabs, curr_tab_index],
-    ([$tabs, $index]) => $tabs[$index],
+    [tabs, curr_tab_index, tab_updater],
+    ([$tabs, $index, _t]) => $tabs[$index],
 );
 
 export interface Player {
@@ -272,13 +283,28 @@ selected_menubar_option.subscribe(async (option) => {
                             return fused_searcher;
                         }
                         let ids: string[] = covau.queue;
-                        return St.SongTube.new({
+                        let wrapper = OptionsWrapper((old: Option[], s: Searcher) => {
+                            old.push({
+                                title: "add all to queue",
+                                icon: icons.add,
+                                location: "OnlyMenu",
+                                onclick: async () => {
+                                    let items = await s.next_page();
+                                    await queue_ops.add_item(...items);
+                                    toast("items added");
+                                },
+                            });
+                            return old;
+                        });
+                        let s = St.SongTube.new({
                             type: "SongIds",
                             content: {
                                 ids,
                                 batch_size: 10,
                             },
-                        });
+                        }, wrapper);
+
+                        return s;
                     }; 
 
                     s = await new_searcher(get(query_input));
@@ -288,13 +314,17 @@ selected_menubar_option.subscribe(async (option) => {
             }
             tabs.update(t => {
                 let q = writable(get(query_input));
+                let searcher = writable(s);
+                let ops = derived([searcher], ([s]) => s.options());
+                ops.subscribe(() => update_current_tab());
                 let tab: Tab = {
                     name: "Results",
-                    searcher: writable(s),
+                    searcher: searcher,
                     thumbnail: null,
                     query: q,
                     key: new_tab_key(),
                     new_searcher: new_searcher,
+                    options: ops,
                 };
                 q.subscribe(async (q) => {
                     if (tab.new_searcher) {
@@ -334,13 +364,20 @@ selected_menubar_option.subscribe(async (option) => {
                 toast("could not find related for " + item.title(), "error");
             }
             tabs.update(t => {
+                let searcher = writable(s);
+                searcher.subscribe(s => {
+                    update_current_tab();
+                });
+                let ops = derived([searcher], ([s]) => s.options());
+                ops.subscribe(() => update_current_tab());
                 let tab: Tab = {
                     name: "Related",
-                    searcher: writable(s),
+                    searcher: searcher,
                     thumbnail: null,
                     query: writable(""),
                     key: new_tab_key(),
                     new_searcher: null,
+                    options: ops,
                 };
                 t = [tab];
                 return t;
