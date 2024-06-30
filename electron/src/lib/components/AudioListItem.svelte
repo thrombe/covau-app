@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ListItem, RenderContext } from "$lib/searcher/item";
+    import ThreeDotMenu from "./ThreeDotMenu.svelte";
 
     export let item: ListItem;
     export let ctx: RenderContext;
@@ -13,19 +14,6 @@
 
     let hide_border = true;
     let show_menu = false;
-
-    const menu_disabler = () => {
-        window.removeEventListener("click", menu_disabler);
-        show_menu = false;
-    };
-    let on_menu_click = () => {
-        if (!show_menu) {
-            show_menu = true;
-            setTimeout(() => {
-                window.addEventListener("click", menu_disabler);
-            }, 300);
-        }
-    };
 
     $: if (img_src || true) {
         if (img_src == "") {
@@ -117,53 +105,26 @@
     {#if options.length > 0}
         <button
             class="pop-button bottom-0 menu-button"
-            on:click={on_menu_click}
+            on:click={() => {
+                show_menu = !show_menu;
+            }}
             class:menu-open={show_menu}
         >
             <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
-            <div
-                class="menu-box absolute right-5 top-0 flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
-                class:hidden={!show_menu}
-            >
-                {#each options as option}
-                    <button on:click={option.onclick}>
-                        <div
-                            class="flex flex-row rounded-md p-2 pr-8 hover:bg-gray-100 hover:bg-opacity-15"
-                        >
-                            <img
-                                alt="three dot menu icon"
-                                class="h-4 w-4 m-1 mr-4"
-                                src={option.icon}
-                            />
-
-                            <item-title
-                                class="flex flex-col justify-end h-1/2 text-sm text-gray-200"
-                            >
-                                <txt>{option.tooltip}</txt>
-                            </item-title>
-                        </div>
-                    </button>
-                {/each}
-            </div>
+            <ThreeDotMenu
+                options={options}
+                show_menu={show_menu}
+            />
         </button>
     {/if}
 </item>
 
 <style lang="postcss">
-    txt {
-        @apply w-full text-ellipsis whitespace-nowrap overflow-hidden select-none;
-    }
-
     item button {
         display: none;
     }
     item:hover button,
     item.show-buttons button {
-        display: block;
-    }
-
-    item button.menu-open,
-    .menu-open button {
         display: block;
     }
 
