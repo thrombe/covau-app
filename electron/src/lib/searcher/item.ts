@@ -101,7 +101,7 @@ export type RenderContext = "Queue" | "Browser" | "Playbar";
 export type Callback = (() => void) | (() => Promise<void>);
 export type Option = {
     icon: string,
-    tooltip: string,
+    title: string,
     location: "IconTop" | "TopRight" | "BottomRight" | "OnlyMenu",
     onclick: Callback,
 };

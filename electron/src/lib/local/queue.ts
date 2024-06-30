@@ -223,7 +223,7 @@ export class QueueManager implements Searcher {
     options(): Option[] {
         return [
             {
-                tooltip: "empty queue",
+                title: "empty queue",
                 icon: "/static/remove.svg",
                 location: "OnlyMenu",
                 onclick: () => {
@@ -237,7 +237,7 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                tooltip: "save queue",
+                title: "save queue",
                 icon: "/static/floppy-disk.svg",
                 location: "OnlyMenu",
                 onclick: async () => {
@@ -270,7 +270,7 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                tooltip: "reseed autoplay",
+                title: "reseed autoplay",
                 icon: "/static/repeat.svg",
                 location: "OnlyMenu",
                 onclick: async () => {

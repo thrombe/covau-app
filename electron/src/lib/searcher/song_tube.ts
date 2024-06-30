@@ -196,7 +196,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -204,7 +204,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -212,7 +212,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.id);
                                     toast("url copied", "info");
@@ -235,7 +235,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                title: "add to queue",
                                 onclick: async () => {
                                     stores.queue_ops.add_item(this);
                                 },
@@ -243,7 +243,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.detour(this);
                                 },
@@ -251,7 +251,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.id);
                                     toast("url copied", "info");
@@ -265,7 +265,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open",
+                                title: "open",
                                 onclick: async () => {
                                     let s = SongTube.new({
                                         type: "Album",
@@ -277,7 +277,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let s = SongTube.new({
                                         type: "Album",
@@ -295,7 +295,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open",
+                                title: "open",
                                 onclick: async () => {
                                     let s = SongTube.new({
                                         type: "Playlist",
@@ -312,7 +312,7 @@ export class StListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore songs",
+                                title: "explore songs",
                                 onclick: async () => {
                                     let s = SongTube.new({
                                         type: "Artist",

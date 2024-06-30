@@ -169,7 +169,7 @@
                                     <txt
                                         class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none"
                                     >
-                                        {option.tooltip}
+                                        {option.title}
                                     </txt>
                                 </item-title>
                             </div>

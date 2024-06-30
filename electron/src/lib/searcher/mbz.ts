@@ -173,7 +173,7 @@ export class MbzListItem extends ListItem {
                             return old;
                         }
                         old.push({
-                            tooltip: "Set as play source",
+                            title: "Set as play source",
                             icon: "/static/floppy-disk.svg",
                             location: "OnlyMenu",
                             onclick: () => {
@@ -264,7 +264,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -272,7 +272,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -280,7 +280,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/floppy-disk.svg",
                                 location: "OnlyMenu",
-                                tooltip: "Set play source",
+                                title: "Set play source",
                                 onclick: async () => {
                                     let query = song.title + " by " + song.creator;
                                     await ops.search_and_get(query, true);
@@ -294,7 +294,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -302,7 +302,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -310,7 +310,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/floppy-disk.svg",
                                 location: "OnlyMenu",
-                                tooltip: "Set play source",
+                                title: "Set play source",
                                 onclick: async () => {
                                     let rec = await ops.upgrade_to_recording_with_info(r);
                                     let query = await ops.get_query(rec)
@@ -327,7 +327,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -335,7 +335,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -343,7 +343,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/floppy-disk.svg",
                                 location: "OnlyMenu",
-                                tooltip: "Set play source",
+                                title: "Set play source",
                                 onclick: async () => {
                                     let query = await ops.get_query(rec)
                                     if (query) {
@@ -372,7 +372,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore recordings",
+                                title: "explore recordings",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -390,7 +390,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore releases",
+                                title: "explore releases",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -403,7 +403,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "OnlyMenu",
-                                tooltip: "explore recordings",
+                                title: "explore recordings",
                                 onclick: async () => {
                                     let releases = await mbz.recordings_from_releases(a.releases);
                                     let s = StaticSearcher(releases);
@@ -413,7 +413,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let releases = await mbz.recordings_from_releases(a.releases);
                                     await stores.queue_ops.add_item(...releases);
@@ -427,7 +427,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore releases",
+                                title: "explore releases",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -440,7 +440,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "OnlyMenu",
-                                tooltip: "explore recordings",
+                                title: "explore recordings",
                                 onclick: async () => {
                                     let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
                                     this.data.data = rel;
@@ -453,7 +453,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
                                     this.data.data = rel;
@@ -470,7 +470,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore recordings",
+                                title: "explore recordings",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -489,7 +489,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                title: "add to queue",
                                 onclick: async () => {
                                     await stores.queue_ops.add_item(this);
                                 },
@@ -497,7 +497,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.detour(this);
                                 },
@@ -510,7 +510,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "OnlyMenu",
-                                tooltip: "explore release groups",
+                                title: "explore release groups",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -523,7 +523,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "OnlyMenu",
-                                tooltip: "explore releases",
+                                title: "explore releases",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",
@@ -536,7 +536,7 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "explore recordings",
+                                title: "explore recordings",
                                 onclick: async () => {
                                     let s = Mbz.new({
                                         query_type: "linked",

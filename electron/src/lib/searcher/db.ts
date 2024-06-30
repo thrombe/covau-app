@@ -424,7 +424,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -432,7 +432,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove item",
+                                title: "remove item",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -440,7 +440,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.key);
                                     toast("url copied", "info");
@@ -454,7 +454,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -462,7 +462,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove item",
+                                title: "remove item",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -470,7 +470,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.id);
                                     toast("url copied", "info");
@@ -483,7 +483,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.play_item(this);
                                 },
@@ -491,7 +491,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/remove.svg",
                                 location: "TopRight",
-                                tooltip: "remove item",
+                                title: "remove item",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -519,7 +519,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.detour(this);
                                 },
@@ -527,7 +527,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                title: "add to queue",
                                 onclick: async () => {
                                     await stores.queue_ops.add_item(this);
                                 },
@@ -535,7 +535,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -543,7 +543,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.key);
                                     toast("url copied", "info");
@@ -557,7 +557,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open",
+                                title: "open",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -570,7 +570,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -589,7 +589,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open saved",
+                                title: "open saved",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -602,7 +602,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "OnlyMenu",
-                                tooltip: "open unexplored",
+                                title: "open unexplored",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -615,7 +615,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all saved to queue",
+                                title: "add all saved to queue",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -629,7 +629,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all unexplored to queue",
+                                title: "add all unexplored to queue",
                                 onclick: async () => {
                                     let songs = a.unexplored_songs ?? [];
                                     let s = Db.new({
@@ -650,7 +650,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open",
+                                title: "open",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -663,7 +663,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -682,7 +682,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/open-new-tab.svg",
                                 location: "TopRight",
-                                tooltip: "open",
+                                title: "open",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "ids",
@@ -695,7 +695,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "add all to queue",
+                                title: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "ids",
@@ -713,7 +713,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.detour(this);
                                 },
@@ -721,7 +721,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                title: "add to queue",
                                 onclick: async () => {
                                     await stores.queue_ops.add_item(this);
                                 },
@@ -729,7 +729,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -741,7 +741,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/play.svg",
                                 location: "IconTop",
-                                tooltip: "play",
+                                title: "play",
                                 onclick: async () => {
                                     await stores.queue_ops.detour(this);
                                 },
@@ -749,7 +749,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "TopRight",
-                                tooltip: "add to queue",
+                                title: "add to queue",
                                 onclick: async () => {
                                     await stores.queue_ops.add_item(this);
                                 },
@@ -757,7 +757,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/add.svg",
                                 location: "OnlyMenu",
-                                tooltip: "remove from queue",
+                                title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
                                 },
@@ -765,7 +765,7 @@ export class DbListItem extends ListItem {
                             {
                                 icon: "/static/copy.svg",
                                 location: "OnlyMenu",
-                                tooltip: "copy url",
+                                title: "copy url",
                                 onclick: async () => {
                                     await navigator.clipboard.writeText("https://youtu.be/" + s.id);
                                     toast("url copied", "info");
@@ -785,7 +785,7 @@ export class DbListItem extends ListItem {
                                     {
                                         icon: "/static/open-new-tab.svg",
                                         location: "TopRight",
-                                        tooltip: "open",
+                                        title: "open",
                                         onclick: async () => {
                                             let s = Db.new({
                                                 query_type: "refids",
@@ -798,7 +798,7 @@ export class DbListItem extends ListItem {
                                     {
                                         icon: "/static/add.svg",
                                         location: "OnlyMenu",
-                                        tooltip: "add all to queue",
+                                        title: "add all to queue",
                                         onclick: async () => {
                                             let s = Db.new({
                                                 query_type: "refids",
