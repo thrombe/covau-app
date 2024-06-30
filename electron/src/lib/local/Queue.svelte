@@ -33,8 +33,6 @@
     });
     onDestroy(unsub);
 
-    let show_menu = false;
-
     let end_is_visible = false;
     const end_reached = async (q: Readable<QueueManager> = queue) => {
         while (true) {
@@ -118,7 +116,9 @@
     <div class="p-2 pl-0 h-16">
         <div class="flex flex-row rounded-xl h-full bg-gray-400 bg-opacity-20">
             <div class="h-full pl-2 pr-2 flex-grow">
-                <div class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold">
+                <div
+                    class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold"
+                >
                     Queue
                 </div>
                 <!-- <InputBar
@@ -128,26 +128,24 @@
                 /> -->
             </div>
 
-            <button
+            <div
                 class="my-2 mr-2 p-1 aspect-square relative"
-                on:click={() => {
-                    show_menu = !show_menu;
-                }}
-                class:menu-open={show_menu}
                 class:hidden={options.length == 0}
             >
-                <ThreeDotMenu
-                    options={options}
-                    bind:show_menu={show_menu}
-                    let:show_menu
-                >
-                    <img
-                        class="w-full h-full opacity-75"
-                        alt="three dot menu icon"
-                        src="/static/three-dot-menu.svg"
-                    />
+                <ThreeDotMenu {options} let:on_menu_click let:show_menu>
+                    <button
+                        class="w-full h-full"
+                        on:click={on_menu_click}
+                        class:menu-open={show_menu}
+                    >
+                        <img
+                            class="w-full h-full opacity-75"
+                            alt="three dot menu icon"
+                            src="/static/three-dot-menu.svg"
+                        />
+                    </button>
                 </ThreeDotMenu>
-            </button>
+            </div>
         </div>
     </div>
     <div class="w-full" style="height: calc(100% - 4rem);">

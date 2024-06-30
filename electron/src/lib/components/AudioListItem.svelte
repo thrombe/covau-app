@@ -13,7 +13,6 @@
     $: options = item?.options(ctx) ?? [];
 
     let hide_border = true;
-    let show_menu = false;
 
     $: if (img_src || true) {
         if (img_src == "") {
@@ -103,19 +102,21 @@
     {/each}
 
     {#if options.length > 0}
-        <button
-            class="pop-button bottom-0 menu-button"
-            on:click={() => {
-                show_menu = !show_menu;
-            }}
-            class:menu-open={show_menu}
-        >
-            <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
+        <div class="relative">
             <ThreeDotMenu
                 options={options}
-                show_menu={show_menu}
-            />
-        </button>
+                let:show_menu
+                let:on_menu_click
+            >
+                <button
+                    class="pop-button bottom-0 menu-button"
+                    on:click={on_menu_click}
+                    class:menu-open={show_menu}
+                >
+                    <img alt="three dot menu icon" class="h-3 w-3" src="/static/three-dot-menu.svg" />
+                </button>
+            </ThreeDotMenu>
+        </div>
     {/if}
 </item>
 
