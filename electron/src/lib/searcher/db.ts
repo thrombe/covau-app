@@ -1,4 +1,4 @@
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -829,34 +829,24 @@ export class DbListItem extends ListItem {
     }
 }
 
-interface IClassTypeWrapper<D> {
+interface IClassTypeWrapper {
     next_page(): Promise<DbListItem[]>;
-    inner: D;
-    has_next_page: boolean;
 };
-function ClassTypeWrapper<D extends {
+function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<MusicListItem[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
+}>>(s: S) {
+    return class extends s implements IClassTypeWrapper {
+        constructor(...args: any[]) {
+            super(...args);
+        }
 
+        // @ts-ignore
         async next_page(): Promise<DbListItem[]> {
-            let res = await d.next_page();
-
-            let self = this as unknown as IClassTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
-            if (res.length === 0) {
-                return [];
-            }
-
+            let res = await super.next_page();
             return res.map(m => new DbListItem(m));
         }
-    } as unknown as IClassTypeWrapper<D>;
+    } as Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
 }
-
 
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
@@ -869,20 +859,23 @@ export class Db extends Unpaged<MusicListItem> {
     }
 
     static new(query: BrowseQuery, page_size: number) {
-        let w2 = ClassTypeWrapper(Db.unwrapped(query, page_size));
-        let w3 = AsyncWrapper<DbListItem, typeof w2>(w2);
-        return w3;
+        const CW = ClassTypeWrapper(Db);
+        const US = UniqueSearch<DbListItem, typeof CW>(CW);
+        const SS = SavedSearch<DbListItem, typeof US>(US);
+        const AW = AsyncWrapper<DbListItem, typeof SS>(SS);
+        return new AW(query, page_size);
     }
 
     static unwrapped(query: BrowseQuery, page_size: number) {
         const US = UniqueSearch<MusicListItem, typeof Db>(Db);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
-        return new SS(query, page_size);
+        const AW = AsyncWrapper<MusicListItem, typeof SS>(SS);
+        return new AW(query, page_size);
     }
 
     static fused() {
         let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
-        s.inner.has_next_page = false;
+        s.has_next_page = false;
         return s;
     }
 

@@ -1,7 +1,7 @@
 import { type Keyed } from "$lib/virtual.ts";
 import type { ListItem } from "./item";
 
-type Constructor<T> = new (...args: any[]) => T;
+export type Constructor<T> = new (...args: any[]) => T;
 
 const sleep = (ms: number) => {
     return new Promise(
@@ -44,32 +44,23 @@ export function SlowSearch<T, Q, S extends Constructor<{
 }
 
 
-export interface IAsyncWrapper<T, D> {
+export interface IAsyncWrapper<T> {
     next_page(): Promise<T[]>;
-    inner: D;
-    has_next_page: boolean;
-    promise: Promise<T[]> | null;
 };
-export function AsyncWrapper<T, D extends {
+export function AsyncWrapper<T, S extends Constructor<{
     next_page(): Promise<T[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-
-        promise: null,
+}>>(s: S) {
+    return class extends s implements IAsyncWrapper<T> {
+        promise: Promise<T[]> | null = null;
         async next_page(): Promise<T[]> {
-            let self = this as unknown as IAsyncWrapper<T, D>;
-            if (!self.promise) {
-                self.promise = d.next_page();
+            if (!this.promise) {
+                this.promise = super.next_page();
             }
-            let res = await self.promise;
-            self.promise = null;
-            self.has_next_page = d.has_next_page;
+            let res = await this.promise;
+            this.promise = null;
             return res;
         }
-    } as unknown as IAsyncWrapper<T, D>;
+    } as S & Constructor<IAsyncWrapper<T>>;
 }
 
 export interface IMapWrapper<D> {
