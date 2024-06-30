@@ -565,7 +565,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: list.songs,
                                     }, 30);
-                                    stores.push_tab(s, list.name);
+                                    stores.new_tab(s, list.name);
                                 },
                             },
                             {
@@ -597,7 +597,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: a.songs,
                                     }, 30);
-                                    stores.push_tab(s, a.name + " saved");
+                                    stores.new_tab(s, a.name + " saved");
                                 },
                             },
                             {
@@ -610,7 +610,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: a.unexplored_songs ?? [],
                                     }, 30);
-                                    stores.push_tab(s, a.name + " unexplored");
+                                    stores.new_tab(s, a.name + " unexplored");
                                 },
                             },
                             {
@@ -658,7 +658,7 @@ export class DbListItem extends ListItem {
                                         type: "MmSong",
                                         ids: list.data_list,
                                     }, 30);
-                                    stores.push_tab(s, list.name);
+                                    stores.new_tab(s, list.name);
                                 },
                             },
                             {
@@ -690,7 +690,7 @@ export class DbListItem extends ListItem {
                                         type: "Song",
                                         ids: queue.queue.songs,
                                     }, 30);
-                                    stores.push_tab(s, queue.queue.title);
+                                    stores.new_tab(s, queue.queue.title);
                                 },
                             },
                             {
@@ -793,7 +793,7 @@ export class DbListItem extends ListItem {
                                                 type: "Song",
                                                 ids: ss.songs.queue.map(s => s.item),
                                             }, ss.songs.queue.length);
-                                            stores.push_tab(s, u.title);
+                                            stores.new_tab(s, u.title);
                                         },
                                     },
                                     {

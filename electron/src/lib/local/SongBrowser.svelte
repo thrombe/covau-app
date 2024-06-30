@@ -60,8 +60,8 @@
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar class="flex flex-row h-full">
             {#if curr_tab && curr_tab.new_searcher === null}
-                <div class="flex h-full items-center">
-                    <div class="w-full text-center text-xl">
+                <div class="flex h-full w-full items-center">
+                    <div class="flex w-full text-center justify-center text-xl">
                         {curr_tab.name}
                     </div>
                 </div>

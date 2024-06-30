@@ -113,16 +113,21 @@ export const pop_menu_item = (key: number) => {
 export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
 
-export const push_tab = (
+export const new_tab = (
     s: Searcher,
     title: string,
     thumb: string | null = null,
     query: string | null = null,
     new_searcher: (((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null) = null,
+    append: boolean = true,
 ) => {
     let index = get(curr_tab_index);
     tabs.update(t => {
-        t = [...t.slice(0, index + 1)];
+        if (append) {
+            t = [...t.slice(0, index + 1)];
+        } else {
+            t = [];
+        }
 
         let q = writable(query ?? "");
         let searcher = writable(s);
@@ -337,29 +342,14 @@ selected_menubar_option.subscribe(async (option) => {
                 default:
                     throw exhausted(option.type);
             }
-            tabs.update(t => {
-                let q = writable(get(query_input));
-                let searcher = writable(s);
-                let ops = derived([searcher], ([s]) => s.options());
-                ops.subscribe(() => update_current_tab());
-                let tab: Tab = {
-                    name: "Results",
-                    searcher: searcher,
-                    thumbnail: null,
-                    query: q,
-                    key: new_key(),
-                    new_searcher: new_searcher,
-                    options: ops,
-                };
-                q.subscribe(async (q) => {
-                    if (tab.new_searcher) {
-                        tab.searcher.set(await tab.new_searcher(q));
-                    }
-                });
-                t = [tab];
-                return t;
-            });
-            curr_tab_index.set(0);
+            new_tab(
+                s,
+                "Results",
+                null,
+                get(query_input),
+                new_searcher,
+                false,
+            );
         } break;
         case "queue":
             break
@@ -388,44 +378,28 @@ selected_menubar_option.subscribe(async (option) => {
             } else {
                 toast("could not find related for " + item.title(), "error");
             }
-            tabs.update(t => {
-                let searcher = writable(s);
-                searcher.subscribe(s => {
-                    update_current_tab();
-                });
-                let ops = derived([searcher], ([s]) => s.options());
-                ops.subscribe(() => update_current_tab());
-                let tab: Tab = {
-                    name: "Related",
-                    searcher: searcher,
-                    thumbnail: null,
-                    query: writable(""),
-                    key: new_key(),
-                    new_searcher: null,
-                    options: ops,
-                };
-                t = [tab];
-                return t;
-            });
-            curr_tab_index.set(0);
+            new_tab(
+                s,
+                "Related",
+                null,
+                null,
+                null,
+                false,
+            );
         } break;
         case "home-feed": {
-            // let st = await import("$lib/searcher/song_tube.ts");
-            // let s = st.SongTube.new({
-            //     type: "HomeFeed",
-            // });
-            // tabs.update(t => {
-            //     t = [{
-            //         name: "Home",
-            //         searcher: writable(s),
-            //         new_searcher: null,
-            //         key: new_key(),
-            //         thumbnail: null,
-            //         query: writable(""),
-            //     }];
-            //     return t;
-            // });
-            // curr_tab_index.set(0);
+            let st = await import("$lib/searcher/song_tube.ts");
+            let s = st.SongTube.new({
+                type: "HomeFeed",
+            });
+            new_tab(
+                s,
+                "Home",
+                null,
+                null,
+                null,
+                false,
+            );
         } break;
         default:
             throw exhausted(option);

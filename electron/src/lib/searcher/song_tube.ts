@@ -271,7 +271,7 @@ export class StListItem extends ListItem {
                                         type: "Album",
                                         content: a.id,
                                     });
-                                    stores.push_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
+                                    stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                             {
@@ -301,7 +301,7 @@ export class StListItem extends ListItem {
                                         type: "Playlist",
                                         content: p.id,
                                     });
-                                    stores.push_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
+                                    stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                         ];
@@ -318,7 +318,7 @@ export class StListItem extends ListItem {
                                         type: "Artist",
                                         content: a.id,
                                     });
-                                    stores.push_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
+                                    stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
                                 },
                             },
                         ];

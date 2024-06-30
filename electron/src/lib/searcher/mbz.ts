@@ -195,7 +195,7 @@ export class MbzListItem extends ListItem {
                 }, wrapper);
 
                 let searcher = new_searcher(query);
-                stores.push_tab(searcher, query, null, query, new_searcher);
+                stores.new_tab(searcher, query, null, query, new_searcher);
                 stores.query_input.set(query);
                 if (switch_tab) {
                     stores.curr_tab_index.set(get(stores.tabs).length - 1);
@@ -380,7 +380,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRecording_MbzRelease",
                                         id: a.title,
                                     }, 30);
-                                    stores.push_tab(s, "Recordings for " + a.title);
+                                    stores.new_tab(s, "Recordings for " + a.title);
                                 },
                             },
                         ];
@@ -398,7 +398,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRelease_MbzReleaseGroup",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Releases for " + a.title);
                                 },
                             },
                             {
@@ -408,7 +408,7 @@ export class MbzListItem extends ListItem {
                                 onclick: async () => {
                                     let releases = await mbz.recordings_from_releases(a.releases);
                                     let s = StaticSearcher(releases);
-                                    stores.push_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Releases for " + a.title);
                                 },
                             },
                             {
@@ -435,7 +435,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRelease_MbzReleaseGroup",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Releases for " + a.title);
                                 },
                             },
                             {
@@ -448,7 +448,7 @@ export class MbzListItem extends ListItem {
                                     this.data.typ = "MbzReleaseGroupWithInfo";
                                     let releases = await mbz.recordings_from_releases(rel.releases);
                                     let s = StaticSearcher(releases);
-                                    stores.push_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Releases for " + a.title);
                                 },
                             },
                             {
@@ -478,7 +478,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRecording_MbzRelease",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Recordings for " + a.title);
+                                    stores.new_tab(s, "Recordings for " + a.title);
                                 },
                             },
                         ];
@@ -518,7 +518,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzReleaseGroup_MbzArtist",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Release groups for " + a.name);
+                                    stores.new_tab(s, "Release groups for " + a.name);
                                 },
                             },
                             {
@@ -531,7 +531,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRelease_MbzArtist",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Releases for " + a.name);
+                                    stores.new_tab(s, "Releases for " + a.name);
                                 },
                             },
                             {
@@ -544,7 +544,7 @@ export class MbzListItem extends ListItem {
                                         type: "MbzRecording_MbzArtsit",
                                         id: a.id,
                                     }, 30);
-                                    stores.push_tab(s, "Recordings for " + a.name);
+                                    stores.new_tab(s, "Recordings for " + a.name);
                                 },
                             },
                         ];
