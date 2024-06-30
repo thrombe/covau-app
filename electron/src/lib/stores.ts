@@ -21,7 +21,7 @@ export type Tab = {
     options: Readable<Option[]>;
 };
 
-export type MenubarOption = { name: string } & (
+export type MenubarOption = { name: string, key: number } & (
     | { content_type: "list"; type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
@@ -30,6 +30,11 @@ export type MenubarOption = { name: string } & (
 );
 
 let page_size = 30;
+
+let tab_key = 0;
+export const new_key = () => {
+    return tab_key++;
+}
 
 // NOTE: initialized in wrap components
 export let tube: Writable<Innertube> = writable();
@@ -46,48 +51,86 @@ export type MetaBrowseQuery = (
 );
 
 export let menubar_options: Writable<MenubarOption[]> = writable([
-    { name: "Home", content_type: "home-feed" },
-    { name: "Mm Song", content_type: "list", type: "MmSong" },
-    { name: "Mm Queues", content_type: "list", type: "MmQueue" },
-    { name: "Mm Playlists", content_type: "list", type: "MmPlaylist" },
-    { name: "Mm Artist", content_type: "list", type: "MmArtist" },
-    { name: "Mm Album", content_type: "list", type: "MmAlbum" },
-    { name: "Yt Song", content_type: "list", type: "YtSong" },
-    { name: "Yt Video", content_type: "list", type: "YtVideo" },
-    { name: "Yt Album", content_type: "list", type: "YtAlbum" },
-    { name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
-    { name: "Yt Artist", content_type: "list", type: "YtArtist" },
-    { name: "St Song", content_type: "list", type: "StSong" },
-    { name: "St Video", content_type: "list", type: "StVideo" },
-    { name: "St Album", content_type: "list", type: "StAlbum" },
-    { name: "St Playlist", content_type: "list", type: "StPlaylist" },
-    { name: "St Artist", content_type: "list", type: "StArtist" },
-    { name: "Song", content_type: "list", type: "Song" },
-    { name: "Playlist", content_type: "list", type: "Playlist" },
-    { name: "Queue", content_type: "list", type: "Queue" },
-    { name: "Updater", content_type: "list", type: "Updater" },
-    { name: "Mbz Recording", content_type: "list", type: "MbzRecordingWithInfo" },
-    { name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
-    { name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
-    { name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
-    { name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
-    { name: "Covau Group", content_type: "list", type: "covau-group" },
-    { name: "Related", content_type: "related-music", source: "Yt" },
-    { name: "Radio", content_type: "related-music", source: "Mbz" },
+    { key: new_key(), name: "Home", content_type: "home-feed" },
+    { key: new_key(), name: "Mm Song", content_type: "list", type: "MmSong" },
+    { key: new_key(), name: "Mm Queues", content_type: "list", type: "MmQueue" },
+    { key: new_key(), name: "Mm Playlists", content_type: "list", type: "MmPlaylist" },
+    { key: new_key(), name: "Mm Artist", content_type: "list", type: "MmArtist" },
+    { key: new_key(), name: "Mm Album", content_type: "list", type: "MmAlbum" },
+    { key: new_key(), name: "Yt Song", content_type: "list", type: "YtSong" },
+    { key: new_key(), name: "Yt Video", content_type: "list", type: "YtVideo" },
+    { key: new_key(), name: "Yt Album", content_type: "list", type: "YtAlbum" },
+    { key: new_key(), name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
+    { key: new_key(), name: "Yt Artist", content_type: "list", type: "YtArtist" },
+    { key: new_key(), name: "St Song", content_type: "list", type: "StSong" },
+    { key: new_key(), name: "St Video", content_type: "list", type: "StVideo" },
+    { key: new_key(), name: "St Album", content_type: "list", type: "StAlbum" },
+    { key: new_key(), name: "St Playlist", content_type: "list", type: "StPlaylist" },
+    { key: new_key(), name: "St Artist", content_type: "list", type: "StArtist" },
+    { key: new_key(), name: "Song", content_type: "list", type: "Song" },
+    { key: new_key(), name: "Playlist", content_type: "list", type: "Playlist" },
+    { key: new_key(), name: "Queue", content_type: "list", type: "Queue" },
+    { key: new_key(), name: "Updater", content_type: "list", type: "Updater" },
+    { key: new_key(), name: "Mbz Recording", content_type: "list", type: "MbzRecordingWithInfo" },
+    { key: new_key(), name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
+    { key: new_key(), name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
+    { key: new_key(), name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
+    { key: new_key(), name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
+    { key: new_key(), name: "Covau Group", content_type: "list", type: "covau-group" },
+    { key: new_key(), name: "Related", content_type: "related-music", source: "Yt" },
+    { key: new_key(), name: "Radio", content_type: "related-music", source: "Mbz" },
 ]);
 export let selected_menubar_option_index = writable(0);
 export let selected_menubar_option: Readable<MenubarOption> = derived(
     [menubar_options, selected_menubar_option_index, tube],
     ([$options, $index, _t]) => $options[$index],
 );
+export const insert_menu_item = (
+    option: MenubarOption,
+    index: number | null = null,
+    switch_to: boolean = false,
+) => {
+    let i = index ?? get(menubar_options).length;
+    let curr = get(selected_menubar_option_index);
+
+    let options = get(menubar_options);
+    options.splice(i, 0, option);
+
+    if (curr >= i) {
+        curr += 1;
+    }
+    if (switch_to) {
+        curr = i;
+    }
+
+    menubar_options.set(options);
+    selected_menubar_option_index.set(curr);
+};
+export const pop_menu_item = (key: number) => {
+    let i = get(menubar_options).findIndex(o => o.key == key);
+    if (i == -1) {
+        toast(`menu option with key ${key} not found`, "error");
+        return;
+    }
+
+    let curr = get(selected_menubar_option_index);
+    let options = get(menubar_options);
+    options.splice(i, 1);
+
+    if (curr >= i) {
+        curr -= 1;
+    }
+    if (curr < 0) {
+        curr = 0;
+    }
+
+    menubar_options.set(options);
+    selected_menubar_option_index.set(curr);
+};
 
 export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
 
-let tab_key = 0;
-export const new_tab_key = () => {
-    return tab_key++;
-}
 export const push_tab = (
     s: Searcher,
     title: string,
@@ -109,7 +152,7 @@ export const push_tab = (
             new_searcher: new_searcher,
             thumbnail: thumb,
             query: q,
-            key: new_tab_key(),
+            key: new_key(),
             options: ops,
         };
         q.subscribe(async (q) => {
@@ -322,7 +365,7 @@ selected_menubar_option.subscribe(async (option) => {
                     searcher: searcher,
                     thumbnail: null,
                     query: q,
-                    key: new_tab_key(),
+                    key: new_key(),
                     new_searcher: new_searcher,
                     options: ops,
                 };
@@ -375,7 +418,7 @@ selected_menubar_option.subscribe(async (option) => {
                     searcher: searcher,
                     thumbnail: null,
                     query: writable(""),
-                    key: new_tab_key(),
+                    key: new_key(),
                     new_searcher: null,
                     options: ops,
                 };
@@ -394,7 +437,7 @@ selected_menubar_option.subscribe(async (option) => {
             //         name: "Home",
             //         searcher: writable(s),
             //         new_searcher: null,
-            //         key: new_tab_key(),
+            //         key: new_key(),
             //         thumbnail: null,
             //         query: writable(""),
             //     }];
