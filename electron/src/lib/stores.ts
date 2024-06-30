@@ -128,6 +128,7 @@ export interface Player {
     pause(): void;
 }
 export interface Queue {
+    detour(): void;
     play_item(item: ListItem): Promise<void>;
     add(...item: ListItem[]): Promise<void>;
     play_queue_item(item: ListItem): Promise<void>;
@@ -148,6 +149,7 @@ export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
 export const queue_ops = {
     async detour(item: ListItem) {
         await get(queue).play_item(item);
+        get(queue).detour();
         queue.update(q => q);
     },
 
