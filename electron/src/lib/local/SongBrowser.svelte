@@ -3,10 +3,11 @@
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
     import * as stores from "$lib/stores.ts";
-    import type { ListItem } from "$lib/searcher/item.ts";
+    import type { ListItem, Option } from "$lib/searcher/item.ts";
     import { onDestroy } from "svelte";
     import { get } from "svelte/store";
     import * as icons from "$lib/icons.ts";
+    import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
 
     export let columns: number;
     export let item_height: number;
@@ -37,6 +38,7 @@
 
     let tabs: stores.Tab[] = [];
     let curr_tab: stores.Tab;
+    let options: Option[] = [];
 
     let unsub = stores.tabs.subscribe((t) => {
         tabs = t;
@@ -44,9 +46,12 @@
     onDestroy(unsub);
     unsub = stores.curr_tab.subscribe((t) => {
         curr_tab = t;
-        if (t?.query) {
-            search_query = get(t.query);
+        if (!t) {
+            return;
         }
+
+        search_query = get(t.query);
+        options = get(t.options);
     });
     onDestroy(unsub);
 </script>
@@ -70,29 +75,34 @@
                         if (curr_tab.query) {
                             curr_tab.query.set(search_query);
                         }
+                        stores.update_current_tab();
 
                         e.preventDefault();
                     }}
                 />
             {/if}
-            <div class="relative h-full" class:hidden={false}>
-                <button
-                    class="absolute right-0 h-full aspect-square flex flex-col items-center"
-                    on:click={() => {
-                    }}
-                >
-                    <div
-                        class="w-full h-full flex flex-col pr-1 rounded-md opacity-60 hover:opacity-100"
+            <ThreeDotMenu
+                options={options}
+                let:on_menu_click
+            >
+                <div class="relative h-full" class:hidden={options.length == 0}>
+                    <button
+                        class="absolute right-0 h-full aspect-square flex flex-col items-center"
+                        on:click={on_menu_click}
                     >
-                        <img
-                            alt="options"
-                            draggable={false}
-                            class="scale-[50%] max-h-full"
-                            src={icons.three_dot_menu}
-                        />
-                    </div>
-                </button>
-            </div>
+                        <div
+                            class="w-full h-full flex flex-col pr-1 rounded-md opacity-60 hover:opacity-100"
+                        >
+                            <img
+                                alt="options"
+                                draggable={false}
+                                class="scale-[50%] max-h-full"
+                                src={icons.three_dot_menu}
+                            />
+                        </div>
+                    </button>
+                </div>
+            </ThreeDotMenu>
         </search-bar>
 
         <browse-tab-bar
