@@ -1,5 +1,5 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
@@ -333,28 +333,19 @@ export class StListItem extends ListItem {
     }
 }
 
-interface IClassTypeWrapper<D> {
+interface IClassTypeWrapper {
     next_page(): Promise<StListItem[]>;
-    inner: D;
-    has_next_page: boolean;
 };
-function ClassTypeWrapper<D extends {
+function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<(MusicListItem & Keyed)[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-
+}>>(s: S) {
+    return class extends s implements IClassTypeWrapper {
+        // @ts-ignore
         async next_page(): Promise<StListItem[]> {
-            let res = await d.next_page();
-
-            let self = this as unknown as IClassTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
+            let res = await super.next_page();
             return res.map(m => new StListItem(m));
         }
-    } as unknown as IClassTypeWrapper<D>;
+    } as Constructor<IClassTypeWrapper> & S;
 }
 
 export const st = {
@@ -445,15 +436,18 @@ export class SongTube extends Unpaged<MusicListItem> {
     }
 
     static new(query: BrowseQuery) {
-        let w1 = ClassTypeWrapper(SongTube.unwrapped(query));
-        let w2 = AsyncWrapper<StListItem, typeof w1>(w1);
-        return w2;
+        const CW = ClassTypeWrapper(SongTube)
+        const US = UniqueSearch<StListItem, typeof CW>(CW);
+        const SS = SavedSearch<StListItem, typeof US>(US);
+        const AW = AsyncWrapper<StListItem, typeof SS>(SS);
+        return new AW(query);
     }
 
     static unwrapped(query: BrowseQuery) {
-        const US = UniqueSearch<MusicListItem, typeof SongTube>(SongTube);
+        const US = UniqueSearch<MusicListItem & Keyed, typeof SongTube>(SongTube);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
-        return new SS(query);
+        const AW = AsyncWrapper<MusicListItem, typeof SS>(SS);
+        return new AW(query);
     }
 
     results: Search | null = null;

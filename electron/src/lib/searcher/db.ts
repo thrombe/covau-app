@@ -836,10 +836,6 @@ function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<MusicListItem[]>;
 }>>(s: S) {
     return class extends s implements IClassTypeWrapper {
-        constructor(...args: any[]) {
-            super(...args);
-        }
-
         // @ts-ignore
         async next_page(): Promise<DbListItem[]> {
             let res = await super.next_page();

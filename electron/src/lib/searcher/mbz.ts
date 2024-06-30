@@ -844,7 +844,8 @@ export class Mbz<T> extends Unpaged<T> {
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
         const US = UniqueSearch<T & Keyed, typeof Mbz<T>>(Mbz);
         const SS = SavedSearch<T, typeof US>(US);
-        return new SS(query, page_size);
+        const AW = AsyncWrapper<T, typeof SS>(SS);
+        return new AW(query, page_size);
     }
 
     async fetch(query: string): Promise<T[]> {
