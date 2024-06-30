@@ -50,37 +50,8 @@ export type MetaBrowseQuery = (
     | ({ source: "Musicbrainz" } & Mbz.BrowseQuery)
 );
 
-export let menubar_options: Writable<MenubarOption[]> = writable([
-    { key: new_key(), name: "Home", content_type: "home-feed" },
-    { key: new_key(), name: "Mm Song", content_type: "list", type: "MmSong" },
-    { key: new_key(), name: "Mm Queues", content_type: "list", type: "MmQueue" },
-    { key: new_key(), name: "Mm Playlists", content_type: "list", type: "MmPlaylist" },
-    { key: new_key(), name: "Mm Artist", content_type: "list", type: "MmArtist" },
-    { key: new_key(), name: "Mm Album", content_type: "list", type: "MmAlbum" },
-    { key: new_key(), name: "Yt Song", content_type: "list", type: "YtSong" },
-    { key: new_key(), name: "Yt Video", content_type: "list", type: "YtVideo" },
-    { key: new_key(), name: "Yt Album", content_type: "list", type: "YtAlbum" },
-    { key: new_key(), name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
-    { key: new_key(), name: "Yt Artist", content_type: "list", type: "YtArtist" },
-    { key: new_key(), name: "St Song", content_type: "list", type: "StSong" },
-    { key: new_key(), name: "St Video", content_type: "list", type: "StVideo" },
-    { key: new_key(), name: "St Album", content_type: "list", type: "StAlbum" },
-    { key: new_key(), name: "St Playlist", content_type: "list", type: "StPlaylist" },
-    { key: new_key(), name: "St Artist", content_type: "list", type: "StArtist" },
-    { key: new_key(), name: "Song", content_type: "list", type: "Song" },
-    { key: new_key(), name: "Playlist", content_type: "list", type: "Playlist" },
-    { key: new_key(), name: "Queue", content_type: "list", type: "Queue" },
-    { key: new_key(), name: "Updater", content_type: "list", type: "Updater" },
-    { key: new_key(), name: "Mbz Recording", content_type: "list", type: "MbzRecordingWithInfo" },
-    { key: new_key(), name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
-    { key: new_key(), name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
-    { key: new_key(), name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
-    { key: new_key(), name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
-    { key: new_key(), name: "Covau Group", content_type: "list", type: "covau-group" },
-    { key: new_key(), name: "Related", content_type: "related-music", source: "Yt" },
-    { key: new_key(), name: "Radio", content_type: "related-music", source: "Mbz" },
-]);
-export let selected_menubar_option_index = writable(0);
+export let menubar_options: Writable<MenubarOption[]> = writable([]);
+export let selected_menubar_option_index = writable(-1);
 export let selected_menubar_option: Readable<MenubarOption> = derived(
     [selected_menubar_option_index, tube],
     ([$index, _t]) => get(menubar_options)[$index],

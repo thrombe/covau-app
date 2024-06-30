@@ -2,13 +2,45 @@
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
     import { get } from "svelte/store";
+
+    stores.menubar_options.set([
+        { key: stores.new_key(), name: "Home", content_type: "home-feed" },
+        { key: stores.new_key(), name: "Mm Song", content_type: "list", type: "MmSong" },
+        { key: stores.new_key(), name: "Mm Queues", content_type: "list", type: "MmQueue" },
+        { key: stores.new_key(), name: "Mm Playlists", content_type: "list", type: "MmPlaylist" },
+        { key: stores.new_key(), name: "Mm Artist", content_type: "list", type: "MmArtist" },
+        { key: stores.new_key(), name: "Mm Album", content_type: "list", type: "MmAlbum" },
+        { key: stores.new_key(), name: "Yt Song", content_type: "list", type: "YtSong" },
+        { key: stores.new_key(), name: "Yt Video", content_type: "list", type: "YtVideo" },
+        { key: stores.new_key(), name: "Yt Album", content_type: "list", type: "YtAlbum" },
+        { key: stores.new_key(), name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
+        { key: stores.new_key(), name: "Yt Artist", content_type: "list", type: "YtArtist" },
+        { key: stores.new_key(), name: "St Song", content_type: "list", type: "StSong" },
+        { key: stores.new_key(), name: "St Video", content_type: "list", type: "StVideo" },
+        { key: stores.new_key(), name: "St Album", content_type: "list", type: "StAlbum" },
+        { key: stores.new_key(), name: "St Playlist", content_type: "list", type: "StPlaylist" },
+        { key: stores.new_key(), name: "St Artist", content_type: "list", type: "StArtist" },
+        { key: stores.new_key(), name: "Song", content_type: "list", type: "Song" },
+        { key: stores.new_key(), name: "Playlist", content_type: "list", type: "Playlist" },
+        { key: stores.new_key(), name: "Queue", content_type: "list", type: "Queue" },
+        { key: stores.new_key(), name: "Updater", content_type: "list", type: "Updater" },
+        { key: stores.new_key(), name: "Mbz Recording", content_type: "list", type: "MbzRecordingWithInfo" },
+        { key: stores.new_key(), name: "Mbz Release", content_type: "list", type: "MbzReleaseWithInfo" },
+        { key: stores.new_key(), name: "Mbz ReleaseGroup", content_type: "list", type: "MbzReleaseGroupWithInfo" },
+        { key: stores.new_key(), name: "Mbz Artist", content_type: "list", type: "MbzArtist" },
+        { key: stores.new_key(), name: "Lbz Radio", content_type: "list", type: "MbzRadioSong" },
+        { key: stores.new_key(), name: "Covau Group", content_type: "list", type: "covau-group" },
+        { key: stores.new_key(), name: "Related", content_type: "related-music", source: "Yt" },
+        { key: stores.new_key(), name: "Radio", content_type: "related-music", source: "Mbz" },
+    ]);
+    stores.selected_menubar_option_index.set(0);
 
     let item_height: number = 75;
     let item_min_width = 290;
