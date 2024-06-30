@@ -1,10 +1,10 @@
 import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
-import { exhausted } from "$lib/virtual";
+import { exhausted, type Keyed } from "$lib/virtual";
 import * as covau from "$types/covau.ts";
 import type { DbItem } from "$types/db";
 
-export abstract class ListItem {
+export abstract class ListItem implements Keyed {
     custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
 
     options(ctx: RenderContext) {

@@ -5,7 +5,6 @@ import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
 import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
-import { Musiplayer } from "$lib/local/player.ts";
 import { toast } from "./toast/toast";
 import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
 import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
@@ -18,11 +17,6 @@ export type Tab = {
     query: Writable<string>;
     key: number;
 };
-
-let tab_key = 0;
-export function new_tab_key() {
-    return tab_key++;
-}
 
 export type MenubarOption = { name: string } & (
     | { content_type: "list"; type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
@@ -86,6 +80,11 @@ export let selected_menubar_option: Readable<MenubarOption> = derived(
 
 export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
+
+let tab_key = 0;
+export const new_tab_key = () => {
+    return tab_key++;
+}
 export const push_tab = (
     s: Searcher,
     title: string,
