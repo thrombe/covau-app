@@ -11,6 +11,7 @@ import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
+import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -854,12 +855,17 @@ export class Db extends Unpaged<MusicListItem> {
         this.page_size = page_size;
     }
 
-    static new(query: BrowseQuery, page_size: number) {
+    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null) {
         const CW = ClassTypeWrapper(Db);
         const US = UniqueSearch<DbListItem, typeof CW>(CW);
         const SS = SavedSearch<DbListItem, typeof US>(US);
         const AW = AsyncWrapper<DbListItem, typeof SS>(SS);
-        return new AW(query, page_size);
+        if (wrapper) {
+            const WR = wrapper(AW) as typeof AW;
+            return new WR(query, page_size);
+        } else {
+            return new AW(query, page_size);
+        }
     }
 
     static unwrapped(query: BrowseQuery, page_size: number) {
@@ -892,6 +898,10 @@ export class Db extends Unpaged<MusicListItem> {
             this.has_next_page = false;
         }
         return matches.items as MusicListItem[];
+    }
+
+    options() {
+        return [] as Option[];
     }
 
     cont: DB.SearchContinuation | null = null;

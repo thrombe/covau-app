@@ -10,6 +10,7 @@ import * as covau from "$types/covau.ts";
 import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { db } from "$lib/local/db.ts";
+import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -435,12 +436,17 @@ export class SongTube extends Unpaged<MusicListItem> {
         this.query = query;
     }
 
-    static new(query: BrowseQuery) {
+    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, wrapper: W | null = null) {
         const CW = ClassTypeWrapper(SongTube)
         const US = UniqueSearch<StListItem, typeof CW>(CW);
         const SS = SavedSearch<StListItem, typeof US>(US);
         const AW = AsyncWrapper<StListItem, typeof SS>(SS);
-        return new AW(query);
+        if (wrapper) {
+            const WR = wrapper(AW) as typeof AW;
+            return new WR(query);
+        } else {
+            return new AW(query);
+        }
     }
 
     static unwrapped(query: BrowseQuery) {

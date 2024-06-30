@@ -1,4 +1,5 @@
-import type { ListItem } from "./item";
+import type { ListItem, Option } from "./item.ts";
+import type { Constructor } from "./mixins.ts";
 
 export interface Searcher {
     next_page(): Promise<ListItem[]>;
@@ -8,6 +9,8 @@ export let fused_searcher = {
     async next_page() { return [] },
     has_next_page: false,
 };
+
+export type SearcherConstructorMapper = (s: Constructor<Searcher>) => Constructor<Searcher>;
 
 export function StaticSearcher(items: ListItem[]) {
     return {

@@ -163,34 +163,35 @@ export class MbzListItem extends ListItem {
         let self = this;
         return {
             async search_and_get(query: string, switch_tab: boolean = false)  {
-                let new_searcher = (q: string) => MapWrapper(st.SongTube.new({
+                let wrapper = MapWrapper(async (item) => {
+                    if (item.custom_options.length > 0) {
+                        return item;
+                    }
+                    let stitem = item as st.StListItem;
+                    item.custom_options.push((ctx, old) => {
+                        if (ctx == "Playbar") {
+                            return old;
+                        }
+                        old.push({
+                            tooltip: "Set as play source",
+                            icon: "/static/floppy-disk.svg",
+                            location: "OnlyMenu",
+                            onclick: () => {
+                                self.yt_song = stitem.data.content as types.yt.Song;
+                                toast("song set as play source for Mbz item");
+                            },
+                        });
+                        return old;
+                    });
+                    return item;
+                });
+                let new_searcher = (q: string) => st.SongTube.new({
                     type: "Search",
                     content: {
                         search: "YtSong",
                         query: q,
                     },
-                }), async (item) => {
-                        if (item.custom_options.length > 0) {
-                            return item;
-                        }
-                        let stitem = item as st.StListItem;
-                        item.custom_options.push((ctx, old) => {
-                            if (ctx == "Playbar") {
-                                return old;
-                            }
-                            old.push({
-                                tooltip: "Set as play source",
-                                icon: "/static/floppy-disk.svg",
-                                location: "OnlyMenu",
-                                onclick: () => {
-                                    self.yt_song = stitem.data.content as types.yt.Song;
-                                    toast("song set as play source for Mbz item");
-                                },
-                            });
-                            return old;
-                        });
-                        return item;
-                    });
+                }, wrapper);
 
                 let searcher = new_searcher(query);
                 stores.push_tab(searcher, query, null, query, new_searcher);
