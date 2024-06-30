@@ -120,13 +120,15 @@ export const push_tab = (
 export const pop_tab = (index: number | null = null) => {
     let i = index ?? get(tabs).length - 1;
 
-    let curr_key = get(curr_tab).key;
+    let curr = get(curr_tab_index);
     let tabbs = get(tabs);
     tabbs.splice(i, 1);
 
-    let new_curr = tabbs.findIndex(t => t.key === curr_key);
-    if (new_curr === -1) {
-        new_curr = 0;
+    let new_curr: number;
+    if (curr >= i) {
+        new_curr = curr - 1;
+    } else {
+        new_curr = curr;
     }
 
     tabs.set(tabbs);
