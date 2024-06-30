@@ -56,7 +56,7 @@ export class MbzListItem extends ListItem {
         this.data = data;
     }
 
-    key(): unknown {
+    get_key(): unknown {
         return this.data.get_key();
     }
     song_ids(): string[] {

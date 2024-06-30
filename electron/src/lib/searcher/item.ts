@@ -15,7 +15,7 @@ export abstract class ListItem {
         return ops;
     }
 
-    abstract key(): unknown; // literally anything unique
+    abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
     abstract title(): string;
     abstract thumbnail(): string | null;
@@ -43,7 +43,7 @@ export class CustomListItem extends ListItem {
         this._title = title;
     }
 
-    key() {
+    get_key() {
         return this._key;
     }
 

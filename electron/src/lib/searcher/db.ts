@@ -48,7 +48,7 @@ export class DbListItem extends ListItem {
         this.data = data;
     }
 
-    key(): unknown {
+    get_key(): unknown {
         return this.data.get_key();
     }
 

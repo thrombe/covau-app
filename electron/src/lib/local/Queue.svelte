@@ -58,7 +58,7 @@
     };
     const next_page = async (q: Readable<QueueManager>) => {
         let r = await get(q).next_page();
-        items = r.map((e) => ({ id: e.key(), data: e })) as typeof items;
+        items = r.map((e) => ({ id: e.get_key(), data: e })) as typeof items;
     };
     export const search_objects = async (q: Readable<QueueManager> = queue) => {
         await next_page(q);

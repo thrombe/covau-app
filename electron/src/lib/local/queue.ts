@@ -41,7 +41,7 @@ export class QueueManager implements Searcher {
     }
     async play_queue_item(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
-            if (this.items[i].key() == item.key()) {
+            if (this.items[i].get_key() == item.get_key()) {
                 this.playing_index = i;
                 await this.play(i);
                 return;
@@ -52,7 +52,7 @@ export class QueueManager implements Searcher {
     }
     async remove_queue_item(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
-            if (this.items[i].key() == item.key()) {
+            if (this.items[i].get_key() == item.get_key()) {
                 await this.remove(i);
                 return;
             }
@@ -62,7 +62,7 @@ export class QueueManager implements Searcher {
     }
     async add(...items: ListItem[]) {
         for (let item of items) {
-            if (this.items.find((a) => a.key() == item.key())) {
+            if (this.items.find((a) => a.get_key() == item.get_key())) {
                 toast(`item "${item.title()}" already in queue`, "error");
             } else {
                 this.items.push(item);

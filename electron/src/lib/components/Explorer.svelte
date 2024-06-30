@@ -45,7 +45,7 @@
     const next_page = async (s: Readable<Searcher>) => {
         let r = await get(s).next_page();
         items = r.map((e) => {
-            return { id: e.key(), data: e } as Unique<ListItem, number>;
+            return { id: e.get_key(), data: e } as Unique<ListItem, number>;
         });
     };
     export const search_objects = async (s: Readable<Searcher>) => {
