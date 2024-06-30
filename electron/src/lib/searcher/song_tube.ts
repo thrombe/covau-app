@@ -9,8 +9,7 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
-import { db } from "$lib/local/db.ts";
-import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
+import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 
 export { YT, YTNodes, YTMusic };

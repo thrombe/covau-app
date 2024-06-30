@@ -11,7 +11,7 @@ import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
-import type { Searcher, SearcherConstructorMapper } from "./searcher.ts";
+import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;

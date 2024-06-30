@@ -1,5 +1,5 @@
 import { type Keyed } from "$lib/virtual.ts";
-import type { ListItem } from "./item";
+import type { ListItem, Option } from "./item";
 import type { Searcher } from "./searcher";
 
 export type Constructor<T> = new (...args: any[]) => T;
@@ -73,6 +73,17 @@ export function MapWrapper<S extends Constructor<Searcher>>(mapper: (item: ListI
             return items;
         }
     } as IMapWrapper & S;
+}
+
+export interface IOptionsWrapper { };
+export function OptionsWrapper<S extends Constructor<Searcher>>(fn: (old: Option[], s: Searcher) => Option[]) {
+    return (s: S) => class extends s implements IOptionsWrapper {
+        options() {
+            let old = super.options();
+            let new_ops = fn(old, this);
+            return new_ops;
+        }
+    } as IOptionsWrapper & S;
 }
 
 export interface ISaved<T> {
