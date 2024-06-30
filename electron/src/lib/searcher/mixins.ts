@@ -119,10 +119,10 @@ export function SavedSearch<T, S extends Constructor<{
 
 
 export interface IUnique<T> {
-    next_page(): Promise<(T & Keyed)[]>;
+    next_page(): Promise<T[]>;
 }
-export function UniqueSearch<T, S extends Constructor<{
-    next_page(): Promise<(T & Keyed)[]>;
+export function UniqueSearch<T extends Keyed, S extends Constructor<{
+    next_page(): Promise<T[]>;
 }>>(s: S) {
     return class extends s implements IUnique<T> {
         uniq: Set<T>;

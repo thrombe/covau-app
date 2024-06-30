@@ -1,4 +1,4 @@
-import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged } from "./mixins.ts";
+import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
@@ -691,56 +691,37 @@ export class MbzListItem extends ListItem {
     }
 }
 
-interface IClassTypeWrapper<D> {
+interface IClassTypeWrapper {
     next_page(): Promise<MbzListItem[]>;
-    inner: D;
-    has_next_page: boolean;
 };
-function ClassTypeWrapper<D extends {
-    query: BrowseQuery;
+function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<MusicListItem[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-
+}>>(s: S) {
+    return class extends s implements IClassTypeWrapper {
+        // @ts-ignore
         async next_page(): Promise<MbzListItem[]> {
-            let res = await d.next_page();
-
-            let self = this as unknown as IClassTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
+            let res = await super.next_page();
             return res.map(m => new MbzListItem(m));
         }
-    } as unknown as IClassTypeWrapper<D>;
+    } as Constructor<IClassTypeWrapper> & S;
 }
 
-interface IUnionTypeWrapper<D> {
-    query: BrowseQuery;
+interface IUnionTypeWrapper {
     next_page(): Promise<MusicListItem[]>;
-    inner: D;
-    has_next_page: boolean;
 };
-function UnionTypeWrapper<D extends {
+function UnionTypeWrapper<T extends Keyed, S extends Constructor<{
     query: BrowseQuery;
-    next_page(): Promise<Keyed[]>;
-    has_next_page: boolean;
-}>(d: D) {
-    return {
-        inner: d,
-        has_next_page: d.has_next_page,
-
+    next_page(): Promise<T[]>;
+}>>(s: S) {
+    return class extends s implements IUnionTypeWrapper {
+        // @ts-ignore
         async next_page(): Promise<MusicListItem[]> {
-            let res = await d.next_page();
+            let res = await super.next_page();
 
-            let self = this as unknown as IUnionTypeWrapper<D>;
-            self.has_next_page = d.has_next_page;
-
-            let type = d.query.query_type;
+            let type = this.query.query_type;
             switch (type) {
                 case "search": {
-                    let typ = d.query.type;
+                    let typ = this.query.type;
                     return res.map(data => ({
                         typ: typ,
                         data: data,
@@ -748,7 +729,7 @@ function UnionTypeWrapper<D extends {
                     })) as unknown as MusicListItem[];
                 } break;
                 case "linked": {
-                    let typ = d.query.type;
+                    let typ = this.query.type;
                     return res.map(data => ({
                         typ: typ.substring(0, typ.indexOf("_")),
                         data: data,
@@ -758,8 +739,8 @@ function UnionTypeWrapper<D extends {
                 default:
                     throw exhausted(type)
             }
-        },
-    } as unknown as IUnionTypeWrapper<D>;
+        }
+    } as Constructor<IUnionTypeWrapper> & S;
 }
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
@@ -851,16 +832,17 @@ export class Mbz<T> extends Unpaged<T> {
         this.page_size = page_size;
     }
 
-    static new<T>(query: BrowseQuery, page_size: number) {
-        let w0 = Mbz.unwrapped<T>(query, page_size);
-        let w1 = UnionTypeWrapper(w0);
-        let w2 = ClassTypeWrapper(w1);
-        let w3 = AsyncWrapper<MbzListItem, typeof w2>(w2);
-        return w3
+    static new(query: BrowseQuery, page_size: number) {
+        const UW = UnionTypeWrapper(Mbz);
+        const CW = ClassTypeWrapper(UW);
+        const US = UniqueSearch<MbzListItem, typeof Mbz<MbzListItem>>(CW);
+        const SS = SavedSearch<MbzListItem, typeof US>(US);
+        const AW = AsyncWrapper<MbzListItem, typeof SS>(SS);
+        return new AW(query, page_size);
     }
 
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
-        const US = UniqueSearch<T, typeof Mbz<T>>(Mbz);
+        const US = UniqueSearch<T & Keyed, typeof Mbz<T>>(Mbz);
         const SS = SavedSearch<T, typeof US>(US);
         return new SS(query, page_size);
     }
