@@ -361,6 +361,8 @@ export async function autoplay_try_all(item: ListItem) {
 type AutoplayState = {
     state: 'Uninit';
 } | {
+    state: 'Disabled';
+} | {
     state: 'Init';
     searcher: Searcher;
     seed_item: ListItem;
@@ -372,12 +374,34 @@ type AutoplayState = {
 };
 
 export class AutoplayQueueManager extends QueueManager {
-    autoplay_state: AutoplayState = { state: "Uninit" };
+    autoplay_state: AutoplayState = { state: "Disabled" };
     autoplayed_ids: Set<string> = new Set();
+
+    autoplay_toggle() {
+        if (this.autoplay_state.state === "Disabled") {
+            this.autoplay_state = { state: "Uninit" };
+        } else {
+            this.autoplay_state = { state: "Disabled" };
+        }
+    }
+
+    autoplay_disable() {
+        this.autoplay_state = { state: "Disabled" };
+    }
+
+    autoplay_enable() {
+        if (this.autoplay_state.state === "Disabled") {
+            this.autoplay_state = { state: "Uninit" };
+        }
+    }
+
+    autoplay_is_enabled() {
+        return this.autoplay_state.state !== "Disabled";
+    }
 
     reset() {
         super.reset();
-        this.autoplay_state = { state: "Uninit" };
+        this.autoplay_state = { state: "Disabled" };
     }
 
     async init_with_seed(item: ListItem) {
@@ -464,6 +488,10 @@ export class AutoplayQueueManager extends QueueManager {
         await super.play_item(item);
 
         if (this.autoplay_state.state === "Init") {
+            return;
+        }
+
+        if (this.autoplay_state.state === "Disabled") {
             return;
         }
 
