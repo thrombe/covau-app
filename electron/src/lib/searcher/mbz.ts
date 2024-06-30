@@ -162,7 +162,7 @@ export class MbzListItem extends ListItem {
     protected ops() {
         let self = this;
         return {
-            async search_and_get(query: string, switch_tab: boolean = false)  {
+            async search_and_get(query: string, switch_tab: boolean = false) {
                 let wrapper = MapWrapper(async (item) => {
                     if (item.custom_options.length > 0) {
                         return item;
@@ -677,7 +677,7 @@ export class MbzListItem extends ListItem {
                 };
                 let s: AlmostDbItem<types.covau.Song> = { typ: "Song", t };
 
-                let res =  await db.insert_or_get(s);
+                let res = await db.insert_or_get(s);
                 return res.content;
             } break;
             case "MbzReleaseWithInfo":

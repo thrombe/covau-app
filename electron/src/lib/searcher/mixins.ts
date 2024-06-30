@@ -41,7 +41,7 @@ export function SlowSearch<T, Q, S extends Constructor<{
             }
             return null;
         }
-    } as S & Constructor<ISlow<T,Q>>
+    } as S & Constructor<ISlow<T, Q>>
 }
 
 
@@ -64,7 +64,7 @@ export function AsyncWrapper<T, S extends Constructor<{
     } as S & Constructor<IAsyncWrapper<T>>;
 }
 
-export interface IMapWrapper {};
+export interface IMapWrapper { };
 export function MapWrapper<S extends Constructor<Searcher>>(mapper: (item: ListItem) => Promise<ListItem>) {
     return (s: S) => class extends s implements IMapWrapper {
         async next_page(): Promise<ListItem[]> {

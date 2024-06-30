@@ -375,11 +375,11 @@ export class DbListItem extends ListItem {
                     info_sources: [id],
                 };
 
-                let s1: AlmostDbItem<yt.Song> = {typ: "StSong", t: vid };
+                let s1: AlmostDbItem<yt.Song> = { typ: "StSong", t: vid };
                 let s2: AlmostDbItem<covau.Song> = { typ: "Song", t };
 
                 await db.insert_or_get(s1);
-                let res =  await db.insert_or_get(s2);
+                let res = await db.insert_or_get(s2);
                 return res.content;
             } break;
             case "StSong": {
@@ -395,7 +395,7 @@ export class DbListItem extends ListItem {
                 };
                 let s: AlmostDbItem<covau.Song> = { typ: "Song", t };
 
-                let res =  await db.insert_or_get(s);
+                let res = await db.insert_or_get(s);
                 return res.content;
             } break;
             case "MmAlbum":
