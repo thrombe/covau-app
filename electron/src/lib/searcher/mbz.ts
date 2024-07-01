@@ -463,7 +463,7 @@ export class MbzListItem extends ListItem {
                                 onclick: async () => {
                                     let releases = await mbz.recordings_from_releases(a.releases);
                                     let s = StaticSearcher(releases);
-                                    stores.new_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Recordings for " + a.title);
                                 },
                             },
                             {
@@ -498,12 +498,10 @@ export class MbzListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "explore recordings",
                                 onclick: async () => {
-                                    let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
-                                    this.data.data = rel;
-                                    this.data.typ = "MbzReleaseGroupWithInfo";
+                                    let rel = await ops.upgrade_to_recording_with_info(a);
                                     let releases = await mbz.recordings_from_releases(rel.releases);
                                     let s = StaticSearcher(releases);
-                                    stores.new_tab(s, "Releases for " + a.title);
+                                    stores.new_tab(s, "Recordings for " + a.title);
                                 },
                             },
                             {
@@ -511,9 +509,7 @@ export class MbzListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
-                                    let rel: ReleaseGroupWithInfo & Keyed = await mbz.id_fetch(a.id, "MbzReleaseGroupWithInfo");
-                                    this.data.data = rel;
-                                    this.data.typ = "MbzReleaseGroupWithInfo";
+                                    let rel = await ops.upgrade_to_recording_with_info(a);
                                     let releases = await mbz.recordings_from_releases(rel.releases);
                                     await stores.queue_ops.add_item(...releases);
                                 },
