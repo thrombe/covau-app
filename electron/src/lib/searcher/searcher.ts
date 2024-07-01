@@ -14,12 +14,13 @@ export let fused_searcher = {
 
 export type SearcherConstructorMapper = (s: Constructor<Searcher>) => Constructor<Searcher>;
 
-export function StaticSearcher(items: ListItem[]) {
+export function StaticSearcher(items: ListItem[]): Searcher {
     return {
         async next_page() {
             return items;
         },
+        options: () => [],
         has_next_page: false,
-    } as Searcher;
+    };
 }
 
