@@ -9,7 +9,7 @@ import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
 import { prompt } from "$lib/prompt/prompt.ts";
-import { StaticSearcher } from "./searcher.ts";
+import { StaticSearcher, type Searcher } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import * as types from "$types/types.ts";
 import * as icons from "$lib/icons.ts";
@@ -162,37 +162,60 @@ export class MbzListItem extends ListItem {
     }
     protected ops() {
         let self = this;
-        return {
-            async search_and_get(query: string, switch_tab: boolean = false) {
-                let wrapper = MapWrapper(async (item) => {
-                    if (item.custom_options.length > 0) {
-                        return item;
-                    }
-                    let stitem = item as st.StListItem;
-                    item.custom_options.push((ctx, old) => {
-                        if (ctx == "Playbar") {
-                            return old;
-                        }
-                        old.push({
-                            title: "Set as play source",
-                            icon: icons.floppy_disk,
-                            location: "OnlyMenu",
-                            onclick: () => {
-                                self.yt_song = stitem.data.content as types.yt.Song;
-                                toast("song set as play source for Mbz item");
-                            },
-                        });
-                        return old;
-                    });
-                    return item;
-                });
-                let new_searcher = (q: string) => st.SongTube.new({
-                    type: "Search",
-                    content: {
-                        search: "YtSong",
-                        query: q,
+        let wrapper = MapWrapper(async (item) => {
+            if (item.custom_options.length > 0) {
+                return item;
+            }
+            let stitem = item as st.StListItem;
+            item.custom_options.push((ctx, old) => {
+                if (ctx == "Playbar") {
+                    return old;
+                }
+                old.push({
+                    title: "Set as play source",
+                    icon: icons.floppy_disk,
+                    location: "OnlyMenu",
+                    onclick: () => {
+                        self.yt_song = stitem.data.content as types.yt.Song;
+                        toast("song set as play source for Mbz item");
                     },
-                }, wrapper);
+                });
+                return old;
+            });
+            return item;
+        });
+        let new_video_searcher = (q: string) => st.SongTube.new({
+            type: "VideoSearch",
+            content: {
+                query: q,
+            },
+        }, wrapper);
+        let new_song_searcher = (q: string) => st.SongTube.new({
+            type: "Search",
+            content: {
+                search: "YtSong",
+                query: q,
+            },
+        }, wrapper);
+
+
+        return {
+            new_song_searcher,
+            new_video_searcher,
+
+            async search_and_get(query: string, type: "song" | "video", switch_tab: boolean = false) {
+
+                let new_searcher: (q: string) => Searcher;
+                switch (type) {
+                    case "song": {
+                        new_searcher = this.new_song_searcher;
+                    } break;
+                    case "video": {
+                        new_searcher = this.new_video_searcher
+                    } break;
+                    default:
+                        throw exhausted(type);
+                }
 
                 let searcher = new_searcher(query);
                 stores.new_tab(searcher, query, null, query, new_searcher);
@@ -231,7 +254,7 @@ export class MbzListItem extends ListItem {
 
                 return query;
             },
-            async play_recording(recording: RecordingWithInfo) {
+            async play_recording(recording: RecordingWithInfo, type: "song" | "video") {
                 if (self.yt_song) {
                     return st.st.get_wrapped([self.yt_song], "Song")[0].audio_uri();
                 }
@@ -242,7 +265,7 @@ export class MbzListItem extends ListItem {
                     return null;
                 }
 
-                let song = await this.search_and_get(query);
+                let song = await this.search_and_get(query, type);
 
                 return song?.audio_uri() ?? null;
             },
@@ -281,10 +304,19 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: icons.floppy_disk,
                                 location: "OnlyMenu",
-                                title: "Set play source",
+                                title: "search YtSong play source",
                                 onclick: async () => {
                                     let query = song.title + " by " + song.creator;
-                                    await ops.search_and_get(query, true);
+                                    await ops.search_and_get(query, "song", true);
+                                },
+                            },
+                            {
+                                icon: icons.floppy_disk,
+                                location: "OnlyMenu",
+                                title: "search YtVideo play source",
+                                onclick: async () => {
+                                    let query = song.title + " by " + song.creator;
+                                    await ops.search_and_get(query, "video", true);
                                 },
                             },
                         ];
@@ -311,12 +343,24 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: icons.floppy_disk,
                                 location: "OnlyMenu",
-                                title: "Set play source",
+                                title: "search YtSong play source",
                                 onclick: async () => {
                                     let rec = await ops.upgrade_to_recording_with_info(r);
                                     let query = await ops.get_query(rec)
                                     if (query) {
-                                        await ops.search_and_get(query, true);
+                                        await ops.search_and_get(query, "song", true);
+                                    }
+                                },
+                            },
+                            {
+                                icon: icons.floppy_disk,
+                                location: "OnlyMenu",
+                                title: "search YtVideo play source",
+                                onclick: async () => {
+                                    let rec = await ops.upgrade_to_recording_with_info(r);
+                                    let query = await ops.get_query(rec)
+                                    if (query) {
+                                        await ops.search_and_get(query, "video", true);
                                     }
                                 },
                             },
@@ -344,11 +388,22 @@ export class MbzListItem extends ListItem {
                             {
                                 icon: icons.floppy_disk,
                                 location: "OnlyMenu",
-                                title: "Set play source",
+                                title: "search YtSong play source",
                                 onclick: async () => {
                                     let query = await ops.get_query(rec)
                                     if (query) {
-                                        await ops.search_and_get(query, true);
+                                        await ops.search_and_get(query, "song", true);
+                                    }
+                                },
+                            },
+                            {
+                                icon: icons.floppy_disk,
+                                location: "OnlyMenu",
+                                title: "search YtVideo play source",
+                                onclick: async () => {
+                                    let query = await ops.get_query(rec)
+                                    if (query) {
+                                        await ops.search_and_get(query, "video", true);
                                     }
                                 },
                             },
@@ -564,14 +619,14 @@ export class MbzListItem extends ListItem {
         switch (this.data.typ) {
             case "MbzRecording": {
                 let recording = await ops.upgrade_to_recording_with_info(this.data.data);
-                return await ops.play_recording(recording);
+                return await ops.play_recording(recording, "song");
             } break;
             case "MbzRecordingWithInfo": {
-                return await ops.play_recording(this.data.data);
+                return await ops.play_recording(this.data.data, "song");
             } break;
             case "MbzRadioSong": {
                 let query = this.data.data.title + " by " + this.data.data.creator;
-                let song = await ops.search_and_get(query);
+                let song = await ops.search_and_get(query, "song");
                 return song?.audio_uri() ?? null;
             } break;
             case "MbzReleaseWithInfo":
@@ -606,6 +661,7 @@ export class MbzListItem extends ListItem {
                     throw exhausted(typ);
             }
         };
+        let ops = this.ops();
 
         switch (this.data.typ) {
             case "MbzRecordingWithInfo": {
@@ -613,9 +669,7 @@ export class MbzListItem extends ListItem {
                 return recording_autoplay(s) as AutoplayQueryInfo;
             } break;
             case "MbzRecording": {
-                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
-                this.data.data = recording;
-                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+                let recording = await ops.upgrade_to_recording_with_info(this.data.data);
                 return recording_autoplay(recording) as AutoplayQueryInfo;
             } break;
             case "MbzRadioSong": {
@@ -646,14 +700,13 @@ export class MbzListItem extends ListItem {
     }
 
     async saved_covau_song(db: DbOps) {
+        let ops = this.ops();
         switch (this.data.typ) {
             case "MbzRadioSong": {
                 return null;
             } break;
             case "MbzRecording": {
-                let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(this.data.data.id, "MbzRecordingWithInfo");
-                this.data.data = recording;
-                this.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+                let _ = await ops.upgrade_to_recording_with_info(this.data.data);
             }; // no break
             case "MbzRecordingWithInfo": {
                 let rec = this.data.data as RecordingWithInfo;
