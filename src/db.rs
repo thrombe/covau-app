@@ -953,6 +953,13 @@ pub mod db {
                 .collect();
             Ok(e)
         }
+
+        pub fn now_time(&self) -> anyhow::Result<u64> {
+            let secs = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_secs();
+            Ok(secs)
+        }
     }
 
     struct Node<T> {
