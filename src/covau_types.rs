@@ -150,17 +150,24 @@ mod serde_with_string {
 
 pub struct UpdateManager {
     st_fac: yt::SongTubeFac,
+    fe: FrontendClient<FeRequest>,
     db: crate::db::Db,
 }
 impl UpdateManager {
-    pub fn new(st_fac: yt::SongTubeFac, db: crate::db::Db) -> Self {
-        Self { st_fac, db }
+    pub fn new(st_fac: yt::SongTubeFac, fe: FrontendClient<FeRequest>, db: crate::db::Db) -> Self {
+        Self { st_fac, db, fe }
     }
 
-    async fn send_error_message(&self, message: String) -> anyhow::Result<()> {
-        self.st_fac
-            .0
-            .send(crate::server::MessageResult::Err(message))
+    async fn notify_error(&self, message: String) -> anyhow::Result<()> {
+        self.fe
+            .send(MessageResult::Ok(FeRequest::NotifyError(message)))
+            .await?;
+        Ok(())
+    }
+
+    async fn notify(&self, message: String) -> anyhow::Result<()> {
+        self.fe
+            .send(MessageResult::Ok(FeRequest::Notify(message)))
             .await?;
         Ok(())
     }
@@ -279,7 +286,7 @@ impl UpdateManager {
                                 new_albums.push(a);
                             }
                             Err(e) => {
-                                self.send_error_message(format!("{}", e)).await?;
+                                self.notify_error(format!("{}", e)).await?;
                             }
                         }
                     }
@@ -308,14 +315,16 @@ impl UpdateManager {
                         match old {
                             Some(_) => {
                                 // this Song item has very less info anyway. don't update old info
-                            },
-                            None => {
-                                match song.insert(&txn).await {
-                                    Ok(_) => (),
-                                    Err(e) => {
-                                        txn.rollback().await?;
-                                        return Err(e);
-                                    },
+                            }
+                            None => match song.insert(&txn).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    txn.rollback().await?;
+                                    eprintln!(
+                                        "failed to insert song in updater {}",
+                                        &song.title.as_deref().unwrap_or("")
+                                    );
+                                    return Err(e);
                                 }
                             },
                         }
@@ -331,8 +340,8 @@ impl UpdateManager {
                 txn.commit().await?;
             }
         }
-
-        self.send_error_message(format!("updated updater: {}", &updater.t.title)).await?;
+        self.notify(format!("updated updater: {}", &updater.t.title))
+            .await?;
 
         Ok(())
     }

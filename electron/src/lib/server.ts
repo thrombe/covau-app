@@ -1,4 +1,4 @@
-import type { ErrorMessage, Message } from '$types/server.ts';
+import type { ErrorMessage, Message, FeRequest } from '$types/server.ts';
 import { toast } from './toast/toast.ts';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
@@ -50,14 +50,14 @@ export const utils = {
     },
 };
 
-class Server {
+abstract class Server<Req> {
     ws: WebSocket;
 
-    constructor() {
-        this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/serve`);
+    constructor(path: string) {
+        this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
 
         this.ws.addEventListener('message', async (e) => {
-            let mesg: Message<yt.YtiRequest> = JSON.parse(e.data);
+            let mesg: Message<Req> = JSON.parse(e.data);
             console.log(mesg)
 
             if (mesg.type === "Err") {
@@ -93,6 +93,14 @@ class Server {
         });
     }
 
+    abstract handle_req(req: Req): Promise<Object | null | undefined>;
+}
+
+class YtiServer extends Server<yt.YtiRequest> {
+    constructor() {
+        super("serve/yti")
+    }
+
     tubes: Map<string, St.SongTube> = new Map();
     // don't return anything if no response
     // return null for () unit type
@@ -124,9 +132,42 @@ class Server {
     }
 }
 
-export let server: Server | null = null;
+class FeServer extends Server<FeRequest> {
+    constructor() {
+        super("serve/fec")
+    }
+
+    // don't return anything if no response
+    // return null for () unit type
+    // else some { object: () }
+    async handle_req(req: FeRequest): Promise<Object | null | undefined> {
+        switch (req.type) {
+            case 'Notify': {
+                toast(req.content, "info");
+            } break;
+            case 'NotifyError': {
+                toast(req.content, "error");
+            } break;
+            case 'Like':
+            case 'Dislike':
+            case 'Next':
+            case 'Prev':
+            case 'Pause':
+            case 'Play':
+            case 'ToggleMute':
+            case 'TogglePlay':
+            default:
+                throw exhausted(req);
+        }
+        return {};
+    }
+}
+
+export let ytiserver: YtiServer | null = null;
+export let feserver: FeServer | null = null;
 export const serve = async () => {
-    server = new Server();
+    ytiserver = new YtiServer();
+    feserver = new FeServer();
 
     // let tube = get(stores.tube);
     // let res = await tube.music.search("Aimer", { type: 'video' });

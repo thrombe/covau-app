@@ -14,6 +14,7 @@ use warp::ws::WebSocket;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
+use crate::covau_types;
 use crate::db::{Db, DbAble};
 use crate::mbz::{self, IdSearch, PagedSearch};
 use crate::musiplayer::Player;
@@ -338,7 +339,8 @@ fn client_ws_route<R: Send + Sync + Serialize + 'static>(
     fe: FrontendClient<R>,
     path: &'static str,
 ) -> BoxedFilter<(impl Reply,)> {
-    let ws_route = warp::path(path)
+    let ws_route = warp::path("serve")
+        .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || fe.clone()))
@@ -902,7 +904,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
         db.init_tables().await.expect("could not init database");
     }
 
-    let fe = FrontendClient::<YtiRequest>::new();
+    let yti = FrontendClient::<YtiRequest>::new();
+    let fe = FrontendClient::<FeRequest>::new();
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -1150,7 +1153,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     );
 
     // TODO: expose db transactions somehow T_T
-    let all = client_ws_route(fe.clone(), "serve")
+    let all = client_ws_route(yti.clone(), "yti")
+        .or(client_ws_route(fe.clone(), "fec"))
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes.boxed())
@@ -1184,10 +1188,11 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     });
 
     let j = tokio::task::spawn(async move {
-        let fe = fe;
+        let yti = yti;
         let db = db;
+        let fec = fe;
 
-        updater_system(fe, db).await;
+        updater_system(yti, fec, db).await;
     });
 
     println!("Starting server at {}:{}", ip_addr, port);
@@ -1196,14 +1201,33 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     j.abort();
 }
 
-async fn _updater_system(fe: FrontendClient<YtiRequest>, db: Db) -> anyhow::Result<()> {
-    let manager = crate::covau_types::UpdateManager::new(crate::yt::SongTubeFac::new(fe), db);
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+#[serde(tag = "type", content = "content")]
+pub enum FeRequest {
+    Like,
+    Dislike,
+    Next,
+    Prev,
+    Pause,
+    Play,
+    ToggleMute,
+    TogglePlay,
+    Notify(String),
+    NotifyError(String),
+}
+
+async fn _updater_system(
+    yti: FrontendClient<YtiRequest>,
+    fec: FrontendClient<FeRequest>,
+    db: Db,
+) -> anyhow::Result<()> {
+    let manager = covau_types::UpdateManager::new(crate::yt::SongTubeFac::new(yti), fec, db);
     // manager.start().await?;
     Ok(())
 }
 
-async fn updater_system(fe: FrontendClient<YtiRequest>, db: Db) {
-    match _updater_system(fe, db).await {
+async fn updater_system(yti: FrontendClient<YtiRequest>, fec: FrontendClient<FeRequest>, db: Db) {
+    match _updater_system(yti, fec, db).await {
         Ok(()) => (),
         Err(e) => {
             eprintln!("updater error: {}", e);
@@ -1218,6 +1242,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<Message<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<MessageResult<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<FeRequest>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
