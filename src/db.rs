@@ -59,9 +59,73 @@ pub struct SearchMatches<T> {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub struct DbItem<T> {
+    pub metadata: DbMetadata,
     pub id: i32,
     pub typ: Typ,
     pub t: T,
+}
+
+// these fields don't always mean something. but i can't bother with metadata specific to specific items
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+#[cfg_attr(
+    feature = "wasmdeps",
+    derive(tsify_next::Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
+)]
+pub struct DbMetadata {
+    pub done: bool,
+    pub likes: u32,
+    pub dislikes: u32,
+    pub interactions: u32,
+    pub update_counter: u32, // increment when updated to prevent overwrites
+    #[serde(with = "serde_with_string")]
+    pub added_ts: u64,
+    #[serde(with = "serde_with_string")]
+    pub updated_ts: u64,
+}
+// https://github.com/serde-rs/json/issues/329#issuecomment-305608405
+mod serde_with_string {
+    use std::fmt::Display;
+    use std::str::FromStr;
+
+    use serde::{de, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Display,
+        S: Serializer,
+    {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer)?
+            .parse()
+            .map_err(de::Error::custom)
+    }
+}
+impl DbMetadata {
+    pub fn new() -> Self {
+        let ts = Db::timestamp();
+        Self {
+            likes: 0,
+            dislikes: 0,
+            interactions: 0,
+            done: false,
+            update_counter: 0,
+            added_ts: ts,
+            updated_ts: ts,
+        }
+    }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self).expect("won't fail")
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -113,7 +177,10 @@ pub mod db {
         fn refids(&self) -> impl IntoIterator<Item = String>;
         fn links(&self) -> impl IntoIterator<Item = Link>;
 
-        async fn get_by_refid<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<Option<DbItem<Self>>> {
+        async fn get_by_refid<C: ConnectionTrait>(
+            &self,
+            conn: &C,
+        ) -> anyhow::Result<Option<DbItem<Self>>> {
             let mut condition = Condition::any();
             for id in self.refids() {
                 condition = condition.add(refid::Column::Refid.eq(id));
@@ -128,6 +195,7 @@ pub mod db {
                 .map(|(_refid, obj)| obj)
                 .flatten()
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.parsed_assume(),
                     id: e.id,
                     typ: Self::typ(),
@@ -143,6 +211,7 @@ pub mod db {
                 id: sea_orm::ActiveValue::NotSet,
                 data: sea_orm::ActiveValue::Set(self.to_json()),
                 typ: sea_orm::ActiveValue::Set(Self::typ()),
+                metadata: sea_orm::ActiveValue::Set(DbMetadata::new().to_json()),
             };
             let obj = object::Entity::insert(am).exec(conn).await?;
 
@@ -161,14 +230,35 @@ pub mod db {
             }
             Ok(obj.last_insert_id)
         }
+
+        async fn update_mdata<C: ConnectionTrait>(
+            conn: &C,
+            id: DbId,
+            mut mdata: DbMetadata,
+        ) -> anyhow::Result<DbMetadata> {
+            mdata.update_counter += 1;
+
+            let am = object::ActiveModel {
+                id: sea_orm::ActiveValue::Unchanged(id),
+                data: sea_orm::ActiveValue::NotSet, // OOF: ? is this okay??
+                typ: sea_orm::ActiveValue::Unchanged(Self::typ()),
+                metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
+            };
+            let obj = object::Entity::update(am).exec(conn).await?;
+            Ok(mdata)
+        }
     }
 
     impl<T: DbAble> DbItem<T> {
         pub async fn update<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {
+            let mut mdata = self.metadata.clone();
+            mdata.update_counter += 1;
+
             let am = object::ActiveModel {
                 id: sea_orm::ActiveValue::Unchanged(self.id),
                 data: sea_orm::ActiveValue::Set(self.t.to_json()),
                 typ: sea_orm::ActiveValue::Unchanged(T::typ()),
+                metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
             };
             let obj = object::Entity::update(am).exec(conn).await?;
 
@@ -393,7 +483,7 @@ pub mod db {
     }
 
     mod yt {
-        use super::{AutoDbAble, Link, Linked, Typ, db};
+        use super::{db, AutoDbAble, Link, Linked, Typ};
         use crate::yt::song_tube::*;
 
         impl Linked<Album> for Song {}
@@ -566,7 +656,6 @@ pub mod db {
                 [self.key.clone()]
             }
 
-
             fn links(&self) -> impl IntoIterator<Item = Link> {
                 let mut links = vec![];
                 for from in self.refids() {
@@ -653,6 +742,7 @@ pub mod db {
             #[sea_orm(primary_key, auto_increment = true)]
             pub id: i32,
             pub data: String,
+            pub metadata: String,
             pub typ: Typ,
         }
         impl Model {
@@ -666,6 +756,11 @@ pub mod db {
                 }
                 let t: T = serde_json::from_str(&self.data)?;
                 Ok(t)
+            }
+            pub fn parse_assume_metadata<T: for<'de> Deserialize<'de>>(&self) -> T {
+                let t: T = serde_json::from_str(&self.metadata)
+                    .expect("parsing Model metadata json failed");
+                t
             }
         }
 
@@ -738,9 +833,13 @@ pub mod db {
     mod link {
         use super::*;
 
-        // links go from song -> album/artist
-        // or album -> artist
-        // reverse links should be auto implemented
+        // - objecs just add self_refid, self_type, link_refid.
+        //  - so song: videoid, albumid, playlistid
+        //  -    album: albumid, artistid
+        //  -    artist: artistid
+        //  - then you can do queries like
+        //    gimme 'Song' linked to this artistid
+        //    or gimme 'YtSong' linked to this Song's id
 
         #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
         #[sea_orm(table_name = "links")]
@@ -1025,6 +1124,7 @@ pub mod db {
                         val: DbItem {
                             id: m.id,
                             typ: T::typ(),
+                            metadata: m.parse_assume_metadata(),
                             t,
                         },
                         score,
@@ -1040,6 +1140,7 @@ pub mod db {
                             val: DbItem {
                                 id: m.id,
                                 typ: T::typ(),
+                                metadata: m.parse_assume_metadata(),
                                 t,
                             },
                             score,
@@ -1130,6 +1231,7 @@ pub mod db {
                 .one(&self.db)
                 .await?
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.data,
                     id: e.id,
                     typ: e.typ,
@@ -1151,6 +1253,7 @@ pub mod db {
                 .await?
                 .into_iter()
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.data,
                     id: e.id,
                     typ: e.typ,
@@ -1166,6 +1269,7 @@ pub mod db {
                 .one(&self.db)
                 .await?
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.parsed_assume(),
                     id: e.id,
                     typ: T::typ(),
@@ -1188,6 +1292,7 @@ pub mod db {
                 .await?
                 .into_iter()
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.parsed_assume(),
                     id: e.id,
                     typ: T::typ(),
@@ -1209,6 +1314,7 @@ pub mod db {
                 .map(|(_refid, obj)| obj)
                 .flatten()
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.parsed_assume(),
                     id: e.id,
                     typ: T::typ(),
@@ -1234,6 +1340,7 @@ pub mod db {
                 .map(|(_refid, obj)| obj)
                 .flatten()
                 .map(|e| DbItem {
+                    metadata: e.parse_assume_metadata(),
                     t: e.parsed_assume(),
                     id: e.id,
                     typ: T::typ(),
@@ -1274,6 +1381,8 @@ pub mod db {
     pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
         let mut types = String::new();
         types += &specta::ts::export::<SearchMatches<()>>(config)?;
+        types += ";\n";
+        types += &specta::ts::export::<DbMetadata>(config)?;
         types += ";\n";
         types += &specta::ts::export::<DbItem<()>>(config)?;
         types += ";\n";

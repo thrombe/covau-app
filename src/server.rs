@@ -588,6 +588,7 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
                         id,
                         typ: T::typ(),
                         t: item,
+                        metadata: crate::db::DbMetadata::new(),
                     };
                     Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
                 }

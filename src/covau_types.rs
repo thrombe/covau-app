@@ -182,6 +182,7 @@ impl UpdateManager {
             }
 
             item = Some(crate::db::DbItem {
+                metadata: m.parse_assume_metadata(),
                 t,
                 id: m.id,
                 typ: m.typ,
