@@ -705,7 +705,7 @@ pub mod db {
                                     current_index: None,
                                 },
                             },
-                            last_update_ts: a.last_auto_search.unwrap_or(0),
+                            last_update_ts: a.last_auto_search.unwrap_or(0) as u64,
                             enabled: a.last_auto_search.is_some(),
                         };
                         u.insert(&txn).await?;

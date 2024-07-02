@@ -87,8 +87,36 @@ pub enum UpdateSource {
 pub struct Updater {
     pub title: String,
     pub source: UpdateSource,
-    pub last_update_ts: u32,
+    #[serde(with = "serde_with_string")]
+    pub last_update_ts: u64,
     pub enabled: bool,
+}
+
+// https://github.com/serde-rs/json/issues/329#issuecomment-305608405
+mod serde_with_string {
+    use std::fmt::Display;
+    use std::str::FromStr;
+
+    use serde::{de, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: Display,
+        S: Serializer,
+    {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+    where
+        T: FromStr,
+        T::Err: Display,
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer)?
+            .parse()
+            .map_err(de::Error::custom)
+    }
 }
 
 pub struct UpdateManager {

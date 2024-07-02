@@ -32,7 +32,8 @@ pub mod webui;
 pub mod yt;
 
 fn dump_types() -> Result<()> {
-    let tsconfig = specta::ts::ExportConfiguration::default();
+    let tsconfig =
+        specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);
     let types_dir = PathBuf::from("./electron/src/types");
     let _ = std::fs::create_dir(&types_dir);
     std::fs::write(
