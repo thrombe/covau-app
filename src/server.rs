@@ -598,6 +598,37 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
     insert.boxed()
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+pub struct UpdateMetadataQuery {
+    id: crate::db::DbId,
+    metadata: crate::db::DbMetadata,
+}
+fn db_update_metadata_route<T: DbAble + Send + Sync + 'static>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
+    let update = warp::path("update_metadata")
+        .and(warp::path(path))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(
+            |db: Db, q: WithTransaction<UpdateMetadataQuery>| async move {
+                let mut txns = db.transactions.lock().await;
+                let txn = txns
+                    .get(&q.transaction_id)
+                    .context("Transaction not found")
+                    .map_err(custom_reject)?;
+                let mdata = T::update_mdata(txn, q.t.id, q.t.metadata)
+                    .await
+                    .map_err(custom_reject)?;
+                Ok::<_, warp::Rejection>(warp::reply::json(&mdata))
+            },
+        );
+    let update = update.with(warp::cors().allow_any_origin());
+    update.boxed()
+}
+
 fn db_update_route<T: DbAble + Send + Sync + 'static>(
     db: Db,
     path: &'static str,
@@ -891,6 +922,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "songs",
                 ))
+                .or(db_update_metadata_route::<Song<Option<SongInfo>>>(
+                    db.clone(),
+                    "songs",
+                ))
                 .or(db_delete_route::<Song<Option<SongInfo>>>(
                     db.clone(),
                     "songs",
@@ -906,6 +941,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 ))
                 .or(db_insert_route::<Album<VideoId>>(db.clone(), "albums"))
                 .or(db_update_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_update_metadata_route::<Album<VideoId>>(
+                    db.clone(),
+                    "albums",
+                ))
                 .or(db_delete_route::<Album<VideoId>>(db.clone(), "albums"))
                 .or(db_search_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
@@ -920,6 +959,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     "artists",
                 ))
                 .or(db_update_route::<Artist<VideoId, AlbumId>>(
+                    db.clone(),
+                    "artists",
+                ))
+                .or(db_update_metadata_route::<Artist<VideoId, AlbumId>>(
                     db.clone(),
                     "artists",
                 ))
@@ -943,6 +986,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "playlists",
                 ))
+                .or(db_update_metadata_route::<Playlist<VideoId>>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_delete_route::<Playlist<VideoId>>(
                     db.clone(),
                     "playlists",
@@ -954,6 +1001,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 ))
                 .or(db_insert_route::<Queue<VideoId>>(db.clone(), "queues"))
                 .or(db_update_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_update_metadata_route::<Queue<VideoId>>(
+                    db.clone(),
+                    "queues",
+                ))
                 .or(db_delete_route::<Queue<VideoId>>(db.clone(), "queues")),
         )
     };
@@ -967,22 +1018,29 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
                 .or(db_update_route::<Song>(db.clone(), "songs"))
+                .or(db_update_metadata_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 .or(db_search_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_refid_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_id_route::<Album>(db.clone(), "albums"))
                 .or(db_insert_route::<Album>(db.clone(), "albums"))
                 .or(db_update_route::<Album>(db.clone(), "albums"))
+                .or(db_update_metadata_route::<Album>(db.clone(), "albums"))
                 .or(db_delete_route::<Album>(db.clone(), "albums"))
                 .or(db_search_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_by_refid_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_by_id_route::<Artist>(db.clone(), "artists"))
                 .or(db_insert_route::<Artist>(db.clone(), "artists"))
                 .or(db_update_route::<Artist>(db.clone(), "artists"))
+                .or(db_update_metadata_route::<Artist>(db.clone(), "artists"))
                 .or(db_delete_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_insert_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_update_metadata_route::<Playlist>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_search_by_refid_route::<Playlist>(
                     db.clone(),
@@ -991,6 +1049,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(db_search_by_id_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_insert_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_update_metadata_route::<Playlist>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists")),
         )
     };
@@ -1004,12 +1066,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
                 .or(db_update_route::<Song>(db.clone(), "songs"))
+                .or(db_update_metadata_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 .or(db_search_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_by_refid_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_by_id_route::<Updater>(db.clone(), "updaters"))
                 .or(db_insert_route::<Updater>(db.clone(), "updaters"))
                 .or(db_update_route::<Updater>(db.clone(), "updaters"))
+                .or(db_update_metadata_route::<Updater>(db.clone(), "updaters"))
                 .or(db_delete_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_search_by_refid_route::<Playlist>(
@@ -1019,12 +1083,17 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                 .or(db_search_by_id_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_insert_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_update_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_update_metadata_route::<Playlist>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_search_route::<Queue>(db.clone(), "queues"))
                 .or(db_search_by_refid_route::<Queue>(db.clone(), "queues"))
                 .or(db_search_by_id_route::<Queue>(db.clone(), "queues"))
                 .or(db_insert_route::<Queue>(db.clone(), "queues"))
                 .or(db_update_route::<Queue>(db.clone(), "queues"))
+                .or(db_update_metadata_route::<Queue>(db.clone(), "queues"))
                 .or(db_delete_route::<Queue>(db.clone(), "queues")),
         )
     };
@@ -1141,6 +1210,8 @@ async fn updater_system(fe: FrontendClient<YtiRequest>, db: Db) {
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
+    types += "import type { DbMetadata } from '$types/db.ts';\n";
+    types += ";\n";
     types += &specta::ts::export::<Message<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<MessageResult<()>>(config)?;
@@ -1148,6 +1219,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerMessage>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<UpdateMetadataQuery>(config)?;
     types += ";\n";
     types += &specta::ts::export::<FetchRequest>(config)?;
     types += ";\n";
