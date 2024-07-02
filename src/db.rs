@@ -233,38 +233,11 @@ pub mod db {
             Ok(obj.last_insert_id)
         }
 
-        async fn update_mdata<C: ConnectionTrait>(
-            conn: &C,
-            id: DbId,
-            mut mdata: DbMetadata,
-        ) -> anyhow::Result<DbMetadata> {
-            let old = Self::get(conn, id).await?;
-            if !old
-                .map(|m| m.metadata.update_counter == mdata.update_counter)
-                .unwrap_or(false)
-            {
-                return Err(anyhow::anyhow!("invalid update (mdata)"));
-            }
-
-            mdata.update_counter += 1;
-            mdata.updated_ts = Db::timestamp();
-
-            let am = object::ActiveModel {
-                id: sea_orm::ActiveValue::Unchanged(id),
-                data: sea_orm::ActiveValue::NotSet, // CHECK_PLZ: ? is this okay??
-                typ: sea_orm::ActiveValue::Unchanged(Self::typ()),
-                metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
-            };
-            let obj = object::Entity::update(am).exec(conn).await?;
-            Ok(mdata)
-        }
-
         async fn get<C: ConnectionTrait>(
             conn: &C,
             id: DbId,
         ) -> anyhow::Result<Option<DbItem<Self>>> {
             let m = object::Entity::find_by_id(id)
-                .select_only()
                 .one(conn)
                 .await?;
             let mdata = m.map(|m| DbItem {
@@ -278,7 +251,7 @@ pub mod db {
     }
 
     impl<T: DbAble> DbItem<T> {
-        pub async fn update<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {
+        pub async fn update<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<DbMetadata> {
             let old = T::get(conn, self.id).await?;
             if !old
                 .map(|m| m.metadata.update_counter == self.metadata.update_counter)
@@ -319,7 +292,33 @@ pub mod db {
                 };
                 refid::Entity::insert(id).exec(conn).await?;
             }
-            Ok(())
+            Ok(mdata)
+        }
+
+        pub async fn update_mdata<C: ConnectionTrait>(
+            &self,
+            conn: &C,
+        ) -> anyhow::Result<DbMetadata> {
+            let old = T::get(conn, self.id).await?;
+            if !old
+                .map(|m| m.metadata.update_counter == self.metadata.update_counter)
+                .unwrap_or(false)
+            {
+                return Err(anyhow::anyhow!("invalid update (mdata)"));
+            }
+
+            let mut mdata = self.metadata.clone();
+            mdata.update_counter += 1;
+            mdata.updated_ts = Db::timestamp();
+
+            let am = object::ActiveModel {
+                id: sea_orm::ActiveValue::Unchanged(self.id),
+                data: sea_orm::ActiveValue::NotSet,
+                typ: sea_orm::ActiveValue::Unchanged(T::typ()),
+                metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
+            };
+            let obj = object::Entity::update(am).exec(conn).await?;
+            Ok(mdata)
         }
 
         pub async fn delete<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {

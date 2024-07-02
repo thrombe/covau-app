@@ -598,11 +598,6 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
     insert.boxed()
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-pub struct UpdateMetadataQuery {
-    id: crate::db::DbId,
-    metadata: crate::db::DbMetadata,
-}
 fn db_update_metadata_route<T: DbAble + Send + Sync + 'static>(
     db: Db,
     path: &'static str,
@@ -613,15 +608,13 @@ fn db_update_metadata_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(
-            |db: Db, q: WithTransaction<UpdateMetadataQuery>| async move {
+            |db: Db, item: WithTransaction<crate::db::DbItem<T>>| async move {
                 let mut txns = db.transactions.lock().await;
                 let txn = txns
-                    .get(&q.transaction_id)
+                    .get(&item.transaction_id)
                     .context("Transaction not found")
                     .map_err(custom_reject)?;
-                let mdata = T::update_mdata(txn, q.t.id, q.t.metadata)
-                    .await
-                    .map_err(custom_reject)?;
+                let mdata = item.t.update_mdata(txn).await.map_err(custom_reject)?;
                 Ok::<_, warp::Rejection>(warp::reply::json(&mdata))
             },
         );
@@ -645,8 +638,11 @@ fn db_update_route<T: DbAble + Send + Sync + 'static>(
                     .get(&item.transaction_id)
                     .context("Transaction not found")
                     .map_err(custom_reject)?;
-                item.t.update(txn).await.map_err(custom_reject)?;
-                Ok::<_, warp::Rejection>(warp::reply())
+                let mdata = item.t.update(txn).await.map_err(custom_reject)?;
+
+                let mut item = item.t;
+                item.metadata = mdata;
+                Ok::<_, warp::Rejection>(warp::reply::json(&item))
             },
         );
     let update = update.with(warp::cors().allow_any_origin());
@@ -1219,8 +1215,6 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerMessage>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<UpdateMetadataQuery>(config)?;
     types += ";\n";
     types += &specta::ts::export::<FetchRequest>(config)?;
     types += ";\n";

@@ -28,21 +28,19 @@ function db_cud(id: number) {
                 transaction_id: this.id,
                 t: item,
             };
-            await utils.api_request_no_resp(route, txn);
+            let dbitem: DB.DbItem<T> = await utils.api_request(route, txn);
+            return dbitem;
         },
 
         async update_metadata<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "update_metadata");
 
-            let txn: server.WithTransaction<server.UpdateMetadataQuery> = {
+            let txn: server.WithTransaction<DB.DbItem<T>> = {
                 transaction_id: this.id,
-                t: {
-                    id: item.id,
-                    metadata: item.metadata,
-                },
+                t: item,
             };
-            let dbitem: server.InsertResponse<DB.DbMetadata> = await utils.api_request(route, txn);
-            return dbitem;
+            let mdata: DB.DbMetadata = await utils.api_request(route, txn);
+            return mdata;
         },
 
         async delete<T>(item: DB.DbItem<T>) {
