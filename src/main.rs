@@ -24,7 +24,7 @@ use anyhow::Result;
 //  - like / dislike current song. plays a beep to notify
 //  - next / prev
 //
-// update song data as it's fetched
+// update song data as its fetched
 // - anytime any song is fetched - just save it in db
 // - save any song where we know it's in db. (st.get_uri(save: boolean))
 //

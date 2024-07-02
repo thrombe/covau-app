@@ -93,6 +93,9 @@ abstract class Server<Req> {
         });
     }
 
+    // don't return anything if no response
+    // return null for () unit type
+    // else some { object: () }
     abstract handle_req(req: Req): Promise<Object | null | undefined>;
 }
 
@@ -102,9 +105,6 @@ class YtiServer extends Server<yt.YtiRequest> {
     }
 
     tubes: Map<string, St.SongTube> = new Map();
-    // don't return anything if no response
-    // return null for () unit type
-    // else some { object: () }
     async handle_req(req: yt.YtiRequest): Promise<Object | null | undefined> {
         switch (req.type) {
             case 'CreateSongTube': {
@@ -128,7 +128,6 @@ class YtiServer extends Server<yt.YtiRequest> {
             default:
                 throw exhausted(req);
         }
-        return {};
     }
 }
 
@@ -137,16 +136,15 @@ class FeServer extends Server<FeRequest> {
         super("serve/fec")
     }
 
-    // don't return anything if no response
-    // return null for () unit type
-    // else some { object: () }
     async handle_req(req: FeRequest): Promise<Object | null | undefined> {
         switch (req.type) {
             case 'Notify': {
                 toast(req.content, "info");
+                return;
             } break;
             case 'NotifyError': {
                 toast(req.content, "error");
+                return;
             } break;
             case 'Like':
             case 'Dislike':
@@ -159,7 +157,6 @@ class FeServer extends Server<FeRequest> {
             default:
                 throw exhausted(req);
         }
-        return {};
     }
 }
 
