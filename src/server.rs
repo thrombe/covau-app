@@ -1070,18 +1070,19 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
 
     // TODO: expose db transactions somehow T_T
     let all = client_ws_route(fe.clone(), "serve")
-        .or(player_route())
-        .or(cors_proxy_route(client.clone()))
-        .or(musimanager_search_routes)
-        .or(song_tube_search_routes)
-        .or(covau_search_routes)
-        .or(db_begin_transaction_route(db.clone()))
-        .or(db_commit_transaction_route(db.clone()))
-        .or(db_rollback_transaction_route(db.clone()))
-        .or(db_search_untyped_by_id_route(db.clone(), "object"))
-        .or(mbz_search_routes)
-        .or(webui_js_route(client.clone()))
-        .or(options_route);
+        .boxed()
+        .or(player_route().boxed())
+        .or(cors_proxy_route(client.clone()).boxed())
+        .or(musimanager_search_routes.boxed())
+        .or(song_tube_search_routes.boxed())
+        .or(covau_search_routes.boxed())
+        .or(db_begin_transaction_route(db.clone()).boxed())
+        .or(db_commit_transaction_route(db.clone()).boxed())
+        .or(db_rollback_transaction_route(db.clone()).boxed())
+        .or(db_search_untyped_by_id_route(db.clone(), "object").boxed())
+        .or(mbz_search_routes.boxed())
+        .or(webui_js_route(client.clone()).boxed())
+        .or(options_route.boxed());
     // let all = all.or(redirect_route(client.clone()));
     let all = all.or(embedded_asset_route());
     let all = all.recover(|rej: warp::reject::Rejection| async move {
