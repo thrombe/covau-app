@@ -99,8 +99,8 @@ pub mod song_tube {
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct WithLinked<T, Id> {
-        item: T,
-        linked: Vec<Id>,
+        pub item: T,
+        pub linked: Vec<Id>,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -257,7 +257,7 @@ impl InnerSongTube {
 }
 
 #[derive(Clone)]
-pub struct SongTubeFac(FrontendClient<YtiRequest>);
+pub struct SongTubeFac(pub FrontendClient<YtiRequest>);
 
 impl SongTubeFac {
     pub fn new(fe: FrontendClient<YtiRequest>) -> Self {

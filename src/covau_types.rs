@@ -1,9 +1,12 @@
+use std::{borrow::Borrow, collections::HashSet};
 use std::path::PathBuf;
 
+use futures::stream::{FuturesOrdered, FuturesUnordered};
+use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
+use tokio_stream::StreamExt;
 
-use super::{mbz, yt};
-use super::db::DbId;
+use super::{db, db::{DbId, DbAble}, mbz, yt, yt::song_tube::TMusicListItem};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
@@ -47,6 +50,15 @@ pub struct UpdateItem<T> {
     pub done: bool,
     pub points: u32,
     pub item: T,
+}
+impl<T> UpdateItem<T> {
+    pub fn new(item: T) -> Self {
+        Self {
+            done: false,
+            points: 0,
+            item,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -128,32 +140,174 @@ impl UpdateManager {
         Self { st_fac, db }
     }
 
-    pub async fn test(&self) -> anyhow::Result<()> {
-        let ist = self
-            .st_fac
-            .with_search_query::<yt::song_tube::Song>("Milet")
+    async fn send_error_message(&self, message: String) -> anyhow::Result<()> {
+        self.st_fac
+            .0
+            .send(crate::server::MessageResult::Err(message))
             .await?;
+        Ok(())
+    }
 
-        let items = ist.next_page().await?;
-        let items = ist.next_page().await?;
+    async fn get_next_updater(&self) -> anyhow::Result<Option<crate::db::DbItem<Updater>>> {
+        let mut it = self.db.stream_models::<Updater>().await?;
+        let ts = self.db.now_time()?;
+        let week = 2 * 7 * 24 * 60 * 60;
+        let check_delta = week * 2;
+
+        let mut item: Option<crate::db::DbItem<Updater>> = None;
+        let mut max_delta = 0;
+        while let Some(m) = it.next().await {
+            let m = m?;
+            let t: Updater = m.parsed_assume();
+            if !t.enabled {
+                continue;
+            }
+            let delta = ts - t.last_update_ts;
+            if delta < check_delta {
+                continue;
+            }
+
+            if delta <= max_delta {
+                continue;
+            }
+
+            item = Some(crate::db::DbItem {
+                t,
+                id: m.id,
+                typ: m.typ,
+            });
+        }
+
+        Ok(item)
+    }
+
+    pub async fn update_one(&self) -> anyhow::Result<()> {
+        let Some(mut updater) = self.get_next_updater().await? else {
+            return Ok(());
+        };
+
+        match &mut updater.t.source {
+            UpdateSource::Mbz {
+                artist_id,
+                release_groups,
+                releases,
+                recordings,
+            } => todo!(),
+            UpdateSource::SongTubeSearch {
+                search_words,
+                artist_keys,
+                known_albums,
+                songs,
+            }
+            | UpdateSource::MusimanagerSearch {
+                search_words,
+                artist_keys,
+                known_albums,
+                songs,
+                ..
+            } => {
+                let mut keys: HashSet<String> = artist_keys.iter().map(String::from).collect();
+                let mut known: HashSet<String> =
+                    known_albums.iter().map(|a| a.item.0.to_string()).collect();
+                let mut new_albums = vec![];
+                for query in search_words {
+                    let albums = self
+                        .st_fac
+                        .with_search_query::<yt::song_tube::Album>(query.as_str())
+                        .await?;
+                    let albums = albums.next_page().await?;
+
+                    let albums = albums
+                        .items
+                        .into_iter()
+                        .filter(|a| !known.contains(&a.id))
+                        .filter(|a| {
+                            a.author
+                                .as_ref()
+                                .map(|a| a.channel_id.as_ref().map(|id| keys.contains(id)))
+                                .flatten()
+                                .unwrap_or(false)
+                        })
+                        .collect::<Vec<_>>();
+
+                    let mut album_futures = albums
+                        .into_iter()
+                        .inspect(|a| {
+                            known.insert(a.id.clone());
+                        })
+                        .map(|a| async {
+                            let songs = self
+                                .st_fac
+                                .with_query(yt::song_tube::BrowseQuery::Album(yt::AlbumId(
+                                    a.id.clone(),
+                                )))
+                                .await?;
+                            let songs = songs.next_page().await?;
+                            let songs = songs
+                                .items
+                                .into_iter()
+                                .map(|s| yt::song_tube::Song::assume(s))
+                                .collect::<Vec<_>>();
+                            Result::<_, anyhow::Error>::Ok(yt::song_tube::WithLinked {
+                                item: a,
+                                linked: songs,
+                            })
+                        })
+                        .collect::<FuturesUnordered<_>>();
+
+                    while let Some(album) = album_futures.next().await {
+                        match album {
+                            Ok(a) => {
+                                new_albums.push(a);
+                            }
+                            Err(e) => {
+                                self.send_error_message(format!("{}", e)).await?;
+                            }
+                        }
+                    }
+                }
+
+                updater.t.last_update_ts = self.db.now_time()?;
+                let txn = self.db.db.begin().await?;
+
+                for a in new_albums.into_iter() {
+                    let id = yt::AlbumId(a.item.id.clone());
+                    let item = UpdateItem::new(id);
+                    known_albums.push(item);
+                    for song in a.linked.into_iter() {
+                        songs
+                            .queue
+                            .push(UpdateItem::new(yt::VideoId(song.id.clone())));
+
+                        match song.insert(&txn).await {
+                            Ok(_) => (),
+                            Err(e) => {
+                                txn.rollback().await?;
+                                return Err(e);
+                            },
+                        }
+                    }
+                }
+                match updater.update(&txn).await {
+                    Ok(_) => (),
+                    Err(e) => {
+                        txn.rollback().await?;
+                        return Err(e);
+                    },
+                }
+                txn.commit().await?;
+            }
+        }
 
         Ok(())
     }
 
-    pub async fn update(&self) -> anyhow::Result<()> {
-        // let keys: HashSet<String> = artist_keys.into_iter().collect();
-        // let albumss = self.client.fetch_albums(todo!()).await?;
-
-        // let albums = albums
-        //     .into_iter()
-        //     .filter(|a| {
-        //         a.author
-        //             .as_ref()
-        //             .map(|a| a.channel_id.as_ref().map(|id| keys.contains(id)))
-        //             .flatten()
-        //             .unwrap_or(false)
-        //     })
-        //     .collect();
+    pub async fn start(&self) -> anyhow::Result<()> {
+        let dur = tokio::time::Duration::from_secs(10 * 60);
+        loop {
+            tokio::time::sleep(dur).await;
+            self.update_one().await?;
+        }
         Ok(())
     }
 }
