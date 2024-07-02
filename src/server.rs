@@ -574,13 +574,7 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: WithTransaction<T>| async move {
-            for refid in item
-                .t
-                .refids()
-                .into_iter()
-                .collect::<Vec<_>>()
-                .into_iter()
-            {
+            for refid in item.t.refids().into_iter().collect::<Vec<_>>().into_iter() {
                 if let Some(e) = db
                     .search_by_ref_id::<T>(refid)
                     .await
@@ -909,7 +903,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "albums",
                 ))
-                .or(db_search_by_id_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_search_by_id_route::<Album<VideoId>>(
+                    db.clone(),
+                    "albums",
+                ))
                 .or(db_insert_route::<Album<VideoId>>(db.clone(), "albums"))
                 .or(db_update_route::<Album<VideoId>>(db.clone(), "albums"))
                 .or(db_delete_route::<Album<VideoId>>(db.clone(), "albums"))
@@ -933,16 +930,31 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
                     db.clone(),
                     "artists",
                 ))
-                .or(db_search_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_search_route::<Playlist<VideoId>>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_search_by_id_route::<Playlist<VideoId>>(
                     db.clone(),
                     "playlists",
                 ))
-                .or(db_insert_route::<Playlist<VideoId>>(db.clone(), "playlists"))
-                .or(db_update_route::<Playlist<VideoId>>(db.clone(), "playlists"))
-                .or(db_delete_route::<Playlist<VideoId>>(db.clone(), "playlists"))
+                .or(db_insert_route::<Playlist<VideoId>>(
+                    db.clone(),
+                    "playlists",
+                ))
+                .or(db_update_route::<Playlist<VideoId>>(
+                    db.clone(),
+                    "playlists",
+                ))
+                .or(db_delete_route::<Playlist<VideoId>>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_search_route::<Queue<VideoId>>(db.clone(), "queues"))
-                .or(db_search_by_id_route::<Queue<VideoId>>(db.clone(), "queues"))
+                .or(db_search_by_id_route::<Queue<VideoId>>(
+                    db.clone(),
+                    "queues",
+                ))
                 .or(db_insert_route::<Queue<VideoId>>(db.clone(), "queues"))
                 .or(db_update_route::<Queue<VideoId>>(db.clone(), "queues"))
                 .or(db_delete_route::<Queue<VideoId>>(db.clone(), "queues")),
