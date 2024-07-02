@@ -574,28 +574,24 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: WithTransaction<T>| async move {
-            for refid in item.t.refids().into_iter().collect::<Vec<_>>().into_iter() {
-                if let Some(e) = db
-                    .search_by_ref_id::<T>(refid)
-                    .await
-                    .map_err(custom_reject)?
-                {
-                    return Ok(warp::reply::json(&InsertResponse::Old(e)));
+            let old = item.t.get_by_refid(&db.db).await.map_err(custom_reject)?;
+            match old {
+                Some(e) => Ok(warp::reply::json(&InsertResponse::Old(e))),
+                None => {
+                    let mut txns = db.transactions.lock().await;
+                    let txn = txns
+                        .get(&item.transaction_id)
+                        .context("Transaction not found")
+                        .map_err(custom_reject)?;
+                    let id = item.t.insert(txn).await.map_err(custom_reject)?;
+                    let db_item = crate::db::DbItem {
+                        id,
+                        typ: T::typ(),
+                        t: item,
+                    };
+                    Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
                 }
             }
-
-            let mut txns = db.transactions.lock().await;
-            let txn = txns
-                .get(&item.transaction_id)
-                .context("Transaction not found")
-                .map_err(custom_reject)?;
-            let id = item.t.insert(txn).await.map_err(custom_reject)?;
-            let db_item = crate::db::DbItem {
-                id,
-                typ: T::typ(),
-                t: item,
-            };
-            Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
         });
     let insert = insert.with(warp::cors().allow_any_origin());
     insert.boxed()

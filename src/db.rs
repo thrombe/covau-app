@@ -113,6 +113,28 @@ pub mod db {
         fn refids(&self) -> impl IntoIterator<Item = String>;
         fn links(&self) -> impl IntoIterator<Item = Link>;
 
+        async fn get_by_refid<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<Option<DbItem<Self>>> {
+            let mut condition = Condition::any();
+            for id in self.refids() {
+                condition = condition.add(refid::Column::Refid.eq(id));
+            }
+
+            let e = refid::Entity::find()
+                .filter(refid::Column::Typ.eq(Self::typ()))
+                .filter(condition)
+                .find_also_related(object::Entity)
+                .one(conn)
+                .await?
+                .map(|(_refid, obj)| obj)
+                .flatten()
+                .map(|e| DbItem {
+                    t: e.parsed_assume(),
+                    id: e.id,
+                    typ: Self::typ(),
+                });
+            Ok(e)
+        }
+
         async fn insert<C>(&self, conn: &C) -> anyhow::Result<i32>
         where
             C: ConnectionTrait,
