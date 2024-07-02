@@ -35,12 +35,15 @@ function db_cud(id: number) {
         async update_metadata<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "update_metadata");
 
-            let txn: server.WithTransaction<DB.DbItem<T>> = {
+            let txn: server.WithTransaction<server.UpdateMetadataQuery> = {
                 transaction_id: this.id,
-                t: item,
+                t: {
+                    id: item.id,
+                    metadata: item.metadata,
+                },
             };
-            let mdata: DB.DbMetadata = await utils.api_request(route, txn);
-            return mdata;
+            let dbitem: DB.DbMetadata = await utils.api_request(route, txn);
+            return dbitem;
         },
 
         async delete<T>(item: DB.DbItem<T>) {

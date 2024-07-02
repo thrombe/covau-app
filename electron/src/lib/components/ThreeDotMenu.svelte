@@ -5,7 +5,6 @@
 
     let show_menu: boolean = false;
     const menu_disabler = () => {
-        console.log("disabler", show_menu);
         window.removeEventListener("click", menu_disabler);
         show_menu = false;
     };
