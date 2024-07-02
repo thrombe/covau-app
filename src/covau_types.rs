@@ -6,7 +6,7 @@ use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
-use super::{db, db::{DbId, DbAble}, mbz, yt, yt::song_tube::TMusicListItem};
+use super::{db, db::{DbId, Db, DbAble}, mbz, yt, yt::song_tube::TMusicListItem};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
@@ -48,17 +48,27 @@ pub struct Song {
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct UpdateItem<T> {
     pub done: bool,
-    pub points: u32,
+    pub points: i32,
+    #[serde(with = "serde_with_string")]
+    pub added_ts: u64,
     pub item: T,
 }
 impl<T> UpdateItem<T> {
-    pub fn new(item: T) -> Self {
+    pub fn new(item: T, ts: u64) -> Self {
         Self {
             done: false,
             points: 0,
+            added_ts: ts,
             item,
         }
     }
+
+    pub fn bump_up(&mut self) {
+        self.points += 1;
+    } 
+    pub fn bump_down(&mut self) {
+        self.points -= 1;
+    } 
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -150,7 +160,7 @@ impl UpdateManager {
 
     async fn get_next_updater(&self) -> anyhow::Result<Option<crate::db::DbItem<Updater>>> {
         let mut it = self.db.stream_models::<Updater>().await?;
-        let ts = self.db.now_time()?;
+        let ts = Db::timestamp();
         let week = 2 * 7 * 24 * 60 * 60;
         let check_delta = week * 2;
 
@@ -267,23 +277,35 @@ impl UpdateManager {
                     }
                 }
 
-                updater.t.last_update_ts = self.db.now_time()?;
+                let ts = Db::timestamp();
+                updater.t.last_update_ts = ts;
                 let txn = self.db.db.begin().await?;
 
                 for a in new_albums.into_iter() {
                     let id = yt::AlbumId(a.item.id.clone());
-                    let item = UpdateItem::new(id);
+                    let item = UpdateItem::new(id, ts);
                     known_albums.push(item);
-                    for song in a.linked.into_iter() {
+                    for mut song in a.linked.into_iter() {
                         songs
                             .queue
-                            .push(UpdateItem::new(yt::VideoId(song.id.clone())));
+                            .push(UpdateItem::new(yt::VideoId(song.id.clone()), ts));
 
-                        match song.insert(&txn).await {
-                            Ok(_) => (),
-                            Err(e) => {
-                                txn.rollback().await?;
-                                return Err(e);
+                        song.album = Some(yt::song_tube::SmolAlbum { name: a.item.title.clone(), id: a.item.id.clone() });
+                        song.authors.extend(a.item.author.iter().cloned());
+
+                        let old = song.get_by_refid(&txn).await?;
+                        match old {
+                            Some(_) => {
+                                // this Song item has very less info anyway. don't update old info
+                            },
+                            None => {
+                                match song.insert(&txn).await {
+                                    Ok(_) => (),
+                                    Err(e) => {
+                                        txn.rollback().await?;
+                                        return Err(e);
+                                    },
+                                }
                             },
                         }
                     }

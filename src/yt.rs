@@ -69,7 +69,7 @@ pub mod song_tube {
     }
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct SmolAlbum {
-        pub name: String,
+        pub name: Option<String>,
         pub id: String,
     }
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]

@@ -418,6 +418,7 @@ pub mod db {
                 self.album
                     .as_ref()
                     .map(|a| a.name.clone())
+                    .flatten()
                     .map(|n| hs.push(n));
 
                 hs
@@ -905,6 +906,7 @@ pub mod db {
                 }
                 println!("queues added");
 
+                let ts = Db::timestamp();
                 for a in tracker.artists.iter() {
                     if !a.known_albums.is_empty() || !a.unexplored_songs.is_empty() {
                         let u = crate::covau_types::Updater {
@@ -920,6 +922,7 @@ pub mod db {
                                         done: false,
                                         points: 0,
                                         item: e.clone(),
+                                        added_ts: ts,
                                     })
                                     .collect(),
                                 songs: crate::covau_types::ListenQueue {
@@ -930,6 +933,7 @@ pub mod db {
                                             done: false,
                                             points: 0,
                                             item: e.clone(),
+                                            added_ts: ts,
                                         })
                                         .collect(),
                                     current_index: None,
@@ -1238,11 +1242,12 @@ pub mod db {
             Ok(e)
         }
 
-        pub fn now_time(&self) -> anyhow::Result<u64> {
+        pub fn timestamp() -> u64 {
             let secs = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)?
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("unix epoch is the beginning of everything")
                 .as_secs();
-            Ok(secs)
+            secs
         }
     }
 
