@@ -790,6 +790,7 @@ pub mod db {
             // a writer transaction blocks all writers (sqlite can't do multiple concurrent writers)
             // - [Transaction](https://sqlite.org/lang_transaction.html)
             opts.max_connections(10);
+            opts.max_lifetime(std::time::Duration::from_secs_f32(60.0 * 10.0));
             let db = sea_orm::Database::connect(opts).await?;
 
             // enable wal so writers do not block reads
