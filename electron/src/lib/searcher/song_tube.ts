@@ -214,7 +214,8 @@ export class StListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    let url = st.get_yt_url(s.id);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
@@ -253,7 +254,8 @@ export class StListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    let url = st.get_yt_url(s.id);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
@@ -389,6 +391,10 @@ export const st = {
 
     get_thumbnail(id: string) {
         return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+    },
+
+    get_yt_url(id: string) {
+        return `https://youtu.be/${id}`;
     },
 
     get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem) {

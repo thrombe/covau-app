@@ -443,7 +443,8 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.key);
+                                    let url = st.get_yt_url(s.key);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
@@ -473,7 +474,8 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    let url = st.get_yt_url(s.id);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
@@ -546,7 +548,8 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.key);
+                                    let url = st.get_yt_url(s.key);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
@@ -710,6 +713,7 @@ export class DbListItem extends ListItem {
                         ];
                     } break;
                     case "Song":
+                        let song = this.data.t;
                         return [
                             {
                                 icon: icons.play,
@@ -733,6 +737,29 @@ export class DbListItem extends ListItem {
                                 title: "remove from queue",
                                 onclick: async () => {
                                     await stores.queue_ops.remove_item(this);
+                                },
+                            },
+                            {
+                                icon: icons.copy,
+                                location: "OnlyMenu",
+                                title: "copy source url",
+                                onclick: async () => {
+                                    for (let source of song.play_sources) {
+                                        switch (source.type) {
+                                            case "File": {
+                                                continue;
+                                            } break;
+                                            case "YtId": {
+                                                let url = st.get_yt_url(source.content);
+                                                await navigator.clipboard.writeText(url);
+                                                toast("url copied", "info");
+                                                return;
+                                            } break;
+                                            default:
+                                                throw exhausted(source);
+                                        }
+                                    }
+                                    toast("url not found", "info");
                                 },
                             },
                         ];
@@ -768,7 +795,8 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "copy url",
                                 onclick: async () => {
-                                    await navigator.clipboard.writeText("https://youtu.be/" + s.id);
+                                    let url = st.get_yt_url(s.id);
+                                    await navigator.clipboard.writeText(url);
                                     toast("url copied", "info");
                                 },
                             },
