@@ -161,7 +161,7 @@ pub mod db {
     use anyhow::Context;
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::{entity::prelude::*, Schema};
-    use sea_orm::{Condition, DeriveEntityModel, QuerySelect};
+    use sea_orm::{Condition, DeriveEntityModel, QuerySelect, SelectColumns};
     use sea_orm::{RelationTrait, TransactionTrait};
     use tokio_stream::StreamExt;
 
@@ -170,7 +170,9 @@ pub mod db {
     pub type DbId = i32;
 
     #[async_trait::async_trait]
-    pub trait DbAble: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone {
+    pub trait DbAble:
+        Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone + Sync + Send
+    {
         fn to_json(&self) -> String;
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = String>;
@@ -236,23 +238,58 @@ pub mod db {
             id: DbId,
             mut mdata: DbMetadata,
         ) -> anyhow::Result<DbMetadata> {
+            let old = Self::get(conn, id).await?;
+            if !old
+                .map(|m| m.metadata.update_counter == mdata.update_counter)
+                .unwrap_or(false)
+            {
+                return Err(anyhow::anyhow!("invalid update (mdata)"));
+            }
+
             mdata.update_counter += 1;
+            mdata.updated_ts = Db::timestamp();
 
             let am = object::ActiveModel {
                 id: sea_orm::ActiveValue::Unchanged(id),
-                data: sea_orm::ActiveValue::NotSet, // OOF: ? is this okay??
+                data: sea_orm::ActiveValue::NotSet, // CHECK_PLZ: ? is this okay??
                 typ: sea_orm::ActiveValue::Unchanged(Self::typ()),
                 metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
             };
             let obj = object::Entity::update(am).exec(conn).await?;
             Ok(mdata)
         }
+
+        async fn get<C: ConnectionTrait>(
+            conn: &C,
+            id: DbId,
+        ) -> anyhow::Result<Option<DbItem<Self>>> {
+            let m = object::Entity::find_by_id(id)
+                .select_only()
+                .one(conn)
+                .await?;
+            let mdata = m.map(|m| DbItem {
+                metadata: m.parse_assume_metadata(),
+                t: m.parsed_assume(),
+                id: m.id,
+                typ: m.typ,
+            });
+            Ok(mdata)
+        }
     }
 
     impl<T: DbAble> DbItem<T> {
         pub async fn update<C: ConnectionTrait>(&self, conn: &C) -> anyhow::Result<()> {
+            let old = T::get(conn, self.id).await?;
+            if !old
+                .map(|m| m.metadata.update_counter == self.metadata.update_counter)
+                .unwrap_or(false)
+            {
+                return Err(anyhow::anyhow!("invalid update (mdata)"));
+            }
+
             let mut mdata = self.metadata.clone();
             mdata.update_counter += 1;
+            mdata.updated_ts = Db::timestamp();
 
             let am = object::ActiveModel {
                 id: sea_orm::ActiveValue::Unchanged(self.id),
@@ -310,7 +347,13 @@ pub mod db {
     }
     impl<T> DbAble for T
     where
-        T: Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone + AutoDbAble,
+        T: Serialize
+            + for<'de> Deserialize<'de>
+            + std::fmt::Debug
+            + Clone
+            + AutoDbAble
+            + Sync
+            + Send,
     {
         fn to_json(&self) -> String {
             serde_json::to_string(self).expect("won't fail")
