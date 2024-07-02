@@ -111,6 +111,7 @@ pub mod db {
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = String>;
         fn refids(&self) -> impl IntoIterator<Item = String>;
+        fn links(&self) -> impl IntoIterator<Item = Link>;
 
         async fn insert<C>(&self, conn: &C) -> anyhow::Result<i32>
         where
@@ -183,12 +184,15 @@ pub mod db {
         }
     }
 
+    pub trait Linked<To> {}
+
     pub trait AutoDbAble {
         fn typ() -> Typ;
         fn haystack(&self) -> impl IntoIterator<Item = String>;
         fn refids(&self) -> impl IntoIterator<Item = String> {
             []
         }
+        fn links(&self) -> impl IntoIterator<Item = Link> {
             []
         }
     }
@@ -208,12 +212,19 @@ pub mod db {
         fn refids(&self) -> impl IntoIterator<Item = String> {
             <Self as AutoDbAble>::refids(self)
         }
+        fn links(&self) -> impl IntoIterator<Item = Link> {
+            <Self as AutoDbAble>::links(self)
+        }
     }
 
     mod covau_types {
-        use super::*;
+        use std::collections::HashSet;
+
+        use super::{AutoDbAble, Link, Linked, Typ};
         use crate::covau_types::*;
 
+        impl Linked<crate::yt::song_tube::Song> for Song {}
+        impl Linked<crate::mbz::RecordingWithInfo> for Song {}
         impl AutoDbAble for Song {
             fn typ() -> Typ {
                 Typ::Song
@@ -251,7 +262,33 @@ pub mod db {
 
                 hs
             }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+
+                let set: HashSet<_> = self.refids().into_iter().collect();
+                for from_id in set.into_iter() {
+                    for id in self.info_sources.iter() {
+                        match id {
+                            InfoSource::YtId(id) => {
+                                links.push(Link {
+                                    from_refid: from_id.clone(),
+                                    from_typ: Self::typ(),
+                                    to_refid: id.to_owned(),
+                                    to_typ: crate::yt::song_tube::Song::typ(),
+                                });
+                            }
+                            InfoSource::MbzId(id) => {
+                                // hs.push(id.to_owned());
+                            }
+                        }
+                    }
+                }
+
+                links
+            }
         }
+
         impl AutoDbAble for Playlist {
             fn typ() -> Typ {
                 Typ::Playlist
@@ -271,6 +308,11 @@ pub mod db {
                 [self.0.queue.title.clone()]
             }
         }
+
+        // impl Linked<Updater, crate::mbz::Artist> {}
+        use crate::musimanager as mm;
+        impl Linked<mm::Artist<mm::VideoId, mm::AlbumId>> for Updater {}
+        impl Linked<crate::yt::song_tube::Artist> for Updater {}
         impl AutoDbAble for Updater {
             fn typ() -> Typ {
                 Typ::Updater
@@ -296,13 +338,44 @@ pub mod db {
                 }
                 rids
             }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+
+                for from in self.refids() {
+                    match &self.source {
+                        UpdateSource::Mbz { artist_id, .. } => {
+                            // links.push(artist_id.to_owned());
+                        }
+                        UpdateSource::MusimanagerSearch { artist_keys, .. } => {
+                            links.extend(artist_keys.iter().map(String::from).map(|to| Link {
+                                from_refid: from.clone(),
+                                from_typ: Self::typ(),
+                                to_refid: to,
+                                to_typ: mm::Artist::<mm::VideoId, mm::AlbumId>::typ(),
+                            }));
+                        }
+                        UpdateSource::SongTubeSearch { artist_keys, .. } => {
+                            links.extend(artist_keys.iter().map(String::from).map(|to| Link {
+                                from_refid: from.clone(),
+                                from_typ: Self::typ(),
+                                to_refid: to,
+                                to_typ: crate::yt::song_tube::Artist::typ(),
+                            }));
+                        }
+                    }
+                }
+                links
+            }
         }
     }
 
     mod yt {
-        use super::*;
+        use super::{AutoDbAble, Link, Linked, Typ, db};
         use crate::yt::song_tube::*;
 
+        impl Linked<Album> for Song {}
+        impl Linked<Artist> for Song {}
         impl AutoDbAble for Song {
             fn typ() -> db::Typ {
                 db::Typ::StSong
@@ -331,8 +404,34 @@ pub mod db {
             fn refids(&self) -> impl IntoIterator<Item = String> {
                 [self.id.to_owned()]
             }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+                for from in self.refids() {
+                    for id in self.authors.iter().filter_map(|a| a.channel_id.as_ref()) {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: <Self as AutoDbAble>::typ(),
+                            to_refid: id.to_owned(),
+                            to_typ: <Artist as AutoDbAble>::typ(),
+                        });
+                    }
+                }
+                for from in self.refids() {
+                    for a in self.album.iter() {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: <Self as AutoDbAble>::typ(),
+                            to_refid: a.id.clone(),
+                            to_typ: <Album as AutoDbAble>::typ(),
+                        });
+                    }
+                }
+                links
+            }
         }
 
+        impl Linked<Artist> for Album {}
         impl AutoDbAble for Album {
             fn typ() -> db::Typ {
                 db::Typ::StAlbum
@@ -356,8 +455,23 @@ pub mod db {
             fn refids(&self) -> impl IntoIterator<Item = String> {
                 [self.id.clone()]
             }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+                for from in self.refids() {
+                    for to in self.author.iter().filter_map(|a| a.channel_id.as_ref()) {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: <Self as AutoDbAble>::typ(),
+                            to_refid: to.to_owned(),
+                            to_typ: <Artist as AutoDbAble>::typ(),
+                        });
+                    }
+                }
+                links
             }
         }
+
         impl AutoDbAble for Playlist {
             fn typ() -> db::Typ {
                 db::Typ::StPlaylist
@@ -382,6 +496,7 @@ pub mod db {
                 [self.id.clone()]
             }
         }
+
         impl AutoDbAble for Artist {
             fn typ() -> db::Typ {
                 db::Typ::StArtist
@@ -404,9 +519,11 @@ pub mod db {
     }
 
     mod musimanager {
-        use super::*;
+        use super::{AutoDbAble, Link, Linked, Typ};
         use crate::musimanager::*;
 
+        // impl Linked<Album<VideoId>> for Song<Option<SongInfo>> {}
+        impl Linked<Artist<VideoId, AlbumId>> for Song<Option<SongInfo>> {}
         impl AutoDbAble for Song<Option<SongInfo>> {
             fn typ() -> Typ {
                 Typ::MmSong
@@ -425,7 +542,24 @@ pub mod db {
             fn refids(&self) -> impl IntoIterator<Item = String> {
                 [self.key.clone()]
             }
+
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+                for from in self.refids() {
+                    for i in self.info.iter() {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: Self::typ(),
+                            to_refid: i.channel_id.clone(),
+                            to_typ: Artist::<VideoId, AlbumId>::typ(),
+                        });
+                    }
+                }
+                links
+            }
         }
+        impl Linked<Artist<VideoId, AlbumId>> for Album<VideoId> {}
         impl AutoDbAble for Album<VideoId> {
             fn typ() -> Typ {
                 Typ::MmAlbum
@@ -437,6 +571,21 @@ pub mod db {
 
             fn refids(&self) -> impl IntoIterator<Item = String> {
                 [self.browse_id.clone()]
+            }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+                for from in self.refids() {
+                    for i in self.artist_keys.iter() {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: Self::typ(),
+                            to_refid: i.clone(),
+                            to_typ: Artist::<VideoId, AlbumId>::typ(),
+                        });
+                    }
+                }
+                links
             }
         }
         impl AutoDbAble for Artist<VideoId, AlbumId> {
@@ -562,6 +711,45 @@ pub mod db {
 
         impl ActiveModelBehavior for ActiveModel {}
     }
+    pub use link::Model as Link;
+    mod link {
+        use super::*;
+
+        // links go from song -> album/artist
+        // or album -> artist
+        // reverse links should be auto implemented
+
+        #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+        #[sea_orm(table_name = "links")]
+        pub struct Model {
+            #[sea_orm(primary_key)]
+            pub from_refid: String,
+            #[sea_orm(primary_key)]
+            pub from_typ: Typ,
+            #[sea_orm(primary_key)]
+            pub to_refid: String,
+            #[sea_orm(primary_key)]
+            pub to_typ: Typ,
+        }
+
+        #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+        pub enum Relation {
+            // #[sea_orm(
+            //     belongs_to = "super::refid::Entity",
+            //     from = "Column::FromRefid",
+            //     to = "super::refid::Column::refid"
+            // )]
+            // From,
+            // #[sea_orm(
+            //     belongs_to = "super::refid::Entity",
+            //     from = "Column::FromRefid",
+            //     to = "super::refid::Column::refid"
+            // )]
+            // To,
+        }
+
+        impl ActiveModelBehavior for ActiveModel {}
+    }
 
     pub type TransactionId = u32;
 
@@ -643,6 +831,25 @@ pub mod db {
                     .name("refid_index")
                     .table(refid::Entity)
                     .col(refid::Column::Refid)
+                    .to_owned(),
+            );
+            let _ = self.db.execute(s).await?;
+
+            let s = builder.build(&schema.create_table_from_entity(link::Entity));
+            let _ = self.db.execute(s).await?;
+            let s = builder.build(
+                &sea_orm::sea_query::Index::create()
+                    .name("from_link_index")
+                    .table(link::Entity)
+                    .col(link::Column::FromRefid)
+                    .to_owned(),
+            );
+            let _ = self.db.execute(s).await?;
+            let s = builder.build(
+                &sea_orm::sea_query::Index::create()
+                    .name("to_link_index")
+                    .table(link::Entity)
+                    .col(link::Column::ToRefid)
                     .to_owned(),
             );
             let _ = self.db.execute(s).await?;
@@ -831,6 +1038,60 @@ pub mod db {
                 items: matches,
                 continuation: (len == cap).then(|| cont).flatten(),
             })
+        }
+
+        pub async fn search_linked_from<From, To>(
+            &self,
+            from: Vec<String>,
+        ) -> anyhow::Result<Vec<DbItem<To>>>
+        where
+            From: DbAble + Linked<To>,
+            To: DbAble,
+        {
+            let mut condition = Condition::any();
+            for id in from {
+                condition = condition.add(link::Column::FromRefid.eq(id));
+            }
+            let links = link::Entity::find()
+                .filter(link::Column::FromTyp.eq(From::typ()))
+                .filter(link::Column::ToTyp.eq(To::typ()))
+                .filter(condition)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .collect::<Vec<_>>();
+            let items = links.into_iter().map(|e| e.to_refid).collect();
+
+            let items = self.search_many_by_ref_id(items).await?;
+
+            Ok(items)
+        }
+
+        pub async fn search_linked_to<From, To>(
+            &self,
+            to: Vec<String>,
+        ) -> anyhow::Result<Vec<DbItem<From>>>
+        where
+            From: DbAble + Linked<To>,
+            To: DbAble,
+        {
+            let mut condition = Condition::any();
+            for id in to {
+                condition = condition.add(link::Column::ToRefid.eq(id));
+            }
+            let links = link::Entity::find()
+                .filter(link::Column::FromTyp.eq(From::typ()))
+                .filter(link::Column::ToTyp.eq(To::typ()))
+                .filter(condition)
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .collect::<Vec<_>>();
+            let items = links.into_iter().map(|e| e.from_refid).collect();
+
+            let items = self.search_many_by_ref_id(items).await?;
+
+            Ok(items)
         }
 
         pub async fn search_untyped_by_id(
