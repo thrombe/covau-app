@@ -31,6 +31,20 @@ function db_cud(id: number) {
             await utils.api_request_no_resp(route, txn);
         },
 
+        async update_metadata<T>(item: DB.DbItem<T>) {
+            let route = db.route(item.typ, "update_metadata");
+
+            let txn: server.WithTransaction<server.UpdateMetadataQuery> = {
+                transaction_id: this.id,
+                t: {
+                    id: item.id,
+                    metadata: item.metadata,
+                },
+            };
+            let dbitem: server.InsertResponse<DB.DbMetadata> = await utils.api_request(route, txn);
+            return dbitem;
+        },
+
         async delete<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "delete");
 
@@ -45,7 +59,7 @@ function db_cud(id: number) {
 
 export type DbOps = ReturnType<typeof db_cud>;
 export const db = {
-    route(type: DB.Typ, op: "search" | "insert" | "update" | "delete") {
+    route(type: DB.Typ, op: "search" | "insert" | "update" | "update_metadata" | "delete") {
         switch (type) {
             case "MmSong":
                 return server_base + `musimanager/${op}/songs`;
