@@ -11,7 +11,7 @@ import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
-import type { SearcherConstructorMapper } from "./searcher.ts";
+import { StaticSearcher, type SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 
@@ -808,8 +808,51 @@ export class DbListItem extends ListItem {
                         switch (u.source.type) {
                             case "Mbz":
                                 return [];
-                            case "MusimanagerSearch":
-                            case "SongTubeSearch":
+                            case "MusimanagerSearch": {
+                                let ss = u.source.content;
+                                return [
+                                    {
+                                        icon: icons.open_new_tab,
+                                        location: "TopRight",
+                                        title: "open",
+                                        onclick: async () => {
+                                            let s1 = Db.new({
+                                                query_type: "refids",
+                                                type: "MmSong",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            let s2 = Db.new({
+                                                query_type: "refids",
+                                                type: "StSong",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            let songs = [...await s1.next_page(), ...await s2.next_page()];
+                                            let s = StaticSearcher(songs);
+                                            stores.new_tab(s, u.title);
+                                        },
+                                    },
+                                    {
+                                        icon: icons.add,
+                                        location: "OnlyMenu",
+                                        title: "add all to queue",
+                                        onclick: async () => {
+                                            let s1 = Db.new({
+                                                query_type: "refids",
+                                                type: "MmSong",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            let s2 = Db.new({
+                                                query_type: "refids",
+                                                type: "StSong",
+                                                ids: ss.songs.queue.map(s => s.item),
+                                            }, ss.songs.queue.length);
+                                            let songs = [...await s1.next_page(), ...await s2.next_page()];
+                                            await stores.queue_ops.add_item(...songs);
+                                        },
+                                    },
+                                ];
+                            } break;
+                            case "SongTubeSearch": {
                                 let ss = u.source.content;
                                 return [
                                     {
@@ -819,7 +862,7 @@ export class DbListItem extends ListItem {
                                         onclick: async () => {
                                             let s = Db.new({
                                                 query_type: "refids",
-                                                type: "Song",
+                                                type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
                                             }, ss.songs.queue.length);
                                             stores.new_tab(s, u.title);
@@ -832,7 +875,7 @@ export class DbListItem extends ListItem {
                                         onclick: async () => {
                                             let s = Db.new({
                                                 query_type: "refids",
-                                                type: "Song",
+                                                type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
                                             }, ss.songs.queue.length);
                                             let items = await s.next_page();
@@ -840,6 +883,7 @@ export class DbListItem extends ListItem {
                                         },
                                     },
                                 ];
+                            } break;
                             default:
                                 throw exhausted(u.source);
                         }
