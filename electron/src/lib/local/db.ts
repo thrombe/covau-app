@@ -3,7 +3,7 @@ import * as DB from "$types/db.ts";
 import * as server from "$types/server.ts";
 import { utils } from "$lib/server.ts";
 
-export type AlmostDbItem<T> = Omit<DB.DbItem<T>, "id">;
+export type AlmostDbItem<T> = Omit<Omit<DB.DbItem<T>, "id">, "metadata">;
 
 let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 function db_cud(id: number) {

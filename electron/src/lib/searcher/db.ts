@@ -13,6 +13,7 @@ import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
+import * as types from "$types/types.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -20,20 +21,20 @@ export type MmArtist = Musi.Artist<yt.VideoId, yt.AlbumId>;
 export type MmPlaylist = Musi.Playlist<yt.VideoId>;
 export type MmQueue = Musi.Queue<yt.VideoId>;
 
-export type MusicListItem = Keyed & (
-    | { id: number, typ: "MmSong", t: MmSong }
-    | { id: number, typ: "MmAlbum", t: MmAlbum }
-    | { id: number, typ: "MmArtist", t: MmArtist }
-    | { id: number, typ: "MmPlaylist", t: MmPlaylist }
-    | { id: number, typ: "MmQueue", t: MmQueue }
-    | { id: number, typ: "StSong", t: yt.Song }
-    | { id: number, typ: "StAlbum", t: yt.Album }
-    | { id: number, typ: "StPlaylist", t: yt.Playlist }
-    | { id: number, typ: "StArtist", t: yt.Artist }
-    | { id: number, typ: "Song", t: covau.Song }
-    | { id: number, typ: "Playlist", t: covau.Playlist }
-    | { id: number, typ: "Queue", t: covau.Queue }
-    | { id: number, typ: "Updater", t: covau.Updater }
+export type MusicListItem = Keyed & { id: number, metadata: types.db.DbMetadata } & (
+    | { typ: "MmSong", t: MmSong }
+    | { typ: "MmAlbum", t: MmAlbum }
+    | { typ: "MmArtist", t: MmArtist }
+    | { typ: "MmPlaylist", t: MmPlaylist }
+    | { typ: "MmQueue", t: MmQueue }
+    | { typ: "StSong", t: yt.Song }
+    | { typ: "StAlbum", t: yt.Album }
+    | { typ: "StPlaylist", t: yt.Playlist }
+    | { typ: "StArtist", t: yt.Artist }
+    | { typ: "Song", t: covau.Song }
+    | { typ: "Playlist", t: covau.Playlist }
+    | { typ: "Queue", t: covau.Queue }
+    | { typ: "Updater", t: covau.Updater }
 );
 
 export type Typ = DB.Typ;
