@@ -1,12 +1,19 @@
-use std::{borrow::Borrow, collections::HashSet};
 use std::path::PathBuf;
+use std::{borrow::Borrow, collections::HashSet};
 
 use futures::stream::{FuturesOrdered, FuturesUnordered};
 use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
-use super::{db, db::{DbId, Db, DbAble}, mbz, yt, yt::song_tube::TMusicListItem};
+use crate::{
+    db,
+    db::{Db, DbAble, DbId},
+    mbz,
+    server::{FeRequest, FrontendClient, MessageResult},
+    yt,
+    yt::song_tube::TMusicListItem,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
@@ -65,10 +72,10 @@ impl<T> UpdateItem<T> {
 
     pub fn bump_up(&mut self) {
         self.points += 1;
-    } 
+    }
     pub fn bump_down(&mut self) {
         self.points -= 1;
-    } 
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -291,7 +298,10 @@ impl UpdateManager {
                             .queue
                             .push(UpdateItem::new(yt::VideoId(song.id.clone()), ts));
 
-                        song.album = Some(yt::song_tube::SmolAlbum { name: a.item.title.clone(), id: a.item.id.clone() });
+                        song.album = Some(yt::song_tube::SmolAlbum {
+                            name: a.item.title.clone(),
+                            id: a.item.id.clone(),
+                        });
                         song.authors.extend(a.item.author.iter().cloned());
 
                         let old = song.get_by_refid(&txn).await?;
@@ -316,7 +326,7 @@ impl UpdateManager {
                     Err(e) => {
                         txn.rollback().await?;
                         return Err(e);
-                    },
+                    }
                 }
                 txn.commit().await?;
             }
