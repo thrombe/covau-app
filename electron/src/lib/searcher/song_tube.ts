@@ -394,7 +394,7 @@ export const st = {
     },
 
     get_yt_url(id: string) {
-        return `https://youtu.be/${id}`;
+        return `https://www.youtube.com/watch?v=${id}`;
     },
 
     get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem) {
