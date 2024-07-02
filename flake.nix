@@ -230,6 +230,22 @@
 
           cargo run --bin covau-app --features bindeps
         '')
+        (pkgs.writeShellScriptBin "check" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          cargo check --bin covau-app --features bindeps
+        '')
+        (pkgs.writeShellScriptBin "build-prod" ''
+          #!/usr/bin/env bash
+          export BUILD_MODE="PRODUCTION"
+
+          cd $PROJECT_ROOT/electron
+          bun run build
+
+          cd $PROJECT_ROOT
+          cargo build --release --bin covau-app --features bindeps
+        '')
       ];
 
       env-packages = pkgs:
