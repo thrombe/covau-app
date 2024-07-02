@@ -40,7 +40,7 @@
         { key: stores.new_key(), name: "Related", content_type: "related-music", source: "Yt" },
         { key: stores.new_key(), name: "Radio", content_type: "related-music", source: "Mbz" },
     ]);
-    stores.selected_menubar_option_index.set(0);
+    // stores.selected_menubar_option_index.set(0);
 
     let item_height: number = 75;
     let item_min_width = 290;

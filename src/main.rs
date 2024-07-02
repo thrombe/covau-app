@@ -19,6 +19,15 @@ use anyhow::Result;
 //    - store the Queue items list as Unique<ListItem | QueuOptions, string>
 //      - second last item always next item to play (by autoplay) (grayed)
 //      - last item always this options
+//
+// cli interface
+//  - like / dislike current song. plays a beep to notify
+//  - next / prev
+//
+// update song data as it's fetched
+// - anytime any song is fetched - just save it in db
+// - save any song where we know it's in db. (st.get_uri(save: boolean))
+//
 
 pub mod covau_types;
 pub mod db;

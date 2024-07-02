@@ -4,7 +4,22 @@ import type { Searcher } from "./searcher";
 
 export type Constructor<T> = new (...args: any[]) => T;
 
-const sleep = (ms: number) => {
+// type NonFunctionPropertyNames<T> = {
+//     [K in keyof T]: T[K] extends Function ? never : K;
+// }[keyof T];
+// type FunctionPropertyNames<T> = {
+//     [K in keyof T]: T[K] extends Function ? K : never;
+// }[keyof T];
+// type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
+// type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
+// type ExcludeMethods<T> =
+//     { [K in keyof T as (T[K] extends Function ? never : K)]: T[K] }
+// type PickMatching<T, V> =
+//     { [K in keyof T as T[K] extends V ? K : never]: T[K] }
+// type ExtractMethods<T> = PickMatching<T, Function>;
+
+
+export const sleep = (ms: number) => {
     return new Promise(
         (r) => setTimeout(r, ms)
     )

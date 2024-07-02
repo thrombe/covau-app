@@ -322,6 +322,8 @@ impl UpdateManager {
             }
         }
 
+        self.send_error_message(format!("updated updater: {}", &updater.t.title)).await?;
+
         Ok(())
     }
 
