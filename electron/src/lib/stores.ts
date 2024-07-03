@@ -29,8 +29,6 @@ export type MenubarOption = { name: string, key: number } & (
     | { content_type: "home-feed" }
 );
 
-let page_size = 30;
-
 let tab_key = 0;
 export const new_key = () => {
     return tab_key++;
@@ -255,7 +253,7 @@ selected_menubar_option.subscribe(async (option) => {
                         query_type: "search",
                         type: type,
                         query: q,
-                    }, page_size);
+                    }, 50);
                     s = new_searcher(get(query_input));
                 } break;
                 case "YtSong":
@@ -291,7 +289,7 @@ selected_menubar_option.subscribe(async (option) => {
                         query_type: "search",
                         type: type,
                         query: q,
-                    }, 30);
+                    }, 50);
                     s = new_searcher(get(query_input));
                 } break;
                 case "covau-group": {

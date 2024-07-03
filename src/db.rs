@@ -1368,6 +1368,9 @@ pub mod db {
             &self,
             ref_ids: Vec<String>,
         ) -> anyhow::Result<Vec<DbItem<T>>> {
+            // TODO: crash on building query if this condition has a lot of items (1000 ish)
+            // - maybe create a temporary table for refids and join on it
+            // - maybe just use a rust hashmap (slow tho :/)
             let mut condition = Condition::any();
             for id in ref_ids {
                 condition = condition.add(refid::Column::Refid.eq(id));

@@ -28,6 +28,8 @@ use anyhow::Result;
 // - anytime any song is fetched - just save it in db
 // - save any song where we know it's in db. (st.get_uri(save: boolean))
 //
+// a browser only player backend
+//
 
 pub mod covau_types;
 pub mod db;

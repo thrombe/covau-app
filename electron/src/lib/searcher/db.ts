@@ -946,6 +946,15 @@ export class Db extends Unpaged<MusicListItem> {
         super();
         this.query = query;
         this.page_size = page_size;
+
+        // fix sea orm crash
+        // refids / ids is equivalent to
+        // select * from _ where id == (a or b or c or ....)
+        // so it's not efficient to do it like this anyway
+        // TODO: maybe optimise it (and fix the crash). create an intermediate table and join on the refids
+        // if (page_size > 500 && (query.query_type == "refids" || query.query_type == "ids")) {
+        //     throw new Error(`page size too large: ${page_size}`);
+        // }
     }
 
     static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null) {
