@@ -5,32 +5,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-// TODO:
-// create a nix style symlinked artist/songs, album/songs, artist/albums, etc
-// but store all songs in a single directory
-//
-// - virtual scrolling but paged
-//  - ff basically does not seem to need virtual scrolling (except for memory usage (cheap))
-//  - chrome (and ff to a lesser degree) does not like frequent DOM changes
-//    - just change the virtual scrolling to add/remove items in big chunks
-//
-// add autoplay
-//  - QueueManager has a AutoPlay Searcher
-//    - store the Queue items list as Unique<ListItem | QueuOptions, string>
-//      - second last item always next item to play (by autoplay) (grayed)
-//      - last item always this options
-//
-// cli interface
-//  - like / dislike current song. plays a beep to notify
-//  - next / prev
-//
-// update song data as its fetched
-// - anytime any song is fetched - just save it in db
-// - save any song where we know it's in db. (st.get_uri(save: boolean))
-//
-// a browser only player backend
-//
-
 pub mod covau_types;
 pub mod db;
 pub mod mbz;
