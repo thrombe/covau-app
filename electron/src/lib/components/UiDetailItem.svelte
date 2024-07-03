@@ -24,7 +24,7 @@
 </script>
 
 <div class="h-full w-full p-4 flex flex-row place-content-center">
-    <div class="skroll flex flex-col max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
+    <div class="flex flex-col max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
         {#each sections as section}
             {#if section.type == "SongInfo"}
                 <div class="flex flex-row gap-4">
@@ -172,14 +172,9 @@
         @apply bg-gray-200 bg-opacity-10 rounded-xl;
     }
 
-    .skroll.div {
-        @apply  flex flex-col justify-center flex-1;
-    }
-
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
     }
-
     /* For IE, Edge and Firefox */
     .scrollbar-hide {
         -ms-overflow-style: none;  /* IE and Edge */
