@@ -16,6 +16,35 @@ export type Option = {
     onclick: Callback,
 };
 
+export type DetailOption = Omit<Option, "location">;
+export type InfoPiece = {
+    heading: string,
+    content: string | null,
+};
+export type DetailSection = ({
+    type: "SongInfo",
+    info: InfoPiece[],
+} | {
+    type: "Searcher",
+    title: string,
+    searcher: Writable<Searcher>,
+    options: DetailOption[],
+    height: number,
+} | {
+    type: "Options",
+    title: string,
+    options: DetailOption[],
+} | {
+    type: "Rearrange",
+    title: string,
+    items: ListItem[],
+} | {
+    type: "PrettyJson",
+    title: string,
+    content: string,
+});
+
+
 export abstract class ListItem implements Keyed {
     custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
 
@@ -37,6 +66,7 @@ export abstract class ListItem implements Keyed {
     abstract audio_uri(): Promise<string | null>;
     abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
+    abstract sections(): DetailSection[];
 }
 
 export class CustomListItem extends ListItem {
@@ -48,6 +78,7 @@ export class CustomListItem extends ListItem {
     _thumbnail: string | null = null;
     _default_thumbnail: string = icons.default_music_icon
     _options: Option[] = [];
+    _sections: DetailSection[] = [];
 
     constructor(key: string, title: string) {
         super();
@@ -91,6 +122,10 @@ export class CustomListItem extends ListItem {
         return null;
     }
 
+    sections(): DetailSection[] {
+        return this._sections;
+    }
+
     async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
         let artists = this._artists.length > 0 ? this._artists : (this._title_sub !== null ? [this._title_sub] : []);
         switch (typ) {
@@ -107,39 +142,4 @@ export class CustomListItem extends ListItem {
                 throw exhausted(typ);
         }
     }
-}
-
-export type DetailOption = Omit<Option, "location">;
-export type InfoPiece = {
-    heading: string,
-    content: string | null,
-};
-export type DetailSection = ({
-    type: "SongInfo",
-    info: InfoPiece[],
-} | {
-    type: "Searcher",
-    title: string,
-    searcher: Writable<Searcher>,
-    options: DetailOption[],
-    height: number,
-} | {
-    type: "Options",
-    title: string,
-    options: DetailOption[],
-} | {
-    type: "Rearrange",
-    title: string,
-    items: ListItem[],
-} | {
-    type: "PrettyJson",
-    title: string,
-    content: string,
-});
-
-export abstract class DetailItem {
-    abstract title(): string;
-    abstract thumbnail(): string | null;
-    abstract default_thumbnail(): string;
-    abstract sections(): DetailSection[];
 }

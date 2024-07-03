@@ -4,7 +4,7 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
-import { type Option, ListItem, type RenderContext, DetailItem, type DetailSection } from "./item.ts";
+import { type Option, ListItem, type RenderContext, type DetailSection } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
@@ -42,69 +42,6 @@ export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
     { query_type: 'refids', type: Typ, ids: string[] } |
     { query_type: 'ids', type: Typ, ids: number[] };
-
-export class MmSongDetailItem extends DetailItem {
-    item: DbListItem;
-    song: MmSong;
-    constructor(song: MmSong, item: DbListItem) {
-        super();
-        this.item = item;
-        this.song = song;
-    }
-    _section_key: number = 1;
-    section_key() {
-        return this._section_key++;
-    }
-
-    title(): string {
-        return this.item.title();
-    }
-    thumbnail(): string | null {
-        return this.item.thumbnail();
-    }
-    default_thumbnail(): string {
-        return this.item.default_thumbnail();
-    }
-    sections(): DetailSection[] {
-        return [
-            {
-                type: "SongInfo",
-                info: [
-                    {
-                        heading: "Type",
-                        content: this.item.data.typ,
-                    },
-                    {
-                        heading: "Title",
-                        content: this.title(),
-                    },
-                    {
-                        heading: "Artist",
-                        content: this.song.artist_name,
-                    },
-                    {
-                        heading: "Key",
-                        content: this.song.key,
-                    },
-                    {
-                        heading: "File",
-                        content: this.song.last_known_path,
-                    },
-                ]
-            },
-            {
-                type: "Options",
-                title: "Options",
-                options: this.item.options("DetailSection"),
-            },
-            {
-                type: "PrettyJson",
-                title: "Internal data",
-                content: JSON.stringify(this.item.data, null, 2),
-            },
-        ];
-    }
-}
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
@@ -993,6 +930,66 @@ export class DbListItem extends ListItem {
                 return [];
             default:
                 throw exhausted(ctx);
+        }
+    }
+
+    sections(): DetailSection[] {
+        switch (this.data.typ) {
+            case "MmSong": {
+                let song = this.data.t;
+                return [
+                    {
+                        type: "SongInfo",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: this.title(),
+                            },
+                            {
+                                heading: "Artist",
+                                content: song.artist_name,
+                            },
+                            {
+                                heading: "Key",
+                                content: song.key,
+                            },
+                            {
+                                heading: "File",
+                                content: song.last_known_path,
+                            },
+                        ]
+                    },
+                    {
+                        type: "Options",
+                        title: "Options",
+                        options: this.options("DetailSection"),
+                    },
+                    {
+                        type: "PrettyJson",
+                        title: "Internal data",
+                        content: JSON.stringify(this.data, null, 2),
+                    },
+                ];
+            } break;
+            case "Queue":
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Song":
+            case "Playlist":
+            case "Updater":
+                return [];
+            default:
+                throw exhausted(this.data)
         }
     }
 }
