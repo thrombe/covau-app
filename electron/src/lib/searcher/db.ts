@@ -560,9 +560,8 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "details",
                                 onclick: async () => {
-                                    let item = new MmSongDetailItem(s, this);
                                     let title = `${this.title()} details`
-                                    stores.new_detail_tab(item, title);
+                                    stores.new_detail_tab(this, title);
                                 },
                             },
                         ];
