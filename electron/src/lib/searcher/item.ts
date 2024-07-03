@@ -1,9 +1,20 @@
-import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
+import type { DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted, type Keyed } from "$lib/virtual";
 import * as covau from "$types/covau.ts";
 import type { DbItem } from "$types/db";
 import * as icons from "$lib/icons.ts";
+import type { Searcher } from "./searcher";
+import type { Writable } from "svelte/store";
+
+export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection";
+export type Callback = (() => void) | (() => Promise<void>);
+export type Option = {
+    icon: string,
+    title: string,
+    location: "IconTop" | "TopRight" | "BottomRight" | "OnlyMenu",
+    onclick: Callback,
+};
 
 export abstract class ListItem implements Keyed {
     custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
@@ -98,11 +109,37 @@ export class CustomListItem extends ListItem {
     }
 }
 
-export type RenderContext = "Queue" | "Browser" | "Playbar";
-export type Callback = (() => void) | (() => Promise<void>);
-export type Option = {
-    icon: string,
-    title: string,
-    location: "IconTop" | "TopRight" | "BottomRight" | "OnlyMenu",
-    onclick: Callback,
+export type DetailOption = Omit<Option, "location">;
+export type InfoPiece = {
+    heading: string,
+    content: string | null,
 };
+export type DetailSection = ({
+    type: "SongInfo",
+    info: InfoPiece[],
+} | {
+    type: "Searcher",
+    title: string,
+    searcher: Writable<Searcher>,
+    options: DetailOption[],
+    height: number,
+} | {
+    type: "Options",
+    title: string,
+    options: DetailOption[],
+} | {
+    type: "Rearrange",
+    title: string,
+    items: ListItem[],
+} | {
+    type: "PrettyJson",
+    title: string,
+    content: string,
+});
+
+export abstract class DetailItem {
+    abstract title(): string;
+    abstract thumbnail(): string | null;
+    abstract default_thumbnail(): string;
+    abstract sections(): DetailSection[];
+}

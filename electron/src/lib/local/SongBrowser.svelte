@@ -8,6 +8,8 @@
     import { get } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
+    import { exhausted } from "$lib/virtual";
+    import UiDetailItem from "$lib/components/UiDetailItem.svelte";
 
     export let columns: number;
     export let item_height: number;
@@ -49,9 +51,18 @@
         if (!t) {
             return;
         }
-
-        search_query = get(t.query);
-        options = get(t.options);
+        switch (t.type) {
+            case "detail": {
+                options = [];
+                search_query = "";
+            } break;
+            case "browse": {
+                search_query = get(t.query);
+                options = get(t.options);
+            } break;
+            default:
+                throw exhausted(t);
+        }
     });
     onDestroy(unsub);
 </script>
@@ -59,18 +70,16 @@
 <div class="w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar class="flex flex-row h-full">
-            {#if curr_tab && curr_tab.new_searcher === null}
-                <div class="flex h-full w-full items-center">
-                    <div class="flex w-full text-center justify-center text-xl">
-                        {curr_tab.name}
-                    </div>
-                </div>
-            {:else}
+            {#if curr_tab && curr_tab.type == "browse" && curr_tab.new_searcher != null}
                 <InputBar
                     placeholder={"Search"}
                     bind:value={search_query}
                     bind:input_element={search_input_element}
                     on_enter={async (e) => {
+                        if (curr_tab.type != "browse") {
+                            throw new Error("unreachable");
+                        }
+
                         stores.query_input.set(search_query);
                         if (curr_tab.query) {
                             curr_tab.query.set(search_query);
@@ -80,7 +89,14 @@
                         e.preventDefault();
                     }}
                 />
+            {:else}
+                <div class="flex h-full w-full items-center">
+                    <div class="flex w-full text-center justify-center text-xl">
+                        {curr_tab?.name ?? "Loading..."}
+                    </div>
+                </div>
             {/if}
+
             <ThreeDotMenu
                 options={options}
                 let:on_menu_click
@@ -150,36 +166,44 @@
 
     {#each tabs as tab (tab.key)}
         <browse-area class={curr_tab == tab ? "" : "hidden"}>
-            <Explorer
-                searcher={tab.searcher}
-                {columns}
-                bind:item_height
-                keyboard_control={false}
-                bind:search_objects
-                bind:try_scroll_selected_item_in_view
-                on_item_click={async (t) => {
-                    console.log(t);
-                }}
-                let:item
-                let:selected
-            >
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <list-item class:selected>
-                    <div
-                        draggable={true}
-                        on:dragstart={(event) => dragstart(event, item)}
-                        on:dragend={queue_dragend}
-                        class="item-bg"
-                    >
-                        <AudioListItem
-                            {item}
-                            ctx="Browser"
-                            show_buttons={selected}
-                            alt_thumbnail={tab.thumbnail}
-                        />
-                    </div>
-                </list-item>
-            </Explorer>
+            {#if tab.type == "browse"}
+                <Explorer
+                    searcher={tab.searcher}
+                    {columns}
+                    bind:item_height
+                    keyboard_control={false}
+                    bind:search_objects
+                    bind:try_scroll_selected_item_in_view
+                    on_item_click={async (t) => {
+                        console.log(t);
+                    }}
+                    let:item
+                    let:selected
+                >
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <list-item class:selected>
+                        <div
+                            draggable={true}
+                            on:dragstart={(event) => dragstart(event, item)}
+                            on:dragend={queue_dragend}
+                            class="item-bg"
+                        >
+                            <AudioListItem
+                                {item}
+                                ctx="Browser"
+                                show_buttons={selected}
+                                alt_thumbnail={tab.thumbnail}
+                            />
+                        </div>
+                    </list-item>
+                </Explorer>
+            {:else if tab.type == "detail"}
+                <UiDetailItem
+                    item={tab.item}
+                />
+            {:else}
+                tab type {tab.type} not handled
+            {/if}
         </browse-area>
     {/each}
 </div>

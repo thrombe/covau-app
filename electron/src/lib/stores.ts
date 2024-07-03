@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import { type ListItem, type Option } from "$lib/searcher/item.ts";
+import { DetailItem, type ListItem, type Option } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
@@ -11,15 +11,23 @@ import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
 import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
 
-export type Tab = {
+export type DetailTab = {
+    type: "detail",
+    item: Writable<DetailItem>,
+    key: number;
+    name: string;
+};
+export type BrowseTab = {
+    type: "browse",
+    key: number;
     name: string;
     searcher: Writable<Searcher>;
     new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null;
-    thumbnail: string | null;
+    thumbnail: string | null; // TODO: don't need this to override thumbnail. do that using some kinda mixin
     query: Writable<string>;
-    key: number;
     options: Readable<Option[]>;
 };
+export type Tab = DetailTab | BrowseTab;
 
 export type MenubarOption = { name: string, key: number } & (
     | { content_type: "list"; type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
@@ -111,6 +119,31 @@ export const pop_menu_item = (key: number) => {
 export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
 
+export const new_detail_tab = (
+    item: DetailItem,
+    name: string,
+    append: boolean = true,
+) => {
+    let index = get(curr_tab_index);
+    tabs.update(t => {
+        if (append) {
+            t = [...t.slice(0, index + 1)];
+        } else {
+            t = [];
+        }
+
+        let tab: DetailTab = {
+            type: "detail",
+            key: new_key(),
+            name,
+            item: writable(item),
+        };
+
+        t.push(tab);
+        return t;
+    });
+    curr_tab_index.set(get(tabs).length - 1);
+};
 export const new_tab = (
     s: Searcher,
     title: string,
@@ -131,7 +164,8 @@ export const new_tab = (
         let searcher = writable(s);
         let ops = derived([searcher], ([s]) => s.options());
         ops.subscribe(() => update_current_tab());
-        let tab: Tab = {
+        let tab: BrowseTab = {
+            type: "browse",
             name: title,
             searcher: searcher,
             new_searcher: new_searcher,
