@@ -146,9 +146,9 @@
     </div>
 </div>
 
-<div class="absolute w-full h-full -z-50" bind:clientWidth={img_w} bind:clientHeight={img_h}></div>
+<div class="absolute w-full h-full -z-[70]" bind:clientWidth={img_w} bind:clientHeight={img_h}></div>
 <img
-    class="absolute w-full h-full left-0 top-0 -z-10 overflow-hidden object-cover brightness-50 blur-2xl"
+    class="absolute w-full h-full left-0 top-0 -z-[49] overflow-hidden object-cover brightness-50 blur-2xl"
     style={`scale: ${100 * Math.max(img_w / img_h, 1) + 10}%;`}
     src={img_src}
     alt=""

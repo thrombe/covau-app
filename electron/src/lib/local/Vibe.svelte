@@ -181,7 +181,7 @@
                         </div>
 
                         <div
-                            class="absolute h-full w-full left-0 top-0 -z-20 brightness-75"
+                            class="absolute h-full w-full left-0 top-0 -z-50 brightness-75"
                         >
                             <BlobBg
                                 colors={[
@@ -195,7 +195,7 @@
                             />
                         </div>
                         <img
-                            class="absolute w-full h-full left-0 top-0 -z-20 overflow-hidden object-cover brightness-50 blur-xl"
+                            class="absolute w-full h-full left-0 top-0 -z-50 overflow-hidden object-cover brightness-50 blur-xl"
                             style={`scale: ${100 * Math.max(img_w / img_h, 1) + 10}%;`}
                             src={img_src}
                             alt=""
@@ -217,13 +217,24 @@
         <PlayBar {mobile} />
     </play-bar>
 
-    <div class="w-full h-full absolute -z-30 brightness-50">
+    <div class="w-full h-full absolute -z-[60] brightness-50">
         <BlobBg />
     </div>
 
     <!-- grain applies over both the bg and the song-browser image cuz of z-index i think -->
-    <div class="-z-20 grainy grainy-bg" />
+    <div class="-z-40 grainy grainy-bg" />
 </div>
+
+<!--
+z index notes
+- -z-70: forbidden things
+- -z-60: blob bg
+- -z-50: bg blob, bg image
+- -z-40: grain
+- -z-10: prompt blur bg
+-  z-10: volume slider, 3 dot menu
+-  z-20: things covering z-10
+-->
 
 <Prompt />
 <Toasts />

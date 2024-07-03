@@ -203,7 +203,7 @@
             <div
                 class="volume-box absolute flex flex-row gap-4 right-0 bottom-10 h-16 px-6 py-4 mr-2 bg-gray-200 bg-opacity-10 rounded-xl backdrop-blur-md {dragging_volume
                     ? 'z-10'
-                    : '-z-40 opacity-0'}"
+                    : '-z-[70] opacity-0'}"
             >
                 <div
                     class="relative h-full w-40 py-3 {is_muted
