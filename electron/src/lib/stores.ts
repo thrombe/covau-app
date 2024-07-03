@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import { DetailItem, type ListItem, type Option } from "$lib/searcher/item.ts";
+import { type ListItem, type Option } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
@@ -13,7 +13,7 @@ import * as icons from "$lib/icons.ts";
 
 export type DetailTab = {
     type: "detail",
-    item: Writable<DetailItem>,
+    item: Writable<ListItem>,
     key: number;
     name: string;
 };
@@ -120,7 +120,7 @@ export let tabs: Writable<Tab[]> = writable([]);
 export let curr_tab_index = writable(0);
 
 export const new_detail_tab = (
-    item: DetailItem,
+    item: ListItem,
     name: string,
     append: boolean = true,
 ) => {

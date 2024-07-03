@@ -9,7 +9,7 @@
     import * as icons from "$lib/icons.ts";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import { exhausted } from "$lib/virtual";
-    import UiDetailItem from "$lib/components/UiDetailItem.svelte";
+    import DetailItem from "$lib/components/DetailItem.svelte";
 
     export let columns: number;
     export let item_height: number;
@@ -198,7 +198,7 @@
                     </list-item>
                 </Explorer>
             {:else if tab.type == "detail"}
-                <UiDetailItem
+                <DetailItem
                     item={tab.item}
                 />
             {:else}
