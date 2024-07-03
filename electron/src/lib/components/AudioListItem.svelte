@@ -131,7 +131,7 @@
     }
 
     .pop-button {
-        @apply absolute p-1 m-2 rounded-md bg-gray-200 bg-opacity-30 text-gray-900 font-bold right-0;
+        @apply absolute p-1 m-2 rounded-md hover:bg-gray-200 hover:bg-opacity-30 text-gray-900 font-bold right-0;
     }
     .queue-button {
         @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;
