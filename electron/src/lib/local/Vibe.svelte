@@ -10,6 +10,7 @@
     import Prompt from "$lib/prompt/Prompt.svelte";
     import { get } from "svelte/store";
 
+    // prettier-ignore
     stores.menubar_options.set([
         { key: stores.new_key(), name: "Home", content_type: "home-feed" },
         { key: stores.new_key(), name: "Mm Song", content_type: "list", type: "MmSong" },
@@ -83,9 +84,8 @@
     }
 
     let img_src = "";
-    let img_h: number;
-    let img_w: number;
-    let img_squared = false;
+    let img_h: number = 1;
+    let img_w: number = 1;
 
     const on_img_err = async () => {
         img_src = "";
@@ -146,8 +146,7 @@
                     class="w-full h-full rounded-3xl overflow-hidden"
                     bind:clientWidth={browse_width}
                 >
-                    <div
-                        class="relative w-full h-full"
+                    <div class="relative w-full h-full"
                         bind:clientWidth={img_w}
                         bind:clientHeight={img_h}
                     >
@@ -196,9 +195,8 @@
                             />
                         </div>
                         <img
-                            class="absolute w-full h-full left-0 top-0 -z-20 overflow-hidden object-cover brightness-50 blur-md scale-110"
-                            style="{img_squared ? '' : 'lol'}height: {100 *
-                                Math.max(img_w / img_h, 1)}%;"
+                            class="absolute w-full h-full left-0 top-0 -z-20 overflow-hidden object-cover brightness-50 blur-xl"
+                            style={`scale: ${100 * Math.max(img_w / img_h, 1) + 10}%;`}
                             src={img_src}
                             alt=""
                             on:error={on_img_err}
@@ -210,11 +208,7 @@
 
         {#if !mobile}
             <queue-area class="flex flex-col h-full">
-                <Queue
-                    bind:item_height
-                    bind:dragend={queue_dragend}
-                    {mobile}
-                />
+                <Queue bind:item_height bind:dragend={queue_dragend} {mobile} />
             </queue-area>
         {/if}
     </all-contents>
