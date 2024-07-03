@@ -820,13 +820,21 @@ export class DbListItem extends ListItem {
                                                 query_type: "refids",
                                                 type: "MmSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
+                                            }, 100);
                                             let s2 = Db.new({
                                                 query_type: "refids",
                                                 type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
-                                            let songs = [...await s1.next_page(), ...await s2.next_page()];
+                                            }, 100);
+                                            let songs1 = await s1.next_page();
+                                            while (s1.has_next_page) {
+                                                songs1 = await s1.next_page();
+                                            }
+                                            let songs2 = await s1.next_page();
+                                            while (s2.has_next_page) {
+                                                songs2 = await s2.next_page();
+                                            }
+                                            let songs = [...songs1, ...songs2];
                                             let s = StaticSearcher(songs);
                                             stores.new_tab(s, u.title);
                                         },
@@ -840,13 +848,21 @@ export class DbListItem extends ListItem {
                                                 query_type: "refids",
                                                 type: "MmSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
+                                            }, 100);
                                             let s2 = Db.new({
                                                 query_type: "refids",
                                                 type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
-                                            let songs = [...await s1.next_page(), ...await s2.next_page()];
+                                            }, 100);
+                                            let songs1 = await s1.next_page();
+                                            while (s1.has_next_page) {
+                                                songs1 = await s1.next_page();
+                                            }
+                                            let songs2 = await s1.next_page();
+                                            while (s2.has_next_page) {
+                                                songs2 = await s2.next_page();
+                                            }
+                                            let songs = [...songs1, ...songs2];
                                             await stores.queue_ops.add_item(...songs);
                                         },
                                     },
@@ -864,7 +880,7 @@ export class DbListItem extends ListItem {
                                                 query_type: "refids",
                                                 type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
+                                            }, 50);
                                             stores.new_tab(s, u.title);
                                         },
                                     },
@@ -877,8 +893,11 @@ export class DbListItem extends ListItem {
                                                 query_type: "refids",
                                                 type: "StSong",
                                                 ids: ss.songs.queue.map(s => s.item),
-                                            }, ss.songs.queue.length);
+                                            }, 100);
                                             let items = await s.next_page();
+                                            while (s.has_next_page) {
+                                                items = await s.next_page();
+                                            }
                                             await stores.queue_ops.add_item(...items);
                                         },
                                     },
