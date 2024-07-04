@@ -400,16 +400,17 @@ fn client_ws_route<R: Send + Sync + Serialize + 'static>(
                                 .ok()
                                 .context("could not send over channel")?;
                         }
-                        None => {
-                            match msg.data {
-                                MessageResult::Ok(msg) => {
-                                    return Err(anyhow::anyhow!("frontend sent a message without id :/ : {:?}", msg));
-                                },
-                                MessageResult::Err(e) => {
-                                    println!("frontend could not fullfill some request: {}", e);
-                                },
+                        None => match msg.data {
+                            MessageResult::Ok(msg) => {
+                                return Err(anyhow::anyhow!(
+                                    "frontend sent a message without id :/ : {:?}",
+                                    msg
+                                ));
                             }
-                        }
+                            MessageResult::Err(e) => {
+                                println!("frontend could not fullfill some request: {}", e);
+                            }
+                        },
                     }
                     Ok(())
                 }
