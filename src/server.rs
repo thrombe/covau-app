@@ -865,7 +865,8 @@ fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
         .and_then(|c: reqwest::Client| async move {
-            let req = c.get("http://localhost:6174/webui.js");
+            let port: u16 = core::env!("WEBUI_PORT").parse().unwrap();
+            let req = c.get(&format!("http://localhost:{}/webui.js", port));
             let res = c
                 .execute(req.build().map_err(custom_reject)?)
                 .await
