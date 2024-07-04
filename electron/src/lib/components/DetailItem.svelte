@@ -105,10 +105,6 @@
                             columns={1}
                             item_height={80}
                             keyboard_control={false}
-                            try_scroll_selected_item_in_view={async () => {}}
-                            on_item_click={async (t) => {
-                                console.log(t);
-                            }}
                             let:item
                             let:selected
                         >

@@ -127,10 +127,6 @@
                         searcher={prompt_info.searcher}
                         keyboard_control={true}
                         bind:selected_item
-                        try_scroll_selected_item_in_view={async () => {}}
-                        on_item_click={async (t) => {
-                            console.log(t);
-                        }}
                         let:item
                         let:selected
                     >

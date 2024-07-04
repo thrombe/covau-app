@@ -171,9 +171,6 @@
                     bind:selected_item_index
                     bind:search_objects
                     bind:try_scroll_selected_item_in_view
-                    on_item_click={async (t) => {
-                        console.log(t);
-                    }}
                     let:item
                     let:selected
                 >
@@ -322,9 +319,6 @@
                     {selected_item_index}
                     {search_objects}
                     {try_scroll_selected_item_in_view}
-                    on_item_click={async (t) => {
-                        console.log(t);
-                    }}
                     let:item
                     let:selected
                 >

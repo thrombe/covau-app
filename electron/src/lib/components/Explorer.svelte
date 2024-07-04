@@ -10,8 +10,13 @@
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
-    export let on_item_click: (t: Unique<ListItem, unknown>) => Promise<void>;
-    export let try_scroll_selected_item_in_view: () => Promise<void>;
+    export let on_item_click: (
+        t: Unique<ListItem, unknown>
+    ) => Promise<void> = async (t) => {
+        console.log(t);
+    };
+    export let try_scroll_selected_item_in_view: () => Promise<void> =
+        async () => {};
     export let keyboard_control = true;
 
     interface $$Slots {
@@ -27,7 +32,8 @@
         infobox: {};
     }
 
-    export let selected_item: Unique<ListItem, unknown> = undefined as unknown as Unique<ListItem, unknown>;
+    export let selected_item: Unique<ListItem, unknown> =
+        undefined as unknown as Unique<ListItem, unknown>;
     let selected_item_index: number;
     let items = new Array<Unique<ListItem, number>>();
 

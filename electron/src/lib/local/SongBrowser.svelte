@@ -174,9 +174,6 @@
                     keyboard_control={false}
                     bind:search_objects
                     bind:try_scroll_selected_item_in_view
-                    on_item_click={async (t) => {
-                        console.log(t);
-                    }}
                     let:item
                     let:selected
                 >
