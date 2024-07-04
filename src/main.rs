@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use clap::Parser;
 
 pub mod covau_types;
 pub mod db;
@@ -13,6 +14,88 @@ mod musiplayer;
 pub mod server;
 pub mod webui;
 pub mod yt;
+
+pub mod cli {
+    use std::path::PathBuf;
+
+    use clap::{arg, command, Parser, Subcommand};
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Deserialize, Debug, Clone)]
+    #[serde(default, deny_unknown_fields)]
+    pub struct Config {
+        pub music_path: Option<String>,
+    }
+    impl Default for Config {
+        fn default() -> Self {
+            Self { music_path: None }
+        }
+    }
+
+    #[derive(Subcommand, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+    #[serde(tag = "type", content = "content")]
+    pub enum FeCommand {
+        Like,
+        Dislike,
+        Next,
+        Prev,
+        Pause,
+        Play,
+        ToggleMute,
+        TogglePlay,
+        Message {
+            #[arg(long, short)]
+            message: String,
+
+            #[arg(long, short, default_value_t = false)]
+            error: bool,
+        },
+    }
+
+    #[derive(Subcommand, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+    pub enum Command {
+        FeCommand {
+            #[command(subcommand)]
+            command: FeCommand,
+        },
+        Server,
+        Webui,
+        Default,
+        Test,
+    }
+
+    #[derive(Parser, Debug, Clone)]
+    #[command(author, version, about)]
+    pub struct Cli {
+        /// Specify a custom config directory
+        #[arg(short, long)]
+        pub config_dir: Option<String>,
+
+        #[arg(long, short, default_value_t = false)]
+        pub debug: bool,
+
+        #[command(subcommand)]
+        pub command: Option<Command>,
+    }
+
+    impl Cli {
+        pub fn config(&self) -> anyhow::Result<Config> {
+            let config = self
+                .config_dir
+                .clone()
+                .map(PathBuf::from)
+                .or(dirs::config_dir().map(|pb| pb.join("covau")))
+                .map(|pb| pb.join("config.toml"))
+                .filter(|p| p.exists())
+                .map(std::fs::read_to_string)
+                .transpose()?
+                .map(|s| toml::from_str::<Config>(&s))
+                .transpose()?
+                .unwrap_or(Config::default());
+            Ok(config)
+        }
+    }
+}
 
 fn dump_types() -> Result<()> {
     let tsconfig =
@@ -76,20 +159,94 @@ async fn server_start() -> Result<()> {
 async fn main() -> Result<()> {
     init_logger("./")?;
 
-    // dbg!(ulid::Ulid::new().to_string());
+    let cli = cli::Cli::parse();
 
-    // parse_test().await?;
-    // db::db_test().await?;
-    // mbz::api_test().await?;
-    // std::process::exit(1);
+    match cli.command.clone().unwrap_or(cli::Command::Default) {
+        cli::Command::Server => {
+            server_start().await?;
+        }
+        cli::Command::Webui => {
+            webui_app().await?;
+        }
+        cli::Command::Default => {
+            #[cfg(build_mode = "DEV")]
+            dump_types()?;
 
-    #[cfg(build_mode = "DEV")]
-    dump_types()?;
+            #[cfg(ui_backend = "WEBUI")]
+            webui_app().await?;
+            #[cfg(not(ui_backend = "WEBUI"))]
+            server_start().await?;
+        }
+        cli::Command::FeCommand { command } => {
+            let fereq = match command {
+                cli::FeCommand::Like => server::FeRequest::Like,
+                cli::FeCommand::Dislike => server::FeRequest::Dislike,
+                cli::FeCommand::Next => server::FeRequest::Next,
+                cli::FeCommand::Prev => server::FeRequest::Prev,
+                cli::FeCommand::Pause => server::FeRequest::Pause,
+                cli::FeCommand::Play => server::FeRequest::Play,
+                cli::FeCommand::ToggleMute => server::FeRequest::ToggleMute,
+                cli::FeCommand::TogglePlay => server::FeRequest::TogglePlay,
+                cli::FeCommand::Message { message, error } => {
+                    if error {
+                        server::FeRequest::NotifyError(message)
+                    } else {
+                        server::FeRequest::Notify(message)
+                    }
+                }
+            };
 
-    #[cfg(ui_backend = "WEBUI")]
-    webui_app().await?;
-    #[cfg(not(ui_backend = "WEBUI"))]
-    server_start().await?;
+            let client = reqwest::Client::new();
+            let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
+            let req = client
+                .post(format!("http://localhost:{}/cli", port))
+                .body(serde_json::to_string(&fereq)?)
+                .timeout(std::time::Duration::from_secs(5))
+                .build()?;
+
+            match client.execute(req).await {
+                Ok(resp) => {
+                    // server responded with something
+
+                    let status = resp.status();
+                    let res = resp.error_for_status_ref();
+                    match res {
+                        Ok(_resp) => {
+                            println!("Ok");
+                        }
+                        Err(e) => match resp.json::<server::ErrorMessage>().await {
+                            Ok(errmsg) => {
+                                if cli.debug {
+                                    return Err(anyhow::anyhow!(errmsg.stack_trace));
+                                } else {
+                                    return Err(anyhow::anyhow!(errmsg.message));
+                                }
+                            }
+                            Err(e) => {
+                                if cli.debug {
+                                    eprintln!("{:?}", e);
+                                    return Err(e.into());
+                                } else {
+                                    return Err(e.into());
+                                }
+                            }
+                        },
+                    }
+                }
+                Err(e) => {
+                    // timeout error and stuff
+                    return Err(e.into());
+                }
+            }
+        }
+        cli::Command::Test => {
+            // dbg!(ulid::Ulid::new().to_string());
+
+            // parse_test().await?;
+            // db::db_test().await?;
+            // mbz::api_test().await?;
+        }
+    }
 
     Ok(())
 }

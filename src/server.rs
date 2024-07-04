@@ -27,13 +27,29 @@ struct CustomReject(anyhow::Error);
 impl warp::reject::Reject for CustomReject {}
 
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-struct ErrorMessage {
-    message: String,
-    stack_trace: String,
+pub struct ErrorMessage {
+    pub message: String,
+    pub stack_trace: String,
 }
 
 pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection {
     warp::reject::custom(CustomReject(error.into()))
+}
+
+fn cli_command_route(
+    fe: FrontendClient<FeRequest>,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
+    let route = warp::path("cli")
+        .and(warp::path::end())
+        .and(warp::any().map(move || fe.clone()))
+        .and(warp::body::json())
+        .and_then(|fe: FrontendClient<_>, req: FeRequest| async move {
+            fe.execute::<()>(req).await.map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply())
+        });
+    let route = route.with(warp::cors().allow_any_origin());
+    route.boxed()
 }
 
 async fn player_command_handler(
@@ -870,7 +886,7 @@ fn embedded_asset_route() -> BoxedFilter<(impl Reply,)> {
 }
 
 fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
-    #[cfg(ui_backend = "WEBUI")]
+    // #[cfg(ui_backend = "WEBUI")]
     let webui = warp::path("webui.js")
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
@@ -891,14 +907,14 @@ fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
             wres.status(status).body(body).map_err(custom_reject)
         });
 
-    #[cfg(not(ui_backend = "WEBUI"))]
-    let webui = warp::path("webui.js")
-        .and(warp::path::end())
-        .and(warp::any().map(move || c.clone()))
-        .and_then(|_: reqwest::Client| async move {
-            let mut wres = warp::http::Response::builder();
-            wres.body("").map_err(custom_reject)
-        });
+    // #[cfg(not(ui_backend = "WEBUI"))]
+    // let webui = warp::path("webui.js")
+    //     .and(warp::path::end())
+    //     .and(warp::any().map(move || c.clone()))
+    //     .and_then(|_: reqwest::Client| async move {
+    //         let mut wres = warp::http::Response::builder();
+    //         wres.body("").map_err(custom_reject)
+    //     });
 
     let webui = webui.with(warp::cors().allow_any_origin());
     webui.boxed()
@@ -1166,6 +1182,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     // TODO: expose db transactions somehow T_T
     let all = client_ws_route(yti.clone(), "yti")
         .or(client_ws_route(fe.clone(), "fec"))
+        .or(cli_command_route(fe.clone(), "cli"))
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes.boxed())
