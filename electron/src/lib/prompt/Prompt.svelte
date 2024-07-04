@@ -69,13 +69,14 @@
             await end_prompt();
         }
     };
-    const search_input_on_focus = async () => {
+
+    let timeout: number;
+    const search_input_on_keydown = async () => {
+        clearTimeout(timeout);
         input_element_is_focused = true;
-    };
-    const search_input_on_unfocus = async () => {
-        setTimeout(() => {
+        timeout = setTimeout(() => {
             input_element_is_focused = false;
-        }, 300);
+        }, 300) as unknown as number;
     };
 
     $: if (input_element) {
@@ -122,14 +123,13 @@
             </div>
         {:else if prompt_info.type == "Searcher"}
             <div class="flex flex-col gap-1 w-[80%] max-w-[40rem] mx-4 my-16 rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity">
-                <div class="w-full flex flex-row gap-4 h-20 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl">
+                <div class="w-full flex flex-row gap-4 h-16 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl">
                     <InputBar
                         classes={"text-2xl font-semibold placeholder-gray-200 placeholder-opacity-60"}
                         bind:input_element
                         placeholder={prompt_info?.placeholder ?? ""}
                         bind:value
-                        on_focus={search_input_on_focus}
-                        on_unfocus={search_input_on_unfocus}
+                        on_keydown={search_input_on_keydown}
                         on_enter={input_on_enter}
                     />
                     <button class="px-4">
