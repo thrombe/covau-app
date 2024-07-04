@@ -16,6 +16,7 @@
     let value: string;
     let selected_item: Unique<ListItem, unknown>;
     let input_element: HTMLElement;
+    let input_element_is_focused: boolean = false;
 
     let prompt_info: Prompt | null;
 
@@ -35,15 +36,20 @@
             prompt_info.resolve(value);
             value = "";
         } else if (prompt_info?.type == "Searcher") {
-            // prompt_info.resolve(selected_item.data);
             prompt_info.query.set(value);
         }
     };
-    const on_unfocus = async () => {
-        $prompt!.resolve(null);
+    const end_prompt = async () => {
+        if (prompt_info) {
+            prompt_info.resolve(null);
+        }
         value = "";
     };
     const on_window_keypress = async (k: KeyboardEvent) => {
+        if (!prompt_info) {
+            return;
+        }
+
         if (k.key == "Enter") {
             if (prompt_info?.type == "Searcher") {
                 prompt_info.resolve(selected_item.data);
@@ -56,7 +62,17 @@
         } else if (k.key == "?") {
             input_element.focus();
             k.preventDefault();
+        } else if (k.key == "Escape" && !input_element_is_focused) {
+            await end_prompt();
         }
+    };
+    const search_input_on_focus = async () => {
+        input_element_is_focused = true;
+    };
+    const search_input_on_unfocus = async () => {
+        setTimeout(() => {
+            input_element_is_focused = false;
+        }, 300);
     };
 
     $: if (input_element) {
@@ -69,14 +85,14 @@
     }
 </script>
 
-<svelte:window on:keypress={on_window_keypress} />
+<svelte:window on:keydown={on_window_keypress} />
 
 {#if prompt_info != null}
     <div class="fixed top-0 flex flex-col w-full h-full items-center">
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
-            on:click={on_unfocus}
+            on:click={end_prompt}
             class="absolute w-full h-full -z-10 bg-gray-900 bg-opacity-20 backdrop-blur-[2px] transition-opacity"
             style="transition-duration: 800ms;"
         />
@@ -91,7 +107,7 @@
                     placeholder={prompt_info?.placeholder ?? ""}
                     bind:value
                     on_enter={input_on_enter}
-                    {on_unfocus}
+                    on_unfocus={end_prompt}
                 />
                 <button class="px-4">
                     <img
@@ -109,6 +125,8 @@
                         bind:input_element
                         placeholder={prompt_info?.placeholder ?? ""}
                         bind:value
+                        on_focus={search_input_on_focus}
+                        on_unfocus={search_input_on_unfocus}
                         on_enter={input_on_enter}
                     />
                     <button class="px-4">
