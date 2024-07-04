@@ -26,9 +26,7 @@
     </div>
 
     <div class='w-full h-full brightness-50'>
-        <BlobBg
-            animate={false}
-        />
+        <BlobBg />
     </div>
     <div class=' grainy grainy-bg'></div>
 </div>
