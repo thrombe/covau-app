@@ -8,6 +8,6 @@ export interface Unique<T, K> {
 
 export function exhausted(d: never) {
     console.log(d)
-    throw new Error("unreachable");
+    throw new Error("unreachable: " + JSON.stringify(d));
 }
 

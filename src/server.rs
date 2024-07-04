@@ -303,6 +303,9 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
         Ok(())
     }
 
+    /// NOTE: there is no timeout on these. (so infinite timeout ig)
+    ///       you will wait forever if no no response is sent
+    // MAYBE: implement timeout?
     pub async fn execute<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
         let id = self
             .id_count
@@ -382,7 +385,14 @@ fn client_ws_route<R: Send + Sync + Serialize + 'static>(
                                 .context("could not send over channel")?;
                         }
                         None => {
-                            eprintln!("frontend sent a message without id :/ : {:?}", msg);
+                            match msg.data {
+                                MessageResult::Ok(msg) => {
+                                    return Err(anyhow::anyhow!("frontend sent a message without id :/ : {:?}", msg));
+                                },
+                                MessageResult::Err(e) => {
+                                    println!("frontend could not fullfill some request: {}", e);
+                                },
+                            }
                         }
                     }
                     Ok(())

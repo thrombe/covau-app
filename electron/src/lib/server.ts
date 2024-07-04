@@ -69,12 +69,19 @@ abstract class Server<Req> {
             try {
                 resp = await this.handle_req(mesg.content);
             } catch (e: any) {
+                let err: string;
+                if (e instanceof Error) {
+                    err = e.message;
+                } else {
+                    err = JSON.stringify(e);
+                }
                 let resp_mesg: Message<Object | null> = {
                     type: "Err",
                     id: mesg.id,
-                    content: e,
+                    content: err,
                 };
 
+                console.log(resp_mesg);
                 this.ws.send(JSON.stringify(resp_mesg));
             }
 
@@ -96,12 +103,14 @@ abstract class Server<Req> {
     // don't return anything if no response
     // return null for () unit type
     // else some { object: () }
+    // NOTE: server will wait forever if it expects a response and one is not sent.
+    //       maybe just make a "null" response as a precaution??
     abstract handle_req(req: Req): Promise<Object | null | undefined>;
 }
 
 class YtiServer extends Server<yt.YtiRequest> {
     constructor() {
-        super("serve/yti")
+        super("serve/yti");
     }
 
     tubes: Map<string, St.SongTube> = new Map();
@@ -133,18 +142,18 @@ class YtiServer extends Server<yt.YtiRequest> {
 
 class FeServer extends Server<FeRequest> {
     constructor() {
-        super("serve/fec")
+        super("serve/fec");
     }
 
     async handle_req(req: FeRequest): Promise<Object | null | undefined> {
         switch (req.type) {
             case 'Notify': {
                 toast(req.content, "info");
-                return;
+                return null;
             } break;
             case 'NotifyError': {
                 toast(req.content, "error");
-                return;
+                return null;
             } break;
             case 'Like':
             case 'Dislike':
