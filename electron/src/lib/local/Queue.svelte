@@ -16,7 +16,7 @@
     import * as icons from "$lib/icons.ts";
 
     export let item_height: number;
-    export let dragend = (e: DragEvent) => {
+    export let dragend = (_: DragEvent) => {
         hovering = null;
         dragging_index = null;
     };
@@ -65,7 +65,7 @@
     });
     onDestroy(unsub);
 
-    const on_item_click = async (t: Unique<ListItem, unknown>) => {};
+    const on_item_click = async (_: Unique<ListItem, unknown>) => {};
     let selected_item: Unique<ListItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 

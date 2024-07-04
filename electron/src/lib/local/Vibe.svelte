@@ -9,6 +9,7 @@
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
     import { get } from "svelte/store";
+    import { prompter } from "$lib/prompt/prompt";
 
     // prettier-ignore
     stores.menubar_options.set([
@@ -216,7 +217,7 @@
     </all-contents>
 
     <play-bar class="px-2 pb-2 pt-4">
-        <PlayBar {mobile} />
+        <PlayBar {mobile} keyboard_control={prompter.active == null} />
     </play-bar>
 
     <div class="w-full h-full absolute -z-[60] brightness-50">
