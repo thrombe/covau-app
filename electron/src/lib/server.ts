@@ -29,7 +29,7 @@ export const utils = {
         return resp;
     },
 
-    async api_request_no_resp<P, T>(url: string, json_payload: P) {
+    async api_request_no_resp<P>(url: string, json_payload: P) {
         let res = await fetch(
             url,
             {
