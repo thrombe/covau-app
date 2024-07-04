@@ -26,11 +26,24 @@ struct CustomReject(anyhow::Error);
 
 impl warp::reject::Reject for CustomReject {}
 
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, specta::Type)]
 pub struct ErrorMessage {
     pub message: String,
     pub stack_trace: String,
 }
+impl core::fmt::Debug for ErrorMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)?;
+        f.write_str("\n\nErrorMessage stacktrace:\n")?;
+        f.write_str(&self.stack_trace)
+    }
+}
+impl core::fmt::Display for ErrorMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+impl std::error::Error for ErrorMessage {}
 
 pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection {
     warp::reject::custom(CustomReject(error.into()))
@@ -268,7 +281,7 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
 #[serde(tag = "type", content = "content")]
 pub enum MessageResult<T> {
     Ok(T),
-    Err(String),
+    Err(ErrorMessage),
 }
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 struct Message<T> {
@@ -343,13 +356,12 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
         drop(map);
 
         let resp = rx.await?;
-        dbg!(&resp);
         match resp {
             MessageResult::Ok(resp) => {
                 let resp = serde_json::from_str(&resp)?;
                 Ok(resp)
             }
-            MessageResult::Err(e) => Err(anyhow::anyhow!(e)),
+            MessageResult::Err(e) => Err(e.into()),
         }
     }
 }
@@ -1200,10 +1212,19 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16) {
     let all = all.or(embedded_asset_route());
     let all = all.recover(|rej: warp::reject::Rejection| async move {
         let msg = if let Some(CustomReject(err)) = rej.find() {
-            warp::reply::json(&ErrorMessage {
-                message: format!("{}", err),
-                stack_trace: format!("{:?}", err),
-            })
+            match err.downcast_ref() {
+                Some(ErrorMessage {
+                    message,
+                    stack_trace,
+                }) => warp::reply::json(&ErrorMessage {
+                    message: message.into(),
+                    stack_trace: stack_trace.into(),
+                }),
+                None => warp::reply::json(&ErrorMessage {
+                    message: format!("{}", err),
+                    stack_trace: format!("{:?}", err),
+                }),
+            }
         } else {
             warp::reply::json(&ErrorMessage {
                 message: "server error".into(),

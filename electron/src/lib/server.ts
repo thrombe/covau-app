@@ -61,7 +61,8 @@ abstract class Server<Req> {
             console.log(mesg)
 
             if (mesg.type === "Err") {
-                toast(mesg.content, "error");
+                toast(mesg.content.message, "error");
+                console.error(mesg.content.stack_trace);
                 return;
             }
 
@@ -70,15 +71,21 @@ abstract class Server<Req> {
                 resp = await this.handle_req(mesg.content);
             } catch (e: any) {
                 let err: string;
+                let trace: string;
                 if (e instanceof Error) {
                     err = e.message;
+                    trace = e.stack ?? err;
                 } else {
                     err = JSON.stringify(e);
+                    trace = JSON.stringify(e);
                 }
                 let resp_mesg: Message<Object | null> = {
                     type: "Err",
                     id: mesg.id,
-                    content: err,
+                    content: {
+                        message: err,
+                        stack_trace: trace,
+                    },
                 };
 
                 console.log(resp_mesg);

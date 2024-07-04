@@ -217,9 +217,9 @@ async fn main() -> Result<()> {
                         Err(e) => match resp.json::<server::ErrorMessage>().await {
                             Ok(errmsg) => {
                                 if cli.debug {
-                                    return Err(anyhow::anyhow!(errmsg.stack_trace));
+                                    return Err(anyhow::anyhow!(format!("{:?}", errmsg)));
                                 } else {
-                                    return Err(anyhow::anyhow!(errmsg.message));
+                                    return Err(anyhow::anyhow!(format!("{}", errmsg)));
                                 }
                             }
                             Err(e) => {
