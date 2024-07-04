@@ -49,6 +49,9 @@
         if (!prompt_info) {
             return;
         }
+        if (input_element_is_focused) {
+            return;
+        }
 
         if (k.key == "Enter") {
             if (prompt_info?.type == "Searcher") {
@@ -62,7 +65,7 @@
         } else if (k.key == "?") {
             input_element.focus();
             k.preventDefault();
-        } else if (k.key == "Escape" && !input_element_is_focused) {
+        } else if (k.key == "Escape") {
             await end_prompt();
         }
     };
