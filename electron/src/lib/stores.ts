@@ -7,7 +7,7 @@ import * as Mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/virtual.ts";
 import { toast } from "./toast/toast";
 import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
-import { type Searcher, fused_searcher } from "./searcher/searcher.ts";
+import { type Searcher, fused_searcher, type NewSearcher } from "./searcher/searcher.ts";
 import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
 
@@ -22,7 +22,7 @@ export type BrowseTab = {
     key: number;
     name: string;
     searcher: Writable<Searcher>;
-    new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null;
+    new_searcher: NewSearcher | null;
     thumbnail: string | null; // TODO: don't need this to override thumbnail. do that using some kinda mixin
     query: Writable<string>;
     options: Readable<Option[]>;
@@ -149,7 +149,7 @@ export const new_tab = (
     title: string,
     thumb: string | null = null,
     query: string | null = null,
-    new_searcher: (((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null) = null,
+    new_searcher: NewSearcher | null = null,
     append: boolean = true,
 ) => {
     let index = get(curr_tab_index);

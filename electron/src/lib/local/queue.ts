@@ -2,7 +2,7 @@ import { db } from "./db.ts";
 import { player, playing_item, queue } from "$lib/stores.ts";
 import type { ListItem, Option } from "$lib/searcher/item.ts";
 import { toast } from "$lib/toast/toast.ts";
-import { prompt } from "$lib/prompt/prompt.ts";
+import { prompter } from "$lib/prompt/prompt.ts";
 import type { Searcher } from "$lib/searcher/searcher.ts";
 import * as icons from "$lib/icons.ts";
 
@@ -242,7 +242,7 @@ export class QueueManager implements Searcher {
                 icon: icons.floppy_disk,
                 location: "OnlyMenu",
                 onclick: async () => {
-                    let _name = await prompt("Enter queue name");
+                    let _name = await prompter.prompt("Enter queue name");
                     if (!_name) {
                         return;
                     }
@@ -276,7 +276,7 @@ export class QueueManager implements Searcher {
                 location: "OnlyMenu",
                 onclick: async () => {
                     let q = get(queue) as AutoplayQueueManager;
-                    let item = q.items.at(q.playing_index??(q.items.length - 1)) ?? null;
+                    let item = q.items.at(q.playing_index ?? (q.items.length - 1)) ?? null;
                     if (!item) {
                         toast("no item in queue. can't pick autoplay seed", "error");
                         return;

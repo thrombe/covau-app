@@ -6,6 +6,7 @@ export interface Searcher {
     has_next_page: boolean;
     options(): Option[];
 };
+export type NewSearcher = ((q: string) => Promise<Searcher>) | ((q: string) => Searcher);
 export let fused_searcher = {
     async next_page() { return [] },
     has_next_page: false,

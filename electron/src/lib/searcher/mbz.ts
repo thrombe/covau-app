@@ -8,7 +8,7 @@ import { get } from "svelte/store";
 import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
-import { prompt } from "$lib/prompt/prompt.ts";
+import { prompter } from "$lib/prompt/prompt.ts";
 import { StaticSearcher, type Searcher } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import * as types from "$types/types.ts";
@@ -249,7 +249,7 @@ export class MbzListItem extends ListItem {
                 }
 
                 if (!query) {
-                    query = await prompt("Enter a search query");
+                    query = await prompter.prompt("Enter a search query");
                 }
 
                 return query;

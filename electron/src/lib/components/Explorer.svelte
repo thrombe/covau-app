@@ -27,8 +27,8 @@
         infobox: {};
     }
 
+    export let selected_item: Unique<ListItem, unknown> = undefined as unknown as Unique<ListItem, unknown>;
     let selected_item_index: number;
-    let selected_item: Unique<ListItem, unknown>;
     let items = new Array<Unique<ListItem, number>>();
 
     const end_reached = async (s: Readable<Searcher> = searcher) => {

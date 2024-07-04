@@ -7,7 +7,7 @@ import * as icons from "$lib/icons.ts";
 import type { Searcher } from "./searcher";
 import type { Writable } from "svelte/store";
 
-export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection";
+export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 export type Callback = (() => void) | (() => Promise<void>);
 export type Option = {
     icon: string,

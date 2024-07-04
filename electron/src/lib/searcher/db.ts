@@ -925,6 +925,7 @@ export class DbListItem extends ListItem {
                     default:
                         throw exhausted(this.data)
                 }
+            case "Prompt":
             case "Playbar":
                 return [];
             default:
