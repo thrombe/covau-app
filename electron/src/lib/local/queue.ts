@@ -40,26 +40,37 @@ export class QueueManager implements Searcher {
         get(player).pause();
         player.update(p => p);
     }
-    async play_queue_item(item: ListItem) {
+    get_item_index(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
             if (this.items[i].get_key() == item.get_key()) {
-                this.playing_index = i;
-                await this.play(i);
-                return;
+                return i;
             }
         }
-
-        toast(`item "${item.title()}" not in queue`, "error");
+        return null;
+    }
+    async play_queue_item(item: ListItem) {
+        this.playing_index = this.get_item_index(item);
+        if (this.playing_index) {
+            await this.play(this.playing_index);
+        } else {
+            toast(`item "${item.title()}" not in queue`, "error");
+        }
     }
     async remove_queue_item(item: ListItem) {
-        for (let i = 0; i < this.items.length; i++) {
-            if (this.items[i].get_key() == item.get_key()) {
-                await this.remove(i);
-                return;
-            }
+        let index = this.get_item_index(item);
+        if (index) {
+            await this.remove(index);
+        } else {
+            toast(`item "${item.title()}" not in queue`, "error");
         }
-
-        toast(`item "${item.title()}" not in queue`, "error");
+    }
+    async move_queue_item(item: ListItem, to: number) {
+        let index = this.get_item_index(item);
+        if (index != null) {
+            await this.move(index, to);
+        } else {
+            throw new Error(`item "${item.title()}" not in queue`);
+        }
     }
     async add(...items: ListItem[]) {
         for (let item of items) {
@@ -99,6 +110,10 @@ export class QueueManager implements Searcher {
         }
     }
     async insert(index: number, item: ListItem) {
+        if (this.get_item_index(item) != null) {
+            toast(`item "${item.title()}" already in queue`, "error");
+            return;
+        }
         if (this.playing_index != null) {
             if (this.playing_index >= index) {
                 this.playing_index += 1;

@@ -5,25 +5,59 @@
 <script lang="ts">
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import type { ListItem } from "$lib/searcher/item.ts";
-    import { onDestroy, tick } from "svelte";
+    import { onDestroy, onMount, tick } from "svelte";
     import type { Unique } from "../virtual";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
-    import { toast } from "$lib/toast/toast.ts";
     import * as stores from "$lib/stores.ts";
     import { type QueueManager } from "./queue.ts";
-    import { get, readable, type Readable, type Writable } from "svelte/store";
+    import { get, readable, type Readable, type Unsubscriber, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
 
     export let item_height: number;
-    export let dragend = (_: DragEvent) => {
-        hovering = null;
-        dragging_index = null;
-    };
     let items: Unique<ListItem, string>[] = [];
     export let mobile = false;
 
     let queue = stores.queue as Writable<QueueManager>;
+
+    let hovering: number | null = null;
+    let dragging_index: number | null = null;
+    let drag_source_key = stores.new_key();
+    const dragstart = (index: number, t: ListItem) => {
+        dragging_index = index;
+        stores.drag_item.set({
+            source_key: drag_source_key,
+            item: t,
+        });
+    };
+    const dragenter = (index: number) => {
+        hovering = index;
+        stores.drag_source.set({
+            source_key: drag_source_key,
+            drop_callback: () => {
+                let item = get(stores.drag_item);
+                if (!item) {
+                    return;
+                }
+
+                if (!item.item.is_playable()) {
+                    return;
+                }
+
+                let q = get(queue);
+                if (item.source_key == drag_source_key) {
+                    q.move_queue_item(item.item, index);
+                } else {
+                    q.insert(index, item.item);
+                }
+                queue.update(t => t);
+            },
+            drop_cleanup: () => {
+                dragging_index = null;
+                hovering = null;
+            },
+        });
+    };
 
     let playing: number | null = null;
     let options = $queue.options();
@@ -68,49 +102,6 @@
     const on_item_click = async (_: Unique<ListItem, unknown>) => {};
     let selected_item: Unique<ListItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
-
-    let hovering: number | null = null;
-    let dragging_index: number | null = null;
-    const drop = async (event: DragEvent, target: number) => {
-        dragend(event);
-        event.dataTransfer!.dropEffect = "move";
-
-        if (event.dataTransfer?.getData("covau/dragndrop")) {
-            let start_index = parseInt(
-                event.dataTransfer.getData("covau/dragndrop")
-            );
-
-            await $queue.move(start_index, target);
-            queue.update((q) => q);
-        } else if (event.dataTransfer?.getData("covau/dragndropnew")) {
-            let new_id = event.dataTransfer.getData("covau/dragndropnew");
-
-            toast("unimplemented");
-            // TODO:
-            // await $queue.insert(target, new_id);
-            // queue.update(q => q);
-        }
-    };
-
-    // can't drag items and scroll at the same time. bummer
-    const dragstart = (event: DragEvent, i: number) => {
-        event.dataTransfer!.effectAllowed = "move";
-        event.dataTransfer!.dropEffect = "move";
-        dragging_index = i;
-        event.dataTransfer!.setData("covau/dragndrop", i.toString());
-    };
-
-    const dragenter = (e: DragEvent, index: number) => {
-        if (!!e.dataTransfer?.getData("covau/ignore")) {
-            return;
-        }
-        if (items.length > index) {
-            hovering = index;
-        } else {
-            // if it is input bar - select the thing above it
-            hovering = index - 1;
-        }
-    };
 </script>
 
 <div class="flex flex-col h-full w-full">
@@ -171,13 +162,13 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <item
                 class="w-full h-full block relative rounded-xl"
-                draggable={index != items.length}
-                on:dragstart={(event) => dragstart(event, index)}
-                on:drop|preventDefault={(event) => drop(event, index)}
-                on:dragend={dragend}
+                draggable={true}
+                on:dragstart={() => dragstart(index, item)}
+                on:drop|preventDefault={stores.drag_ops.drop}
+                on:dragend={stores.drag_ops.dragend}
                 ondragover="return false"
-                on:dragenter={(e) => dragenter(e, index)}
-                class:is-active={hovering === index && items.length != index}
+                on:dragenter={() => dragenter(index)}
+                class:is-active={hovering === index}
                 class:is-dragging={dragging_index === index}
                 class:is-playing={index === playing}
                 class:is-selected={selected}
@@ -201,17 +192,5 @@
     }
     item.is-active {
         @apply bg-green-400 bg-opacity-20;
-    }
-
-    item button {
-        display: none;
-    }
-    item:hover button,
-    .is-selected button {
-        display: block;
-    }
-
-    .pop-button {
-        @apply absolute p-1 m-2 rounded-md bg-gray-200 bg-opacity-30 text-gray-900 font-bold right-0 top-0;
     }
 </style>

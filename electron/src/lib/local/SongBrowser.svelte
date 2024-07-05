@@ -21,7 +21,19 @@
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
+    let drag_source_key: number;
+    let dragging = stores.drag_item;
+
+    let dragend = () => {
+        setTimeout(() => dragging.set(null), 300);
+    };
+
     let dragstart = (event: DragEvent, t: ListItem) => {
+        dragging.set({
+            source_key: drag_source_key,
+            item: t,
+        });
+
         // if (t.data.id) {
         //     if (t.typ == "song" || t.typ == "video") {
         //         event.dataTransfer!.effectAllowed = "move";
@@ -51,6 +63,7 @@
         if (!t) {
             return;
         }
+        drag_source_key = t.key;
         switch (t.type) {
             case "detail": {
                 options = [];
@@ -182,7 +195,7 @@
                         <div
                             draggable={true}
                             on:dragstart={(event) => dragstart(event, item)}
-                            on:dragend={queue_dragend}
+                            on:dragend={dragend}
                             class="item-bg"
                         >
                             <AudioListItem

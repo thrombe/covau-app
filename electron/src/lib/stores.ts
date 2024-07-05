@@ -42,6 +42,47 @@ export const new_key = () => {
     return tab_key++;
 }
 
+export type DragItem = {
+    source_key: unknown;
+    item: ListItem;
+};
+export type DragSource = {
+    source_key: unknown;
+    drop_callback: () => void; 
+    drop_cleanup: () => void; 
+};
+export let drag_item: Writable<DragItem | null> = writable(null);
+export let drag_source: Writable<DragSource | null> = writable(null);
+drag_source.subscribe((ds) => {
+    let old_ds = get(drag_source);
+    if (old_ds == null) {
+        return;
+    }
+
+    if (ds == null || ds.source_key != old_ds.source_key) {
+        old_ds.drop_cleanup();
+    }
+});
+export const drag_ops = {
+    dragend() {
+        setTimeout(() => drag_item.set(null), 300);
+        let ds = get(drag_source);
+        if (ds) {
+            ds.drop_cleanup();
+        }
+    },
+    drop()  {
+        drag_source.update((ds) => {
+            if (!ds) {
+                return null;
+            }
+            ds.drop_callback();
+            ds.drop_cleanup();
+            return null;
+        });
+    },
+};
+
 // NOTE: initialized in wrap components
 export let tube: Writable<Innertube> = writable();
 export let query_input = writable("");

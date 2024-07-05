@@ -58,6 +58,7 @@ export abstract class ListItem implements Keyed {
 
     abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
+    is_playable(): boolean { return true } // TODO:
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
