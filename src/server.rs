@@ -522,7 +522,8 @@ fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
              p: warp::path::Tail,
              h: warp::http::HeaderMap,
              b: bytes::Bytes| async move {
-                let url = String::from("http://localhost:5173/") + p.as_str();
+                let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
+                let url = format!("http://localhost:{}/", port) + p.as_str();
                 dbg!(&url);
                 let mut req = c.request(m, url);
                 for (k, v) in h.iter() {
