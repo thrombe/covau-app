@@ -936,7 +936,7 @@ fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
     let client = reqwest::Client::new();
-    let db_path = &config.db_path;
+    let db_path = config.db_path.join("music.db");
     let db_exists = db_path.exists();
     let db = Db::new(format!("sqlite:{}?mode=rwc", db_path.to_string_lossy()))
         .await

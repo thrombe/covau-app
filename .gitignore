@@ -7,4 +7,5 @@
 /test.db-shm
 /test.db-wal
 /electron/src/wasm
+/debug_data
 
