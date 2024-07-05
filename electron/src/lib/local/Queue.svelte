@@ -5,12 +5,12 @@
 <script lang="ts">
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import type { ListItem } from "$lib/searcher/item.ts";
-    import { onDestroy, onMount, tick } from "svelte";
+    import { onDestroy, tick } from "svelte";
     import type { Unique } from "../virtual";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import * as stores from "$lib/stores.ts";
     import { type QueueManager } from "./queue.ts";
-    import { get, readable, type Readable, type Unsubscriber, type Writable } from "svelte/store";
+    import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
 
