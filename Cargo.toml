@@ -36,6 +36,7 @@ mime_guess = { version = "2.0.4", optional = true }
 dirs = { version = "5.0.1", optional = true }
 clap = { version = "4.5.8", features = ["derive"], optional = true }
 toml = { version = "0.8.14", optional = true }
+shellexpand = { version = "3.1.0", optional = true }
 
 gstreamer = {version = "0.17", optional = true}
 gstreamer-player = {version = "0.17", optional = true}
@@ -86,6 +87,7 @@ bindeps = [
   "dirs",
   "clap",
   "toml",
+  "shellexpand",
 ]
 
 [[bin]]

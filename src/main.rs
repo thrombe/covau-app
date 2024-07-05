@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
@@ -18,18 +18,121 @@ pub mod yt;
 pub mod cli {
     use std::path::PathBuf;
 
+    use anyhow::Context;
     use clap::{arg, command, Parser, Subcommand};
     use serde::{Deserialize, Serialize};
 
-    #[derive(Deserialize, Debug, Clone)]
+    #[derive(Deserialize, Debug, Clone, Default)]
     #[serde(default, deny_unknown_fields)]
     pub struct Config {
+        /// where to store music data
         pub music_path: Option<String>,
+
+        /// where to store app data and logs
+        /// ~/.local/share/covau by default
+        pub data_path: Option<String>,
+
+        /// where to store temporary cache
+        /// ~/.cache/covau
+        pub cache_path: Option<String>,
+
+        pub musimanager_db_path: Option<String>,
+        // TODO:
+        // pub webui_port: Option<u16>,
+        // pub server_port: Option<u16>,
     }
-    impl Default for Config {
-        fn default() -> Self {
-            Self { music_path: None }
+    impl Config {
+        pub fn derived(self) -> anyhow::Result<DerivedConfig> {
+            let home_dir = dirs::home_dir().context("can't find home directory")?;
+            let data_path = dirs::data_dir().context("can't find data dir")?;
+            let cache_path = dirs::cache_dir().context("can't find cache dir")?;
+
+            let data_path = self
+                .data_path
+                .as_ref()
+                .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
+                .map(|s| s.to_string())
+                .map(PathBuf::from)
+                .map(|p| {
+                    p.exists()
+                        .then_some(p)
+                        .context("provided data_path does not exist")
+                })
+                .transpose()?
+                .unwrap_or(data_path.join("covau"));
+            let _ = std::fs::create_dir(&data_path);
+
+            let db_path = data_path.join("db");
+            let _ = std::fs::create_dir(&db_path);
+
+            let log_path = data_path.join("logs");
+            let _ = std::fs::create_dir(&log_path);
+
+            let cache_path = self
+                .cache_path
+                .as_ref()
+                .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
+                .map(|s| s.to_string())
+                .map(PathBuf::from)
+                .map(|p| {
+                    p.exists()
+                        .then_some(p)
+                        .context("provided cache_path does not exist")
+                })
+                .transpose()?
+                .unwrap_or(cache_path.join("covau"));
+            let _ = std::fs::create_dir(&cache_path);
+
+            let musimanager_db_path = self
+                .musimanager_db_path
+                .as_ref()
+                .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
+                .map(|s| s.to_string())
+                .map(PathBuf::from)
+                .map(|p| {
+                    p.exists()
+                        .then_some(p)
+                        .context("provided musimanager_db_path does not exist")
+                })
+                .transpose()?;
+
+            let music_path = self
+                .musimanager_db_path
+                .as_ref()
+                .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
+                .map(|s| s.to_string())
+                .map(PathBuf::from)
+                .map(|p| {
+                    p.exists()
+                        .then_some(p)
+                        .context("provided music_path does not exist")
+                })
+                .transpose()?
+                .unwrap_or(data_path.join("music"));
+            let _ = std::fs::create_dir(&music_path);
+
+            let config = DerivedConfig {
+                db_path,
+                log_path,
+                music_path,
+                musimanager_db_path,
+                data_path,
+                cache_path,
+                config: self,
+            };
+            Ok(config)
         }
+    }
+    #[derive(Deserialize, Debug, Clone)]
+    pub struct DerivedConfig {
+        pub config: Config,
+        pub data_path: PathBuf,
+        pub cache_path: PathBuf,
+
+        pub db_path: PathBuf,
+        pub log_path: PathBuf,
+        pub music_path: PathBuf,
+        pub musimanager_db_path: Option<PathBuf>,
     }
 
     #[derive(Subcommand, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -118,7 +221,7 @@ fn dump_types() -> Result<()> {
     Ok(())
 }
 
-async fn webui_app() -> Result<()> {
+async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     let app = webui::App::new();
 
     #[cfg(build_mode = "DEV")]
@@ -133,7 +236,7 @@ async fn webui_app() -> Result<()> {
     // url += "#/play";
 
     tokio::select! {
-        server = server_start() => {
+        server = server_start(config) => {
             app.close();
             server?;
         }
@@ -146,10 +249,11 @@ async fn webui_app() -> Result<()> {
     Ok(())
 }
 
-async fn server_start() -> Result<()> {
+async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
     server::start(
         "127.0.0.1".parse()?,
         core::env!("SERVER_PORT").parse().unwrap(),
+        config,
     )
     .await;
     Ok(())
@@ -157,25 +261,27 @@ async fn server_start() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_logger("./")?;
-
     let cli = cli::Cli::parse();
+    let config = cli.config()?.derived()?;
+    let config = Arc::new(config);
+
+    init_logger(&config.log_path)?;
 
     match cli.command.clone().unwrap_or(cli::Command::Default) {
         cli::Command::Server => {
-            server_start().await?;
+            server_start(config).await?;
         }
         cli::Command::Webui => {
-            webui_app().await?;
+            webui_app(config).await?;
         }
         cli::Command::Default => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
             #[cfg(ui_backend = "WEBUI")]
-            webui_app().await?;
+            webui_app(config).await?;
             #[cfg(not(ui_backend = "WEBUI"))]
-            server_start().await?;
+            server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {
             let fereq = match command {

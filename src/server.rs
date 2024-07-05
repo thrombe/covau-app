@@ -934,15 +934,21 @@ fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     webui.boxed()
 }
 
-pub async fn start(ip_addr: Ipv4Addr, port: u16) {
+pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
     let client = reqwest::Client::new();
-    let db_path = "./test.db";
-    let db_exists = std::path::PathBuf::from(db_path).exists();
-    let db = Db::new(format!("sqlite:{}?mode=rwc", db_path))
+    let db_path = &config.db_path;
+    let db_exists = db_path.exists();
+    let db = Db::new(format!("sqlite:{}?mode=rwc", db_path.to_string_lossy()))
         .await
         .expect("cannot connect to database");
     if !db_exists {
         db.init_tables().await.expect("could not init database");
+
+        if let Some(path) = config.musimanager_db_path.as_ref() {
+            db.init_musimanager_data(path)
+                .await
+                .expect("could not init musimanager data");
+        }
     }
 
     let yti = FrontendClient::<YtiRequest>::new();

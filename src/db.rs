@@ -237,9 +237,7 @@ pub mod db {
             conn: &C,
             id: DbId,
         ) -> anyhow::Result<Option<DbItem<Self>>> {
-            let m = object::Entity::find_by_id(id)
-                .one(conn)
-                .await?;
+            let m = object::Entity::find_by_id(id).one(conn).await?;
             let mdata = m.map(|m| DbItem {
                 metadata: m.parse_assume_metadata(),
                 t: m.parsed_assume(),
@@ -1019,45 +1017,62 @@ pub mod db {
             );
             let _ = self.db.execute(s).await?;
 
-            {
-                let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+            Ok(())
+        }
 
-                let data = std::fs::read_to_string(path)?;
-                let txn = self.db.begin().await?;
+        pub async fn init_musimanager_data(
+            &self,
+            musimanager_db_path: impl AsRef<std::path::Path>,
+        ) -> anyhow::Result<()> {
+            let path = musimanager_db_path.as_ref();
 
-                let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
-                for s in tracker.songs.iter() {
-                    s.insert(&txn).await?;
-                }
-                println!("songs added");
-                for a in tracker.artists.iter() {
-                    a.insert(&txn).await?;
-                }
-                println!("artists added");
-                for a in tracker.albums.iter() {
-                    a.insert(&txn).await?;
-                }
-                println!("albums added");
-                for p in tracker.playlists.iter() {
-                    p.insert(&txn).await?;
-                }
-                println!("playlists added");
-                for q in tracker.queues.iter() {
-                    q.insert(&txn).await?;
-                }
-                println!("queues added");
+            let data = std::fs::read_to_string(path)?;
+            let txn = self.db.begin().await?;
 
-                let ts = Db::timestamp();
-                for a in tracker.artists.iter() {
-                    if !a.known_albums.is_empty() || !a.unexplored_songs.is_empty() {
-                        let u = crate::covau_types::Updater {
-                            title: a.name.clone(),
-                            source: crate::covau_types::UpdateSource::MusimanagerSearch {
-                                search_words: a.search_keywords.clone(),
-                                artist_keys: a.keys.clone(),
-                                non_search_words: a.non_keywords.clone(),
-                                known_albums: a
-                                    .known_albums
+            let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
+            for s in tracker.songs.iter() {
+                s.insert(&txn).await?;
+            }
+            println!("songs added");
+            for a in tracker.artists.iter() {
+                a.insert(&txn).await?;
+            }
+            println!("artists added");
+            for a in tracker.albums.iter() {
+                a.insert(&txn).await?;
+            }
+            println!("albums added");
+            for p in tracker.playlists.iter() {
+                p.insert(&txn).await?;
+            }
+            println!("playlists added");
+            for q in tracker.queues.iter() {
+                q.insert(&txn).await?;
+            }
+            println!("queues added");
+
+            let ts = Db::timestamp();
+            for a in tracker.artists.iter() {
+                if !a.known_albums.is_empty() || !a.unexplored_songs.is_empty() {
+                    let u = crate::covau_types::Updater {
+                        title: a.name.clone(),
+                        source: crate::covau_types::UpdateSource::MusimanagerSearch {
+                            search_words: a.search_keywords.clone(),
+                            artist_keys: a.keys.clone(),
+                            non_search_words: a.non_keywords.clone(),
+                            known_albums: a
+                                .known_albums
+                                .iter()
+                                .map(|e| crate::covau_types::UpdateItem {
+                                    done: false,
+                                    points: 0,
+                                    item: e.clone(),
+                                    added_ts: ts,
+                                })
+                                .collect(),
+                            songs: crate::covau_types::ListenQueue {
+                                queue: a
+                                    .unexplored_songs
                                     .iter()
                                     .map(|e| crate::covau_types::UpdateItem {
                                         done: false,
@@ -1066,32 +1081,20 @@ pub mod db {
                                         added_ts: ts,
                                     })
                                     .collect(),
-                                songs: crate::covau_types::ListenQueue {
-                                    queue: a
-                                        .unexplored_songs
-                                        .iter()
-                                        .map(|e| crate::covau_types::UpdateItem {
-                                            done: false,
-                                            points: 0,
-                                            item: e.clone(),
-                                            added_ts: ts,
-                                        })
-                                        .collect(),
-                                    current_index: None,
-                                },
+                                current_index: None,
                             },
-                            last_update_ts: a.last_auto_search.unwrap_or(0) as u64,
-                            enabled: a.last_auto_search.is_some(),
-                        };
-                        u.insert(&txn).await?;
-                    } else {
-                        assert_eq!(a.last_auto_search.is_none(), true);
-                    }
+                        },
+                        last_update_ts: a.last_auto_search.unwrap_or(0) as u64,
+                        enabled: a.last_auto_search.is_some(),
+                    };
+                    u.insert(&txn).await?;
+                } else {
+                    assert_eq!(a.last_auto_search.is_none(), true);
                 }
-                println!("updaters added");
-
-                txn.commit().await?;
             }
+            println!("updaters added");
+
+            txn.commit().await?;
 
             Ok(())
         }
