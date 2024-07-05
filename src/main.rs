@@ -183,12 +183,18 @@ pub mod cli {
 
     impl Cli {
         pub fn config(&self) -> anyhow::Result<Config> {
+            #[cfg(build_mode = "PRODUCTION")]
+            let filename = "config.toml";
+
+            #[cfg(build_mode = "DEV")]
+            let filename = "configd.toml";
+
             let config = self
                 .config_dir
                 .clone()
                 .map(PathBuf::from)
                 .or(dirs::config_dir().map(|pb| pb.join("covau")))
-                .map(|pb| pb.join("config.toml"))
+                .map(|pb| pb.join(filename))
                 .filter(|p| p.exists())
                 .map(std::fs::read_to_string)
                 .transpose()?
