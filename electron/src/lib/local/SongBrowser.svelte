@@ -13,7 +13,6 @@
 
     export let columns: number;
     export let item_height: number;
-    export let queue_dragend: (e: DragEvent) => void = () => {};
 
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
@@ -21,33 +20,42 @@
     let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
-    let drag_source_key: number;
-    let dragging = stores.drag_item;
-
-    let dragend = () => {
-        setTimeout(() => dragging.set(null), 300);
-    };
-
-    let dragstart = (event: DragEvent, t: ListItem) => {
-        dragging.set({
-            source_key: drag_source_key,
+    let hovering: number | null = null;
+    let dragging_index: number | null = null;
+    const dragstart = (index: number, t: ListItem) => {
+        dragging_index = index;
+        stores.drag_item.set({
+            source_key: get(stores.curr_tab).key,
             item: t,
         });
+    };
+    const dragenter = (index: number) => {
+        hovering = index;
+        let source_key = get(stores.curr_tab).key;
+        stores.drag_ops.set_source({
+            source_key: source_key,
+            drop_callback: () => {
+                let item = get(stores.drag_item);
+                if (!item) {
+                    return;
+                }
 
-        // if (t.data.id) {
-        //     if (t.typ == "song" || t.typ == "video") {
-        //         event.dataTransfer!.effectAllowed = "move";
-        //         event.dataTransfer!.dropEffect = "move";
-        //         event.dataTransfer!.setData("covau/dragndropnew", t.data.id);
-        //         event.dataTransfer!.setData(
-        //             "text/plain",
-        //             "https://youtu.be/" + t.data.id
-        //         );
-        //     } else if (t.typ == "artist") {
-        //     } else if (t.typ == "album") {
-        //     } else if (t.typ == "playlist") {
-        //     }
-        // }
+                let t = get(stores.curr_tab);
+                switch (t.type) {
+                    case "detail": {} break;
+                    case "browse": {
+                        let s = get(t.searcher);
+                        s.handle_drop(item.item, index, item.source_key == source_key);
+                    } break;
+                    default:
+                        throw exhausted(t);
+                }
+            },
+            drop_cleanup: () => {
+                dragging_index = null;
+                hovering = null;
+            },
+        });
     };
 
     let tabs: stores.Tab[] = [];
@@ -63,7 +71,6 @@
         if (!t) {
             return;
         }
-        drag_source_key = t.key;
         switch (t.type) {
             case "detail": {
                 options = [];
@@ -188,15 +195,23 @@
                     bind:search_objects
                     bind:try_scroll_selected_item_in_view
                     let:item
+                    let:index
                     let:selected
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item class:selected>
+                    <list-item class="w-full h-full block relative pl-4" class:selected>
                         <div
                             draggable={true}
-                            on:dragstart={(event) => dragstart(event, item)}
-                            on:dragend={dragend}
-                            class="item-bg"
+                            on:dragstart={() => dragstart(index, item)}
+                            on:drop|preventDefault={stores.drag_ops.drop}
+                            on:dragend={stores.drag_ops.dragend}
+                            ondragover="return false"
+                            on:dragenter={() => dragenter(index)}
+                            class:selected
+                            class:is-active={hovering === index}
+                            class:is-dragging={dragging_index === index}
+                            class:is-selected={selected}
+                            class="w-full h-full rounded-xl item"
                         >
                             <AudioListItem
                                 {item}
@@ -236,14 +251,6 @@
         );
     }
 
-    list-item {
-        @apply w-full h-full block relative pl-4;
-    }
-
-    .item-bg {
-        @apply w-full h-full;
-    }
-
     .open-button {
         @apply absolute aspect-square p-1 m-2 right-0 top-0 bg-gray-200 bg-opacity-30 rounded-md text-gray-900 text-lg font-bold;
         @apply hidden;
@@ -253,9 +260,18 @@
     .selected .open-button {
         @apply block;
     }
-
-    list-item:hover .item-bg,
+    list-item:hover .item,
     .selected .item-bg {
-        @apply bg-gray-200 bg-opacity-10 rounded-xl;
+        @apply bg-gray-200 bg-opacity-10;
+    }
+
+    .is-dragging {
+        @apply opacity-40;
+    }
+    .is-selected {
+        @apply bg-gray-200 bg-opacity-10;
+    }
+    .is-active {
+        @apply bg-green-400 bg-opacity-20;
     }
 </style>

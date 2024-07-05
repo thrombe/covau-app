@@ -32,7 +32,7 @@
     };
     const dragenter = (index: number) => {
         hovering = index;
-        stores.drag_source.set({
+        stores.drag_ops.set_source({
             source_key: drag_source_key,
             drop_callback: () => {
                 let item = get(stores.drag_item);
@@ -160,8 +160,8 @@
             let:index
         >
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <item
-                class="w-full h-full block relative rounded-xl"
+            <div
+                class="item w-full h-full block relative rounded-xl"
                 draggable={true}
                 on:dragstart={() => dragstart(index, item)}
                 on:drop|preventDefault={stores.drag_ops.drop}
@@ -174,23 +174,23 @@
                 class:is-selected={selected}
             >
                 <AudioListItem {item} ctx="Queue" show_buttons={selected} />
-            </item>
+            </div>
         </VirtualScrollable>
     </div>
 </div>
 
 <style lang="postcss">
-    item.is-dragging {
+    .is-dragging {
         @apply opacity-40;
     }
-    item.is-selected,
-    item:hover {
+    .item:hover,
+    .is-selected {
         @apply bg-gray-200 bg-opacity-10;
     }
-    item.is-playing {
+    .is-playing {
         @apply bg-gray-200 bg-opacity-20;
     }
-    item.is-active {
+    .is-active {
         @apply bg-green-400 bg-opacity-20;
     }
 </style>

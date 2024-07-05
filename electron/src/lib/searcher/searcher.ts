@@ -5,6 +5,8 @@ export interface Searcher {
     next_page(): Promise<ListItem[]>;
     has_next_page: boolean;
     options(): Option[];
+    search_results: ListItem[];
+    handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean>;
 };
 export type NewSearcher = ((q: string) => Promise<Searcher>) | ((q: string) => Searcher);
 export let fused_searcher = {
@@ -20,8 +22,12 @@ export function StaticSearcher(items: ListItem[]): Searcher {
         async next_page() {
             return items;
         },
+        async handle_drop(_item: ListItem, _target: number, _is_outsider: boolean) {
+            return false;
+        },
         options: () => [],
         has_next_page: false,
+        search_results: items,
     };
 }
 

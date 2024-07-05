@@ -52,24 +52,31 @@ export type DragSource = {
     drop_cleanup: () => void; 
 };
 export let drag_item: Writable<DragItem | null> = writable(null);
-export let drag_source: Writable<DragSource | null> = writable(null);
-drag_source.subscribe((ds) => {
-    let old_ds = get(drag_source);
-    if (old_ds == null) {
-        return;
-    }
-
-    if (ds == null || ds.source_key != old_ds.source_key) {
-        old_ds.drop_cleanup();
-    }
-});
+let drag_source: Writable<DragSource | null> = writable(null);
 export const drag_ops = {
+    set_source(ds: DragSource | null) {
+        drag_source.update(old_ds => {
+            if (old_ds == null) {
+                return ds;
+            }
+
+            if (ds == null || ds.source_key != old_ds.source_key) {
+                old_ds.drop_cleanup();
+                console.log("cleanup")
+            }
+            return ds;
+        });
+    },
     dragend() {
-        setTimeout(() => drag_item.set(null), 300);
-        let ds = get(drag_source);
-        if (ds) {
-            ds.drop_cleanup();
-        }
+        setTimeout(() => {
+            drag_item.set(null)
+            drag_source.update(ds => {
+                if (ds) {
+                    ds.drop_cleanup();
+                }
+                return null;
+            });
+        }, 300);
     },
     drop()  {
         drag_source.update((ds) => {

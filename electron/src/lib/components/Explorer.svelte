@@ -22,6 +22,7 @@
     interface $$Slots {
         default: {
             item: ListItem;
+            index: number;
             item_width: number;
             item_height: number;
             selected: boolean;
@@ -101,9 +102,11 @@
             let:item_height
             let:root
             let:item
+            let:index
             let:selected
         >
             <slot
+                {index}
                 {item}
                 {item_width}
                 {item_height}

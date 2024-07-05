@@ -6,6 +6,8 @@ import type { DbItem } from "$types/db";
 import * as icons from "$lib/icons.ts";
 import type { Searcher } from "./searcher";
 import type { Writable } from "svelte/store";
+import * as types from "$types/types.ts";
+import type { SearchTyp as MbzTyp } from "$lib/searcher/mbz.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 export type Callback = (() => void) | (() => Promise<void>);
@@ -43,6 +45,7 @@ export type DetailSection = ({
     title: string,
     content: string,
 });
+export type Typ = types.db.Typ | MbzTyp | types.yt.Typ;
 
 
 export abstract class ListItem implements Keyed {
@@ -59,6 +62,7 @@ export abstract class ListItem implements Keyed {
     abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
     is_playable(): boolean { return true } // TODO:
+    is_container(typ: Typ): boolean { return true } // TODO:
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
