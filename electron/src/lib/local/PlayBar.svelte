@@ -129,7 +129,7 @@
         }
     };
 
-    let default_item = new CustomListItem("default", "Nothing is playing");
+    let default_item = new CustomListItem("default", "Nothing is playing", "Nothing");
 </script>
 
 <div

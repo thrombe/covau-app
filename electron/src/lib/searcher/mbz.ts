@@ -60,6 +60,11 @@ export class MbzListItem extends ListItem {
     get_key(): unknown {
         return this.data.get_key();
     }
+
+    typ() {
+        return this.data.typ;
+    }
+
     song_ids(): string[] {
         switch (this.data.typ) {
             case "MbzRadioSong":

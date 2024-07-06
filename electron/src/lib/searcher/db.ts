@@ -55,6 +55,10 @@ export class DbListItem extends ListItem {
         return this.data.get_key();
     }
 
+    typ() {
+        return this.data.typ;
+    }
+
     song_ids(): string[] {
         switch (this.data.typ) {
             case "MmSong":

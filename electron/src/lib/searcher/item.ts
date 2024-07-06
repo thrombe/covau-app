@@ -7,7 +7,7 @@ import * as icons from "$lib/icons.ts";
 import type { Searcher } from "./searcher";
 import type { Writable } from "svelte/store";
 import * as types from "$types/types.ts";
-import type { SearchTyp as MbzTyp } from "$lib/searcher/mbz.ts";
+import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 export type Callback = (() => void) | (() => Promise<void>);
@@ -45,7 +45,7 @@ export type DetailSection = ({
     title: string,
     content: string,
 });
-export type Typ = types.db.Typ | MbzTyp | types.yt.Typ;
+export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Nothing";
 
 
 export abstract class ListItem implements Keyed {
@@ -58,11 +58,46 @@ export abstract class ListItem implements Keyed {
         }
         return ops;
     }
+    is_playable(): boolean {
+        let typ = this.typ();
+        switch (typ) {
+            case "MmSong":
+            case "Song":
+            case "StSong":
+            case "YtSong":
+            case "StVideo":
+            case "MbzRadioSong":
+            case "MbzRecordingWithInfo":
+            case "MbzRecording":
+                return true;
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "Queue":
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "Playlist":
+            case "Updater":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzArtist":
+            case "YtAlbum":
+            case "YtPlaylist":
+            case "YtArtist":
+            case "Nothing":
+                return false;
+            default:
+                throw exhausted(typ);
+        }
+    }
 
     abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
-    is_playable(): boolean { return true } // TODO:
-    typ(): Typ { return "" } // TODO:
+    abstract typ(): Typ;
     async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> { return false; }
     abstract title(): string;
     abstract thumbnail(): string | null;
@@ -85,15 +120,21 @@ export class CustomListItem extends ListItem {
     _default_thumbnail: string = icons.default_music_icon
     _options: Option[] = [];
     _sections: DetailSection[] = [];
+    _typ: Typ;
 
-    constructor(key: string, title: string) {
+    constructor(key: string, title: string, typ: Typ) {
         super();
         this._key = key;
         this._title = title;
+        this._typ = typ;
     }
 
     get_key() {
         return this._key;
+    }
+
+    typ(): Typ {
+        return this._typ;
     }
 
     song_ids() {
