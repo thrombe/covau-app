@@ -58,8 +58,6 @@
         on_window_resize();
     }
 
-    let queue_dragend: (e: DragEvent) => void;
-
     let menubar_options = stores.menubar_options;
     let menubar_queue_option: stores.MenubarOption = {
         key: stores.new_key(),
@@ -163,7 +161,6 @@
                                 <div class="flex flex-col h-full">
                                     <Queue
                                         bind:item_height
-                                        bind:dragend={queue_dragend}
                                         {mobile}
                                     />
                                 </div>
@@ -179,7 +176,6 @@
                             <SongBrowser
                                 bind:item_height
                                 columns={browse_columns}
-                                {queue_dragend}
                             />
                         </div>
 
@@ -211,7 +207,7 @@
 
         {#if !mobile}
             <queue-area class="flex flex-col h-full">
-                <Queue bind:item_height bind:dragend={queue_dragend} {mobile} />
+                <Queue bind:item_height {mobile} />
             </queue-area>
         {/if}
     </all-contents>
