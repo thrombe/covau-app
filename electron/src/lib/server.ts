@@ -3,8 +3,10 @@ import { toast } from './toast/toast.ts';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
 import { exhausted } from './virtual.ts';
+import * as types from "$types/types.ts";
 
 export const utils = {
+    base_url: `http://localhost:${import.meta.env.SERVER_PORT}/`,
     async api_request<P, T>(url: string, json_payload: P) {
         let res = await fetch(
             url,
@@ -176,11 +178,60 @@ class FeServer extends Server<FeRequest> {
     }
 }
 
+const app_ops = {
+    async send(state: types.server.AppMessage) {
+        let route = utils.base_url + "app";
+
+        console.log(state);
+
+        await utils.api_request_no_resp(route, state);
+    },
+    async before_unload(e: BeforeUnloadEvent) {
+        // e.preventDefault();
+        // e.returnValue = '';
+        await app_ops.send("Unload");
+    },
+    async load(e: Event | null) {
+        await app_ops.send("Load");
+        await app_ops.send("Visible");
+    },
+    async visibility_change(e: Event) {
+        if (document.visibilityState === 'visible') {
+            await app_ops.send("Visible");
+        } else {
+            await app_ops.send("NotVisible");
+        }
+    },
+    async online(e: Event) {
+        await app_ops.send("Online");
+    },
+    async offline(e: Event) {
+        await app_ops.send("Offline");
+    },
+};
+
+function app_hook() {
+    window.addEventListener("load", app_ops.load);
+    window.addEventListener("beforeunload", app_ops.before_unload);
+    document.addEventListener("visibilitychange", app_ops.visibility_change);
+    window.addEventListener("online", app_ops.online);
+    window.addEventListener("offline", app_ops.offline);
+}
+function app_unhook() {
+    window.removeEventListener("load", app_ops.load);
+    window.removeEventListener("beforeunload", app_ops.before_unload);
+    document.removeEventListener("visibilitychange", app_ops.visibility_change);
+    window.removeEventListener("online", app_ops.online);
+    window.removeEventListener("offline", app_ops.offline);
+}
+
 export let ytiserver: YtiServer | null = null;
 export let feserver: FeServer | null = null;
 export const serve = async () => {
     ytiserver = new YtiServer();
     feserver = new FeServer();
+    app_hook();
+    app_ops.load(null);
 
     // let tube = get(stores.tube);
     // let res = await tube.music.search("Aimer", { type: 'video' });
@@ -201,4 +252,9 @@ export const serve = async () => {
     // // console.log(await a.sections[2].as(St.YTNodes.MusicCarouselShelf).header?.more_content?.endpoint.call());
     // let channel = await tube.getChannel(i.id!);
     // console.log(channel)
+};
+export const unserve = async () => {
+    ytiserver = null;
+    feserver = null;
+    app_unhook();
 };

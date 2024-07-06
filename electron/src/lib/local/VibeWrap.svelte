@@ -4,7 +4,8 @@
     import Vibe from './Vibe.svelte';
     import { tube } from "$lib/stores.ts";
     import * as wasm from "$wasm/covau_app_wasm";
-    import { serve } from "$lib/server.ts";
+    import { serve, unserve } from "$lib/server.ts";
+    import { onDestroy } from 'svelte';
 
     let promise = (async () => {
         let itube = await new_innertube_instance();
@@ -13,7 +14,8 @@
         // let _info = await wasm.default();
 
         let _ = serve();
-    })()
+    })();
+    onDestroy(unserve);
 </script>
 
 {#await promise}

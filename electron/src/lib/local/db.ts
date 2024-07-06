@@ -5,7 +5,6 @@ import { utils } from "$lib/server.ts";
 
 export type AlmostDbItem<T> = Omit<Omit<DB.DbItem<T>, "id">, "metadata">;
 
-let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 function db_cud(id: number) {
     return {
         id: id,
@@ -63,49 +62,49 @@ export const db = {
     route(type: DB.Typ, op: "search" | "insert" | "update" | "update_metadata" | "delete") {
         switch (type) {
             case "MmSong":
-                return server_base + `musimanager/${op}/songs`;
+                return utils.base_url + `musimanager/${op}/songs`;
             case "MmAlbum":
-                return server_base + `musimanager/${op}/albums`;
+                return utils.base_url + `musimanager/${op}/albums`;
             case "MmArtist":
-                return server_base + `musimanager/${op}/artists`;
+                return utils.base_url + `musimanager/${op}/artists`;
             case "MmPlaylist":
-                return server_base + `musimanager/${op}/playlists`;
+                return utils.base_url + `musimanager/${op}/playlists`;
             case "MmQueue":
-                return server_base + `musimanager/${op}/queues`;
+                return utils.base_url + `musimanager/${op}/queues`;
             case "Song":
-                return server_base + `covau/${op}/songs`;
+                return utils.base_url + `covau/${op}/songs`;
             case "Playlist":
-                return server_base + `covau/${op}/playlists`;
+                return utils.base_url + `covau/${op}/playlists`;
             case "Queue":
-                return server_base + `covau/${op}/queues`;
+                return utils.base_url + `covau/${op}/queues`;
             case "Updater":
-                return server_base + `covau/${op}/updaters`;
+                return utils.base_url + `covau/${op}/updaters`;
             case "StSong":
-                return server_base + `song_tube/${op}/songs`;
+                return utils.base_url + `song_tube/${op}/songs`;
             case "StVideo":
-                return server_base + `song_tube/${op}/videos`;
+                return utils.base_url + `song_tube/${op}/videos`;
             case "StAlbum":
-                return server_base + `song_tube/${op}/albums`;
+                return utils.base_url + `song_tube/${op}/albums`;
             case "StPlaylist":
-                return server_base + `song_tube/${op}/playlists`;
+                return utils.base_url + `song_tube/${op}/playlists`;
             case "StArtist":
-                return server_base + `song_tube/${op}/artists`;
+                return utils.base_url + `song_tube/${op}/artists`;
             default:
                 throw exhausted(type);
         }
     },
 
     async begin() {
-        let id: number = await utils.api_request(server_base + "db/transaction/begin", null);
+        let id: number = await utils.api_request(utils.base_url + "db/transaction/begin", null);
         return id;
     },
 
     async commit(id: number) {
-        await utils.api_request_no_resp(server_base + "db/transaction/commit", id);
+        await utils.api_request_no_resp(utils.base_url + "db/transaction/commit", id);
     },
 
     async rollback(id: number) {
-        await utils.api_request_no_resp(server_base + "db/transaction/rollback", id);
+        await utils.api_request_no_resp(utils.base_url + "db/transaction/rollback", id);
     },
 
     async txn<Ret>(fn: ((db_ops: DbOps) => Promise<Ret>)) {

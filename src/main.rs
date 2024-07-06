@@ -241,16 +241,24 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     // url += "#/vibe/test";
     // url += "#/play";
 
+    let mut server_fut = std::pin::pin!(server_start(config));
+    let mut app_fut = std::pin::pin!(app.open_window(url));
+
     tokio::select! {
-        server = server_start(config) => {
+        server = &mut server_fut => {
             app.close();
             server?;
+            return Ok(());
         }
-        window = app.open_window(url) => {
-            app.close();
+        window = &mut app_fut => {
+            // app.close();
             window?;
         }
     }
+
+    let res = server_fut.await;
+    app.close();
+    res?;
 
     Ok(())
 }
@@ -275,9 +283,15 @@ async fn main() -> Result<()> {
 
     match cli.command.clone().unwrap_or(cli::Command::Default) {
         cli::Command::Server => {
+            #[cfg(build_mode = "DEV")]
+            dump_types()?;
+
             server_start(config).await?;
         }
         cli::Command::Webui => {
+            #[cfg(build_mode = "DEV")]
+            dump_types()?;
+
             webui_app(config).await?;
         }
         cli::Command::Default => {

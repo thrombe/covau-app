@@ -13,6 +13,7 @@ use warp::filters::BoxedFilter;
 use warp::ws::WebSocket;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
+use std::sync::atomic;
 
 use crate::covau_types;
 use crate::db::{Db, DbAble};
@@ -934,6 +935,44 @@ fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     webui.boxed()
 }
 
+fn app_state_handler_route(state: AppState, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+    let webui = warp::path(path)
+        .and(warp::path::end())
+        .and(warp::any().map(move || state.clone()))
+        .and(warp::body::json())
+        .and_then(|state: AppState, message: AppMessage| async move {
+            dbg!(&message);
+            match message {
+                AppMessage::Online => {
+                    state.0.is_online.store(true, atomic::Ordering::Relaxed);
+                },
+                AppMessage::Offline => {
+                    state.0.is_online.store(false, atomic::Ordering::Relaxed);
+                },
+                AppMessage::Load => {
+                    state.0.is_loaded.store(true, atomic::Ordering::Relaxed);
+                },
+                AppMessage::Unload => {
+                    state.0.is_loaded.store(false, atomic::Ordering::Relaxed);
+                },
+                AppMessage::Visible => {
+                    state.0.is_visible.store(true, atomic::Ordering::Relaxed);
+                },
+                AppMessage::NotVisible => {
+                    state.0.is_visible.store(false, atomic::Ordering::Relaxed);
+                },
+            }
+
+            if !state.is_loaded() && !state.is_visible() {
+                state.0.close.notify_waiters();
+            }
+            
+            Ok::<_, warp::Rejection>(warp::reply())
+        });
+    let webui = webui.with(warp::cors().allow_any_origin());
+    webui.boxed()
+}
+
 pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
     let client = reqwest::Client::new();
     let db_path = config.db_path.join("music.db");
@@ -953,6 +992,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
     let yti = FrontendClient::<YtiRequest>::new();
     let fe = FrontendClient::<FeRequest>::new();
+    let state = AppState::new();
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -1203,6 +1243,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
     let all = client_ws_route(yti.clone(), "yti")
         .or(client_ws_route(fe.clone(), "fec"))
         .or(cli_command_route(fe.clone(), "cli"))
+        .or(app_state_handler_route(state.clone(), "app"))
         .or(player_route())
         .or(cors_proxy_route(client.clone()))
         .or(musimanager_search_routes.boxed())
@@ -1254,8 +1295,63 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
     println!("Starting server at {}:{}", ip_addr, port);
 
-    warp::serve(all).run((ip_addr, port)).await;
+
+    tokio::select!{
+        _ = warp::serve(all).run((ip_addr, port)) => { },
+        _ = state.wait() => { },
+    }
+
     j.abort();
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub enum AppMessage {
+    Online,
+    Offline, // connected to interwebs
+    Load,
+    Unload,     // unload before close/refresh
+    Visible,    // on screen
+    NotVisible, // not on screen
+}
+pub struct InternalAppState {
+    close: tokio::sync::Notify,
+    is_online: atomic::AtomicBool,
+    is_visible: atomic::AtomicBool,
+    is_loaded: atomic::AtomicBool,
+}
+#[derive(Clone)]
+pub struct AppState(Arc<InternalAppState>);
+impl AppState {
+    pub fn new() -> Self {
+        Self(Arc::new(InternalAppState {
+            close: tokio::sync::Notify::new(),
+            is_online: true.into(),
+            is_visible: true.into(),
+            is_loaded: true.into(),
+        }))
+    }
+
+    pub async fn wait(&self) {
+        loop {
+            self.0.close.notified().await;
+
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+
+            if !self.is_loaded() && !self.is_visible() {
+                return;
+            }
+        }
+    }
+
+    pub fn is_online(&self) -> bool {
+        self.0.is_online.load(atomic::Ordering::Relaxed)
+    }
+    pub fn is_visible(&self) -> bool {
+        self.0.is_visible.load(atomic::Ordering::Relaxed)
+    }
+    pub fn is_loaded(&self) -> bool {
+        self.0.is_loaded.load(atomic::Ordering::Relaxed)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -1301,6 +1397,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<MessageResult<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<FeRequest>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<AppMessage>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
