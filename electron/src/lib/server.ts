@@ -182,8 +182,6 @@ const app_ops = {
     async send(state: types.server.AppMessage) {
         let route = utils.base_url + "app";
 
-        console.log(state);
-
         await utils.api_request_no_resp(route, state);
     },
     async before_unload(e: BeforeUnloadEvent) {

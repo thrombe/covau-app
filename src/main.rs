@@ -217,6 +217,9 @@ pub mod cli {
                 Command::Webui { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
+                Command::Server => {
+                    config.run_in_background = true;
+                }
                 #[cfg(ui_backend = "WEBUI")]
                 Command::Default { run_in_background } => {
                     config.run_in_background = *run_in_background;

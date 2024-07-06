@@ -941,7 +941,6 @@ fn app_state_handler_route(state: AppState, path: &'static str) -> BoxedFilter<(
         .and(warp::any().map(move || state.clone()))
         .and(warp::body::json())
         .and_then(|state: AppState, message: AppMessage| async move {
-            dbg!(&message);
             match message {
                 AppMessage::Online => {
                     state.0.is_online.store(true, atomic::Ordering::Relaxed);
@@ -1296,9 +1295,13 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
     println!("Starting server at {}:{}", ip_addr, port);
 
 
-    tokio::select!{
-        _ = warp::serve(all).run((ip_addr, port)) => { },
-        _ = state.wait() => { },
+    if config.run_in_background {
+        warp::serve(all).run((ip_addr, port)).await;
+    } else {
+        tokio::select!{
+            _ = warp::serve(all).run((ip_addr, port)) => { },
+            _ = state.wait() => { },
+        }
     }
 
     j.abort();
