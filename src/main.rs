@@ -37,6 +37,8 @@ pub mod cli {
         pub cache_path: Option<String>,
 
         pub musimanager_db_path: Option<String>,
+
+        pub run_in_background: bool,
         // TODO:
         // pub webui_port: Option<u16>,
         // pub server_port: Option<u16>,
@@ -112,6 +114,7 @@ pub mod cli {
             let _ = std::fs::create_dir(&music_path);
 
             let config = DerivedConfig {
+                run_in_background: self.run_in_background,
                 db_path,
                 log_path,
                 music_path,
@@ -133,6 +136,7 @@ pub mod cli {
         pub log_path: PathBuf,
         pub music_path: PathBuf,
         pub musimanager_db_path: Option<PathBuf>,
+        pub run_in_background: bool,
     }
 
     #[derive(Subcommand, Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -162,8 +166,15 @@ pub mod cli {
             command: FeCommand,
         },
         Server,
-        Webui,
-        Default,
+        Webui {
+            #[arg(long, short, default_value_t = false)]
+            run_in_background: bool,
+        },
+        Default {
+            #[cfg(ui_backend = "WEBUI")]
+            #[arg(long, short, default_value_t = false)]
+            run_in_background: bool,
+        },
         Test,
     }
 
@@ -189,7 +200,7 @@ pub mod cli {
             #[cfg(build_mode = "DEV")]
             let filename = "configd.toml";
 
-            let config = self
+            let mut config = self
                 .config_dir
                 .clone()
                 .map(PathBuf::from)
@@ -201,6 +212,18 @@ pub mod cli {
                 .map(|s| toml::from_str::<Config>(&s))
                 .transpose()?
                 .unwrap_or(Config::default());
+
+            let _ = self.command.as_ref().map(|c| match c {
+                Command::Webui { run_in_background } => {
+                    config.run_in_background = *run_in_background;
+                }
+                #[cfg(ui_backend = "WEBUI")]
+                Command::Default { run_in_background } => {
+                    config.run_in_background = *run_in_background;
+                }
+                _ => {}
+            });
+
             Ok(config)
         }
     }
@@ -281,20 +304,23 @@ async fn main() -> Result<()> {
 
     init_logger(&config.log_path)?;
 
-    match cli.command.clone().unwrap_or(cli::Command::Default) {
+    match cli.command.clone().unwrap_or(cli::Command::Default {
+        #[cfg(ui_backend = "WEBUI")]
+        run_in_background: config.run_in_background,
+    }) {
         cli::Command::Server => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
             server_start(config).await?;
         }
-        cli::Command::Webui => {
+        cli::Command::Webui { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
             webui_app(config).await?;
         }
-        cli::Command::Default => {
+        cli::Command::Default { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
