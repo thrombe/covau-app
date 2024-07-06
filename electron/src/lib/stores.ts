@@ -48,45 +48,37 @@ export type DragItem = {
 };
 export type DragSource = {
     source_key: unknown;
-    drop_callback: () => void; 
-    drop_cleanup: () => void; 
+    drop_callback: (() => Promise<void>) | (() => void); 
+    drop_cleanup: (() => Promise<void>) | (() => void); 
 };
 export let drag_item: Writable<DragItem | null> = writable(null);
 let drag_source: Writable<DragSource | null> = writable(null);
 export const drag_ops = {
-    set_source(ds: DragSource | null) {
-        drag_source.update(old_ds => {
-            if (old_ds == null) {
-                return ds;
-            }
-
-            if (ds == null || ds.source_key != old_ds.source_key) {
-                old_ds.drop_cleanup();
-                console.log("cleanup")
-            }
-            return ds;
-        });
+    async set_source(ds: DragSource | null) {
+        let old_ds = get(drag_source);
+        if (old_ds != null && (ds == null || ds.source_key != old_ds.source_key)) {
+            await old_ds.drop_cleanup();
+        }
+        drag_source.set(ds);
     },
-    dragend() {
-        setTimeout(() => {
+    async dragend() {
+        setTimeout(async () => {
             drag_item.set(null)
-            drag_source.update(ds => {
-                if (ds) {
-                    ds.drop_cleanup();
-                }
-                return null;
-            });
+
+            let ds = get(drag_source);
+            if (ds) {
+                await ds.drop_cleanup();
+            }
+            drag_source.set(null);
         }, 300);
     },
-    drop()  {
-        drag_source.update((ds) => {
-            if (!ds) {
-                return null;
-            }
-            ds.drop_callback();
-            ds.drop_cleanup();
-            return null;
-        });
+    async drop()  {
+        let ds = get(drag_source);
+        if (ds) {
+            await ds.drop_callback();
+            await ds.drop_cleanup();
+        }
+        drag_source.set(ds);
     },
 };
 

@@ -29,12 +29,12 @@
             item: t,
         });
     };
-    const dragenter = (index: number) => {
+    const dragenter = async (index: number) => {
         hovering = index;
         let source_key = get(stores.curr_tab).key;
-        stores.drag_ops.set_source({
+        await stores.drag_ops.set_source({
             source_key: source_key,
-            drop_callback: () => {
+            drop_callback: async () => {
                 let item = get(stores.drag_item);
                 if (!item) {
                     return;
@@ -45,13 +45,13 @@
                     case "detail": {} break;
                     case "browse": {
                         let s = get(t.searcher);
-                        s.handle_drop(item.item, index, item.source_key == source_key);
+                        await s.handle_drop(item.item, index, item.source_key != source_key);
                     } break;
                     default:
                         throw exhausted(t);
                 }
             },
-            drop_cleanup: () => {
+            drop_cleanup: async () => {
                 dragging_index = null;
                 hovering = null;
             },

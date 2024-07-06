@@ -30,11 +30,11 @@
             item: t,
         });
     };
-    const dragenter = (index: number) => {
+    const dragenter = async (index: number) => {
         hovering = index;
-        stores.drag_ops.set_source({
+        await stores.drag_ops.set_source({
             source_key: drag_source_key,
-            drop_callback: () => {
+            drop_callback: async () => {
                 let item = get(stores.drag_item);
                 if (!item) {
                     return;
@@ -46,13 +46,13 @@
 
                 let q = get(queue);
                 if (item.source_key == drag_source_key) {
-                    q.move_queue_item(item.item, index);
+                    await q.move_queue_item(item.item, index);
                 } else {
-                    q.insert(index, item.item);
+                    await q.insert(index, item.item);
                 }
                 queue.update(t => t);
             },
-            drop_cleanup: () => {
+            drop_cleanup: async () => {
                 dragging_index = null;
                 hovering = null;
             },
