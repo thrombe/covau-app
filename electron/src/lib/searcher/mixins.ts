@@ -59,6 +59,64 @@ export function SlowSearch<T, Q, S extends Constructor<{
     } as S & Constructor<ISlow<T, Q>>
 }
 
+export interface IDropWrapper {
+    handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean>;
+}
+export function DropWrapper<S extends Constructor<{
+    items: ListItem[];
+}>>(s: S, d: ListItem | null) {
+    return class extends s implements IDropWrapper {
+        get_item_index(item: ListItem) {
+            for (let i = 0; i < this.items.length; i++) {
+                if (this.items[i].get_key() == item.get_key()) {
+                    return i;
+                }
+            }
+            return null;
+        }
+        move(from: number, to: number) {
+            if (from < to) {
+                this.items.splice(to + 1, 0, this.items[from]);
+                this.items.splice(from, 1);
+            } else {
+                this.items.splice(to, 0, this.items[from]);
+                this.items.splice(from + 1, 1);
+            }
+        }
+        insert(index: number, item: ListItem) {
+            if (this.get_item_index(item) != null) {
+                throw new Error(`item "${item.title()}" already in queue`);
+            }
+            this.items.splice(index, 0, item);
+        }
+        move_item(item: ListItem, to: number) {
+            let index = this.get_item_index(item);
+            if (index != null) {
+                this.move(index, to);
+            } else {
+                throw new Error(`item "${item.title()}" not in queue`);
+            }
+        }
+
+        async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> {
+            if (!d) {
+                return false;
+            }
+            let handled = await d.handle_drop(item, target, is_outsider);
+            if (!handled) {
+                return false;
+            }
+
+            if (is_outsider) {
+                this.insert(target, item);
+            } else {
+                this.move_item(item, target);
+            }
+
+            return true;
+        }
+    } as S & Constructor<IDropWrapper>;
+}
 
 export interface IAsyncWrapper<T> {
     next_page(): Promise<T[]>;
@@ -104,20 +162,20 @@ export function OptionsWrapper<S extends Constructor<Searcher>>(fn: (old: Option
 export interface ISaved<T> {
     next_page(): Promise<(T & Keyed)[]>;
 
-    search_results: (T & Keyed)[];
+    items: (T & Keyed)[];
 }
 export function SavedSearch<T, S extends Constructor<{
     next_page(): Promise<(T & Keyed)[]>;
 }>>(s: S) {
     return class extends s implements ISaved<T> {
-        search_results: Array<(T & Keyed)>;
+        items: Array<(T & Keyed)>;
 
         // this essentially acts as an async semaphore
         last_op: Promise<(T & Keyed)[]>;
 
         constructor(...args: any[]) {
             super(...args);
-            this.search_results = new Array();
+            this.items = new Array();
             this.last_op = Promise.resolve([]);
         }
 
@@ -125,8 +183,8 @@ export function SavedSearch<T, S extends Constructor<{
             await this.last_op;
             this.last_op = super.next_page();
             let r = await this.last_op;
-            this.search_results.push(...r);
-            return this.search_results;
+            this.items.push(...r);
+            return this.items;
         }
     } as S & Constructor<ISaved<T>>
 }

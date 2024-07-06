@@ -5,7 +5,7 @@ export interface Searcher {
     next_page(): Promise<ListItem[]>;
     has_next_page: boolean;
     options(): Option[];
-    search_results: ListItem[];
+    items: ListItem[];
     handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean>;
 };
 export type NewSearcher = ((q: string) => Promise<Searcher>) | ((q: string) => Searcher);
@@ -27,7 +27,7 @@ export function StaticSearcher(items: ListItem[]): Searcher {
         },
         options: () => [],
         has_next_page: false,
-        search_results: items,
+        items: items,
     };
 }
 

@@ -62,7 +62,8 @@ export abstract class ListItem implements Keyed {
     abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
     is_playable(): boolean { return true } // TODO:
-    is_container(typ: Typ): boolean { return true } // TODO:
+    typ(): Typ { return "" } // TODO:
+    async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> { return false; }
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;

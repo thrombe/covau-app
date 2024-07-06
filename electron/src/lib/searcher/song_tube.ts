@@ -1,5 +1,5 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
@@ -442,16 +442,18 @@ export class SongTube extends Unpaged<MusicListItem> {
         this.query = query;
     }
 
-    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, wrapper: W | null = null) {
+    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, wrapper: W | null = null, drop_handle: ListItem | null = null) {
         const CW = ClassTypeWrapper(SongTube)
         const US = UniqueSearch<StListItem, typeof CW>(CW);
         const SS = SavedSearch<StListItem, typeof US>(US);
         const AW = AsyncWrapper<StListItem, typeof SS>(SS);
+        const DW = DropWrapper<typeof AW>(AW, drop_handle);
+        const W = DW;
         if (wrapper) {
-            const WR = wrapper(AW) as typeof AW;
+            const WR = wrapper(W) as typeof W;
             return new WR(query);
         } else {
-            return new AW(query);
+            return new W(query);
         }
     }
 

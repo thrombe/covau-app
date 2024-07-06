@@ -1,4 +1,4 @@
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
+import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -1028,16 +1028,18 @@ export class Db extends Unpaged<MusicListItem> {
         // }
     }
 
-    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null) {
+    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null, drop_handle: ListItem | null = null) {
         const CW = ClassTypeWrapper(Db);
         const US = UniqueSearch<DbListItem, typeof CW>(CW);
         const SS = SavedSearch<DbListItem, typeof US>(US);
         const AW = AsyncWrapper<DbListItem, typeof SS>(SS);
+        const DW = DropWrapper<typeof AW>(AW, drop_handle);
+        const W = DW;
         if (wrapper) {
-            const WR = wrapper(AW) as typeof AW;
+            const WR = wrapper(W) as typeof W;
             return new WR(query, page_size);
         } else {
-            return new AW(query, page_size);
+            return new W(query, page_size);
         }
     }
 

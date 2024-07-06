@@ -1,4 +1,4 @@
-import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor } from "./mixins.ts";
+import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
@@ -9,7 +9,7 @@ import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { utils as server } from "$lib/server.ts";
 import { prompter } from "$lib/prompt/prompt.ts";
-import { StaticSearcher, type Searcher } from "./searcher.ts";
+import { StaticSearcher, type Searcher, type SearcherConstructorMapper } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import * as types from "$types/types.ts";
 import * as icons from "$lib/icons.ts";
@@ -883,13 +883,20 @@ export class Mbz<T> extends Unpaged<T> {
         this.page_size = page_size;
     }
 
-    static new(query: BrowseQuery, page_size: number) {
+    static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null, drop_handle: ListItem | null = null) {
         const UW = UnionTypeWrapper(Mbz);
         const CW = ClassTypeWrapper(UW);
         const US = UniqueSearch<MbzListItem, typeof Mbz<MbzListItem>>(CW);
         const SS = SavedSearch<MbzListItem, typeof US>(US);
         const AW = AsyncWrapper<MbzListItem, typeof SS>(SS);
-        return new AW(query, page_size);
+        const DW = DropWrapper<typeof AW>(AW, drop_handle);
+        const W = DW;
+        if (wrapper) {
+            const WR = wrapper(W) as typeof W;
+            return new WR(query, page_size);
+        } else {
+            return new W(query, page_size);
+        }
     }
 
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
