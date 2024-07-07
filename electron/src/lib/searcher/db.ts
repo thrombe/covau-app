@@ -1,4 +1,4 @@
-import { AsyncWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
+import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -1036,7 +1036,7 @@ export class Db extends Unpaged<MusicListItem> {
         const CW = ClassTypeWrapper(Db);
         const US = UniqueSearch<DbListItem, typeof CW>(CW);
         const SS = SavedSearch<DbListItem, typeof US>(US);
-        const AW = AsyncWrapper<DbListItem, typeof SS>(SS);
+        const AW = DebounceWrapper<DbListItem, typeof SS>(SS);
         const DW = DropWrapper<typeof AW>(AW, drop_handle);
         const W = DW;
         if (wrapper) {
@@ -1050,7 +1050,7 @@ export class Db extends Unpaged<MusicListItem> {
     static unwrapped(query: BrowseQuery, page_size: number) {
         const US = UniqueSearch<MusicListItem, typeof Db>(Db);
         const SS = SavedSearch<MusicListItem, typeof US>(US);
-        const AW = AsyncWrapper<MusicListItem, typeof SS>(SS);
+        const AW = DebounceWrapper<MusicListItem, typeof SS>(SS);
         return new AW(query, page_size);
     }
 

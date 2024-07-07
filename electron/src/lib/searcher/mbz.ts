@@ -1,4 +1,4 @@
-import { AsyncWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
+import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
 import { ListItem, type Option, type RenderContext } from "./item.ts";
@@ -893,7 +893,7 @@ export class Mbz<T> extends Unpaged<T> {
         const CW = ClassTypeWrapper(UW);
         const US = UniqueSearch<MbzListItem, typeof Mbz<MbzListItem>>(CW);
         const SS = SavedSearch<MbzListItem, typeof US>(US);
-        const AW = AsyncWrapper<MbzListItem, typeof SS>(SS);
+        const AW = DebounceWrapper<MbzListItem, typeof SS>(SS);
         const DW = DropWrapper<typeof AW>(AW, drop_handle);
         const W = DW;
         if (wrapper) {
@@ -907,7 +907,7 @@ export class Mbz<T> extends Unpaged<T> {
     static unwrapped<T>(query: BrowseQuery, page_size: number) {
         const US = UniqueSearch<T & Keyed, typeof Mbz<T>>(Mbz);
         const SS = SavedSearch<T, typeof US>(US);
-        const AW = AsyncWrapper<T, typeof SS>(SS);
+        const AW = DebounceWrapper<T, typeof SS>(SS);
         return new AW(query, page_size);
     }
 

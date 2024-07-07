@@ -118,14 +118,13 @@ export function DropWrapper<S extends Constructor<{
     } as S & Constructor<IDropWrapper>;
 }
 
-// TODO: rename to debounce
-export interface IAsyncWrapper<T> {
+export interface IDebounceWrapper<T> {
     next_page(): Promise<T[]>;
 };
-export function AsyncWrapper<T, S extends Constructor<{
+export function DebounceWrapper<T, S extends Constructor<{
     next_page(): Promise<T[]>;
 }>>(s: S) {
-    return class extends s implements IAsyncWrapper<T> {
+    return class extends s implements IDebounceWrapper<T> {
         promise: Promise<T[]> = Promise.resolve([]);
         is_resolved = true;
         async next_page(): Promise<T[]> {
@@ -140,7 +139,7 @@ export function AsyncWrapper<T, S extends Constructor<{
             let res = await this.promise;
             return res;
         }
-    } as S & Constructor<IAsyncWrapper<T>>;
+    } as S & Constructor<IDebounceWrapper<T>>;
 }
 
 export interface IMapWrapper { };
