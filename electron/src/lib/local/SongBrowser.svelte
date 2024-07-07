@@ -202,7 +202,7 @@
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <list-item
-                        class="w-full h-full block relative pl-4"
+                        class="w-full h-full block relative px-2"
                         class:selected
                     >
                         <div
