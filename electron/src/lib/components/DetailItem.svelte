@@ -71,7 +71,7 @@
                         {#each section.options as option}
                             <button on:pointerup={option.onclick}>
                                 <div
-                                    class="flex flex-row rounded-md p-2 pr-8 bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
+                                    class="flex flex-row rounded-md p-2 pr-4 place-items-center bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
                                 >
                                     <img
                                         alt={option.title}
@@ -80,7 +80,7 @@
                                     />
 
                                     <div
-                                        class="flex flex-col justify-end h-1/2 text-sm text-gray-200"
+                                        class="flex flex-col justify-end text-sm text-gray-200"
                                     >
                                         <div class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none">
                                             {option.title}

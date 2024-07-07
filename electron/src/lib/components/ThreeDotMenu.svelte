@@ -27,22 +27,17 @@
     class:hidden={!show_menu}
 >
     {#each options as option}
-        <button on:pointerup={option.onclick}>
-            <div
-                class="flex flex-row rounded-md p-2 pr-8 hover:bg-gray-100 hover:bg-opacity-15"
-            >
+        <button on:pointerup={option.onclick}
+                class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15 min-w-max place-items-center"
+        >
                 <img
                     alt={option.title}
-                    class="h-4 w-4 m-1 mr-4"
+                    class="h-6 w-6 p-1"
                     src={option.icon}
                 />
-
-                <div
-                    class="flex flex-col justify-end h-1/2 text-sm text-gray-200"
-                >
-                    <div class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none">{option.title}</div>
-                </div>
-            </div>
+                    <div class="pl-2 pr-1 text-left text-sm text-gray-200 text-ellipsis whitespace-nowrap overflow-hidden select-none">
+                        {option.title}
+                    </div>
         </button>
     {/each}
 </div>
