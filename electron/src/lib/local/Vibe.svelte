@@ -213,7 +213,7 @@
     </all-contents>
 
     <play-bar class="px-2 pb-2 pt-4">
-        <PlayBar {mobile} keyboard_control={prompter.active == null} />
+        <PlayBar {mobile} keyboard_control={get(prompter.active) == null} />
     </play-bar>
 
     <div class="w-full h-full absolute -z-[60] brightness-50">
