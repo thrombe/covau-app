@@ -99,6 +99,11 @@
         }
     });
     onDestroy(unsub);
+
+    let playbar_kb_controls = true;
+    prompter.active.subscribe(p => {
+        playbar_kb_controls = p == null;
+    });
 </script>
 
 <svelte:window on:resize={on_window_resize} bind:innerWidth={width} />
@@ -213,7 +218,7 @@
     </all-contents>
 
     <play-bar class="px-2 pb-2 pt-4">
-        <PlayBar {mobile} keyboard_control={get(prompter.active) == null} />
+        <PlayBar {mobile} keyboard_control={playbar_kb_controls} />
     </play-bar>
 
     <div class="w-full h-full absolute -z-[60] brightness-50">
