@@ -10,7 +10,8 @@
 
     // TODO: somehow setup retrying and see if images load more reliably
 
-    $: img_src = item?.thumbnail() ?? alt_thumbnail ?? item?.default_thumbnail() ?? "";
+    $: img_src =
+        item?.thumbnail() ?? alt_thumbnail ?? item?.default_thumbnail() ?? "";
     $: options = item?.options(ctx) ?? [];
 
     let hide_border = true;
@@ -31,7 +32,8 @@
     };
 </script>
 
-<item class="w-full h-full block relative py-1"
+<item
+    class="w-full h-full block relative py-1"
     class:show-buttons={show_buttons}
 >
     <div class="w-full h-full pl-1 flex flex-row text-gray-200">
@@ -108,17 +110,17 @@
 
     {#if options.length > 0}
         <div class="relative">
-            <ThreeDotMenu
-                options={options}
-                let:show_menu
-                let:on_menu_click
-            >
+            <ThreeDotMenu {options} let:show_menu let:on_menu_click>
                 <button
                     class="pop-button bottom-0 menu-button"
                     on:pointerup={on_menu_click}
                     class:menu-open={show_menu}
                 >
-                    <img alt="three dot menu icon" class="h-3 w-3" src={icons.three_dot_menu} />
+                    <img
+                        alt="three dot menu icon"
+                        class="h-3 w-3"
+                        src={icons.three_dot_menu}
+                    />
                 </button>
             </ThreeDotMenu>
         </div>

@@ -114,16 +114,15 @@
                 />
             {:else}
                 <div class="flex h-full w-full px-4 items-center">
-                    <div class="w-full inline-block text-center text-xl text-nowrap text-ellipsis overflow-x-hidden select-none">
+                    <div
+                        class="w-full inline-block text-center text-xl text-nowrap text-ellipsis overflow-x-hidden select-none"
+                    >
                         {curr_tab?.name ?? "Loading..."}
                     </div>
                 </div>
             {/if}
 
-            <ThreeDotMenu
-                options={options}
-                let:on_menu_click
-            >
+            <ThreeDotMenu {options} let:on_menu_click>
                 <div class="relative h-full" class:hidden={options.length == 0}>
                     <button
                         class="absolute right-0 h-full aspect-square flex flex-col items-center"
@@ -202,7 +201,10 @@
                     let:selected
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <list-item class="w-full h-full block relative pl-4" class:selected>
+                    <list-item
+                        class="w-full h-full block relative pl-4"
+                        class:selected
+                    >
                         <div
                             draggable={true}
                             on:dragstart={() => dragstart(index, item)}
@@ -226,9 +228,7 @@
                     </list-item>
                 </Explorer>
             {:else if tab.type == "detail"}
-                <DetailItem
-                    item={tab.item}
-                />
+                <DetailItem item={tab.item} />
             {:else}
                 tab type {tab.type} not handled
             {/if}

@@ -1,6 +1,7 @@
 <script lang="ts" context="module">
     let img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    img.src =
+        "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
 </script>
 
 <script lang="ts">
@@ -13,7 +14,7 @@
     let thumb_progress = 0;
     let _progress = 0;
 
-    $: if (typeof progress !== 'undefined') {
+    $: if (typeof progress !== "undefined") {
         if (!dragging && !wait_for_update) {
             thumb_progress = get_thumb_progress(progress);
         }
@@ -54,7 +55,7 @@
     let dragging_x: number | null = null;
     const dragstart = (e: DragEvent) => {
         e.dataTransfer?.setDragImage(img, 0, 0);
-        e.dataTransfer?.setData('covau/ignore', 'covau/ignore');
+        e.dataTransfer?.setData("covau/ignore", "covau/ignore");
         dragging = true;
         set_progress_at_click(e);
     };
@@ -107,7 +108,7 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-    class='w-full h-full flex flex-row relative bg-gray-200 bg-opacity-10 rounded-md'
+    class="w-full h-full flex flex-row relative bg-gray-200 bg-opacity-10 rounded-md"
     bind:this={bar}
     bind:clientWidth={width}
     on:pointerup={onclick}
@@ -115,11 +116,12 @@
     on:dragstart={dragstart}
     on:dragend={dragend}
 >
-    <div 
-        class='rounded-l-md bg-gray-200 bg-opacity-30'
-        style="width: {thumb_progress * width}px;" ></div>
     <div
-        class='thumb absolute rounded-md bg-gray-500'
+        class="rounded-l-md bg-gray-200 bg-opacity-30"
+        style="width: {thumb_progress * width}px;"
+    ></div>
+    <div
+        class="thumb absolute rounded-md bg-gray-500"
         style="--thumb-width: {thumb_width}px;
             --thumb-height: {thumb_height}px;
             --prog: {thumb_progress * (width - thumb_width)}px;"

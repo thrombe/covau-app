@@ -18,26 +18,22 @@
     };
 </script>
 
-<slot
-    {show_menu}
-    {on_menu_click}
-/>
+<slot {show_menu} {on_menu_click} />
 <div
     class="absolute right-5 top-0 flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
     class:hidden={!show_menu}
 >
     {#each options as option}
-        <button on:pointerup={option.onclick}
-                class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15 min-w-max place-items-center"
+        <button
+            on:pointerup={option.onclick}
+            class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15 min-w-max place-items-center"
         >
-                <img
-                    alt={option.title}
-                    class="h-6 w-6 p-1"
-                    src={option.icon}
-                />
-                    <div class="pl-2 pr-1 text-left text-sm text-gray-200 text-ellipsis whitespace-nowrap overflow-hidden select-none">
-                        {option.title}
-                    </div>
+            <img alt={option.title} class="h-6 w-6 p-1" src={option.icon} />
+            <div
+                class="pl-2 pr-1 text-left text-sm text-gray-200 text-ellipsis whitespace-nowrap overflow-hidden select-none"
+            >
+                {option.title}
+            </div>
         </button>
     {/each}
 </div>

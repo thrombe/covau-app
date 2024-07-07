@@ -120,8 +120,12 @@
                 </button>
             </div>
         {:else if prompt_info.type == "Searcher"}
-            <div class="flex flex-col gap-1 w-[80%] max-w-[40rem] mx-4 my-16 rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity">
-                <div class="w-full flex flex-row gap-4 h-16 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl">
+            <div
+                class="flex flex-col gap-1 w-[80%] max-w-[40rem] mx-4 my-16 rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
+            >
+                <div
+                    class="w-full flex flex-row gap-4 h-16 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl"
+                >
                     <InputBar
                         classes={"text-2xl font-semibold placeholder-gray-200 placeholder-opacity-60"}
                         bind:input_element
@@ -139,7 +143,10 @@
                     </button>
                 </div>
 
-                <div class="flex flex-row flex-grow-0 px-3" style="height: 80vh;">
+                <div
+                    class="flex flex-row flex-grow-0 px-3"
+                    style="height: 80vh;"
+                >
                     <Explorer
                         columns={1}
                         item_height={75}
@@ -150,10 +157,7 @@
                         let:selected
                     >
                         <list-item class:selected>
-                            <div
-                                draggable={true}
-                                class="item-bg"
-                            >
+                            <div draggable={true} class="item-bg">
                                 <AudioListItem
                                     {item}
                                     ctx="Prompt"

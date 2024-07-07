@@ -101,7 +101,7 @@
     onDestroy(unsub);
 
     let playbar_kb_controls = true;
-    prompter.active.subscribe(p => {
+    prompter.active.subscribe((p) => {
         playbar_kb_controls = p == null;
     });
 </script>
@@ -119,10 +119,10 @@
 >
     <all-contents class="flex flex-row">
         <search-area class="flex flex-col">
-            <top-menubar
-                class="w-full overflow-hidden px-4"
-            >
-                <div class="flex flex-row gap-2 py-2 justify-start text-gray-200 overflow-x-auto scrollbar-hide">
+            <top-menubar class="w-full overflow-hidden px-4">
+                <div
+                    class="flex flex-row gap-2 py-2 justify-start text-gray-200 overflow-x-auto scrollbar-hide"
+                >
                     {#each $menubar_options as typ, i}
                         <button
                             class="flex-none rounded-xl p-2 font-bold bg-gray-200 {$menubar_option ==
@@ -152,7 +152,8 @@
                     class="w-full h-full rounded-3xl overflow-hidden"
                     bind:clientWidth={browse_width}
                 >
-                    <div class="relative w-full h-full"
+                    <div
+                        class="relative w-full h-full"
                         bind:clientWidth={img_w}
                         bind:clientHeight={img_h}
                     >
@@ -164,10 +165,7 @@
                                     : 'h-0'}"
                             >
                                 <div class="flex flex-col h-full">
-                                    <Queue
-                                        bind:item_height
-                                        {mobile}
-                                    />
+                                    <Queue bind:item_height {mobile} />
                                 </div>
                             </div>
                         {/if}
@@ -200,7 +198,9 @@
                         </div>
                         <img
                             class="absolute w-full h-full left-0 top-0 -z-50 overflow-hidden object-cover brightness-50 blur-xl"
-                            style={`scale: ${100 * Math.max(img_w / img_h, 1) + 10}%;`}
+                            style={`scale: ${
+                                100 * Math.max(img_w / img_h, 1) + 10
+                            }%;`}
                             src={img_src}
                             alt=""
                             on:error={on_img_err}

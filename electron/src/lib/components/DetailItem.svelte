@@ -35,7 +35,9 @@
 <svelte:window on:keydown={disable_space_to_scroll} />
 
 <div class="h-full w-full p-4 flex flex-row place-content-center">
-    <div class="flex flex-col max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
+    <div
+        class="flex flex-col max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide"
+    >
         {#each sections as section}
             {#if section.type == "SongInfo"}
                 <div class="flex flex-row gap-4">
@@ -82,7 +84,9 @@
                                     <div
                                         class="flex flex-col justify-end text-sm text-gray-200"
                                     >
-                                        <div class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none">
+                                        <div
+                                            class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none"
+                                        >
                                             {option.title}
                                         </div>
                                     </div>
@@ -98,10 +102,7 @@
                     </div>
                     {#each section.items as item (item.get_key())}
                         <div class="h-20">
-                            <AudioListItem
-                                ctx={"Browser"}
-                                item={item}
-                            />
+                            <AudioListItem ctx={"Browser"} {item} />
                         </div>
                     {/each}
                 </div>
@@ -110,7 +111,10 @@
                     <div class="w-full heading">
                         {section.title}
                     </div>
-                    <div class="w-full flex flex-row flex-grow-0 px-2" style={`height: ${80 * section.height}px;`}>
+                    <div
+                        class="w-full flex flex-row flex-grow-0 px-2"
+                        style={`height: ${80 * section.height}px;`}
+                    >
                         <Explorer
                             searcher={section.searcher}
                             columns={1}
@@ -121,10 +125,7 @@
                         >
                             <!-- svelte-ignore a11y-no-static-element-interactions -->
                             <list-item class:selected>
-                                <div
-                                    draggable={true}
-                                    class="item-bg"
-                                >
+                                <div draggable={true} class="item-bg">
                                     <AudioListItem
                                         {item}
                                         ctx="Browser"
@@ -140,7 +141,9 @@
                     <div class="w-full heading">
                         {section.title}
                     </div>
-                    <div class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20">
+                    <div
+                        class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20"
+                    >
                         {section.content}
                     </div>
                 </div>
@@ -153,7 +156,11 @@
     </div>
 </div>
 
-<div class="absolute w-full h-full -z-[70]" bind:clientWidth={img_w} bind:clientHeight={img_h}></div>
+<div
+    class="absolute w-full h-full -z-[70]"
+    bind:clientWidth={img_w}
+    bind:clientHeight={img_h}
+/>
 <img
     class="absolute w-full h-full left-0 top-0 -z-[49] overflow-hidden object-cover brightness-50 blur-2xl"
     style={`scale: ${100 * Math.max(img_w / img_h, 1) + 10}%;`}
@@ -170,7 +177,6 @@
         @apply inline-block text-xl text-gray-200 overflow-hidden text-ellipsis text-nowrap selection:bg-gray-200 selection:bg-opacity-20;
     }
 
-
     .item-bg {
         @apply w-full h-full;
     }
@@ -184,8 +190,7 @@
     }
     /* For IE, Edge and Firefox */
     .scrollbar-hide {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
     }
 </style>
-
