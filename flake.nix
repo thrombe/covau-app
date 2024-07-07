@@ -20,10 +20,6 @@
       url = "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download";
       flake = false;
     };
-    mpv-windows = {
-      url = "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download";
-      flake = false;
-    };
   };
 
   outputs = inputs:
@@ -89,23 +85,6 @@
           mv libmpv.dll.a ./lib/.
           mv mpv-1.dll ./lib/.
           
-        '';
-      };
-      windows-mpv-exe = windows-pkgs.stdenv.mkDerivation {
-        name = "mpv";
-        src = inputs.mpv-windows;
-
-        phases = ["installPhase"];
-        installPhase = ''
-          mkdir -p $out/lib
-          mkdir -p $out/bin
-          cd $out
-
-          ${pkgs.p7zip}/bin/7z x $src
-
-          # include
-          mv d3dcompiler_43.dll ./lib/.
-          mv mpv.exe ./bin/.
         '';
       };
       windows-shell = windows-pkgs.mkShell {

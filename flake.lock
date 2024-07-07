@@ -30,18 +30,6 @@
         "url": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download"
       }
     },
-    "mpv-windows": {
-      "flake": false,
-      "locked": {
-        "narHash": "sha256-X/tLTEJCjG3msj+jTfyjWgswHI472tM8HHgpPY7BleA=",
-        "type": "file",
-        "url": "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download"
-      },
-      "original": {
-        "type": "file",
-        "url": "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1715668745,
@@ -78,7 +66,6 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "libmpv-windows": "libmpv-windows",
-        "mpv-windows": "mpv-windows",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "rust-overlay": "rust-overlay",
