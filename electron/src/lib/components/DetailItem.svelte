@@ -58,7 +58,7 @@
                     </div>
                     <div class="flex flex-row flex-wrap gap-2">
                         {#each section.options as option}
-                            <button on:click={option.onclick}>
+                            <button on:pointerup={option.onclick}>
                                 <div
                                     class="flex flex-row rounded-md p-2 pr-8 bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
                                 >

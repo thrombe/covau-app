@@ -127,7 +127,7 @@
                 <ThreeDotMenu {options} let:on_menu_click let:show_menu>
                     <button
                         class="w-full h-full"
-                        on:click={on_menu_click}
+                        on:pointerup={on_menu_click}
                         class:menu-open={show_menu}
                     >
                         <img

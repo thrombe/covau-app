@@ -124,7 +124,7 @@
                 <div class="relative h-full" class:hidden={options.length == 0}>
                     <button
                         class="absolute right-0 h-full aspect-square flex flex-col items-center"
-                        on:click={on_menu_click}
+                        on:pointerup={on_menu_click}
                     >
                         <div
                             class="w-full h-full flex flex-col pr-1 rounded-md opacity-60 hover:opacity-100"
@@ -154,7 +154,7 @@
                     <button
                         class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
                         style="max-width: 12rem;"
-                        on:click={async () => {
+                        on:pointerup={async () => {
                             stores.curr_tab_index.set(i);
                         }}
                     >
@@ -163,7 +163,7 @@
                     <div class="h-5 w-5" class:hidden={i === 0}>
                         <button
                             class="h-full w-full flex items-center"
-                            on:click={() => {
+                            on:pointerup={() => {
                                 stores.pop_tab(i);
                             }}
                         >

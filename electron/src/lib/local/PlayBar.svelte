@@ -161,7 +161,7 @@
 
         <div class="flex flex-row gap-2 justify-center h-2/3">
             <button
-                on:click={async () => {
+                on:pointerup={async () => {
                     await $queue.play_prev();
                     queue.update((q) => q);
                 }}
@@ -169,7 +169,7 @@
                 <img alt="prev" class="h-3" src={icons.prev} />
             </button>
             <button
-                on:click={async () => {
+                on:pointerup={async () => {
                     $player.toggle_pause();
                     is_playing = !$player.paused;
                 }}
@@ -181,7 +181,7 @@
                 />
             </button>
             <button
-                on:click={async () => {
+                on:pointerup={async () => {
                     await $queue.play_next();
                     queue.update((q) => q);
                 }}
@@ -225,7 +225,7 @@
                 </div>
                 <button
                     class="p-2"
-                    on:click={async () => {
+                    on:pointerup={async () => {
                         $player.toggle_mute();
                         is_muted = !is_muted;
                     }}

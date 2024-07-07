@@ -203,7 +203,7 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <sel
                 id={is_selected(i, selected) ? 'selected' : ''}
-                on:click={() => {
+                on:pointerup={() => {
                     _on_item_click(i);
                 }}
                 on:keydown={() => {}}

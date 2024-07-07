@@ -65,7 +65,7 @@
 
     {#each options as option}
         {#if option.location == "TopRight"}
-            <button class="pop-button top-0" on:click={option.onclick}>
+            <button class="pop-button top-0" on:pointerup={option.onclick}>
                 <img
                     alt="remove"
                     draggable={false}
@@ -80,7 +80,7 @@
                 <button
                     class="queue-button"
                     class:play-button={true}
-                    on:click={option.onclick}
+                    on:pointerup={option.onclick}
                 >
                     <img
                         alt="play"
@@ -91,7 +91,7 @@
                 </button>
             </div>
         {:else if option.location == "BottomRight"}
-            <button class="pop-button bottom-0" on:click={option.onclick}>
+            <button class="pop-button bottom-0" on:pointerup={option.onclick}>
                 <img
                     alt="remove"
                     draggable={false}
@@ -111,7 +111,7 @@
             >
                 <button
                     class="pop-button bottom-0 menu-button"
-                    on:click={on_menu_click}
+                    on:pointerup={on_menu_click}
                     class:menu-open={show_menu}
                 >
                     <img alt="three dot menu icon" class="h-3 w-3" src={icons.three_dot_menu} />

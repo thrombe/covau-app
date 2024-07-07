@@ -93,10 +93,8 @@
 
 {#if prompt_info != null}
     <div class="fixed top-0 flex flex-col w-full h-full items-center">
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
-            on:click={end_prompt}
+            on:pointerup={end_prompt}
             class="absolute w-full h-full -z-10 bg-gray-900 bg-opacity-20 backdrop-blur-[2px] transition-opacity"
             style="transition-duration: 800ms;"
         />

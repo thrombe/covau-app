@@ -106,29 +106,28 @@
 <svelte:window on:mousemove={mousemove} on:dragover={dragover} />
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<bar
+<div
     class='w-full h-full flex flex-row relative bg-gray-200 bg-opacity-10 rounded-md'
     bind:this={bar}
     bind:clientWidth={width}
-    on:click={onclick}
-    on:keydown={() => {}}
+    on:pointerup={onclick}
     draggable={true}
     on:dragstart={dragstart}
     on:dragend={dragend}
 >
-    <completed 
+    <div 
         class='rounded-l-md bg-gray-200 bg-opacity-30'
-        style="width: {thumb_progress * width}px;" />
-    <thumb
-        class='absolute rounded-md bg-gray-500'
+        style="width: {thumb_progress * width}px;" ></div>
+    <div
+        class='thumb absolute rounded-md bg-gray-500'
         style="--thumb-width: {thumb_width}px;
             --thumb-height: {thumb_height}px;
             --prog: {thumb_progress * (width - thumb_width)}px;"
-    />
-</bar>
+    ></div>
+</div>
 
 <style>
-    thumb {
+    .thumb {
         top: calc(50% - var(--thumb-height) / 2);
         left: var(--prog);
         width: var(--thumb-width);

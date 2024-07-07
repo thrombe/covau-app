@@ -5,14 +5,14 @@
 
     let show_menu: boolean = false;
     const menu_disabler = () => {
-        window.removeEventListener("click", menu_disabler);
+        window.removeEventListener("pointerup", menu_disabler);
         show_menu = false;
     };
     let on_menu_click = () => {
         if (!show_menu) {
             show_menu = true;
             setTimeout(() => {
-                window.addEventListener("click", menu_disabler);
+                window.addEventListener("pointerup", menu_disabler);
             }, 300);
         }
     };
@@ -27,7 +27,7 @@
     class:hidden={!show_menu}
 >
     {#each options as option}
-        <button on:click={option.onclick}>
+        <button on:pointerup={option.onclick}>
             <div
                 class="flex flex-row rounded-md p-2 pr-8 hover:bg-gray-100 hover:bg-opacity-15"
             >

@@ -92,18 +92,19 @@
 
 <svelte:window on:mousemove={mousemove} on:dragover={dragover} />
 
-<gutter 
+<div
     bind:clientHeight={visible_height} 
     draggable={false} 
     class='h-full w-full flex flex-col {!total_height ? '' : ''}'
 >
-    <top-pad style="height: {top_pad}px" />
-    <thumb
+    <div style="height: {top_pad}px"></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
         class='bg-gray-200 rounded-full {hide_scrollbar ? 'bg-opacity-0' : 'bg-opacity-20'}'
         draggable={true}
         on:dragstart={dragstart}
         on:dragend={dragend}
         style="height: {thumb_height}px;"
-    />
-</gutter>
+    ></div>
+</div>
 

@@ -124,7 +124,7 @@
                             typ
                                 ? 'bg-opacity-30'
                                 : 'bg-opacity-10'}"
-                            on:click={() => {
+                            on:pointerup={() => {
                                 if (
                                     typ.content_type === "related-music" &&
                                     // menubar_related_option.id == null
