@@ -118,6 +118,7 @@ export function DropWrapper<S extends Constructor<{
     } as S & Constructor<IDropWrapper>;
 }
 
+// TODO: rename to debounce
 export interface IAsyncWrapper<T> {
     next_page(): Promise<T[]>;
 };
@@ -125,13 +126,18 @@ export function AsyncWrapper<T, S extends Constructor<{
     next_page(): Promise<T[]>;
 }>>(s: S) {
     return class extends s implements IAsyncWrapper<T> {
-        promise: Promise<T[]> | null = null;
+        promise: Promise<T[]> = Promise.resolve([]);
+        is_resolved = true;
         async next_page(): Promise<T[]> {
-            if (!this.promise) {
-                this.promise = super.next_page();
+            if (this.is_resolved) {
+                this.is_resolved = false;
+                this.promise = this.promise.then(async (_) => {
+                    let items = await super.next_page();
+                    this.is_resolved = true;
+                    return items;
+                });
             }
             let res = await this.promise;
-            this.promise = null;
             return res;
         }
     } as S & Constructor<IAsyncWrapper<T>>;
