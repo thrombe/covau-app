@@ -30,6 +30,9 @@
         });
     };
     const dragenter = async (index: number) => {
+        if (get(stores.drag_item) == null) {
+            return;
+        }
         hovering = index;
         let source_key = get(stores.curr_tab).key;
         await stores.drag_ops.set_source({

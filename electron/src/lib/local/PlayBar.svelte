@@ -160,6 +160,7 @@
         </div>
 
         <div class="flex flex-row gap-2 justify-center h-2/3">
+            <!-- - [clicks are painful sometimes](https://css-tricks.com/when-a-click-is-not-just-a-click/) -->
             <button
                 on:pointerup={async () => {
                     await $queue.play_prev();
