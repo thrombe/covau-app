@@ -38,7 +38,7 @@
     let selected_item_index: number;
     let items = new Array<Unique<ListItem, number>>();
 
-    const end_reached = async (s: Readable<Searcher> = searcher) => {
+    const _end_reached = async (s: Readable<Searcher>) => {
         while (true) {
             if (!end_is_visible || !get(s).has_next_page) {
                 break;
@@ -49,23 +49,35 @@
             await tick();
         }
     };
+
+    let is_resolved = true;
+    let promise = Promise.resolve();
+    const end_reached = async (s: Readable<Searcher> = searcher) => {
+        if (is_resolved) {
+            is_resolved = false;
+            promise = promise.then(async () => {
+                await _end_reached(s);
+                is_resolved = true;
+            });
+            await promise;
+        } else {
+            await promise;
+        }
+    };
     const next_page = async (s: Readable<Searcher>) => {
         let r = await get(s).next_page();
         items = r.map((e) => {
             return { id: e.get_key(), data: e } as Unique<ListItem, number>;
         });
     };
-    export const search_objects = async (s: Readable<Searcher>) => {
-        await next_page(s);
-        await tick();
-        selected_item_index = 0;
-        await try_scroll_selected_item_in_view();
-        end_reached(s);
-    };
     let unsub = searcher.subscribe(async (s) => {
-        items = [];
-        if (search_objects) {
-            await search_objects(readable(s));
+        selected_item_index = 0;
+        is_resolved = true;
+        if (end_is_visible) {
+            items = [];
+            await end_reached(readable(s));
+        } else {
+            items = [];
         }
     });
     onDestroy(unsub);

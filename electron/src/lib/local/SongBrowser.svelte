@@ -17,7 +17,6 @@
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
 
-    let search_objects: () => Promise<void>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 
     let hovering: number | null = null;
@@ -194,7 +193,6 @@
                     {columns}
                     bind:item_height
                     keyboard_control={false}
-                    bind:search_objects
                     bind:try_scroll_selected_item_in_view
                     let:item
                     let:index
