@@ -111,7 +111,7 @@
                 />
             {:else}
                 <div class="flex h-full w-full items-center">
-                    <div class="flex w-full text-center justify-center text-xl">
+                    <div class="flex w-full text-center justify-center text-xl select-none">
                         {curr_tab?.name ?? "Loading..."}
                     </div>
                 </div>

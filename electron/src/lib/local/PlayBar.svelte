@@ -145,7 +145,7 @@
 
     <audio-controls>
         <div class="flex flex-row items-center h-1/3 w-full py-1">
-            <div class="p-2 text-gray-400">
+            <div class="p-2 text-gray-400 select-none">
                 {fmt_video_pos}
             </div>
             <ProgressBar
@@ -154,7 +154,7 @@
                 thumb_width={15}
                 thumb_height={15}
             />
-            <div class="p-2 text-gray-400">
+            <div class="p-2 text-gray-400 select-none">
                 {fmt_duration}
             </div>
         </div>

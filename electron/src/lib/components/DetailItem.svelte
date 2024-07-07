@@ -129,7 +129,7 @@
                     <div class="w-full heading">
                         {section.title}
                     </div>
-                    <div class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis">
+                    <div class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20">
                         {section.content}
                     </div>
                 </div>
@@ -153,10 +153,10 @@
 
 <style lang="postcss">
     .heading {
-        @apply block text-xl font-bold text-gray-400 whitespace-pre;
+        @apply block text-xl font-bold text-gray-400 whitespace-pre select-none;
     }
     .content {
-        @apply block text-xl text-gray-200 overflow-hidden text-ellipsis;
+        @apply block text-xl text-gray-200 overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20;
     }
 
 

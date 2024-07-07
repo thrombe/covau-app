@@ -51,12 +51,12 @@
         </icon>
 
         <info class="flex flex-col mx-2 overflow-hidden pt-1">
-            <item-title class="flex flex-col justify-end h-1/2 text-sm">
+            <item-title class="flex flex-col justify-end h-1/2 text-sm select-none">
                 <txt>{item?.title() ?? ""}</txt>
             </item-title>
 
             <item-title-sub
-                class="flex flex-col justify-start h-1/2 text-xs text-gray-400"
+                class="flex flex-col justify-start h-1/2 text-xs text-gray-400 select-none"
             >
                 <txt>{item?.title_sub() ?? ""}</txt>
             </item-title-sub>

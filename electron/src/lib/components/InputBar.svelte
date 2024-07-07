@@ -31,7 +31,7 @@
 </script>
 
 <input
-    class='w-full h-full text-center focus:border-none focus:outline-none bg-opacity-0 bg-gray-50 text-gray-200 text-lg {classes}'
+    class='w-full h-full text-center focus:border-none focus:outline-none bg-opacity-0 bg-gray-50 text-gray-200 text-lg selection:bg-gray-200 selection:bg-opacity-20 {classes}'
     {placeholder}
     bind:value
     on:focus={on_focus}

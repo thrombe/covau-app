@@ -109,7 +109,7 @@
         <div class="flex flex-row h-full {mobile ? 'py-2 bg-gray-900 bg-opacity-30' : 'rounded-xl bg-gray-400 bg-opacity-20'}">
             <div class="h-full pl-2 pr-2 flex-grow">
                 <div
-                    class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold"
+                    class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold select-none"
                 >
                     Queue
                 </div>
