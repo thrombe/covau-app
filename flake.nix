@@ -228,7 +228,7 @@
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          cargo run --bin covau-app --features bindeps
+          cargo run --bin covau-app --features bindeps -- $@
         '')
         (pkgs.writeShellScriptBin "check" ''
           #!/usr/bin/env bash
@@ -239,6 +239,10 @@
         (pkgs.writeShellScriptBin "build-prod" ''
           #!/usr/bin/env bash
           export BUILD_MODE="PRODUCTION"
+
+          export UI_BACKEND="WEBUI"
+          export SERVER_PORT=6176
+          export WEBUI_PORT=6177
 
           cd $PROJECT_ROOT/electron
           bun run build
