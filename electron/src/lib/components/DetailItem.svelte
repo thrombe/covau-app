@@ -156,7 +156,7 @@
         @apply block text-xl font-bold text-gray-400 whitespace-pre select-none;
     }
     .content {
-        @apply block text-xl text-gray-200 overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20;
+        @apply block text-xl text-gray-200 overflow-hidden text-ellipsis overflow-x-hidden text-nowrap selection:bg-gray-200 selection:bg-opacity-20;
     }
 
 

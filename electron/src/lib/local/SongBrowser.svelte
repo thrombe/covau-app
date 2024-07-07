@@ -113,8 +113,8 @@
                     }}
                 />
             {:else}
-                <div class="flex h-full w-full items-center">
-                    <div class="flex w-full text-center justify-center text-xl select-none">
+                <div class="flex h-full w-full px-4 items-center">
+                    <div class="w-full inline-block text-center text-xl text-nowrap text-ellipsis overflow-x-hidden select-none">
                         {curr_tab?.name ?? "Loading..."}
                     </div>
                 </div>

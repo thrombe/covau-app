@@ -35,7 +35,7 @@
     class:show-buttons={show_buttons}
 >
     <div class="w-full h-full pl-1 flex flex-row text-gray-200">
-        <icon class="block p-1 aspect-square flex-none h-full">
+        <div class="block p-1 aspect-square flex-none h-full">
             <div class="w-full h-full rounded-md overflow-hidden">
                 <img
                     class="w-full h-full object-cover {hide_border
@@ -48,19 +48,23 @@
                     on:load={on_load}
                 />
             </div>
-        </icon>
+        </div>
 
-        <info class="flex flex-col mx-2 overflow-hidden pt-1">
-            <item-title class="flex flex-col justify-end h-1/2 text-sm select-none">
-                <txt>{item?.title() ?? ""}</txt>
-            </item-title>
+        <div class="flex flex-col mx-2 overflow-hidden pt-1">
+            <div class="flex flex-col justify-end h-1/2 text-sm select-none">
+                <div class="text-content">
+                    {item?.title() ?? ""}
+                </div>
+            </div>
 
-            <item-title-sub
+            <div
                 class="flex flex-col justify-start h-1/2 text-xs text-gray-400 select-none"
             >
-                <txt>{item?.title_sub() ?? ""}</txt>
-            </item-title-sub>
-        </info>
+                <div class="text-content">
+                    {item?.title_sub() ?? ""}
+                </div>
+            </div>
+        </div>
     </div>
 
     {#each options as option}
@@ -128,6 +132,10 @@
     item:hover button,
     item.show-buttons button {
         display: block;
+    }
+
+    .text-content {
+        @apply overflow-x-hidden text-ellipsis text-nowrap;
     }
 
     .pop-button {
