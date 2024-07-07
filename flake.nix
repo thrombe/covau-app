@@ -6,8 +6,22 @@
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     webui-git = {
       url = "github:webui-dev/webui/2.5.0-beta.1";
+      flake = false;
+    };
+
+    libmpv-windows = {
+      url = "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download";
+      flake = false;
+    };
+    mpv-windows = {
+      url = "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download";
       flake = false;
     };
   };
@@ -27,6 +41,99 @@
           })
         ];
       };
+
+      # - [Cross compilation — nix.dev documentation](https://nix.dev/tutorials/cross-compilation.html)
+      # - [Cross Compile Rust for Windows - Help - NixOS Discourse](https://discourse.nixos.org/t/cross-compile-rust-for-windows/9582/7)
+      # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingw32;
+      # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingwW64;
+      windows-pkgs = import inputs.nixpkgs {
+        localSystem = "x86_64-linux";
+        crossSystem.config = "x86_64-w64-mingw32";
+      };
+      # windows-pkgs = import inputs.nixpkgs {
+      #   localSystem = "x86_64-linux";
+      #   crossSystem.config = "x86_64-w64-mingwW64";
+      # };
+      rust-bin = inputs.rust-overlay.lib.mkRustBin { } windows-pkgs.buildPackages;
+      windows-webui = windows-pkgs.stdenv.mkDerivation {
+        name = "webui";
+        src = windows-pkgs.fetchzip {
+          url = "https://github.com/webui-dev/webui/releases/download/2.4.2/webui-windows-gcc-x64.zip";
+          sha256 = "sha256-8QmPas4q0Yce78Srx837bjUYo+DQ6ZAsiy4jL0G5Ldk=";
+        };
+
+        phases = ["installPhase"];
+        installPhase = ''
+          mkdir -p $out/lib
+          mkdir -p $out/include
+          # cp $src/debug/libwebui-2-static.a
+          # cp $src/debug/webui-2.dll
+          cp $src/include/webui.h $out/include/.
+          cp $src/include/webui.hpp $out/include/.
+          cp $src/libwebui-2-static.a $out/lib/.
+          cp $src/webui-2.dll $out/lib/.
+        '';
+      };
+      windows-mpv = windows-pkgs.stdenv.mkDerivation {
+        name = "libmpv";
+        src = inputs.libmpv-windows;
+
+        phases = ["installPhase"];
+        installPhase = ''
+          mkdir -p $out/lib
+          cd $out
+
+          ${pkgs.p7zip}/bin/7z x $src
+
+          # mv libmpv-2.dll ./lib/.
+          mv libmpv.dll.a ./lib/.
+          mv mpv-1.dll ./lib/.
+          
+        '';
+      };
+      windows-mpv-exe = windows-pkgs.stdenv.mkDerivation {
+        name = "mpv";
+        src = inputs.mpv-windows;
+
+        phases = ["installPhase"];
+        installPhase = ''
+          mkdir -p $out/lib
+          mkdir -p $out/bin
+          cd $out
+
+          ${pkgs.p7zip}/bin/7z x $src
+
+          # include
+          mv d3dcompiler_43.dll ./lib/.
+          mv mpv.exe ./bin/.
+        '';
+      };
+      windows-shell = windows-pkgs.mkShell {
+        nativeBuildInputs = [
+          rust-bin.stable.latest.minimal
+          windows-pkgs.buildPackages.pkg-config
+          windows-pkgs.openssl
+        ];
+
+        depsBuildBuild = [];
+        buildInputs = [
+          windows-pkgs.buildPackages.pkg-config
+          windows-pkgs.openssl
+          windows-pkgs.windows.mingw_w64_pthreads
+          windows-pkgs.windows.pthreads
+          windows-webui
+          windows-mpv
+        ];
+
+
+        env = {
+          CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+
+          # envCase = triple: pkgs.lib.strings.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] triple);
+          # "CARGO_TARGET_${envCase "x86_64-pc-windows-gnu"}_LINKER" = "${windows-pkgs.stdenv.cc.targetPrefix}cc";
+        };
+      };
+      # UI_BACKEND="WEBUI" BUILD_MODE="PRODUCTION" cargo build --release --target x86_64-pc-windows-gnu --features bindeps
 
       meta = with pkgs.lib; {
         homepage = manifest.repository;
@@ -286,6 +393,7 @@
         inherit covau-app;
       };
 
+      devShells.windows = windows-shell;
       devShells.default =
         pkgs.mkShell.override {
           inherit stdenv;

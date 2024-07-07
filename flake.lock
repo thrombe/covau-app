@@ -18,6 +18,30 @@
         "type": "github"
       }
     },
+    "libmpv-windows": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-xOI+ILDFVqpwbXUn8LqSNCWz4PXEOniUtVP3Lg65DnE=",
+        "type": "file",
+        "url": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download"
+      }
+    },
+    "mpv-windows": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-X/tLTEJCjG3msj+jTfyjWgswHI472tM8HHgpPY7BleA=",
+        "type": "file",
+        "url": "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://sourceforge.net/projects/mpv-player-windows/files/release/mpv-0.32.0-x86_64.7z/download"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1715668745,
@@ -53,9 +77,32 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "libmpv-windows": "libmpv-windows",
+        "mpv-windows": "mpv-windows",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "rust-overlay": "rust-overlay",
         "webui-git": "webui-git"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1720232258,
+        "narHash": "sha256-eR5glZHS2bLpzUgTDhWGm04j+j5KMYKoDsY5DXAiuKQ=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "05ccbe21233d4e9110fc6428d2c3d74b430c3c69",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
       }
     },
     "systems": {
