@@ -76,16 +76,16 @@
     "webui-git": {
       "flake": false,
       "locked": {
-        "lastModified": 1701300464,
-        "narHash": "sha256-RcYEOXm6hZVAYUSB4R66WOVJcFWYIbKjKtFFtmgg120=",
+        "lastModified": 1719103892,
+        "narHash": "sha256-LkbQbAnRb9wyAUe8jYK9fJ+tySlardxEffITF1qkeS8=",
         "owner": "webui-dev",
         "repo": "webui",
-        "rev": "ac4ea8cd7b11daf3d96c65db03e6c02e1e0bd6d2",
+        "rev": "f40d35a60b979c676b67aa9d74f1afe3ab3dbc98",
         "type": "github"
       },
       "original": {
         "owner": "webui-dev",
-        "ref": "2.4.2",
+        "ref": "2.5.0-beta.1",
         "repo": "webui",
         "type": "github"
       }

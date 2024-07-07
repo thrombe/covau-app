@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
 
     webui-git = {
-      url = "github:webui-dev/webui/2.4.2";
+      url = "github:webui-dev/webui/2.5.0-beta.1";
       flake = false;
     };
   };
