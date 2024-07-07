@@ -19,9 +19,20 @@
         hide_border = false;
     };
 
+    const disable_space_to_scroll = (k: KeyboardEvent) => {
+        if (document.activeElement?.tagName == "INPUT") {
+            return;
+        }
+        if (k.key == " ") {
+            k.preventDefault();
+        }
+    };
+
     let img_w: number = 1;
     let img_h: number = 1;
 </script>
+
+<svelte:window on:keydown={disable_space_to_scroll} />
 
 <div class="h-full w-full p-4 flex flex-row place-content-center">
     <div class="flex flex-col max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide">
@@ -156,7 +167,7 @@
         @apply block text-xl font-bold text-gray-400 whitespace-pre select-none;
     }
     .content {
-        @apply block text-xl text-gray-200 overflow-hidden text-ellipsis overflow-x-hidden text-nowrap selection:bg-gray-200 selection:bg-opacity-20;
+        @apply inline-block text-xl text-gray-200 overflow-hidden text-ellipsis text-nowrap selection:bg-gray-200 selection:bg-opacity-20;
     }
 
 
