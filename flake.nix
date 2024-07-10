@@ -259,6 +259,29 @@
           pkg-config
         ];
       };
+      qweb = pkgs.clangStdenv.mkDerivation {
+        name = "covau-qweb";
+        src = ./qweb/qweb;
+
+        buildPhase = ''
+          
+        '';
+
+        buildInputs = with pkgs; [
+          qt6.qtbase
+          qt6.full
+          # kdePackages.qtwebview
+          # kdePackages.qtwebengine
+          # kdePackages.qtdeclarative
+          # kdePackages.qtwayland
+        ];
+
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+          cmake
+          qt6.wrapQtAppsHook
+        ];
+      };
 
       fhs = pkgs.buildFHSEnv {
         name = "fhs-shell";
@@ -375,14 +398,6 @@
 
             # manually generate bindings
             unstable.wasm-bindgen-cli
-
-            qtcreator
-            unstable.kdePackages.qtbase
-            unstable.kdePackages.qtwebview
-            unstable.kdePackages.qtwebengine
-            unstable.kdePackages.qtdeclarative
-            unstable.clang
-            cmake
           ]
           ++ (custom-commands pkgs);
 
@@ -390,11 +405,38 @@
       # stdenv = pkgs.gccStdenv;
     in {
       packages = {
+        qweb = qweb;
         default = covau-app;
         inherit covau-app;
       };
 
       devShells.windows = windows-shell;
+      devShells.qt = pkgs.mkShell.override {
+        inherit stdenv;
+      } {
+        nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+        inputsFrom = [
+          covau-app
+          qweb
+        ];
+
+        buildInputs = with pkgs; [
+          qtcreator
+
+          # this is for the shellhook portion
+          qt6.wrapQtAppsHook
+          makeWrapper
+          bashInteractive
+        ];
+
+        # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
+        # set the environment variables that Qt apps expect
+        shellHook = ''
+          bashdir=$(mktemp -d)
+          makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
+          exec "$bashdir/bash"
+        '';
+      };
       devShells.default =
         pkgs.mkShell.override {
           inherit stdenv;
@@ -402,6 +444,7 @@
           nativeBuildInputs = (env-packages pkgs) ++ [fhs];
           inputsFrom = [
             covau-app
+            qweb
           ];
           shellHook = ''
             export PROJECT_ROOT="$(pwd)"
