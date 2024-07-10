@@ -261,7 +261,7 @@
       };
       qweb = pkgs.clangStdenv.mkDerivation {
         name = "covau-qweb";
-        src = ./qweb/qweb;
+        src = ./qweb;
 
         buildPhase = ''
           
@@ -371,7 +371,7 @@
 
           cd $PROJECT_ROOT
           cd qweb
-          ./build/qweb
+          ./build/appqweb
         '')
       ];
 
