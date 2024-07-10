@@ -264,7 +264,12 @@
         src = ./qweb;
 
         buildPhase = ''
-          
+          cmake
+          make
+        '';
+        installPhase = ''
+          mkdir -p $out/bin
+          mv ./appqweb $out/bin/covau-app-qweb
         '';
 
         buildInputs = with pkgs; [
