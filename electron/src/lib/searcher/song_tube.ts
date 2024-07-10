@@ -377,7 +377,8 @@ export const st = {
             let uri = f.decipher(itube.session.player);
             console.log(uri)
             return { info: d, uri: uri };
-        } catch {
+        } catch (e) {
+            console.error(e);
             return null;
         }
     },
