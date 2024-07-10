@@ -342,6 +342,14 @@
           cmake ..
           make
         '')
+        (pkgs.writeShellScriptBin "run-qweb" ''
+          #!/usr/bin/env bash
+          build-qweb
+
+          cd $PROJECT_ROOT
+          cd qweb
+          ./build/qweb
+        '')
       ];
 
       env-packages = pkgs:
@@ -372,6 +380,7 @@
             unstable.kdePackages.qtbase
             unstable.kdePackages.qtwebview
             unstable.kdePackages.qtwebengine
+            unstable.kdePackages.qtdeclarative
             unstable.clang
             cmake
           ]
