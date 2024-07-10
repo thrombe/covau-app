@@ -107,12 +107,8 @@
 
         env = {
           CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
-
-          # envCase = triple: pkgs.lib.strings.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] triple);
-          # "CARGO_TARGET_${envCase "x86_64-pc-windows-gnu"}_LINKER" = "${windows-pkgs.stdenv.cc.targetPrefix}cc";
         };
       };
-      # UI_BACKEND="WEBUI" BUILD_MODE="PRODUCTION" cargo build --release --target x86_64-pc-windows-gnu --features bindeps
 
       meta = with pkgs.lib; {
         homepage = manifest.repository;
@@ -243,7 +239,7 @@
 
         inherit meta;
       };
-      webui = stdenv.mkDerivation {
+      webui = pkgs.gccStdenv.mkDerivation {
         name = "webui";
         src = inputs.webui-git;
 
@@ -336,6 +332,16 @@
           cd $PROJECT_ROOT
           cargo build --release --bin covau-app --features bindeps
         '')
+        (pkgs.writeShellScriptBin "build-qweb" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+          cd qweb
+          mkdir -p ./build
+
+          cd ./build
+          cmake ..
+          make
+        '')
       ];
 
       env-packages = pkgs:
@@ -361,11 +367,18 @@
 
             # manually generate bindings
             unstable.wasm-bindgen-cli
+
+            qtcreator
+            unstable.kdePackages.qtbase
+            unstable.kdePackages.qtwebview
+            unstable.kdePackages.qtwebengine
+            unstable.clang
+            cmake
           ]
           ++ (custom-commands pkgs);
 
-      # stdenv = pkgs.clangStdenv;
-      stdenv = pkgs.gccStdenv;
+      stdenv = pkgs.clangStdenv;
+      # stdenv = pkgs.gccStdenv;
     in {
       packages = {
         default = covau-app;
