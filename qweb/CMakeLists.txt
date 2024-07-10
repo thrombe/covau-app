@@ -12,6 +12,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS WebEngineQuick)
 
 qt_standard_project_setup()
 
@@ -36,9 +37,8 @@ set_target_properties(appqweb PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-target_link_libraries(appqweb
-    PRIVATE Qt6::Quick
-)
+target_link_libraries(appqweb PRIVATE Qt6::Quick)
+target_link_libraries(appqweb PRIVATE Qt6::WebEngineQuick)
 
 include(GNUInstallDirs)
 install(TARGETS appqweb

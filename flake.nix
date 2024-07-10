@@ -371,7 +371,7 @@
 
           cd $PROJECT_ROOT
           cd qweb
-          ./build/appqweb
+          ./build/appqweb $@
         '')
       ];
 
@@ -432,6 +432,9 @@
         # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
         # set the environment variables that Qt apps expect
         shellHook = ''
+          # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
+          export QTWEBENGINE_REMOTE_DEBUGGING=6176
+
           bashdir=$(mktemp -d)
           makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
           exec "$bashdir/bash"
