@@ -4,7 +4,14 @@ project(qweb VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
+# Set up Clangd
+find_program(CLANGD clangd)
+if(CLANGD)
+    add_definitions(-DUSE_CLANGD)
+endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Quick)
 
 qt_standard_project_setup()
 
