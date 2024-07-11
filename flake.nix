@@ -272,7 +272,7 @@
         installPhase = ''
           mkdir -p $out/bin
           mkdir -p $out/lib
-          mv ./appqweb $out/bin/qweb
+          mv ./qweb $out/bin/.
           mv ./libqweb.so $out/lib/.
           # mv ./libqweb.a $out/lib/.
         '';
@@ -460,9 +460,7 @@
         pkgs.mkShell.override {
           inherit stdenv;
         } {
-          nativeBuildInputs = (env-packages pkgs) ++ [fhs] ++ [
-            qweb
-          ];
+          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
           inputsFrom = [
             covau-app
             qweb

@@ -21,7 +21,7 @@ qt_add_executable(appqweb
 )
 
 qt_add_qml_module(appqweb
-    URI qweb
+    URI files
     VERSION 1.0
     QML_FILES Main.qml
 )
@@ -49,6 +49,9 @@ set_target_properties(appqweb PROPERTIES
 
 target_link_libraries(appqweb PRIVATE Qt6::Quick)
 target_link_libraries(appqweb PRIVATE Qt6::WebEngineQuick)
+
+# rename executable file
+set_target_properties(appqweb PROPERTIES OUTPUT_NAME "qweb")
 
 include(GNUInstallDirs)
 install(TARGETS appqweb

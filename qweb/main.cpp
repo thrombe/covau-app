@@ -33,7 +33,7 @@ extern "C" void qweb_start() {
         std::setlocale(LC_NUMERIC, "C");
 
         QQmlApplicationEngine engine;
-        const QUrl url(u"qrc:/qweb/Main.qml"_qs);
+        const QUrl url(u"qrc:/files/Main.qml"_qs);
         // const QUrl url(u"file:///home/issac/0Git/covau-app/qweb/Main.qml"_qs);
         QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
             &app, []() { QCoreApplication::exit(-1); },
