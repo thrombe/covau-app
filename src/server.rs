@@ -961,10 +961,6 @@ fn app_state_handler_route(state: AppState, path: &'static str) -> BoxedFilter<(
                     state.0.is_visible.store(false, atomic::Ordering::Relaxed);
                 },
             }
-
-            if !state.is_loaded() && !state.is_visible() {
-                state.0.close.notify_waiters();
-            }
             
             Ok::<_, warp::Rejection>(warp::reply())
         });
