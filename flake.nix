@@ -431,6 +431,7 @@
 
         buildInputs = with pkgs; [
           qtcreator
+          qweb
 
           # this is for the shellhook portion
           qt6.wrapQtAppsHook
@@ -453,7 +454,9 @@
         pkgs.mkShell.override {
           inherit stdenv;
         } {
-          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+          nativeBuildInputs = (env-packages pkgs) ++ [fhs] ++ [
+            qweb
+          ];
           inputsFrom = [
             covau-app
             qweb

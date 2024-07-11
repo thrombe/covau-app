@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, process::Stdio, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
@@ -235,7 +235,7 @@ pub mod cli {
 #[cfg(feature = "qweb-dylib")]
 mod qweb {
     mod sys {
-        #[link(name="qweb", kind="dylib")]
+        #[link(name = "qweb", kind = "dylib")]
         extern "C" {
             pub fn qweb_start();
             pub fn qweb_wait();
@@ -272,6 +272,58 @@ fn dump_types() -> Result<()> {
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
+
+    Ok(())
+}
+
+async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
+    #[cfg(feature = "qweb-dylib")]
+    {
+        let start_notif = std::sync::Arc::new(tokio::sync::Notify::new());
+        let quit_notif = std::sync::Arc::new(tokio::sync::Notify::new());
+
+        let start_n = start_notif.clone();
+        let quit_n = quit_notif.clone();
+        let j = tokio::task::spawn_blocking(move || {
+            qweb::start();
+            start_n.notify_waiters();
+            qweb::wait();
+            quit_n.notify_waiters();
+        });
+
+        start_notif.notified().await;
+
+        tokio::select! {
+            server = server_start(config) => {
+                server?;
+            }
+            window = quit_notif.notified() => { }
+        }
+        let _ = j.await;
+    };
+
+    #[cfg(feature = "qweb-bin")]
+    {
+        let mut app_fut = std::pin::pin!(tokio::task::spawn(async {
+            let mut child = tokio::process::Command::new("qweb");
+            let mut child2 = child
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .spawn()?;
+            let s = child2.wait_with_output().await?;
+            Ok::<_, anyhow::Error>(())
+        }));
+        let mut server_fut = std::pin::pin!(server_start(config));
+
+        tokio::select! {
+            server = &mut server_fut => {
+                server?;
+            }
+            window = &mut app_fut => {
+                let _ = window?;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -423,6 +475,8 @@ async fn main() -> Result<()> {
             // parse_test().await?;
             // db::db_test().await?;
             // mbz::api_test().await?;
+
+            qweb_app(config).await?;
         }
     }
 

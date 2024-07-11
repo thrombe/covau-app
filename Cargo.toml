@@ -59,6 +59,7 @@ tsify-next = {version = "0.5.3", optional = true }
 player-mpv = ["mpv"]
 player-gst = ["gstreamer-player", "gstreamer"]
 qweb-dylib = []
+qweb-bin = []
 # player-libmpv = ["libmpv"] # didn't impliment this one yet
 
 wasmdeps = [
@@ -89,7 +90,8 @@ bindeps = [
   "clap",
   "toml",
   "shellexpand",
-  "qweb-dylib",
+  # "qweb-dylib",
+  "qweb-bin",
 ]
 
 [[bin]]
