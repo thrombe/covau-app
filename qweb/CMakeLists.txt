@@ -26,6 +26,15 @@ qt_add_qml_module(appqweb
     QML_FILES Main.qml
 )
 
+qt_add_library(qweb SHARED main.cpp)
+target_link_libraries(qweb PRIVATE Qt6::Quick)
+target_link_libraries(qweb PRIVATE Qt6::WebEngineQuick)
+install(TARGETS qweb
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.

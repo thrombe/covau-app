@@ -215,6 +215,7 @@
         buildInputs = with pkgs; [
           openssl
           webui
+          qweb
 
           # gst_all_1.gstreamer
           # gst_all_1.gst-plugins-base
@@ -269,7 +270,10 @@
         '';
         installPhase = ''
           mkdir -p $out/bin
-          mv ./appqweb $out/bin/covau-app-qweb
+          mkdir -p $out/lib
+          mv ./appqweb $out/bin/qweb
+          mv ./libqweb.so $out/lib/.
+          # mv ./libqweb.a $out/lib/.
         '';
 
         buildInputs = with pkgs; [
