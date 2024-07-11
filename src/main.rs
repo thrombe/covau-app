@@ -170,6 +170,7 @@ pub mod cli {
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
+        #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
         Qweb {
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
@@ -221,6 +222,7 @@ pub mod cli {
                 Command::Webui { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
+                #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
                 Command::Qweb { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
@@ -283,6 +285,7 @@ fn dump_types() -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
 async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     #[cfg(feature = "qweb-dylib")]
     {
@@ -399,6 +402,7 @@ async fn main() -> Result<()> {
 
             server_start(config).await?;
         }
+        #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
         cli::Command::Qweb { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
