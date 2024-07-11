@@ -11,6 +11,10 @@ if(CLANGD)
 endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose Release or Debug" FORCE)
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 find_package(Qt6 REQUIRED COMPONENTS WebEngineQuick)
 find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
