@@ -377,16 +377,18 @@
           mkdir -p ./build
 
           cd ./build
-          cmake ..
+          cmake $@ ..
           make
         '')
         (pkgs.writeShellScriptBin "run-qweb" ''
           #!/usr/bin/env bash
-          build-qweb
-
-          cd $PROJECT_ROOT
-          cd qweb
-          ./build/appqweb $@
+          build-qweb -DCMAKE_BUILD_TYPE=Release
+          $PROJECT_ROOT/qweb/build/qweb $@
+        '')
+        (pkgs.writeShellScriptBin "run-covau-qweb" ''
+          #!/usr/bin/env bash
+          build-qweb -DCMAKE_BUILD_TYPE=Release
+          PATH=$PROJECT_ROOT/qweb/build:$PATH run qweb
         '')
       ];
 
@@ -486,6 +488,12 @@
             export DEV_VITE_PORT=6175
 
             export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"
+
+            export PATH=$PROJECT_ROOT/qweb/build:$PATH
+            export QTWEBENGINE_REMOTE_DEBUGGING=6178
+
+            export QT_SCALE_FACTOR_ROUNDING_POLICY=RoundPreferFloor
+            export QT_WAYLAND_DISABLE_WINDOWDECORATION=0
           '';
         };
     });
