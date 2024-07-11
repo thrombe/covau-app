@@ -6,7 +6,7 @@ use std::net::Ipv4Addr;
 use std::ops::Deref;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex};
-use tokio::time::Duration;
+use tokio::time::{ Duration, Instant };
 use tokio_stream::wrappers::{ReceiverStream, UnboundedReceiverStream};
 use ulid::Ulid;
 use warp::filters::BoxedFilter;
@@ -310,6 +310,19 @@ pub struct InnerFrontendClient<R> {
     request_sender: mpsc::Sender<Message<R>>,
     request_receiver: Mutex<ReceiverStream<Message<R>>>,
     requests: Mutex<HashMap<u32, oneshot::Sender<MessageResult<String>>>>,
+    last_conn_break: std::sync::Mutex<Instant>,
+}
+impl<R> InnerFrontendClient<R> {
+    fn conn_broke_no_handshake(&self) {
+        let mut mg = self.last_conn_break.lock().expect("mutex broke");
+        *mg = Instant::now();
+    }
+    fn conn_break_secs(&self) -> u64 {
+        let now = Instant::now();
+        let mut mg = self.last_conn_break.lock().expect("mutex broke");
+        let dur = now.duration_since(*mg);
+        dur.as_secs()
+    }
 }
 
 impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
@@ -320,6 +333,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             request_sender: tx,
             request_receiver: Mutex::new(ReceiverStream::new(rx)),
             requests: Mutex::new(HashMap::new()),
+            last_conn_break: std::sync::Mutex::new(Instant::now().checked_sub(Duration::from_secs(10 * 60)).unwrap()),
         }))
     }
 
@@ -443,12 +457,15 @@ fn client_ws_route<R: Send + Sync + Serialize + 'static>(
                         }
                         Err(e) => {
                             eprintln!("Error: {}", &e);
+                            fe.0.conn_broke_no_handshake();
+                            dbg!();
                         }
                     }
                 }
 
                 // NOTE: abort drops everything correctly. so this is fine
                 j.abort();
+                dbg!();
             })
         });
     let ws_route = ws_route.with(warp::cors().allow_any_origin());
@@ -941,6 +958,7 @@ fn app_state_handler_route(state: AppState, path: &'static str) -> BoxedFilter<(
         .and(warp::any().map(move || state.clone()))
         .and(warp::body::json())
         .and_then(|state: AppState, message: AppMessage| async move {
+            dbg!(&message);
             match message {
                 AppMessage::Online => {
                     state.0.is_online.store(true, atomic::Ordering::Relaxed);
@@ -991,7 +1009,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
     let yti = FrontendClient::<YtiRequest>::new();
     let fe = FrontendClient::<FeRequest>::new();
-    let state = AppState::new();
+    let state = AppState::new(fe.clone());
 
     let musimanager_search_routes = {
         use crate::musimanager::*;
@@ -1321,16 +1339,18 @@ pub struct InternalAppState {
     is_online: atomic::AtomicBool,
     is_visible: atomic::AtomicBool,
     is_loaded: atomic::AtomicBool,
+    fe: FrontendClient<FeRequest>,
 }
 #[derive(Clone)]
 pub struct AppState(Arc<InternalAppState>);
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(fe: FrontendClient<FeRequest>) -> Self {
         Self(Arc::new(InternalAppState {
             close: tokio::sync::Notify::new(),
             is_online: true.into(),
             is_visible: true.into(),
             is_loaded: true.into(),
+            fe,
         }))
     }
 
@@ -1338,9 +1358,21 @@ impl AppState {
         loop {
             self.0.close.notified().await;
 
-            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            let t1 = Instant::now();
+            tokio::time::sleep(Duration::from_secs(5)).await;
+            // we do this cuz this sleep happens when system is suspended
+            // no clue if this is necessary :/
+            let t1 = Instant::now().duration_since(t1).as_secs() as i64;
 
-            if !self.is_loaded() && !self.is_visible() {
+            let t2 = self.0.fe.0.conn_break_secs() as i64;
+
+            dbg!(t1, t2);
+
+            // conn broke within 5 secs of call to notify
+            let recent_break = t2 - t1 < 5;
+
+            if !self.is_loaded() && !self.is_visible() && !recent_break {
+                dbg!("window wait ends");
                 return;
             }
         }
