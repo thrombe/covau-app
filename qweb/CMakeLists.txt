@@ -13,6 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 find_package(Qt6 REQUIRED COMPONENTS WebEngineQuick)
+find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
 
 qt_standard_project_setup()
 
@@ -30,6 +31,8 @@ qt_add_library(qweb SHARED main.cpp)
 # qt_add_library(qweb STATIC main.cpp)
 target_link_libraries(qweb PRIVATE Qt6::Quick)
 target_link_libraries(qweb PRIVATE Qt6::WebEngineQuick)
+target_link_libraries(qweb PRIVATE Qt6::WebEngineWidgets)
+
 install(TARGETS qweb
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -49,6 +52,7 @@ set_target_properties(appqweb PROPERTIES
 
 target_link_libraries(appqweb PRIVATE Qt6::Quick)
 target_link_libraries(appqweb PRIVATE Qt6::WebEngineQuick)
+target_link_libraries(appqweb PRIVATE Qt6::WebEngineWidgets)
 
 # rename executable file
 set_target_properties(appqweb PROPERTIES OUTPUT_NAME "qweb")

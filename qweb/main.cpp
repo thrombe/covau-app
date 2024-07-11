@@ -1,20 +1,35 @@
 #include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QtCore/qlocale.h>
 #include <QtWebEngineQuick>
 #include <clocale>
+#include <QWebEngineView>
 
 int main(int argc, char *argv[]) {
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--autoplay-policy=no-user-gesture-required");
+
     QtWebEngineQuick::initialize();
 
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
+    QWebEngineView view;
     QQmlApplicationEngine engine;
-    const QUrl url(u"qrc:/qweb/Main.qml"_qs);
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
-        &app, []() { QCoreApplication::exit(-1); },
-        Qt::QueuedConnection);
-    engine.load(url);
+
+    printf("args: %d\n", argc);
+
+    if (argc > 1) {
+        printf("%s\n", argv[1]);
+        view.load(QUrl(argv[1]));
+        view.resize(1024, 750);
+        view.show();
+    } else {
+        const QUrl url(u"qrc:/files/Main.qml"_qs);
+        QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
+            &app, []() { QCoreApplication::exit(-1); },
+            Qt::QueuedConnection);
+        engine.load(url);
+    }
 
     return app.exec();
 }

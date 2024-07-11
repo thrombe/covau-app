@@ -179,7 +179,7 @@ pub mod cli {
             run_in_background: bool,
         },
         Default {
-            #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
+            #[cfg(any(all(ui_backend = "WEBUI", feature = "webui"), all(ui_backend = "QWEB", feature = "qweb")))]
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
@@ -233,7 +233,7 @@ pub mod cli {
                 Command::Server => {
                     config.run_in_background = true;
                 }
-                #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
+                #[cfg(any(all(ui_backend = "WEBUI", feature = "webui"), all(ui_backend = "QWEB", feature = "qweb")))]
                 Command::Default { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
@@ -291,6 +291,17 @@ fn dump_types() -> Result<()> {
 
 #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
 async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
+    #[cfg(build_mode = "DEV")]
+    let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
+    #[cfg(build_mode = "PRODUCTION")]
+    let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
+
+    let mut url = format!("http://localhost:{}/", port);
+
+    url += "#/local";
+    // url += "#/vibe/test";
+    // url += "#/play";
+
     #[cfg(feature = "qweb-dylib")]
     {
         let start_notif = std::sync::Arc::new(tokio::sync::Notify::new());
@@ -328,6 +339,7 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
         let mut app_fut = std::pin::pin!(tokio::task::spawn(async {
             let mut child = tokio::process::Command::new("qweb");
             let mut child2 = child
+                .arg(url)
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .spawn()?;
