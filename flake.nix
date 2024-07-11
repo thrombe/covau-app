@@ -154,8 +154,9 @@
 
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
-          export UI_BACKEND="WEBUI"
+          # export UI_BACKEND="WEBUI"
           # export UI_BACKEND="TAURI"
+          export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PRODUCTION"
 
@@ -190,8 +191,9 @@
 
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
-          export UI_BACKEND="WEBUI"
+          # export UI_BACKEND="WEBUI"
           # export UI_BACKEND="TAURI"
+          export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PRODUCTION"
 
@@ -354,7 +356,7 @@
           #!/usr/bin/env bash
           export BUILD_MODE="PRODUCTION"
 
-          export UI_BACKEND="WEBUI"
+          export UI_BACKEND="QWEB"
           export SERVER_PORT=6176
           export WEBUI_PORT=6177
 
@@ -443,7 +445,7 @@
         # set the environment variables that Qt apps expect
         shellHook = ''
           # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
-          export QTWEBENGINE_REMOTE_DEBUGGING=6176
+          export QTWEBENGINE_REMOTE_DEBUGGING=6178
 
           bashdir=$(mktemp -d)
           makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
@@ -472,6 +474,7 @@
             # export UI_BACKEND="ELECTRON"
             # export UI_BACKEND="WEBUI"
             # export UI_BACKEND="TAURI"
+            # export UI_BACKEND="QWEB"
             export UI_BACKEND="NONE"
             export BUILD_MODE="DEV"
             # export BUILD_MODE="PRODUCTION"

@@ -170,6 +170,10 @@ pub mod cli {
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
+        Qweb {
+            #[arg(long, short, default_value_t = false)]
+            run_in_background: bool,
+        },
         Default {
             #[cfg(ui_backend = "WEBUI")]
             #[arg(long, short, default_value_t = false)]
@@ -215,6 +219,9 @@ pub mod cli {
 
             let _ = self.command.as_ref().map(|c| match c {
                 Command::Webui { run_in_background } => {
+                    config.run_in_background = *run_in_background;
+                }
+                Command::Qweb { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
                 Command::Server => {
@@ -392,6 +399,12 @@ async fn main() -> Result<()> {
 
             server_start(config).await?;
         }
+        cli::Command::Qweb { .. } => {
+            #[cfg(build_mode = "DEV")]
+            dump_types()?;
+
+            qweb_app(config).await?;
+        }
         cli::Command::Webui { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
@@ -402,9 +415,11 @@ async fn main() -> Result<()> {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
+            #[cfg(ui_backend = "QWEB")]
+            qweb_app(config).await?;
             #[cfg(ui_backend = "WEBUI")]
             webui_app(config).await?;
-            #[cfg(not(ui_backend = "WEBUI"))]
+            #[cfg(not(ui_backend = "NONE"))]
             server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {
@@ -475,8 +490,6 @@ async fn main() -> Result<()> {
             // parse_test().await?;
             // db::db_test().await?;
             // mbz::api_test().await?;
-
-            qweb_app(config).await?;
         }
     }
 
