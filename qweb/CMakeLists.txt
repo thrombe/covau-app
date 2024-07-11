@@ -27,6 +27,7 @@ qt_add_qml_module(appqweb
 )
 
 qt_add_library(qweb SHARED main.cpp)
+# qt_add_library(qweb STATIC main.cpp)
 target_link_libraries(qweb PRIVATE Qt6::Quick)
 target_link_libraries(qweb PRIVATE Qt6::WebEngineQuick)
 install(TARGETS qweb
