@@ -357,7 +357,12 @@
 
           export UI_BACKEND="QWEB"
           export SERVER_PORT=6176
-          export WEBUI_PORT=6177
+
+          cd $PROJECT_ROOT/qweb
+          mkdir -p ./build
+          cd ./build
+          cmake -CMAKE_BUILD_TYPE=Release ..
+          make
 
           cd $PROJECT_ROOT/electron
           bun run build
