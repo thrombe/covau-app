@@ -184,6 +184,7 @@ pub mod cli {
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
+        #[clap(hide = true)]
         Test,
     }
 

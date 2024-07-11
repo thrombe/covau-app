@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
 
 std::thread* t = nullptr;
 extern "C" void qweb_start() {
+    // - [mpv-examples/libmpv/qt/qtexample.cpp](https://github.com/mpv-player/mpv-examples/blob/master/libmpv/qt/qtexample.cpp)
     QLocale::setDefault(QLocale::C);
     // std::setlocale(LC_NUMERIC, "C");
 
