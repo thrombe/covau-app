@@ -58,6 +58,7 @@ tsify-next = {version = "0.5.3", optional = true }
 # default = ["player-libmpv"]
 player-mpv = ["mpv"]
 player-gst = ["gstreamer-player", "gstreamer"]
+qweb-dylib = []
 # player-libmpv = ["libmpv"] # didn't impliment this one yet
 
 wasmdeps = [
@@ -88,11 +89,15 @@ bindeps = [
   "clap",
   "toml",
   "shellexpand",
+  "qweb-dylib",
 ]
 
 [[bin]]
 name = "covau-app"
 required-features = ["bindeps"]
+
+[build-dependencies]
+cmake = "0.1.50"
 
 # [lib]
 # name = "covau_app_wasm"

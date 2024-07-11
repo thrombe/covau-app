@@ -232,6 +232,29 @@ pub mod cli {
     }
 }
 
+#[cfg(feature = "qweb-dylib")]
+mod qweb {
+    mod sys {
+        #[link(name="qweb", kind="dylib")]
+        extern "C" {
+            pub fn qweb_start();
+            pub fn qweb_wait();
+        }
+    }
+
+    pub fn start() {
+        unsafe {
+            sys::qweb_start();
+        }
+    }
+
+    pub fn wait() {
+        unsafe {
+            sys::qweb_wait();
+        }
+    }
+}
+
 fn dump_types() -> Result<()> {
     let tsconfig =
         specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);

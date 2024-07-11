@@ -1,4 +1,6 @@
 
+use cmake::Config;
+
 fn main() {
     println!("cargo:rerun-if-env-changed=UI_BACKEND");
     match std::env::var("UI_BACKEND") {
@@ -18,5 +20,15 @@ fn main() {
         Err(_) => {
             panic!("BUILD_MODE env not set");
         },
+    }
+
+    #[cfg(feature = "qweb-dylib")]
+    {
+        println!("cargo:rerun-if-changed=./build.rs");
+        println!("cargo:rerun-if-changed=./qweb/main.cpp");
+        let dst = Config::new("./qweb").build();
+        // panic!();
+        println!("cargo:rustc-link-search={}/lib64", dst.display());
+        println!("cargo:rustc-link-lib=dylib=qweb");
     }
 }
