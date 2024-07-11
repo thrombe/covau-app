@@ -303,13 +303,20 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 
         start_notif.notified().await;
 
+        let mut server_fut = std::pin::pin!(server_start(config));
+
         tokio::select! {
-            server = server_start(config) => {
+            server = &mut server_fut => {
                 server?;
+                return Ok(());
             }
             window = quit_notif.notified() => { }
         }
         let _ = j.await;
+
+        if config.run_in_background {
+            server_fut.await?;
+        }
     };
 
     #[cfg(feature = "qweb-bin")]
@@ -323,15 +330,20 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
             let s = child2.wait_with_output().await?;
             Ok::<_, anyhow::Error>(())
         }));
-        let mut server_fut = std::pin::pin!(server_start(config));
+        let mut server_fut = std::pin::pin!(server_start(config.clone()));
 
         tokio::select! {
             server = &mut server_fut => {
                 server?;
+                return Ok(());
             }
             window = &mut app_fut => {
                 let _ = window?;
             }
+        }
+
+        if config.run_in_background {
+            server_fut.await?;
         }
     }
 
