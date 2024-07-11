@@ -60,6 +60,7 @@ player-mpv = ["mpv"]
 player-gst = ["gstreamer-player", "gstreamer"]
 qweb-dylib = []
 qweb-bin = []
+webui = [ "webui-rs" ]
 # player-libmpv = ["libmpv"] # didn't impliment this one yet
 
 wasmdeps = [
@@ -80,7 +81,6 @@ bindeps = [
   "tokio",
   "tokio-stream",
   "warp",
-  "webui-rs",
   "intrusive-collections",
   "sea-orm",
   "sublime_fuzzy",
@@ -92,6 +92,7 @@ bindeps = [
   "shellexpand",
   # "qweb-dylib",
   "qweb-bin",
+  # "webui",
 ]
 
 [[bin]]

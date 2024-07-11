@@ -12,8 +12,10 @@ pub mod mbz;
 pub mod musimanager;
 mod musiplayer;
 pub mod server;
-pub mod webui;
 pub mod yt;
+
+#[cfg(feature = "webui")]
+pub mod webui;
 
 pub mod cli {
     use std::path::PathBuf;
@@ -166,6 +168,7 @@ pub mod cli {
             command: FeCommand,
         },
         Server,
+        #[cfg(feature = "webui")]
         Webui {
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
@@ -176,7 +179,7 @@ pub mod cli {
             run_in_background: bool,
         },
         Default {
-            #[cfg(ui_backend = "WEBUI")]
+            #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
@@ -219,6 +222,7 @@ pub mod cli {
                 .unwrap_or(Config::default());
 
             let _ = self.command.as_ref().map(|c| match c {
+                #[cfg(feature = "webui")]
                 Command::Webui { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
@@ -229,7 +233,7 @@ pub mod cli {
                 Command::Server => {
                     config.run_in_background = true;
                 }
-                #[cfg(ui_backend = "WEBUI")]
+                #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
                 Command::Default { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
@@ -350,6 +354,7 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "webui")]
 async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     let app = webui::App::new();
 
@@ -421,6 +426,7 @@ async fn main() -> Result<()> {
 
             qweb_app(config).await?;
         }
+        #[cfg(feature = "webui")]
         cli::Command::Webui { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
@@ -435,7 +441,7 @@ async fn main() -> Result<()> {
             qweb_app(config).await?;
             #[cfg(ui_backend = "WEBUI")]
             webui_app(config).await?;
-            #[cfg(not(ui_backend = "NONE"))]
+            #[cfg(ui_backend = "NONE")]
             server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {

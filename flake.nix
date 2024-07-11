@@ -104,7 +104,6 @@
           windows-mpv
         ];
 
-
         env = {
           CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
         };
