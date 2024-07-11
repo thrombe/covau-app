@@ -217,7 +217,7 @@
         {/if}
     </all-contents>
 
-    <play-bar class="px-2 pb-2 pt-4">
+    <play-bar class="px-2">
         <PlayBar {mobile} keyboard_control={playbar_kb_controls} />
     </play-bar>
 

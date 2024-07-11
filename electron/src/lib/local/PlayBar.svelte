@@ -147,7 +147,7 @@
         <AudioListItem item={$playing_item ?? default_item} ctx="Playbar" />
     </audio-info>
 
-    <audio-controls>
+    <audio-controls class="pt-4 pb-2">
         <div class="flex flex-row items-center h-1/3 w-full py-1">
             <div class="p-2 text-gray-400 select-none">
                 {fmt_video_pos}
