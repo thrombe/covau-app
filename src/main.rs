@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
+#![recursion_limit = "256"]
 
 use std::{path::PathBuf, process::Stdio, sync::Arc};
 
