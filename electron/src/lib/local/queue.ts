@@ -11,6 +11,7 @@ import { exhausted } from "$lib/virtual.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import { get } from "svelte/store";
+import { Db } from "$lib/searcher/db.ts";
 
 
 export class QueueManager implements Searcher {
@@ -300,6 +301,28 @@ export class QueueManager implements Searcher {
                     }
 
                     await q.init_with_seed(item);
+                },
+            },
+            {
+                title: "searcher prompt test",
+                icon: icons.covau_icon,
+                location: "OnlyMenu",
+                onclick: async () => {
+                    let new_searcher = (q: string) => Db.new({
+                        type: "MmSong",
+                        query_type: "search",
+                        query: q,
+                    }, 50);
+                    let q = "milet";
+                    let s = new_searcher(q);
+                    let item = await prompter.searcher_prompt(
+                        s,
+                        false,
+                        "Do Da Do",
+                        q,
+                        new_searcher,
+                    );
+                    console.log(item);
                 },
             },
         ];
