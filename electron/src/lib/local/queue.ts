@@ -229,6 +229,7 @@ export class QueueManager implements Searcher {
         try {
             let p = get(player);
             await p.play_item(item);
+            playing_item.set(item);
             player.update(p => p);
         } catch (e: any) {
             if (e instanceof Error) {
