@@ -209,7 +209,6 @@ export class MbzListItem extends ListItem {
             new_video_searcher,
 
             async search_and_get(query: string, type: "song" | "video", switch_tab: boolean = false) {
-
                 let new_searcher: (q: string) => Searcher;
                 switch (type) {
                     case "song": {
@@ -259,9 +258,9 @@ export class MbzListItem extends ListItem {
 
                 return query;
             },
-            async play_recording(recording: RecordingWithInfo, type: "song" | "video") {
+            async play_song(recording: RecordingWithInfo, type: "song" | "video") {
                 if (self.yt_song) {
-                    return st.st.get_wrapped([self.yt_song], "Song")[0].audio_uri();
+                    return st.st.get_wrapped([self.yt_song], "Song")[0];
                 }
 
                 let query = await this.get_query(recording);
@@ -271,7 +270,10 @@ export class MbzListItem extends ListItem {
                 }
 
                 let song = await this.search_and_get(query, type);
-
+                return song;
+            },
+            async play_recording(recording: RecordingWithInfo, type: "song" | "video") {
+                let song = await this.play_song(recording, type);
                 return song?.audio_uri() ?? null;
             },
             async upgrade_to_recording_with_info(rec: Recording) {
@@ -615,6 +617,35 @@ export class MbzListItem extends ListItem {
                 throw exhausted(ctx);
         }
     }
+
+    async yt_id(): Promise<string | null> {
+        let ops = this.ops();
+        switch (this.data.typ) {
+            case "MbzRecording": {
+                let recording = await ops.upgrade_to_recording_with_info(this.data.data);
+                let song = await ops.play_song(recording, "song");
+                return song?.yt_id() ?? null;
+            } break;
+            case "MbzRecordingWithInfo": {
+                let song = await ops.play_song(this.data.data, "song");
+                return song?.yt_id() ?? null;
+            } break;
+            case "MbzRadioSong": {
+                let query = this.data.data.title + " by " + this.data.data.creator;
+                let song = await ops.search_and_get(query, "song");
+                return song?.audio_uri() ?? null;
+            } break;
+            case "MbzReleaseWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
     async audio_uri(): Promise<string | null> {
         let ops = this.ops();
         switch (this.data.typ) {

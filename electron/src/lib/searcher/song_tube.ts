@@ -142,6 +142,21 @@ export class StListItem extends ListItem {
         }
     }
 
+    async yt_id() {
+        switch (this.data.type) {
+            case "Song": {
+                let s = this.data.content;
+                return s.id;
+            } break;
+            case "Album":
+            case "Playlist":
+            case "Artist":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
     async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
         switch (this.data.type) {
             case "Song": {
@@ -373,6 +388,7 @@ export const st = {
             let d = await itube.getInfo(id);
             console.log(d);
             let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
+            console.log(f);
             // let url = d.getStreamingInfo();
             let uri = f.decipher(itube.session.player);
             console.log(uri)

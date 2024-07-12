@@ -59,6 +59,44 @@ export class DbListItem extends ListItem {
         return this.data.typ;
     }
 
+    async yt_id(): Promise<string | null> {
+        switch (this.data.typ) {
+            case "MmSong":
+                return this.data.t.key;
+            case "StSong":
+                return this.data.t.id;
+            case "Song": {
+                let song = this.data.t;
+                for (let source of song.info_sources) {
+                    switch (source.type) {
+                        case "MbzId":
+                            break;
+                        case "YtId": {
+                            return source.content;
+                        } break;
+                        default:
+                            throw exhausted(source);
+                    }
+                }
+                // TODO: play the first mbz song here
+                return null;
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                return null;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     song_ids(): string[] {
         switch (this.data.typ) {
             case "MmSong":

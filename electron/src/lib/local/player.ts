@@ -1,7 +1,8 @@
-import { toast } from "$lib/toast/toast";
-import { exhausted } from "$lib/virtual";
-import type { PlayerMessage, PlayerCommand } from "$types/server";
-import type { MessageHandler } from "$lib/stores";
+import { toast } from "$lib/toast/toast.ts";
+import { exhausted } from "$lib/virtual.ts";
+import type { PlayerMessage, PlayerCommand } from "$types/server.ts";
+import type { MessageHandler } from "$lib/stores.ts";
+import type { ListItem } from "$lib/searcher/item.ts";
 
 export class Musiplayer {
     ws: WebSocket;
@@ -115,6 +116,15 @@ export class Musiplayer {
 
     send_message(msg: PlayerCommand) {
         this.ws.send(JSON.stringify(msg));
+    }
+
+    async play_item(item: ListItem) {
+        let uri = await item.audio_uri();
+        if (uri) {
+            this.play(uri);
+        } else {
+            throw new Error("Musiplayer can't play this item");
+        }
     }
 
     play(uri: string | null = null) {

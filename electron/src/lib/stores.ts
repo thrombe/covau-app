@@ -255,7 +255,7 @@ export let curr_tab = derived(
 
 export type MessageHandler = ((msg: types.server.PlayerMessage) => Promise<void>) | ((msg: types.server.PlayerMessage) => void);
 export interface Player {
-    play(uri: string): (Promise<void> | void);
+    play_item(item: ListItem): (Promise<void> | void);
     pause(): void;
     on_message(handler: MessageHandler): void;
     destroy(): Promise<void>;

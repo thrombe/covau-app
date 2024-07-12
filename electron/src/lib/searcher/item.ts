@@ -97,6 +97,7 @@ export abstract class ListItem implements Keyed {
 
     abstract get_key(): unknown; // literally anything unique
     abstract song_ids(): string[]; // a id that might identify this song
+    abstract yt_id(): Promise<string | null>; // get yt id for playing purposes
     abstract typ(): Typ;
     async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> { return false; }
     abstract title(): string;

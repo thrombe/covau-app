@@ -226,16 +226,16 @@ export class QueueManager implements Searcher {
         }
     }
     async play_item(item: ListItem) {
-        let uri = await item.audio_uri().catch(e => {
-            toast(e, "error");
-            return null;
-        });
-        playing_item.set(item);
-        if (uri) {
-            await get(player).play(uri);
+        try {
+            let p = get(player);
+            await p.play_item(item);
             player.update(p => p);
-        } else {
-            toast("could not play item", "error");
+        } catch (e: any) {
+            if (e instanceof Error) {
+                toast(e.message, "error");
+            } else {
+                toast(e, "error");
+            }
         }
     }
 
