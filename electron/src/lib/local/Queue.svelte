@@ -47,13 +47,12 @@
                     return;
                 }
 
+                let is_outsider = item.source_key != drag_source_key;
                 let q = get(queue);
-                if (item.source_key == drag_source_key) {
-                    await q.move_queue_item(item.item, index);
-                } else {
-                    await q.insert(index, item.item);
+                let handled = await q.handle_drop(item.item, index, is_outsider);
+                if (handled) {
+                    queue.update((t) => t);
                 }
-                queue.update((t) => t);
             },
             drop_cleanup: async () => {
                 dragging_index = null;

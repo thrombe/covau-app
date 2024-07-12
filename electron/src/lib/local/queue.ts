@@ -239,6 +239,18 @@ export class QueueManager implements Searcher {
         }
     }
 
+    async  handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> {
+        if (!item.is_playable()) {
+            return false;
+        }
+        if (is_outsider) {
+            await this.insert(target, item);
+        } else {
+            await this.move_queue_item(item, target);
+        }
+        return true;
+    }
+
     options(): Option[] {
         return [
             {
