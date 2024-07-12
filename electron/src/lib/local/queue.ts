@@ -53,7 +53,7 @@ export class QueueManager implements Searcher {
     }
     async play_queue_item(item: ListItem) {
         this.playing_index = this.get_item_index(item);
-        if (this.playing_index) {
+        if (this.playing_index != null) {
             await this.play(this.playing_index);
         } else {
             toast(`item "${item.title()}" not in queue`, "error");
