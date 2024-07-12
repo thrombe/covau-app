@@ -36,9 +36,11 @@ export class QueueManager implements Searcher {
         this.state = "Detour";
     }
     finished() {
-        this.state = "Finished";
-        get(player).pause();
-        player.update(p => p);
+        if (this.state !== "Finished") {
+            this.state = "Finished";
+            get(player).pause();
+            player.update(p => p);
+        }
     }
     get_item_index(item: ListItem) {
         for (let i = 0; i < this.items.length; i++) {
