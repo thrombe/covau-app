@@ -1,8 +1,7 @@
 import { toast } from "$lib/toast/toast";
 import { exhausted } from "$lib/virtual";
 import type { PlayerMessage, PlayerCommand } from "$types/server";
-
-type MessageHandler = ((msg: PlayerMessage) => Promise<void>) | ((msg: PlayerMessage) => void);
+import type { MessageHandler } from "$lib/stores";
 
 export class Musiplayer {
     ws: WebSocket;
@@ -100,6 +99,10 @@ export class Musiplayer {
         }
 
         return disable;
+    }
+
+    on_message(callback: MessageHandler) {
+        this.add_message_listener("any", callback);
     }
 
     send_message(msg: PlayerCommand) {

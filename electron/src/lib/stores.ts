@@ -10,6 +10,7 @@ import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from 
 import { type Searcher, fused_searcher, type NewSearcher } from "./searcher/searcher.ts";
 import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
+import * as types from "$types/types.ts";
 
 export type DetailTab = {
     type: "detail",
@@ -252,6 +253,7 @@ export let curr_tab = derived(
     ([$tabs, $index, _t]) => $tabs[$index],
 );
 
+export type MessageHandler = ((msg: types.server.PlayerMessage) => Promise<void>) | ((msg: types.server.PlayerMessage) => void);
 export interface Player {
     play(uri: string): (Promise<void> | void);
     pause(): void;

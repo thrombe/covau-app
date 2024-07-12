@@ -9,8 +9,8 @@ export interface Searcher {
     handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean>;
 };
 export type NewSearcher = ((q: string) => Promise<Searcher>) | ((q: string) => Searcher);
-export let fused_searcher = {
-    async next_page() { return [] },
+export let fused_searcher: Searcher = {
+    async next_page(): Promise<ListItem[]> { return [] },
     has_next_page: false,
     options: () => [],
 };
