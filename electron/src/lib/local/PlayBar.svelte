@@ -8,6 +8,7 @@
     import type { Writable } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import type { QueueManager } from "./queue.ts";
+    import type { PlayerMessage } from "$types/server.ts";
 
     export let mobile = false;
     export let keyboard_control = true;
@@ -24,52 +25,52 @@
     let audio_duration = 0;
     let is_muted = false;
     let volume = 1;
+    const handler = async (m: PlayerMessage) => {
+        switch (m.type) {
+            case "Paused":
+                is_playing = false;
+                break;
+            case "Unpaused":
+                is_playing = true;
+                break;
+            case "Finished":
+                is_playing = false;
+                if (await $queue.has_next()) {
+                    await $queue.play_next();
+                } else {
+                    $queue.finished();
+                }
+                queue.update((q) => q);
+                break;
+            case "Playing":
+                is_playing = true;
+                break;
+            case "ProgressPerc":
+                break;
+            case "Volume":
+                volume = m.content;
+                break;
+            case "Duration":
+                audio_duration = m.content;
+                break;
+            case "Mute":
+                is_muted = m.content;
+                break;
+            case "Error":
+                break;
+            default:
+                throw exhausted(m);
+        }
+        if (m.type != "ProgressPerc") {
+            return;
+        }
+        video_pos = m.content;
+    };
     let unsub = player.subscribe((pl) => {
         if (!pl) {
             return;
         }
-        pl.on_message(async (m) => {
-            switch (m.type) {
-                case "Paused":
-                    is_playing = false;
-                    break;
-                case "Unpaused":
-                    is_playing = true;
-                    break;
-                case "Finished":
-                    is_playing = false;
-                    if (await $queue.has_next()) {
-                        await $queue.play_next();
-                    } else {
-                        $queue.finished();
-                    }
-                    queue.update((q) => q);
-                    break;
-                case "Playing":
-                    is_playing = true;
-                    break;
-                case "ProgressPerc":
-                    break;
-                case "Volume":
-                    volume = m.content;
-                    break;
-                case "Duration":
-                    audio_duration = m.content;
-                    break;
-                case "Mute":
-                    console.log(m)
-                    is_muted = m.content;
-                    break;
-                case "Error":
-                    break;
-                default:
-                    throw exhausted(m);
-            }
-            if (m.type != "ProgressPerc") {
-                return;
-            }
-            video_pos = m.content;
-        });
+        pl.on_message(handler);
     });
     onDestroy(unsub);
 

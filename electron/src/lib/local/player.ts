@@ -94,6 +94,11 @@ export class Musiplayer {
         };
 
         if (handlers) {
+            for (let h of handlers) {
+                if (h.callback == callback) {
+                    return disable;
+                }
+            }
             handlers.push(handler);
         } else {
             this.listeners.set(type, [handler]);

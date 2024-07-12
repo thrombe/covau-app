@@ -64,6 +64,11 @@ export class YtPlayer {
 
     handlers: MessageHandler[] = [];
     on_message(callback: MessageHandler) {
+        for (let h of this.handlers) {
+            if (h == callback) {
+                return;
+            }
+        }
         this.handlers.push(callback);
     }
 
