@@ -3,8 +3,9 @@ import { exhausted } from '$lib/virtual.ts';
 import * as types from "$types/types.ts";
 import type { MessageHandler } from '$lib/stores.ts';
 import type { ListItem } from '$lib/searcher/item.ts';
+import { toast } from '$lib/toast/toast.ts';
 
-type PlayerSyncedData = 'Initialised' | 'Finished' | 'Playing' | 'Paused';
+type PlayerSyncedData = 'Initialised' | 'Finished' | 'Playing' | 'Paused' | "Unstarted";
 
 export class YtPlayer {
     player_initialised: Promise<void>;
@@ -86,6 +87,12 @@ export class YtPlayer {
         }
         switch (eve.data) {
             case YT.PlayerState.UNSTARTED: {
+                if (this.synced_data !== "Unstarted") {
+                    this._is_playing = false;
+                    this.synced_data = "Unstarted";
+                } else {
+                    toast("could not play song", "error");
+                }
             } break;
             case YT.PlayerState.ENDED: {
                 await this.send_message({ type: "Finished" });
@@ -154,6 +161,7 @@ export class YtPlayer {
             } break;
             case 'Initialised':
             case 'Finished':
+            case 'Unstarted':
             case 'Paused': {
             } break;
             default:
@@ -174,6 +182,7 @@ export class YtPlayer {
         switch (this.synced_data) {
             case 'Playing':
             case 'Finished':
+            case 'Unstarted':
             case 'Initialised': {
                 if (id) {
                     this.player.loadVideoById(id);
