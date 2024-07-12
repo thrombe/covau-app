@@ -101,6 +101,14 @@ export class Musiplayer {
         return disable;
     }
 
+    async destroy() {
+        // pass
+    }
+
+    is_playing() {
+        return !this.paused && !this.finished && this.playing !== "";
+    }
+
     on_message(callback: MessageHandler) {
         this.add_message_listener("any", callback);
     }

@@ -257,6 +257,13 @@ export type MessageHandler = ((msg: types.server.PlayerMessage) => Promise<void>
 export interface Player {
     play(uri: string): (Promise<void> | void);
     pause(): void;
+    on_message(handler: MessageHandler): void;
+    destroy(): Promise<void>;
+    set_volume(v: number): void;
+    seek_to_perc(t: number): (Promise<void> | void);
+    toggle_pause(): void;
+    toggle_mute(): void;
+    is_playing(): boolean;
 }
 export interface Queue {
     detour(): void;

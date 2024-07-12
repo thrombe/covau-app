@@ -5,7 +5,6 @@
     import * as stores from "$lib/stores.ts";
     import { exhausted } from "$lib/virtual.ts";
     import { CustomListItem } from "$lib/searcher/item";
-    import type { Musiplayer } from "./player.ts";
     import type { Writable } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import type { QueueManager } from "./queue.ts";
@@ -15,7 +14,7 @@
 
     let playing_item = stores.playing_item;
 
-    let player = stores.player as unknown as Writable<Musiplayer>;
+    let player = stores.player;
     let queue = stores.queue as Writable<QueueManager>;
 
     let video_pos = 0;
@@ -25,48 +24,54 @@
     let audio_duration = 0;
     let is_muted = false;
     let volume = 1;
-    let unhandle = $player.add_message_listener("any", async (m) => {
-        switch (m.type) {
-            case "Paused":
-                is_playing = false;
-                break;
-            case "Unpaused":
-                is_playing = true;
-                break;
-            case "Finished":
-                is_playing = false;
-                if (await $queue.has_next()) {
-                    await $queue.play_next();
-                } else {
-                    $queue.finished();
-                }
-                queue.update((q) => q);
-                break;
-            case "Playing":
-                is_playing = true;
-                break;
-            case "ProgressPerc":
-                break;
-            case "Volume":
-                volume = m.content;
-                break;
-            case "Duration":
-                audio_duration = m.content;
-                break;
-            case "Mute":
-                is_muted = m.content;
-                break;
-            case "Error":
-                break;
-            default:
-                throw exhausted(m);
-        }
-        if (m.type != "ProgressPerc") {
+    let unsub = player.subscribe((pl) => {
+        if (!pl) {
             return;
         }
-        video_pos = m.content;
+        pl.on_message(async (m) => {
+            switch (m.type) {
+                case "Paused":
+                    is_playing = false;
+                    break;
+                case "Unpaused":
+                    is_playing = true;
+                    break;
+                case "Finished":
+                    is_playing = false;
+                    if (await $queue.has_next()) {
+                        await $queue.play_next();
+                    } else {
+                        $queue.finished();
+                    }
+                    queue.update((q) => q);
+                    break;
+                case "Playing":
+                    is_playing = true;
+                    break;
+                case "ProgressPerc":
+                    break;
+                case "Volume":
+                    volume = m.content;
+                    break;
+                case "Duration":
+                    audio_duration = m.content;
+                    break;
+                case "Mute":
+                    console.log(m)
+                    is_muted = m.content;
+                    break;
+                case "Error":
+                    break;
+                default:
+                    throw exhausted(m);
+            }
+            if (m.type != "ProgressPerc") {
+                return;
+            }
+            video_pos = m.content;
+        });
     });
-    onDestroy(unhandle);
+    onDestroy(unsub);
 
     const on_seek = async (p: number) => {
         $player.seek_to_perc(p);
@@ -176,7 +181,7 @@
             <button
                 on:pointerup={async () => {
                     $player.toggle_pause();
-                    is_playing = !$player.paused;
+                    is_playing = $player.is_playing();
                 }}
             >
                 <img
@@ -231,8 +236,8 @@
                 <button
                     class="p-2"
                     on:pointerup={async () => {
-                        $player.toggle_mute();
                         is_muted = !is_muted;
+                        $player.toggle_mute();
                     }}
                 >
                     <img
