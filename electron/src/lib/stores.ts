@@ -276,11 +276,11 @@ export interface Queue {
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
 export let player: Writable<Player> = writable();
-(async () => {
-    let musiplayer = await import("$lib/local/player.ts");
-    let pl = new musiplayer.Musiplayer();
-    player.set(pl);
-})()
+// (async () => {
+//     let musiplayer = await import("$lib/local/player.ts");
+//     let pl = new musiplayer.Musiplayer();
+//     player.set(pl);
+// })()
 
 export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
 
