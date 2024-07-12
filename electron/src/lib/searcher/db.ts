@@ -459,519 +459,614 @@ export class DbListItem extends ListItem {
     }
 
     impl_options(ctx: RenderContext): Option[] {
-        switch (ctx) {
-            case "Queue":
-                switch (this.data.typ) {
-                    case "MmSong": {
-                        let s = this.data.t;
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove item",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.key);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                        ];
-                    }
-                    case "StSong": {
-                        let s = this.data.t;
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove item",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.id);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                        ];
-                    }
-                    case "Song":
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove item",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                        ];
-                    case "StAlbum":
-                    case "StPlaylist":
-                    case "StArtist":
-                    case "Playlist":
+        let common_options = {
+            queue_play: {
+                icon: icons.play,
+                location: "IconTop",
+                title: "play",
+                onclick: async () => {
+                    await stores.queue_ops.play_item(this);
+                },
+            },
+            queue_remove_while_in_queue: {
+                icon: icons.remove,
+                location: "TopRight",
+                title: "remove item",
+                onclick: async () => {
+                    await stores.queue_ops.remove_item(this);
+                },
+            },
+            queue_remove: {
+                icon: icons.remove,
+                location: "OnlyMenu",
+                title: "remove item",
+                onclick: async () => {
+                    await stores.queue_ops.remove_item(this);
+                },
+            },
+            detour: {
+                icon: icons.play,
+                location: "IconTop",
+                title: "play",
+                onclick: async () => {
+                    await stores.queue_ops.detour(this);
+                },
+            },
+            queue_add: {
+                icon: icons.add,
+                location: "TopRight",
+                title: "add to queue",
+                onclick: async () => {
+                    await stores.queue_ops.add_item(this);
+                },
+            },
+            open_details: {
+                icon: icons.open_new_tab,
+                location: "OnlyMenu",
+                title: "details",
+                onclick: async () => {
+                    let title = `${this.title()} details`
+                    stores.new_detail_tab(this, title);
+                },
+            },
+        };
+        switch (this.data.typ) {
+            case "MmSong": {
+                let s = this.data.t;
+                let options = {
+                    copy_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy url",
+                        onclick: async () => {
+                            let url = st.get_yt_url(s.key);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                };
+
+                switch (ctx) {
                     case "Queue":
-                    case "Updater":
-                    case "MmAlbum":
-                    case "MmArtist":
-                    case "MmPlaylist":
-                    case "MmQueue":
-                        throw new Error("cannot render " + this.data.typ + " in " + ctx + " context");
-                    default:
-                        throw exhausted(this.data)
-                }
-            case "DetailSection":
-            case "Browser":
-                switch (this.data.typ) {
-                    case "MmSong": {
-                        let s = this.data.t;
                         return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.detour(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "TopRight",
-                                title: "add to queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.add_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.key);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "details",
-                                onclick: async () => {
-                                    let title = `${this.title()} details`
-                                    stores.new_detail_tab(this, title);
-                                },
-                            },
-                        ];
-                    }
-                    case "MmAlbum": {
-                        let list = this.data.t;
+                            common_options.queue_play,
+                            common_options.queue_remove_while_in_queue,
+                            options.copy_url,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
                         return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: list.songs,
-                                    }, 30);
-                                    stores.new_tab(s, list.name);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: list.songs,
-                                    }, list.songs.length);
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                        ];
-                    }
-                    case "MmArtist": {
-                        let a = this.data.t;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open saved",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: a.songs,
-                                    }, 30);
-                                    stores.new_tab(s, a.name + " saved");
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "open unexplored",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: a.unexplored_songs ?? [],
-                                    }, 30);
-                                    stores.new_tab(s, a.name + " unexplored");
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all saved to queue",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: a.songs,
-                                    }, a.songs.length);
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all unexplored to queue",
-                                onclick: async () => {
-                                    let songs = a.unexplored_songs ?? [];
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: songs,
-                                    }, songs.length);
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                        ];
-                    }
-                    case "MmPlaylist":
-                    case "MmQueue": {
-                        let list = this.data.t;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: list.data_list,
-                                    }, 30);
-                                    stores.new_tab(s, list.name);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "refids",
-                                        type: "MmSong",
-                                        ids: list.data_list,
-                                    }, list.data_list.length);
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                        ];
-                    }
-                    case "Queue": {
-                        let queue = this.data.t;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "ids",
-                                        type: "Song",
-                                        ids: queue.queue.songs,
-                                    }, 30);
-                                    stores.new_tab(s, queue.queue.title);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let s = Db.new({
-                                        query_type: "ids",
-                                        type: "Song",
-                                        ids: queue.queue.songs,
-                                    }, queue.queue.songs.length);
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "Song":
-                        let song = this.data.t;
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.detour(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "TopRight",
-                                title: "add to queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.add_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy source url",
-                                onclick: async () => {
-                                    for (let source of song.play_sources) {
-                                        switch (source.type) {
-                                            case "File": {
-                                                continue;
-                                            } break;
-                                            case "YtId": {
-                                                let url = st.get_yt_url(source.content);
-                                                await navigator.clipboard.writeText(url);
-                                                toast("url copied", "info");
-                                                return;
-                                            } break;
-                                            default:
-                                                throw exhausted(source);
-                                        }
-                                    }
-                                    toast("url not found", "info");
-                                },
-                            },
-                        ];
-                    case "StSong": {
-                        let s = this.data.t;
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.detour(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "TopRight",
-                                title: "add to queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.add_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.id);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                        ];
-                    } break;
-                    case "Updater": {
-                        let u = this.data.t;
-                        switch (u.source.type) {
-                            case "Mbz":
-                                return [];
-                            case "MusimanagerSearch": {
-                                let ss = u.source.content;
-                                return [
-                                    {
-                                        icon: icons.open_new_tab,
-                                        location: "TopRight",
-                                        title: "open",
-                                        onclick: async () => {
-                                            let s1 = Db.new({
-                                                query_type: "refids",
-                                                type: "MmSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 100);
-                                            let s2 = Db.new({
-                                                query_type: "refids",
-                                                type: "StSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 100);
-                                            let songs1 = await s1.next_page();
-                                            while (s1.has_next_page) {
-                                                songs1 = await s1.next_page();
-                                            }
-                                            let songs2 = await s1.next_page();
-                                            while (s2.has_next_page) {
-                                                songs2 = await s2.next_page();
-                                            }
-                                            let songs = [...songs1, ...songs2];
-                                            let s = StaticSearcher(songs);
-                                            stores.new_tab(s, u.title);
-                                        },
-                                    },
-                                    {
-                                        icon: icons.add,
-                                        location: "OnlyMenu",
-                                        title: "add all to queue",
-                                        onclick: async () => {
-                                            let s1 = Db.new({
-                                                query_type: "refids",
-                                                type: "MmSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 100);
-                                            let s2 = Db.new({
-                                                query_type: "refids",
-                                                type: "StSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 100);
-                                            let songs1 = await s1.next_page();
-                                            while (s1.has_next_page) {
-                                                songs1 = await s1.next_page();
-                                            }
-                                            let songs2 = await s1.next_page();
-                                            while (s2.has_next_page) {
-                                                songs2 = await s2.next_page();
-                                            }
-                                            let songs = [...songs1, ...songs2];
-                                            await stores.queue_ops.add_item(...songs);
-                                        },
-                                    },
-                                ];
-                            } break;
-                            case "SongTubeSearch": {
-                                let ss = u.source.content;
-                                return [
-                                    {
-                                        icon: icons.open_new_tab,
-                                        location: "TopRight",
-                                        title: "open",
-                                        onclick: async () => {
-                                            let s = Db.new({
-                                                query_type: "refids",
-                                                type: "StSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 50);
-                                            stores.new_tab(s, u.title);
-                                        },
-                                    },
-                                    {
-                                        icon: icons.add,
-                                        location: "OnlyMenu",
-                                        title: "add all to queue",
-                                        onclick: async () => {
-                                            let s = Db.new({
-                                                query_type: "refids",
-                                                type: "StSong",
-                                                ids: ss.songs.queue.map(s => s.item),
-                                            }, 100);
-                                            let items = await s.next_page();
-                                            while (s.has_next_page) {
-                                                items = await s.next_page();
-                                            }
-                                            await stores.queue_ops.add_item(...items);
-                                        },
-                                    },
-                                ];
-                            } break;
-                            default:
-                                throw exhausted(u.source);
-                        }
-                    } break;
-                    case "Playlist":
-                    case "StAlbum":
-                    case "StPlaylist":
-                    case "StArtist":
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.copy_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Playbar":
+                    case "Prompt":
                         return [];
                     default:
-                        throw exhausted(this.data)
+                        throw exhausted(ctx);
                 }
-            case "Prompt":
-            case "Playbar":
-                return [];
+            } break;
+            case "StSong": {
+                let s = this.data.t;
+                let options = {
+                    copy_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy url",
+                        onclick: async () => {
+                            let url = st.get_yt_url(s.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
+                        return [
+                            common_options.queue_play,
+                            common_options.queue_remove,
+                            options.copy_url,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.copy_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "Song": {
+                let s = this.data.t;
+                let options = {
+                    copy_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy source url",
+                        onclick: async () => {
+                            for (let source of s.play_sources) {
+                                switch (source.type) {
+                                    case "File": {
+                                        continue;
+                                    } break;
+                                    case "YtId": {
+                                        let url = st.get_yt_url(source.content);
+                                        await navigator.clipboard.writeText(url);
+                                        toast("url copied", "info");
+                                        return;
+                                    } break;
+                                    default:
+                                        throw exhausted(source);
+                                }
+                            }
+                            toast("url not found", "info");
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
+                        return [
+                            common_options.queue_play,
+                            common_options.queue_remove,
+                            options.copy_url,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.copy_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MmAlbum": {
+                let a = this.data.t;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: a.songs,
+                            }, 30);
+                            stores.new_tab(s, a.name);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: a.songs,
+                            }, a.songs.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MmArtist": {
+                let a = this.data.t;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open saved",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: a.songs,
+                            }, 30);
+                            stores.new_tab(s, a.name + " saved");
+                        },
+                    },
+                    open_unexplored: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "open unexplored",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: a.unexplored_songs ?? [],
+                            }, 30);
+                            stores.new_tab(s, a.name + " unexplored");
+                        },
+                    },
+                    add_saved_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all saved to queue",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: a.songs,
+                            }, a.songs.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                    add_all_unexplored_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all unexplored to queue",
+                        onclick: async () => {
+                            let songs = a.unexplored_songs ?? [];
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: songs,
+                            }, songs.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            options.open_unexplored,
+                            options.add_saved_to_queue,
+                            options.add_all_unexplored_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MmPlaylist":
+            case "MmQueue": {
+                let list = this.data.t;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: list.data_list,
+                            }, 30);
+                            stores.new_tab(s, list.name);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "MmSong",
+                                ids: list.data_list,
+                            }, list.data_list.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "Queue": {
+                let queue = this.data.t;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "ids",
+                                type: "Song",
+                                ids: queue.queue.songs,
+                            }, 30);
+                            stores.new_tab(s, queue.queue.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "ids",
+                                type: "Song",
+                                ids: queue.queue.songs,
+                            }, queue.queue.songs.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "Updater": {
+                let u = this.data.t;
+                switch (u.source.type) {
+                    case "Mbz":
+                        return [];
+                    case "MusimanagerSearch": {
+                        let ss = u.source.content;
+                        let options = {
+                            open: {
+                                icon: icons.open_new_tab,
+                                location: "TopRight",
+                                title: "open",
+                                onclick: async () => {
+                                    let s1 = Db.new({
+                                        query_type: "refids",
+                                        type: "MmSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 100);
+                                    let s2 = Db.new({
+                                        query_type: "refids",
+                                        type: "StSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 100);
+                                    let songs1 = await s1.next_page();
+                                    while (s1.has_next_page) {
+                                        songs1 = await s1.next_page();
+                                    }
+                                    let songs2 = await s1.next_page();
+                                    while (s2.has_next_page) {
+                                        songs2 = await s2.next_page();
+                                    }
+                                    let songs = [...songs1, ...songs2];
+                                    let s = StaticSearcher(songs);
+                                    stores.new_tab(s, u.title);
+                                },
+                            },
+                            add_all_to_queue: {
+                                icon: icons.add,
+                                location: "OnlyMenu",
+                                title: "add all to queue",
+                                onclick: async () => {
+                                    let s1 = Db.new({
+                                        query_type: "refids",
+                                        type: "MmSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 100);
+                                    let s2 = Db.new({
+                                        query_type: "refids",
+                                        type: "StSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 100);
+                                    let songs1 = await s1.next_page();
+                                    while (s1.has_next_page) {
+                                        songs1 = await s1.next_page();
+                                    }
+                                    let songs2 = await s1.next_page();
+                                    while (s2.has_next_page) {
+                                        songs2 = await s2.next_page();
+                                    }
+                                    let songs = [...songs1, ...songs2];
+                                    await stores.queue_ops.add_item(...songs);
+                                },
+                            },
+                        };
+
+                        switch (ctx) {
+                            case "DetailSection":
+                            case "Browser":
+                                return [
+                                    options.open,
+                                    options.add_all_to_queue,
+                                    common_options.open_details,
+                                ] as Option[];
+                            case "Queue":
+                            case "Playbar":
+                            case "Prompt":
+                                return [];
+                            default:
+                                throw exhausted(ctx);
+                        }
+                    } break;
+                    case "SongTubeSearch": {
+                        let ss = u.source.content;
+                        let options = {
+                            open: {
+                                icon: icons.open_new_tab,
+                                location: "TopRight",
+                                title: "open",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "refids",
+                                        type: "StSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 50);
+                                    stores.new_tab(s, u.title);
+                                },
+                            },
+                            add_all_to_queue: {
+                                icon: icons.add,
+                                location: "OnlyMenu",
+                                title: "add all to queue",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "refids",
+                                        type: "StSong",
+                                        ids: ss.songs.queue.map(s => s.item),
+                                    }, 100);
+                                    let items = await s.next_page();
+                                    while (s.has_next_page) {
+                                        items = await s.next_page();
+                                    }
+                                    await stores.queue_ops.add_item(...items);
+                                },
+                            },
+                        };
+
+                        switch (ctx) {
+                            case "DetailSection":
+                            case "Browser":
+                                return [
+                                    options.open,
+                                    options.add_all_to_queue,
+                                    common_options.open_details,
+                                ] as Option[];
+                            case "Queue":
+                            case "Playbar":
+                            case "Prompt":
+                                return [];
+                            default:
+                                throw exhausted(ctx);
+                        }
+                    } break;
+                    default:
+                        throw exhausted(u.source);
+                }
+            } break;
+            case "StAlbum": {
+                let t = this.data.t;
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "StPlaylist": {
+                let t = this.data.t;
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "StArtist": {
+                let t = this.data.t;
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "Playlist": {
+                let t = this.data.t;
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
             default:
-                throw exhausted(ctx);
+                throw exhausted(this.data)
         }
     }
 
