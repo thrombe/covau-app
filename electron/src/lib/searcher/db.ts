@@ -490,7 +490,6 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -520,7 +519,7 @@ export class DbListItem extends ListItem {
                     case "Queue":
                         return [
                             common_options.queue_play,
-                            common_options.queue_remove,
+                            common_options.queue_remove_while_in_queue,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -529,7 +528,6 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -572,7 +570,7 @@ export class DbListItem extends ListItem {
                     case "Queue":
                         return [
                             common_options.queue_play,
-                            common_options.queue_remove,
+                            common_options.queue_remove_while_in_queue,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -581,7 +579,6 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];

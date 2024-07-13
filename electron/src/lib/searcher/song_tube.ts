@@ -247,7 +247,7 @@ export class StListItem extends ListItem {
                     case "Browser":
                         return [
                             common_options.detour,
-                            common_options.queue_remove,
+                            common_options.queue_add,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];

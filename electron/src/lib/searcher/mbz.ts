@@ -326,7 +326,6 @@ export class MbzListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.search_song,
                             options.search_video,
                             common_options.open_details,
@@ -404,7 +403,6 @@ export class MbzListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.search_song,
                             options.search_video,
                             options.mbz_url,
@@ -481,7 +479,6 @@ export class MbzListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
-                            common_options.queue_remove,
                             options.search_song,
                             options.search_video,
                             options.mbz_url,

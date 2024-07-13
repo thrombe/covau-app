@@ -79,15 +79,15 @@ export abstract class ListItem implements Keyed {
                     await stores.queue_ops.remove_item(this);
                 },
             },
-            queue_remove: {
-                icon: icons.remove,
-                location: "OnlyMenu",
-                title: "remove item",
-                onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.remove_item(this);
-                },
-            },
+            // queue_remove: {
+            //     icon: icons.remove,
+            //     location: "OnlyMenu",
+            //     title: "remove from queue",
+            //     onclick: async () => {
+            //         let stores = await stores_ts;
+            //         await stores.queue_ops.remove_item(this);
+            //     },
+            // },
             detour: {
                 icon: icons.play,
                 location: "IconTop",
