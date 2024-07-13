@@ -35,127 +35,129 @@
 
 <svelte:window on:keydown={disable_space_to_scroll} />
 
-<div class="h-full w-full pb-4 flex flex-row place-content-center">
+<div class="h-full w-full pb-4 flex flex-row">
     <div
-        class="flex flex-col px-4 pt-4 max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide"
+        class="flex flex-col px-4 pt-4 place-items-center w-full h-full overflow-y-auto overflow-x-auto scrollbar-hide"
     >
-        {#each sections as section}
-            {#if section.type == "Info"}
-                <div class="flex flex-row gap-4">
-                    {#if thumbnail != null}
-                        <img
-                            class="h-56 w-56 rounded-xl object-cover {hide_border
-                                ? 'scale-150'
-                                : ''}"
-                            src={thumbnail}
-                            draggable={false}
-                            alt=""
-                            on:error={on_err}
-                            on:load={on_load}
-                        />
-                    {/if}
+        <div class="flex flex-col gap-4 w-full md:max-w-[60rem]">
+            {#each sections as section}
+                {#if section.type == "Info"}
+                    <div class="flex flex-row gap-4">
+                        {#if thumbnail != null}
+                            <img
+                                class="h-56 w-56 rounded-xl object-cover {hide_border
+                                    ? 'scale-150'
+                                    : ''}"
+                                src={thumbnail}
+                                draggable={false}
+                                alt=""
+                                on:error={on_err}
+                                on:load={on_load}
+                            />
+                        {/if}
+                        <div class="flex flex-col">
+                            {#each section.info as info}
+                                <div class="flex flex-row">
+                                    <div class="heading">
+                                        {`${info.heading}: `}
+                                    </div>
+                                    <div class="content">
+                                        {info.content}
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                {:else if section.type == "Options"}
                     <div class="flex flex-col">
-                        {#each section.info as info}
-                            <div class="flex flex-row">
-                                <div class="heading">
-                                    {`${info.heading}: `}
-                                </div>
-                                <div class="content">
-                                    {info.content}
-                                </div>
+                        <div class="w-full heading">
+                            {section.title}
+                        </div>
+                        <div class="flex flex-row flex-wrap gap-2">
+                            {#each section.options as option}
+                                <button on:pointerup={option.onclick}>
+                                    <div
+                                        class="flex flex-row rounded-md p-2 pr-4 place-items-center bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
+                                    >
+                                        <img
+                                            alt={option.title}
+                                            class="h-4 w-4 m-1 mr-4"
+                                            src={option.icon}
+                                        />
+
+                                        <div
+                                            class="flex flex-col justify-end text-sm text-gray-200"
+                                        >
+                                            <div
+                                                class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none"
+                                            >
+                                                {option.title}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </button>
+                            {/each}
+                        </div>
+                    </div>
+                {:else if section.type == "Rearrange"}
+                    <div class="flex flex-col">
+                        <div class="w-full heading">
+                            {section.title}
+                        </div>
+                        {#each section.items as item (item.get_key())}
+                            <div class="h-20">
+                                <AudioListItem ctx={"Browser"} {item} />
                             </div>
                         {/each}
                     </div>
-                </div>
-            {:else if section.type == "Options"}
-                <div class="flex flex-col">
-                    <div class="w-full heading">
-                        {section.title}
-                    </div>
-                    <div class="flex flex-row flex-wrap gap-2">
-                        {#each section.options as option}
-                            <button on:pointerup={option.onclick}>
-                                <div
-                                    class="flex flex-row rounded-md p-2 pr-4 place-items-center bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
-                                >
-                                    <img
-                                        alt={option.title}
-                                        class="h-4 w-4 m-1 mr-4"
-                                        src={option.icon}
-                                    />
-
-                                    <div
-                                        class="flex flex-col justify-end text-sm text-gray-200"
-                                    >
-                                        <div
-                                            class="w-full text-ellipsis whitespace-nowrap overflow-hidden select-none"
-                                        >
-                                            {option.title}
-                                        </div>
-                                    </div>
-                                </div>
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-            {:else if section.type == "Rearrange"}
-                <div class="flex flex-col">
-                    <div class="w-full heading">
-                        {section.title}
-                    </div>
-                    {#each section.items as item (item.get_key())}
-                        <div class="h-20">
-                            <AudioListItem ctx={"Browser"} {item} />
+                {:else if section.type == "Searcher"}
+                    <div class="flex flex-col">
+                        <div class="w-full heading">
+                            {section.title}
                         </div>
-                    {/each}
-                </div>
-            {:else if section.type == "Searcher"}
-                <div class="flex flex-col">
-                    <div class="w-full heading">
-                        {section.title}
-                    </div>
-                    <div
-                        class="w-full flex flex-row flex-grow-0 px-2"
-                        style={`height: ${80 * section.height}px;`}
-                    >
-                        <Explorer
-                            searcher={section.searcher}
-                            columns={1}
-                            item_height={80}
-                            keyboard_control={false}
-                            let:item
-                            let:selected
+                        <div
+                            class="w-full flex flex-row flex-grow-0 px-2"
+                            style={`height: ${80 * section.height}px;`}
                         >
-                            <!-- svelte-ignore a11y-no-static-element-interactions -->
-                            <list-item class:selected>
-                                <div draggable={true} class="item-bg">
-                                    <AudioListItem
-                                        {item}
-                                        ctx="Browser"
-                                        show_buttons={selected}
-                                    />
-                                </div>
-                            </list-item>
-                        </Explorer>
+                            <Explorer
+                                searcher={section.searcher}
+                                columns={1}
+                                item_height={80}
+                                keyboard_control={false}
+                                let:item
+                                let:selected
+                            >
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <list-item class:selected>
+                                    <div draggable={true} class="item-bg">
+                                        <AudioListItem
+                                            {item}
+                                            ctx="Browser"
+                                            show_buttons={selected}
+                                        />
+                                    </div>
+                                </list-item>
+                            </Explorer>
+                        </div>
                     </div>
-                </div>
-            {:else if section.type == "PrettyJson"}
-                <div class="flex flex-col">
-                    <div class="w-full heading">
-                        {section.title}
+                {:else if section.type == "PrettyJson"}
+                    <div class="flex flex-col">
+                        <div class="w-full heading">
+                            {section.title}
+                        </div>
+                        <div
+                            class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20"
+                        >
+                            {section.content}
+                        </div>
                     </div>
-                    <div
-                        class="w-full text-sm whitespace-pre overflow-hidden text-ellipsis selection:bg-gray-200 selection:bg-opacity-20"
-                    >
-                        {section.content}
+                {:else}
+                    <div class="w-full">
+                        section type {section.type} not handled
                     </div>
-                </div>
-            {:else}
-                <div class="w-full">
-                    section type {section.type} not handled
-                </div>
-            {/if}
-        {/each}
+                {/if}
+            {/each}
+        </div>
     </div>
 </div>
 
