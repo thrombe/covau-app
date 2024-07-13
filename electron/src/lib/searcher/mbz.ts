@@ -285,336 +285,407 @@ export class MbzListItem extends ListItem {
         };
     }
     impl_options(ctx: RenderContext): Option[] {
+        let common_options = this.common_options();
         let ops = this.ops();
-        switch (ctx) {
-            case "Queue": {
-                switch (this.data.typ) {
-                    case "MbzRadioSong": {
-                        let song = this.data.data;
+
+        switch (this.data.typ) {
+            case "MbzRadioSong": {
+                let song = this.data.data;
+                let options = {
+                    search_song: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtSong play source",
+                        onclick: async () => {
+                            let query = song.title + " by " + song.creator;
+                            await ops.search_and_get(query, "song", true);
+                        },
+                    },
+                    search_video: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtVideo play source",
+                        onclick: async () => {
+                            let query = song.title + " by " + song.creator;
+                            await ops.search_and_get(query, "video", true);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
                         return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtSong play source",
-                                onclick: async () => {
-                                    let query = song.title + " by " + song.creator;
-                                    await ops.search_and_get(query, "song", true);
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtVideo play source",
-                                onclick: async () => {
-                                    let query = song.title + " by " + song.creator;
-                                    await ops.search_and_get(query, "video", true);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzRecording": {
-                        let r = this.data.data;
+                            common_options.queue_play,
+                            common_options.queue_remove_while_in_queue,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
                         return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtSong play source",
-                                onclick: async () => {
-                                    let rec = await ops.upgrade_to_recording_with_info(r);
-                                    let query = await ops.get_query(rec)
-                                    if (query) {
-                                        await ops.search_and_get(query, "song", true);
-                                    }
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtVideo play source",
-                                onclick: async () => {
-                                    let rec = await ops.upgrade_to_recording_with_info(r);
-                                    let query = await ops.get_query(rec)
-                                    if (query) {
-                                        await ops.search_and_get(query, "video", true);
-                                    }
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzRecordingWithInfo": {
-                        let rec = this.data.data;
-                        return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtSong play source",
-                                onclick: async () => {
-                                    let query = await ops.get_query(rec)
-                                    if (query) {
-                                        await ops.search_and_get(query, "song", true);
-                                    }
-                                },
-                            },
-                            {
-                                icon: icons.floppy_disk,
-                                location: "OnlyMenu",
-                                title: "search YtVideo play source",
-                                onclick: async () => {
-                                    let query = await ops.get_query(rec)
-                                    if (query) {
-                                        await ops.search_and_get(query, "video", true);
-                                    }
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzReleaseWithInfo":
-                    case "MbzReleaseGroupWithInfo":
-                    case "MbzReleaseGroup":
-                    case "MbzRelease":
-                    case "MbzArtist": {
-                        throw new Error("Can't display this item in queue");
-                    } break;
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
                     default:
-                        throw exhausted(this.data);
+                        throw exhausted(ctx);
                 }
             } break;
-            case "Browser": {
-                switch (this.data.typ) {
-                    case "MbzReleaseWithInfo": {
-                        let a = this.data.data;
+            case "MbzRecording": {
+                let r = this.data.data;
+                let options = {
+                    search_song: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtSong play source",
+                        onclick: async () => {
+                            let rec = await ops.upgrade_to_recording_with_info(r);
+                            let query = await ops.get_query(rec)
+                            if (query) {
+                                await ops.search_and_get(query, "song", true);
+                            }
+                        },
+                    },
+                    search_video: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtVideo play source",
+                        onclick: async () => {
+                            let rec = await ops.upgrade_to_recording_with_info(r);
+                            let query = await ops.get_query(rec)
+                            if (query) {
+                                await ops.search_and_get(query, "video", true);
+                            }
+                        },
+                    },
+                };
+
+                
+                switch (ctx) {
+                    case "Queue":
                         return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore recordings",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRecording_MbzRelease",
-                                        id: a.title,
-                                    }, 30);
-                                    stores.new_tab(s, "Recordings for " + a.title);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzReleaseGroupWithInfo": {
-                        let a = this.data.data;
+                            common_options.queue_play,
+                            common_options.queue_remove_while_in_queue,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
                         return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore releases",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRelease_MbzReleaseGroup",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Releases for " + a.title);
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "explore recordings",
-                                onclick: async () => {
-                                    let releases = await mbz.recordings_from_releases(a.releases);
-                                    let s = StaticSearcher(releases);
-                                    stores.new_tab(s, "Recordings for " + a.title);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let releases = await mbz.recordings_from_releases(a.releases);
-                                    await stores.queue_ops.add_item(...releases);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzReleaseGroup": {
-                        let a = this.data.data;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore releases",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRelease_MbzReleaseGroup",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Releases for " + a.title);
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "explore recordings",
-                                onclick: async () => {
-                                    let rel = await ops.upgrade_to_recording_with_info(a);
-                                    let releases = await mbz.recordings_from_releases(rel.releases);
-                                    let s = StaticSearcher(releases);
-                                    stores.new_tab(s, "Recordings for " + a.title);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let rel = await ops.upgrade_to_recording_with_info(a);
-                                    let releases = await mbz.recordings_from_releases(rel.releases);
-                                    await stores.queue_ops.add_item(...releases);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzRelease": {
-                        let a = this.data.data;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore recordings",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRecording_MbzRelease",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Recordings for " + a.title);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzRecordingWithInfo":
-                    case "MbzRadioSong":
-                    case "MbzRecording": {
-                        return [
-                            {
-                                icon: icons.add,
-                                location: "TopRight",
-                                title: "add to queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.add_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.detour(this);
-                                },
-                            },
-                        ];
-                    } break;
-                    case "MbzArtist": {
-                        let a = this.data.data;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "explore release groups",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzReleaseGroup_MbzArtist",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Release groups for " + a.name);
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "OnlyMenu",
-                                title: "explore releases",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRelease_MbzArtist",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Releases for " + a.name);
-                                },
-                            },
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore recordings",
-                                onclick: async () => {
-                                    let s = Mbz.new({
-                                        query_type: "linked",
-                                        type: "MbzRecording_MbzArtsit",
-                                        id: a.id,
-                                    }, 30);
-                                    stores.new_tab(s, "Recordings for " + a.name);
-                                },
-                            },
-                        ];
-                    } break;
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
                     default:
-                        throw exhausted(this.data);
+                        throw exhausted(ctx);
                 }
             } break;
-            case "Playbar":
-                return [];
+            case "MbzRecordingWithInfo": {
+                let rec = this.data.data;
+                let options = {
+                    search_song: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtSong play source",
+                        onclick: async () => {
+                            let query = await ops.get_query(rec)
+                            if (query) {
+                                await ops.search_and_get(query, "song", true);
+                            }
+                        },
+                    },
+                    search_video: {
+                        icon: icons.floppy_disk,
+                        location: "OnlyMenu",
+                        title: "search YtVideo play source",
+                        onclick: async () => {
+                            let query = await ops.get_query(rec)
+                            if (query) {
+                                await ops.search_and_get(query, "video", true);
+                            }
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
+                        return [
+                            common_options.queue_play,
+                            common_options.queue_remove_while_in_queue,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.detour,
+                            common_options.queue_add,
+                            common_options.queue_remove,
+                            options.search_song,
+                            options.search_video,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzReleaseWithInfo": {
+                let a = this.data.data;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRecording_MbzRelease",
+                                id: a.title,
+                            }, 30);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                };
+                
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzReleaseGroupWithInfo": {
+                let a = this.data.data;
+                let options = {
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzReleaseGroup",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.title);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let releases = await mbz.recordings_from_releases(a.releases);
+                            let s = StaticSearcher(releases);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let releases = await mbz.recordings_from_releases(a.releases);
+                            await stores.queue_ops.add_item(...releases);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_releases,
+                            options.explore_recordings,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzReleaseGroup": {
+                let a = this.data.data;
+                let options = {
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzReleaseGroup",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.title);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let rel = await ops.upgrade_to_recording_with_info(a);
+                            let releases = await mbz.recordings_from_releases(rel.releases);
+                            let s = StaticSearcher(releases);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let rel = await ops.upgrade_to_recording_with_info(a);
+                            let releases = await mbz.recordings_from_releases(rel.releases);
+                            await stores.queue_ops.add_item(...releases);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_releases,
+                            options.explore_recordings,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzRelease": {
+                let a = this.data.data;
+                let options = {
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRecording_MbzRelease",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_recordings,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzArtist": {
+                let a = this.data.data;
+                let options = {
+                    explore_release_groups: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore release groups",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzReleaseGroup_MbzArtist",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Release groups for " + a.name);
+                        },
+                    },
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzArtist",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.name);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRecording_MbzArtsit",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Recordings for " + a.name);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_release_groups,
+                            options.explore_releases,
+                            options.explore_recordings,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
             default:
-                throw exhausted(ctx);
+                throw exhausted(this.data);
         }
     }
 

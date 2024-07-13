@@ -58,6 +58,67 @@ export abstract class ListItem implements Keyed {
         }
         return ops;
     }
+    common_options() {
+        let stores_ts = import("$lib/stores.ts");
+        let common_options = {
+            queue_play: {
+                icon: icons.play,
+                location: "IconTop",
+                title: "play",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.play_item(this);
+                },
+            },
+            queue_remove_while_in_queue: {
+                icon: icons.remove,
+                location: "TopRight",
+                title: "remove item",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.remove_item(this);
+                },
+            },
+            queue_remove: {
+                icon: icons.remove,
+                location: "OnlyMenu",
+                title: "remove item",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.remove_item(this);
+                },
+            },
+            detour: {
+                icon: icons.play,
+                location: "IconTop",
+                title: "play",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.detour(this);
+                },
+            },
+            queue_add: {
+                icon: icons.add,
+                location: "TopRight",
+                title: "add to queue",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.add_item(this);
+                },
+            },
+            open_details: {
+                icon: icons.open_new_tab,
+                location: "OnlyMenu",
+                title: "details",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    let title = `${this.title()} details`
+                    stores.new_detail_tab(this, title);
+                },
+            },
+        };
+        return common_options;
+    }
     is_playable(): boolean {
         let typ = this.typ();
         switch (typ) {

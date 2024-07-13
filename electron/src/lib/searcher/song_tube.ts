@@ -217,151 +217,160 @@ export class StListItem extends ListItem {
     }
 
     impl_options(ctx: RenderContext): Option[] {
-        switch (ctx) {
-            case "Queue":
-                switch (this.data.type) {
-                    case "Song": {
-                        let s = this.data.content;
+        let common_options = this.common_options();
+
+        switch (this.data.type) {
+            case "Song": {
+                let s = this.data.content;
+                let options = {
+                    copy_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy url",
+                        onclick: async () => {
+                            let url = st.get_yt_url(s.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
                         return [
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.play_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.remove,
-                                location: "TopRight",
-                                title: "remove from queue",
-                                onclick: async () => {
-                                    await stores.queue_ops.remove_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.id);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                        ];
-                    }
-                    case "Album":
-                    case "Playlist":
-                    case "Artist":
-                        throw new Error("cannot render " + this.data.type + " in " + ctx + " context");
+                            common_options.queue_play,
+                            common_options.queue_remove_while_in_queue,
+                            options.copy_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            common_options.detour,
+                            common_options.queue_remove,
+                            options.copy_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
                     default:
-                        throw exhausted(this.data)
+                        throw exhausted(ctx);
                 }
-            case "Browser":
-                switch (this.data.type) {
-                    case "Song": {
-                        let s = this.data.content;
+            } break;
+            case "Album": {
+                let a = this.data.content;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "Album",
+                                content: a.id,
+                            });
+                            stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "Album",
+                                content: a.id,
+                            });
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
                         return [
-                            {
-                                icon: icons.add,
-                                location: "TopRight",
-                                title: "add to queue",
-                                onclick: async () => {
-                                    stores.queue_ops.add_item(this);
-                                },
-                            },
-                            {
-                                icon: icons.play,
-                                location: "IconTop",
-                                title: "play",
-                                onclick: async () => {
-                                    await stores.queue_ops.detour(this);
-                                },
-                            },
-                            {
-                                icon: icons.copy,
-                                location: "OnlyMenu",
-                                title: "copy url",
-                                onclick: async () => {
-                                    let url = st.get_yt_url(s.id);
-                                    await navigator.clipboard.writeText(url);
-                                    toast("url copied", "info");
-                                },
-                            },
-                        ];
-                    }
-                    case "Album": {
-                        let a = this.data.content;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "Album",
-                                        content: a.id,
-                                    });
-                                    stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
-                                },
-                            },
-                            {
-                                icon: icons.add,
-                                location: "OnlyMenu",
-                                title: "add all to queue",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "Album",
-                                        content: a.id,
-                                    });
-                                    let items = await s.next_page();
-                                    await stores.queue_ops.add_item(...items);
-                                },
-                            },
-                        ];
-                    }
-                    case "Playlist": {
-                        let p = this.data.content;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "open",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "Playlist",
-                                        content: p.id,
-                                    });
-                                    stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
-                                },
-                            },
-                        ];
-                    }
-                    case "Artist": {
-                        let a = this.data.content;
-                        return [
-                            {
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore songs",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "Artist",
-                                        content: a.id,
-                                    });
-                                    stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
-                                },
-                            },
-                        ];
-                    }
+                            options.open,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
                     default:
-                        throw exhausted(this.data)
+                        throw exhausted(ctx);
                 }
-            case "Playbar":
-                return [];
+            } break;
+            case "Playlist": {
+                let p = this.data.content;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "Playlist",
+                                content: p.id,
+                            });
+                            stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "Artist": {
+                let a = this.data.content;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore songs",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "Artist",
+                                content: a.id,
+                            });
+                            stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+                break
             default:
-                throw exhausted(ctx);
+                throw exhausted(this.data);
         }
     }
 }

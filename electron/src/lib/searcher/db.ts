@@ -459,57 +459,8 @@ export class DbListItem extends ListItem {
     }
 
     impl_options(ctx: RenderContext): Option[] {
-        let common_options = {
-            queue_play: {
-                icon: icons.play,
-                location: "IconTop",
-                title: "play",
-                onclick: async () => {
-                    await stores.queue_ops.play_item(this);
-                },
-            },
-            queue_remove_while_in_queue: {
-                icon: icons.remove,
-                location: "TopRight",
-                title: "remove item",
-                onclick: async () => {
-                    await stores.queue_ops.remove_item(this);
-                },
-            },
-            queue_remove: {
-                icon: icons.remove,
-                location: "OnlyMenu",
-                title: "remove item",
-                onclick: async () => {
-                    await stores.queue_ops.remove_item(this);
-                },
-            },
-            detour: {
-                icon: icons.play,
-                location: "IconTop",
-                title: "play",
-                onclick: async () => {
-                    await stores.queue_ops.detour(this);
-                },
-            },
-            queue_add: {
-                icon: icons.add,
-                location: "TopRight",
-                title: "add to queue",
-                onclick: async () => {
-                    await stores.queue_ops.add_item(this);
-                },
-            },
-            open_details: {
-                icon: icons.open_new_tab,
-                location: "OnlyMenu",
-                title: "details",
-                onclick: async () => {
-                    let title = `${this.title()} details`
-                    stores.new_detail_tab(this, title);
-                },
-            },
-        };
+        let common_options = this.common_options();
+
         switch (this.data.typ) {
             case "MmSong": {
                 let s = this.data.t;
@@ -532,6 +483,7 @@ export class DbListItem extends ListItem {
                             common_options.queue_play,
                             common_options.queue_remove_while_in_queue,
                             options.copy_url,
+                            common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
                     case "Browser":
@@ -570,6 +522,7 @@ export class DbListItem extends ListItem {
                             common_options.queue_play,
                             common_options.queue_remove,
                             options.copy_url,
+                            common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
                     case "Browser":
@@ -621,6 +574,7 @@ export class DbListItem extends ListItem {
                             common_options.queue_play,
                             common_options.queue_remove,
                             options.copy_url,
+                            common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
                     case "Browser":
