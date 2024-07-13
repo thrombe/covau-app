@@ -14,6 +14,7 @@ import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import { StaticSearcher, type SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
+import { writable } from "svelte/store";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -1127,7 +1128,37 @@ export class DbListItem extends ListItem {
                     sections.json,
                 ] as DetailSection[];
             } break;
-            case "Playlist":
+            case "Playlist": {
+                let playlist = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: playlist.title,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, playlist.songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "ids",
+                            type: "Song",
+                            ids: playlist.songs,
+                        }, 10)),
+                    },
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             case "Queue": {
                 let queue = this.data.t;
                 return [
@@ -1140,11 +1171,22 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Title",
-                                content: this.title(),
+                                content: queue.queue.title,
                             },
                         ]
                     },
                     sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, queue.queue.songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "ids",
+                            type: "Song",
+                            ids: queue.queue.songs,
+                        }, 10)),
+                    },
                     sections.json,
                 ] as DetailSection[];
             } break;
@@ -1173,6 +1215,17 @@ export class DbListItem extends ListItem {
                         ]
                     },
                     sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, album.songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "MmSong",
+                            ids: album.songs,
+                        }, 10)),
+                    },
                     sections.json,
                 ] as DetailSection[];
             } break;
@@ -1201,6 +1254,28 @@ export class DbListItem extends ListItem {
                         ]
                     },
                     sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, artist.songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "MmSong",
+                            ids: artist.songs,
+                        }, 10)),
+                    },
+                    ...maybe(artist.unexplored_songs ?? null, songs => ({
+                        type: "Searcher",
+                        title: "Unexplored Songs",
+                        options: [],
+                        height: Math.min(5, songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "MmSong",
+                            ids: artist.songs,
+                        }, 10)),
+                    })),
                     sections.json,
                 ] as DetailSection[];
             } break;
@@ -1221,6 +1296,17 @@ export class DbListItem extends ListItem {
                         ]
                     },
                     sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, playlist.data_list.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "MmSong",
+                            ids: playlist.data_list,
+                        }, 10)),
+                    },
                     sections.json,
                 ] as DetailSection[];
             } break;
@@ -1241,6 +1327,17 @@ export class DbListItem extends ListItem {
                         ]
                     },
                     sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, queue.data_list.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "MmSong",
+                            ids: queue.data_list,
+                        }, 10)),
+                    },
                     sections.json,
                 ] as DetailSection[];
             } break;
