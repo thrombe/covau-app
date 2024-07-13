@@ -236,7 +236,7 @@
                     >
                         {#if mobile}
                             <div
-                                class="flex flex-col w-full overflow-hidden {$menubar_option.content_type ==
+                                class="flex flex-col w-full overflow-hidden {$menubar_option?.content_type ==
                                 'queue'
                                     ? 'h-full'
                                     : 'h-0'}"
