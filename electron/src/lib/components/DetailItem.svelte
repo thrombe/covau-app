@@ -8,6 +8,7 @@
 
     $: img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
     $: sections = $item?.sections() ?? [];
+    $: thumbnail = $item.thumbnail() ?? null;
 
     let hide_border = true;
     const on_err = async () => {
@@ -39,18 +40,20 @@
         class="flex flex-col pt-4 max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide"
     >
         {#each sections as section}
-            {#if section.type == "SongInfo"}
+            {#if section.type == "Info"}
                 <div class="flex flex-row gap-4">
-                    <img
-                        class="h-56 w-56 rounded-xl object-cover {hide_border
-                            ? 'scale-150'
-                            : ''}"
-                        src={$item?.thumbnail() ?? ""}
-                        draggable={false}
-                        alt=""
-                        on:error={on_err}
-                        on:load={on_load}
-                    />
+                    {#if thumbnail != null}
+                        <img
+                            class="h-56 w-56 rounded-xl object-cover {hide_border
+                                ? 'scale-150'
+                                : ''}"
+                            src={thumbnail}
+                            draggable={false}
+                            alt=""
+                            on:error={on_err}
+                            on:load={on_load}
+                        />
+                    {/if}
                     <div class="flex flex-col">
                         {#each section.info as info}
                             <div class="flex flex-row">
