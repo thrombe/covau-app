@@ -33,6 +33,6 @@
     "postcss": "^8.4.38",
     "svelte-spa-router": "^4.0.1",
     "tailwindcss": "^3.4.3",
-    "youtubei.js": "^6.0.0"
+    "youtubei.js": "^10.1.0"
   }
 }
