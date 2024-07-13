@@ -341,6 +341,26 @@ export class MbzListItem extends ListItem {
             case "MbzRecording": {
                 let r = this.data.data;
                 let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.recording.mbz(r.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    lbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy listenbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.recording.lbz(r.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
                     search_song: {
                         icon: icons.floppy_disk,
                         location: "OnlyMenu",
@@ -375,6 +395,8 @@ export class MbzListItem extends ListItem {
                             common_options.queue_remove_while_in_queue,
                             options.search_song,
                             options.search_video,
+                            options.mbz_url,
+                            options.lbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
@@ -385,6 +407,8 @@ export class MbzListItem extends ListItem {
                             common_options.queue_remove,
                             options.search_song,
                             options.search_video,
+                            options.mbz_url,
+                            options.lbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Prompt":
@@ -397,6 +421,26 @@ export class MbzListItem extends ListItem {
             case "MbzRecordingWithInfo": {
                 let rec = this.data.data;
                 let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.recording.mbz(rec.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    lbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy listenbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.recording.lbz(rec.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
                     search_song: {
                         icon: icons.floppy_disk,
                         location: "OnlyMenu",
@@ -428,6 +472,8 @@ export class MbzListItem extends ListItem {
                             common_options.queue_remove_while_in_queue,
                             options.search_song,
                             options.search_video,
+                            options.mbz_url,
+                            options.lbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
@@ -438,6 +484,8 @@ export class MbzListItem extends ListItem {
                             common_options.queue_remove,
                             options.search_song,
                             options.search_video,
+                            options.mbz_url,
+                            options.lbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Prompt":
@@ -450,7 +498,27 @@ export class MbzListItem extends ListItem {
             case "MbzReleaseWithInfo": {
                 let a = this.data.data;
                 let options = {
-                    open: {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    lbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy listenbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release.lbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    explore_recordings: {
                         icon: icons.open_new_tab,
                         location: "TopRight",
                         title: "explore recordings",
@@ -469,117 +537,9 @@ export class MbzListItem extends ListItem {
                     case "DetailSection":
                     case "Browser":
                         return [
-                            options.open,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Queue":
-                    case "Prompt":
-                    case "Playbar":
-                        return [];
-                    default:
-                        throw exhausted(ctx);
-                }
-            } break;
-            case "MbzReleaseGroupWithInfo": {
-                let a = this.data.data;
-                let options = {
-                    explore_releases: {
-                        icon: icons.open_new_tab,
-                        location: "TopRight",
-                        title: "explore releases",
-                        onclick: async () => {
-                            let s = Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRelease_MbzReleaseGroup",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Releases for " + a.title);
-                        },
-                    },
-                    explore_recordings: {
-                        icon: icons.open_new_tab,
-                        location: "OnlyMenu",
-                        title: "explore recordings",
-                        onclick: async () => {
-                            let releases = await mbz.recordings_from_releases(a.releases);
-                            let s = StaticSearcher(releases);
-                            stores.new_tab(s, "Recordings for " + a.title);
-                        },
-                    },
-                    add_all_to_queue: {
-                        icon: icons.add,
-                        location: "OnlyMenu",
-                        title: "add all to queue",
-                        onclick: async () => {
-                            let releases = await mbz.recordings_from_releases(a.releases);
-                            await stores.queue_ops.add_item(...releases);
-                        },
-                    },
-                };
-
-                switch (ctx) {
-                    case "DetailSection":
-                    case "Browser":
-                        return [
-                            options.explore_releases,
                             options.explore_recordings,
-                            options.add_all_to_queue,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Queue":
-                    case "Prompt":
-                    case "Playbar":
-                        return [];
-                    default:
-                        throw exhausted(ctx);
-                }
-            } break;
-            case "MbzReleaseGroup": {
-                let a = this.data.data;
-                let options = {
-                    explore_releases: {
-                        icon: icons.open_new_tab,
-                        location: "TopRight",
-                        title: "explore releases",
-                        onclick: async () => {
-                            let s = Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRelease_MbzReleaseGroup",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Releases for " + a.title);
-                        },
-                    },
-                    explore_recordings: {
-                        icon: icons.open_new_tab,
-                        location: "OnlyMenu",
-                        title: "explore recordings",
-                        onclick: async () => {
-                            let rel = await ops.upgrade_to_recording_with_info(a);
-                            let releases = await mbz.recordings_from_releases(rel.releases);
-                            let s = StaticSearcher(releases);
-                            stores.new_tab(s, "Recordings for " + a.title);
-                        },
-                    },
-                    add_all_to_queue: {
-                        icon: icons.add,
-                        location: "OnlyMenu",
-                        title: "add all to queue",
-                        onclick: async () => {
-                            let rel = await ops.upgrade_to_recording_with_info(a);
-                            let releases = await mbz.recordings_from_releases(rel.releases);
-                            await stores.queue_ops.add_item(...releases);
-                        },
-                    },
-                };
-
-                switch (ctx) {
-                    case "DetailSection":
-                    case "Browser":
-                        return [
-                            options.explore_releases,
-                            options.explore_recordings,
-                            options.add_all_to_queue,
+                            options.mbz_url,
+                            options.lbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -593,6 +553,26 @@ export class MbzListItem extends ListItem {
             case "MbzRelease": {
                 let a = this.data.data;
                 let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    lbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy listenbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release.lbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
                     explore_recordings: {
                         icon: icons.open_new_tab,
                         location: "TopRight",
@@ -613,6 +593,140 @@ export class MbzListItem extends ListItem {
                     case "Browser":
                         return [
                             options.explore_recordings,
+                            options.mbz_url,
+                            options.lbz_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzReleaseGroupWithInfo": {
+                let a = this.data.data;
+                let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release_group.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzReleaseGroup",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.title);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let releases = await mbz.recordings_from_releases(a.releases);
+                            let s = StaticSearcher(releases);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let releases = await mbz.recordings_from_releases(a.releases);
+                            await stores.queue_ops.add_item(...releases);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_releases,
+                            options.explore_recordings,
+                            options.add_all_to_queue,
+                            options.mbz_url,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Prompt":
+                    case "Playbar":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzReleaseGroup": {
+                let a = this.data.data;
+                let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release_group.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzReleaseGroup",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.title);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        location: "OnlyMenu",
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let rel = await ops.upgrade_to_recording_with_info(a);
+                            let releases = await mbz.recordings_from_releases(rel.releases);
+                            let s = StaticSearcher(releases);
+                            stores.new_tab(s, "Recordings for " + a.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let rel = await ops.upgrade_to_recording_with_info(a);
+                            let releases = await mbz.recordings_from_releases(rel.releases);
+                            await stores.queue_ops.add_item(...releases);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.explore_releases,
+                            options.explore_recordings,
+                            options.add_all_to_queue,
+                            options.mbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -626,6 +740,16 @@ export class MbzListItem extends ListItem {
             case "MbzArtist": {
                 let a = this.data.data;
                 let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        location: "OnlyMenu",
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.urls.release_group.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
                     explore_release_groups: {
                         icon: icons.open_new_tab,
                         location: "OnlyMenu",
@@ -674,6 +798,7 @@ export class MbzListItem extends ListItem {
                             options.explore_release_groups,
                             options.explore_releases,
                             options.explore_recordings,
+                            options.mbz_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -928,6 +1053,35 @@ export const mbz = {
             }
         }
         return deduped;
+    },
+
+    urls: {
+        recording: {
+            mbz(id: string) {
+                return `https://musicbrainz.org/recording/${id}`
+            },
+            lbz(id: string) {
+                return `https://listenbrainz.org/player/?recording_mbids=${id}`
+            },
+        },
+        release: {
+            mbz(id: string) {
+                return `https://musicbrainz.org/release/${id}`
+            },
+            lbz(id: string) {
+                return `https://listenbrainz.org/player/release/${id}`
+            },
+        },
+        release_group: {
+            mbz(id: string) {
+                return `https://musicbrainz.org/release_group/${id}`
+            },
+        },
+        artist: {
+            mbz(id: string) {
+                return `https://musicbrainz.org/artist/${id}`
+            },
+        },
     },
 
     search_route(type: SearchTyp) {
