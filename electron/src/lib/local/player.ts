@@ -159,7 +159,7 @@ export class Musiplayer {
         if (uri === null) {
             this.unpause();
         } else {
-            this.send_message({type: 'Play', content: uri });
+            this.send_message({ type: 'Play', content: uri });
         }
     }
 

@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy, onMount } from "svelte";
     import * as icons from "$lib/icons.ts";
-    import { YtPlayer } from '$lib/player/yt.ts';
+    import { YtPlayer } from "$lib/player/yt.ts";
     import * as stores from "$lib/stores.ts";
-    import type { Writable } from 'svelte/store';
+    import type { Writable } from "svelte/store";
 
-    let player: Writable<YtPlayer> = stores.player as unknown as Writable<YtPlayer>;
+    let player: Writable<YtPlayer> =
+        stores.player as unknown as Writable<YtPlayer>;
 
     onDestroy(async () => {
         if ($player) {
@@ -18,7 +19,7 @@
         if ($player) {
             $player.destroy();
         }
-        let p = await YtPlayer.new('video');
+        let p = await YtPlayer.new("video");
         player.set(p);
     };
     onMount(() => {
@@ -29,7 +30,8 @@
     let interval = setInterval(() => {
         if (waiting) {
             if ($player && $player.player && $player.player.getPlayerState) {
-                waiting = $player.player.getPlayerState() !== YT.PlayerState.PLAYING;
+                waiting =
+                    $player.player.getPlayerState() !== YT.PlayerState.PLAYING;
             }
         } else {
             clearInterval(interval);
@@ -48,12 +50,17 @@
 <div class="relative h-full w-full">
     <div class="block w-full h-full" id="video" />
     <div class="block absolute left-0 top-0 w-full h-full opacity-0 z-10" />
-    <div class="absolute left-0 top-0 flex flex-col h-full w-full z-10 items-center justify-center {waiting ? '' : 'hidden'}">
+    <div
+        class="absolute left-0 top-0 flex flex-col h-full w-full z-10 items-center justify-center {waiting
+            ? ''
+            : 'hidden'}"
+    >
         <button
-            class='py-3 px-6 rounded-2xl bg-[#513A61] h-20 text-lg font-bold text-center select-none'
-            on:pointerup={on_click} on:keydown={() => {}}
+            class="py-3 px-6 rounded-2xl bg-[#513A61] h-20 text-lg font-bold text-center select-none"
+            on:pointerup={on_click}
+            on:keydown={() => {}}
         >
-            <img alt="play" class='h-full' src={icons.play}>
+            <img alt="play" class="h-full" src={icons.play} />
         </button>
     </div>
 </div>

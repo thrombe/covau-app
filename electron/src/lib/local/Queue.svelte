@@ -49,7 +49,11 @@
 
                 let is_outsider = item.source_key != drag_source_key;
                 let q = get(queue);
-                let handled = await q.handle_drop(item.item, index, is_outsider);
+                let handled = await q.handle_drop(
+                    item.item,
+                    index,
+                    is_outsider
+                );
                 if (handled) {
                     queue.update((t) => t);
                 }
@@ -130,7 +134,12 @@
                 class="my-2 mr-2 p-1 aspect-square relative"
                 class:hidden={options.length == 0}
             >
-                <ThreeDotMenu {options} classes="top-8 right-8" let:on_menu_click let:show_menu>
+                <ThreeDotMenu
+                    {options}
+                    classes="top-8 right-8"
+                    let:on_menu_click
+                    let:show_menu
+                >
                     <button
                         class="w-full h-full"
                         on:pointerup={on_menu_click}

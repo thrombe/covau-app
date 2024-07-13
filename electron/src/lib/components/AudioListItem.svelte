@@ -110,7 +110,12 @@
 
     {#if options.length > 0}
         <div class="relative">
-            <ThreeDotMenu {options} classes="-top-8 right-8" let:show_menu let:on_menu_click>
+            <ThreeDotMenu
+                {options}
+                classes="-top-8 right-8"
+                let:show_menu
+                let:on_menu_click
+            >
                 <button
                     class="pop-button bottom-0 menu-button"
                     on:pointerup={on_menu_click}

@@ -49,8 +49,8 @@ export type DragItem = {
 };
 export type DragSource = {
     source_key: unknown;
-    drop_callback: (() => Promise<void>) | (() => void); 
-    drop_cleanup: (() => Promise<void>) | (() => void); 
+    drop_callback: (() => Promise<void>) | (() => void);
+    drop_cleanup: (() => Promise<void>) | (() => void);
 };
 export let drag_item: Writable<DragItem | null> = writable(null);
 let drag_source: Writable<DragSource | null> = writable(null);
@@ -73,7 +73,7 @@ export const drag_ops = {
             drag_source.set(null);
         }, 300);
     },
-    async drop()  {
+    async drop() {
         let ds = get(drag_source);
         if (ds) {
             await ds.drop_callback();
@@ -246,7 +246,7 @@ export const pop_tab = (index: number | null = null) => {
 
 let tab_updater = writable(0);
 export let update_current_tab = () => {
-    tab_updater.update(t => t+1);
+    tab_updater.update(t => t + 1);
 };
 export let curr_tab = derived(
     [tabs, curr_tab_index, tab_updater],
@@ -273,14 +273,14 @@ export interface Queue {
     remove_queue_item(item: ListItem): Promise<void>;
 }
 export let dummy_player: Player = {
-    play_item() {},
-    pause() {},
-    on_message() {},
-    async destroy() {},
-    set_volume() {},
-    seek_to_perc() {},
-    toggle_pause() {},
-    toggle_mute() {},
+    play_item() { },
+    pause() { },
+    on_message() { },
+    async destroy() { },
+    set_volume() { },
+    seek_to_perc() { },
+    toggle_pause() { },
+    toggle_mute() { },
     is_playing() { return false; },
 };
 
@@ -422,7 +422,7 @@ selected_menubar_option.subscribe(async (option) => {
                         }, wrapper);
 
                         return s;
-                    }; 
+                    };
 
                     s = await new_searcher(get(query_input));
                 } break;
