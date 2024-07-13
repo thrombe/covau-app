@@ -2,14 +2,15 @@
     import { onDestroy, onMount } from 'svelte';
     import * as icons from "$lib/icons.ts";
     import { YtPlayer } from '$lib/player/yt.ts';
-    import { player as player_ } from "$lib/stores.ts";
+    import * as stores from "$lib/stores.ts";
     import type { Writable } from 'svelte/store';
 
-    let player: Writable<YtPlayer> = player_ as unknown as Writable<YtPlayer>;
+    let player: Writable<YtPlayer> = stores.player as unknown as Writable<YtPlayer>;
 
     onDestroy(async () => {
         if ($player) {
             $player.destroy();
+            player.set(stores.dummy_player as unknown as YtPlayer);
         }
     });
 
@@ -18,7 +19,7 @@
             $player.destroy();
         }
         let p = await YtPlayer.new('video');
-        $player = p;
+        player.set(p);
     };
     onMount(() => {
         load_player();

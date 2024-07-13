@@ -2,7 +2,7 @@
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
-    import { onDestroy } from "svelte";
+    import { onDestroy, tick } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
@@ -13,6 +13,10 @@
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import type { DetailOption } from "$lib/searcher/item.ts";
+    import Video from '$lib/components/Video.svelte';
+    import { sleep } from "$lib/searcher/mixins.ts";
+
+    let player_type: Writable<"YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None"> = writable("None");
 
     // prettier-ignore
     stores.menubar_options.set([
@@ -84,7 +88,7 @@
         }
     }
 
-    let menubar_menu = derived([stores.menubar_options, menubar_option], ([ops, curr_op]) => {
+    let menubar_menu = derived([stores.menubar_options, menubar_option, player_type], ([ops, curr_op, _player_type]) => {
         let menubar_options = ops.map((o, i) => ({
             icon: icons.covau_icon,
             title: o.name,
@@ -100,10 +104,56 @@
             },
         } as DetailOption));
 
+        let player_options = [
+            {
+                icon: icons.default_music_icon,
+                title: "Musiplayer",
+                onclick: async () => {
+                    await get(stores.player).destroy();
+                    stores.player.set(stores.dummy_player);
+
+                    let musiplayer = await import("$lib/local/player.ts");
+                    let pl = await musiplayer.Musiplayer.new();
+
+                    player_type.set("MusiPlayer");
+                    await tick();
+                    stores.player.set(pl);
+                },
+            },
+            {
+                icon: icons.default_music_icon,
+                title: "Youtube Player",
+                onclick: async () => {
+                    await get(stores.player).destroy();
+                    stores.player.set(stores.dummy_player);
+
+                    let yt = await import("$lib/player/yt.ts");
+                    let _stat = await yt.init_api();
+                    player_type.set("YtPlayer");
+                },
+            },
+            {
+                icon: icons.default_music_icon,
+                title: "Youtube Video Player",
+                onclick: async () => {
+                    await get(stores.player).destroy();
+                    stores.player.set(stores.dummy_player);
+
+                    let yt = await import("$lib/player/yt.ts");
+                    let _stat = await yt.init_api();
+                    player_type.set("YtVideoPlayer");
+                },
+            },
+        ] as DetailOption[];
+
         return [
             {
                 title: curr_op?.name,
                 options: menubar_options,
+            },
+            {
+                title: _player_type,
+                options: player_options,
             },
         ];
     });
@@ -238,8 +288,17 @@
         </search-area>
 
         {#if !mobile}
-            <queue-area class="flex flex-col h-full">
-                <Queue bind:item_height {mobile} />
+            <queue-area class="h-full">
+                <div class="flex flex-col" style={`height: calc(100% - calc(var(--queue-area-width) * 9 / 16));`}>
+                    <Queue bind:item_height {mobile} />
+                </div>
+                {#if $player_type == "YtVideoPlayer"}
+                    <div
+                        class="rounded-2xl overflow-hidden mt-2 mr-4 flex-none aspect-video"
+                    >
+                        <Video />
+                    </div>
+                {/if}
             </queue-area>
         {/if}
     </all-contents>
@@ -267,6 +326,11 @@ z index notes
 -  z-20: things covering z-10
 -->
 
+{#if $player_type == "YtPlayer" || ($player_type == "YtVideoPlayer" && mobile)}
+    <div class="absolute -z-[70] left-8 aspect-video bottom-28 w-80">
+        <Video />
+    </div>
+{/if}
 <Prompt />
 <Toasts />
 

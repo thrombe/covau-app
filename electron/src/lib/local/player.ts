@@ -15,7 +15,9 @@ export class Musiplayer {
     listeners: Map<string, { enabled: boolean, callback: MessageHandler }[]>;
     muted: boolean = false;
 
-    constructor() {
+    private wait: Promise<void>;
+    private closed: Promise<void>;
+    private constructor() {
         this.listeners = new Map();
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/player`);
         this.ws.addEventListener('message', async (e) => {
@@ -72,12 +74,32 @@ export class Musiplayer {
                     throw exhausted(message);
             }
         });
+
+        let resolve: () => {};
+        this.wait = new Promise(r => {
+            resolve = r as () => {};
+        });
         this.ws.addEventListener('open', async (_e) => {
+            resolve();
             this.unmute();
             this.set_volume(1.0);
             this.seek_to_perc(0.0);
             this.pause();
         });
+
+        let close_resolve: () => {};
+        this.closed = new Promise(r => {
+            close_resolve = r as () => {};
+        });
+        this.ws.addEventListener("close", async (e) => {
+            close_resolve();
+        });
+    }
+
+    static async new() {
+        let pl = new Musiplayer();
+        await pl.wait;
+        return pl;
     }
 
     add_message_listener(type: PlayerMessage['type'] | "any", callback: MessageHandler) {
@@ -108,7 +130,8 @@ export class Musiplayer {
     }
 
     async destroy() {
-        // pass
+        this.ws.close(1000);
+        await this.closed;
     }
 
     is_playing() {

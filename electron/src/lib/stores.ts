@@ -272,10 +272,21 @@ export interface Queue {
     play_queue_item(item: ListItem): Promise<void>;
     remove_queue_item(item: ListItem): Promise<void>;
 }
+export let dummy_player: Player = {
+    play_item() {},
+    pause() {},
+    on_message() {},
+    async destroy() {},
+    set_volume() {},
+    seek_to_perc() {},
+    toggle_pause() {},
+    toggle_mute() {},
+    is_playing() { return false; },
+};
 
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
-export let player: Writable<Player> = writable();
+export let player: Writable<Player> = writable(dummy_player);
 
 export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
 
