@@ -35,9 +35,9 @@
 
 <svelte:window on:keydown={disable_space_to_scroll} />
 
-<div class="h-full w-full p-4 pt-0 flex flex-row place-content-center">
+<div class="h-full w-full pb-4 flex flex-row place-content-center">
     <div
-        class="flex flex-col pt-4 max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide"
+        class="flex flex-col px-4 pt-4 max-w-[80rem] h-full gap-4 overflow-y-auto overflow-x-hidden scrollbar-hide"
     >
         {#each sections as section}
             {#if section.type == "Info"}
