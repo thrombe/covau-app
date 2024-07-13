@@ -272,13 +272,18 @@ export class YtPlayer {
     }
 }
 
+let has_iframe = Promise.resolve(false);
 export let init_api = async () => {
+    if (await has_iframe) {
+        return true;
+    }
+
     let s = document.createElement("script");
     s.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(s);
 
     let init_iframe: (b: boolean) => void;
-    let has_iframe: Promise<boolean> = new Promise((r) => {
+    has_iframe = new Promise((r) => {
         init_iframe = r;
     });
     // [...document.getElementsByTagName('script')].forEach((e) => {
