@@ -3,6 +3,7 @@
 
     export let options: DetailOption[];
     export let classes: string = "";
+    export let styles: string = "";
 
     let show_menu: boolean = false;
     const menu_disabler = () => {
@@ -22,6 +23,7 @@
 <slot {show_menu} {on_menu_click} />
 <div
     class="absolute flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10 overflow-y-auto scrollbar-hide {classes}"
+    style={styles}
     class:hidden={!show_menu}
 >
     {#each options as option}

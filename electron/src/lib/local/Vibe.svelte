@@ -203,12 +203,17 @@
                 <div
                     class="flex flex-row gap-2 py-2 h-full justify-start text-gray-200 overflow-x-auto scrollbar-hide"
                 >
-                    {#each $menubar_menu as options}
-                        <ThreeDotMenu options={options.options} classes="left-4 top-12 max-h-72" let:on_menu_click>
+                    {#each $menubar_menu as options, i}
+                        <ThreeDotMenu
+                            options={options.options}
+                            classes={`top-12 max-h-72`}
+                            styles={`left: ${i * 4 + 1}rem;`}
+                            let:on_menu_click
+                        >
                             <button
                                 class="flex flex-row gap-2 h-full rounded-xl p-2 pr-3 font-bold bg-gray-200 bg-opacity-10"
                                 on:pointerup={on_menu_click}
-                                 class:hidden={options.options.length == 0}
+                                class:hidden={options.options.length == 0}
                             >
                                 <div
                                     class="w-full h-full aspect-square flex flex-col rounded-md opacity-60 hover:opacity-100"
