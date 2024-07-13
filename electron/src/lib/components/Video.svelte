@@ -12,14 +12,6 @@
         await stores.set_player(stores.dummy_player);
     });
 
-    const load_player = async () => {
-        let p = await YtPlayer.new("video");
-        await stores.set_player(p);
-    };
-    onMount(() => {
-        load_player();
-    });
-
     let waiting = true;
     let interval = setInterval(() => {
         if (waiting) {

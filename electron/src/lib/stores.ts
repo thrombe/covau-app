@@ -313,7 +313,12 @@ export let set_player_type = async (t: PlayerType) => {
 
             let yt = await import("$lib/player/yt.ts");
             let _stat = await yt.init_api();
+
             player_type.set("YtPlayer");
+            await tick();
+            // NOTE: assuming that a div with 'video' id exsits
+            let p = await yt.YtPlayer.new("video");
+            await set_player(p);
         } break;
         case "YtVideoPlayer": {
             await get(player).destroy();
@@ -321,7 +326,12 @@ export let set_player_type = async (t: PlayerType) => {
 
             let yt = await import("$lib/player/yt.ts");
             let _stat = await yt.init_api();
+
             player_type.set("YtVideoPlayer");
+            await tick();
+            // NOTE: assuming that a div with 'video' id exsits
+            let p = await yt.YtPlayer.new("video");
+            await set_player(p);
         } break;
         case "None": {
             await get(player).destroy();
