@@ -14,7 +14,6 @@
     import * as icons from "$lib/icons.ts";
     import type { DetailOption } from "$lib/searcher/item.ts";
     import Video from '$lib/components/Video.svelte';
-    import { sleep } from "$lib/searcher/mixins.ts";
 
     let player_type: Writable<"YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None"> = writable("None");
 
@@ -145,6 +144,10 @@
                 },
             },
         ] as DetailOption[];
+
+        if (_player_type == "None") {
+            player_options[0].onclick();
+        }
 
         return [
             {
