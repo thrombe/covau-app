@@ -71,7 +71,9 @@ async fn player_command_handler(
     player: &Arc<Mutex<Player>>,
     tx: tokio::sync::mpsc::Sender<PlayerMessage>,
 ) -> anyhow::Result<()> {
-    let message = msg.to_str().ok().context("message was not a string")?;
+    let Some(message) = msg.to_str().ok() else {
+        return Ok(());
+    };
     let message = serde_json::from_str::<PlayerCommand>(message)?;
 
     let mut p = player.lock().await;
@@ -247,9 +249,6 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                 while let Some(msg) = wsrx.next().await {
                     match msg {
                         Ok(msg) => {
-                            if msg.is_close() {
-                                break;
-                            }
                             match player_command_handler(msg, &player, tx.clone()).await {
                                 Ok(_) => (),
                                 Err(e) => {
@@ -269,8 +268,12 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
                     }
                 }
 
+                let _ = player.lock().await.pause();
                 j.abort();
+                drop(tx);
+                drop(wsrx);
                 j2.abort();
+                // let _  = j2.await;
             })
         });
     let route = route.with(warp::cors().allow_any_origin());
