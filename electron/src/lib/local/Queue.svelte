@@ -130,7 +130,7 @@
                 class="my-2 mr-2 p-1 aspect-square relative"
                 class:hidden={options.length == 0}
             >
-                <ThreeDotMenu {options} let:on_menu_click let:show_menu>
+                <ThreeDotMenu {options} classes="top-8 right-8" let:on_menu_click let:show_menu>
                     <button
                         class="w-full h-full"
                         on:pointerup={on_menu_click}

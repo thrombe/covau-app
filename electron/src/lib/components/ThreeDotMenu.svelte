@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { type Option } from "$lib/searcher/item.ts";
+    import { type DetailOption } from "$lib/searcher/item.ts";
 
-    export let options: Option[];
+    export let options: DetailOption[];
+    export let classes: string = "";
 
     let show_menu: boolean = false;
     const menu_disabler = () => {
@@ -20,7 +21,7 @@
 
 <slot {show_menu} {on_menu_click} />
 <div
-    class="absolute right-5 top-0 flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10"
+    class="absolute flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10 overflow-y-auto scrollbar-hide {classes}"
     class:hidden={!show_menu}
 >
     {#each options as option}
@@ -37,3 +38,15 @@
         </button>
     {/each}
 </div>
+
+<style lang="postcss">
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* For IE, Edge and Firefox */
+    .scrollbar-hide {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+</style>
