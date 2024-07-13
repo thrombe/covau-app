@@ -2,22 +2,20 @@
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
     import SongBrowser from "./SongBrowser.svelte";
-    import { onDestroy, tick } from "svelte";
+    import { onDestroy } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
     import BlobBg from "$lib/components/BlobBg.svelte";
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
-    import { derived, get, writable, type Writable } from "svelte/store";
+    import { derived, get } from "svelte/store";
     import { prompter } from "$lib/prompt/prompt";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import type { DetailOption } from "$lib/searcher/item.ts";
     import Video from "$lib/components/Video.svelte";
 
-    let player_type: Writable<
-        "YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None"
-    > = writable("None");
+    let player_type = stores.player_type;
 
     // prettier-ignore
     stores.menubar_options.set([
@@ -51,6 +49,7 @@
         { key: stores.new_key(), name: "Radio", content_type: "related-music", source: "Mbz" },
     ]);
     // stores.selected_menubar_option_index.set(0);
+    stores.set_player_type("MusiPlayer");
 
     let item_height: number = 75;
     let item_min_width = 290;
@@ -115,46 +114,24 @@
                     icon: icons.default_music_icon,
                     title: "Musiplayer",
                     onclick: async () => {
-                        await get(stores.player).destroy();
-                        stores.player.set(stores.dummy_player);
-
-                        let musiplayer = await import("$lib/local/player.ts");
-                        let pl = await musiplayer.Musiplayer.new();
-
-                        player_type.set("MusiPlayer");
-                        await tick();
-                        stores.player.set(pl);
+                        await stores.set_player_type("MusiPlayer");
                     },
                 },
                 {
                     icon: icons.default_music_icon,
                     title: "Youtube Player",
                     onclick: async () => {
-                        await get(stores.player).destroy();
-                        stores.player.set(stores.dummy_player);
-
-                        let yt = await import("$lib/player/yt.ts");
-                        let _stat = await yt.init_api();
-                        player_type.set("YtPlayer");
+                        await stores.set_player_type("YtPlayer");
                     },
                 },
                 {
                     icon: icons.default_music_icon,
                     title: "Youtube Video Player",
                     onclick: async () => {
-                        await get(stores.player).destroy();
-                        stores.player.set(stores.dummy_player);
-
-                        let yt = await import("$lib/player/yt.ts");
-                        let _stat = await yt.init_api();
-                        player_type.set("YtVideoPlayer");
+                        await stores.set_player_type("YtVideoPlayer");
                     },
                 },
             ] as DetailOption[];
-
-            if (_player_type == "None") {
-                player_options[0].onclick();
-            }
 
             return [
                 {

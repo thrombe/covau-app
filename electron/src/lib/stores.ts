@@ -11,6 +11,7 @@ import { type Searcher, fused_searcher, type NewSearcher } from "./searcher/sear
 import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
+import { tick } from "svelte";
 
 export type DetailTab = {
     type: "detail",
@@ -287,6 +288,49 @@ export let dummy_player: Player = {
 export let playing_item: Writable<ListItem> = writable();
 // TODO: also allow sync/player
 export let player: Writable<Player> = writable(dummy_player);
+export type PlayerType = "YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None";
+export let player_type: Writable<PlayerType> = writable("None");
+export let set_player = async (p: Player) => {
+    await get(player).destroy();
+    player.set(p);
+};
+export let set_player_type = async (t: PlayerType) => {
+    switch (t) {
+        case "MusiPlayer": {
+            await get(player).destroy();
+            player.set(dummy_player);
+
+            let musiplayer = await import("$lib/local/player.ts");
+            let pl = await musiplayer.Musiplayer.new();
+
+            player_type.set("MusiPlayer");
+            await tick();
+            player.set(pl);
+        } break;
+        case "YtPlayer": {
+            await get(player).destroy();
+            player.set(dummy_player);
+
+            let yt = await import("$lib/player/yt.ts");
+            let _stat = await yt.init_api();
+            player_type.set("YtPlayer");
+        } break;
+        case "YtVideoPlayer": {
+            await get(player).destroy();
+            player.set(dummy_player);
+
+            let yt = await import("$lib/player/yt.ts");
+            let _stat = await yt.init_api();
+            player_type.set("YtVideoPlayer");
+        } break;
+        case "None": {
+            await get(player).destroy();
+            player.set(dummy_player);
+        } break;
+        default:
+            throw exhausted(t);
+    }
+};
 
 export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
 

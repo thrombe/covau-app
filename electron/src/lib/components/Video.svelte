@@ -9,18 +9,12 @@
         stores.player as unknown as Writable<YtPlayer>;
 
     onDestroy(async () => {
-        if ($player) {
-            $player.destroy();
-            player.set(stores.dummy_player as unknown as YtPlayer);
-        }
+        await stores.set_player(stores.dummy_player);
     });
 
     const load_player = async () => {
-        if ($player) {
-            $player.destroy();
-        }
         let p = await YtPlayer.new("video");
-        player.set(p);
+        await stores.set_player(p);
     };
     onMount(() => {
         load_player();
