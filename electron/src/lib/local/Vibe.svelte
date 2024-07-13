@@ -8,8 +8,11 @@
     import BlobBg from "$lib/components/BlobBg.svelte";
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
-    import { get } from "svelte/store";
+    import { derived, get, writable, type Writable } from "svelte/store";
     import { prompter } from "$lib/prompt/prompt";
+    import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
+    import * as icons from "$lib/icons.ts";
+    import type { DetailOption } from "$lib/searcher/item.ts";
 
     // prettier-ignore
     stores.menubar_options.set([
@@ -58,7 +61,6 @@
         on_window_resize();
     }
 
-    let menubar_options = stores.menubar_options;
     let menubar_queue_option: stores.MenubarOption = {
         key: stores.new_key(),
         name: "Queue",
@@ -81,6 +83,31 @@
             mobile = false;
         }
     }
+
+    let menubar_menu = derived([stores.menubar_options, menubar_option], ([ops, curr_op]) => {
+        let menubar_options = ops.map((o, i) => ({
+            icon: icons.covau_icon,
+            title: o.name,
+            onclick: async () => {
+                if (
+                    o.content_type === "related-music" &&
+                    !get(stores.playing_item)
+                ) {
+                    toast("no queue item selected", "info");
+                    return;
+                }
+                stores.selected_menubar_option_index.set(i);
+            },
+        } as DetailOption));
+
+        return [
+            {
+                title: curr_op?.name,
+                options: menubar_options,
+            },
+        ];
+    });
+
 
     let img_src = "";
     let img_h: number = 1;
@@ -121,28 +148,28 @@
         <search-area class="flex flex-col">
             <top-menubar class="w-full overflow-hidden px-4">
                 <div
-                    class="flex flex-row gap-2 py-2 justify-start text-gray-200 overflow-x-auto scrollbar-hide"
+                    class="flex flex-row gap-2 py-2 h-full justify-start text-gray-200 overflow-x-auto scrollbar-hide"
                 >
-                    {#each $menubar_options as typ, i}
-                        <button
-                            class="flex-none rounded-xl p-2 font-bold bg-gray-200 {$menubar_option ==
-                            typ
-                                ? 'bg-opacity-30'
-                                : 'bg-opacity-10'}"
-                            on:pointerup={() => {
-                                if (
-                                    typ.content_type === "related-music" &&
-                                    // menubar_related_option.id == null
-                                    !get(stores.playing_item)
-                                ) {
-                                    toast("no queue item selected", "info");
-                                    return;
-                                }
-                                stores.selected_menubar_option_index.set(i);
-                            }}
-                        >
-                            {typ.name}
-                        </button>
+                    {#each $menubar_menu as options}
+                        <ThreeDotMenu options={options.options} classes="left-4 top-12 max-h-72" let:on_menu_click>
+                            <button
+                                class="flex flex-row gap-2 h-full rounded-xl p-2 pr-3 font-bold bg-gray-200 bg-opacity-10"
+                                on:pointerup={on_menu_click}
+                                 class:hidden={options.options.length == 0}
+                            >
+                                <div
+                                    class="w-full h-full aspect-square flex flex-col rounded-md opacity-60 hover:opacity-100"
+                                >
+                                    <img
+                                        alt="options"
+                                        draggable={false}
+                                        class="scale-[100%] max-h-full"
+                                        src={icons.caret_down}
+                                    />
+                                </div>
+                                <div class="text-nowrap">{options.title}</div>
+                            </button>
+                        </ThreeDotMenu>
                     {/each}
                 </div>
             </top-menubar>
