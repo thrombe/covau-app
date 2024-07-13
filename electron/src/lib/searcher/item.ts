@@ -24,7 +24,7 @@ export type InfoPiece = {
     content: string | null,
 };
 export type DetailSection = ({
-    type: "SongInfo",
+    type: "Info",
     info: InfoPiece[],
 } | {
     type: "Searcher",

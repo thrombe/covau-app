@@ -1025,12 +1025,52 @@ export class DbListItem extends ListItem {
     }
 
     sections(): DetailSection[] {
+        let sections = {
+            options: {
+                type: "Options",
+                title: "Options",
+                options: this.options("DetailSection"),
+            },
+            json: {
+                type: "PrettyJson",
+                title: "Internal data",
+                content: JSON.stringify(this.data, null, 2),
+            },
+        };
+        const maybe = <T, P>(t: T | null, fn: (t: T) => P) => {
+            let non_null = [t].filter(n => n != null) as T[];
+            return non_null.map(n => fn(n));
+        };
         switch (this.data.typ) {
+            case "Song": {
+                let song = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            ...song.artists.map(a => ({
+                                heading: "Artist",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             case "MmSong": {
                 let song = this.data.t;
                 return [
                     {
-                        type: "SongInfo",
+                        type: "Info",
                         info: [
                             {
                                 heading: "Type",
@@ -1054,31 +1094,271 @@ export class DbListItem extends ListItem {
                             },
                         ]
                     },
-                    {
-                        type: "Options",
-                        title: "Options",
-                        options: this.options("DetailSection"),
-                    },
-                    {
-                        type: "PrettyJson",
-                        title: "Internal data",
-                        content: JSON.stringify(this.data, null, 2),
-                    },
-                ];
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
             } break;
-            case "Queue":
-            case "MmAlbum":
-            case "MmArtist":
-            case "MmPlaylist":
-            case "MmQueue":
-            case "StSong":
-            case "StAlbum":
-            case "StPlaylist":
-            case "StArtist":
-            case "Song":
+            case "StSong": {
+                let song = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: this.title(),
+                            },
+                            {
+                                heading: "Key",
+                                content: song.id,
+                            },
+                            ...maybe(song.album?.name ?? null, n => ({
+                                heading: "Album",
+                                content: n,
+                            })),
+                            ...song.authors.map(a =>({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             case "Playlist":
-            case "Updater":
-                return [];
+            case "Queue": {
+                let queue = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: this.title(),
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MmAlbum": {
+                let album = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Title",
+                                content: this.title(),
+                            },
+                            {
+                                heading: "Artist",
+                                content: album.artist_name,
+                            },
+                            {
+                                heading: "Album Id",
+                                content: album.browse_id,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MmArtist": {
+                let artist = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: artist.name,
+                            },
+                            ...artist.keys.map(k => ({
+                                heading: "Key",
+                                content: k,
+                            })),
+                            ...artist.search_keywords.map(k => ({
+                                heading: "Keywords",
+                                content: k,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MmPlaylist": {
+                let playlist = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: playlist.name,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MmQueue": {
+                let queue = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: queue.name,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "StAlbum": {
+                let album = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: album.title,
+                            },
+                            {
+                                heading: "Album Id",
+                                content: album.id,
+                            },
+                            ...maybe(album.author?.name ?? null, a => ({
+                                heading: "Artist",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "StPlaylist": {
+                let playlist = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: playlist.title,
+                            },
+                            {
+                                heading: "Playlist Id",
+                                content: playlist.id,
+                            },
+                            ...maybe(playlist.author?.name ?? null, a => ({
+                                heading: "Artist",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "StArtist": {
+                let artist = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: artist.name,
+                            },
+                            {
+                                heading: "Artist Id",
+                                content: artist.id,
+                            },
+                            ...maybe(artist.subscribers, a => ({
+                                heading: "Subscribers",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "Updater": {
+                let updater = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                            {
+                                heading: "Name",
+                                content: updater.title,
+                            },
+                            {
+                                heading: "Enabled",
+                                content: updater.enabled.toString(),
+                            },
+                            {
+                                heading: "Updater Type",
+                                content: updater.source.type,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             default:
                 throw exhausted(this.data)
         }
