@@ -12,6 +12,7 @@
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import type { Unique } from "$lib/virtual.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
+    import * as stores from "$lib/stores.ts";
 
     let value: string;
     let selected_item: Unique<ListItem, unknown>;
@@ -151,6 +152,7 @@
                         columns={1}
                         item_height={75}
                         searcher={prompt_info.searcher}
+                        source_key={stores.new_key()}
                         keyboard_control={true}
                         bind:selected_item
                         let:item

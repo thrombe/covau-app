@@ -2,14 +2,16 @@
     import type { ListItem } from "$lib/searcher/item.ts";
     import VirtualScrollable from "./VirtualScrollable.svelte";
     import { onDestroy, tick } from "svelte";
-    import type { Unique } from "../virtual.ts";
+    import { type Unique } from "../virtual.ts";
     import { get, readable, type Readable } from "svelte/store";
     import type { Searcher } from "$lib/searcher/searcher.ts";
+    import * as stores from "$lib/stores.ts";
 
     export let searcher: Readable<Searcher>;
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
+    export let source_key: number;
     export let on_item_click: (
         t: Unique<ListItem, unknown>
     ) => Promise<void> = async (t) => {
@@ -29,6 +31,10 @@
             root: HTMLElement;
             info_margin: number;
             info_width: number;
+            hovering: number | null;
+            dragging_index: number | null;
+            dragstart: (index: number, t: ListItem) => void;
+            dragenter: (index: number) => Promise<void>;
         };
         infobox: {};
     }
@@ -37,6 +43,37 @@
         undefined as unknown as Unique<ListItem, unknown>;
     let selected_item_index: number;
     let items = new Array<Unique<ListItem, number>>();
+
+    let hovering: number | null = null;
+    let dragging_index: number | null = null;
+    const dragstart = (index: number, t: ListItem) => {
+        dragging_index = index;
+        stores.drag_item.set({
+            source_key: source_key,
+            item: t,
+        });
+    };
+    const dragenter = async (index: number) => {
+        if (get(stores.drag_item) == null) {
+            return;
+        }
+        hovering = index;
+        await stores.drag_ops.set_source({
+            source_key: source_key,
+            drop_callback: async () => {
+                let item = get(stores.drag_item);
+                if (!item) {
+                    return;
+                }
+
+                await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+            },
+            drop_cleanup: async () => {
+                dragging_index = null;
+                hovering = null;
+            },
+        });
+    };
 
     const _end_reached = async (s: Readable<Searcher>) => {
         while (true) {
@@ -126,6 +163,10 @@
                 {root}
                 {info_margin}
                 {info_width}
+                {hovering}
+                {dragging_index}
+                {dragstart}
+                {dragenter}
             />
         </VirtualScrollable>
     </scrollable>

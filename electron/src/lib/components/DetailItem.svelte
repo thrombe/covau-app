@@ -1,8 +1,9 @@
 <script lang="ts">
     import type { ListItem } from "$lib/searcher/item.ts";
-    import type { Readable } from "svelte/store";
+    import { writable, type Readable } from "svelte/store";
     import AudioListItem from "./AudioListItem.svelte";
     import Explorer from "./Explorer.svelte";
+    import * as stores from "$lib/stores.ts";
 
     export let item: Readable<ListItem>;
 
@@ -121,15 +122,36 @@
                         >
                             <Explorer
                                 searcher={section.searcher}
+                                source_key={stores.new_key()}
                                 columns={1}
                                 item_height={80}
                                 keyboard_control={false}
                                 let:item
                                 let:selected
+                                let:index
+                                let:hovering
+                                let:dragging_index
+                                let:dragstart
+                                let:dragenter
                             >
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
-                                <list-item class:selected>
-                                    <div draggable={true} class="item-bg">
+                                <list-item
+                                    class="w-full h-full rounded-xl"
+                                    class:selected
+                                >
+                                    <div
+                                        class="item w-full h-full rounded-xl"
+                                        draggable={true}
+                                        on:dragstart={() => dragstart(index, item)}
+                                        on:drop|preventDefault={stores.drag_ops.drop}
+                                        on:dragend={stores.drag_ops.dragend}
+                                        ondragover="return false"
+                                        on:dragenter={() => dragenter(index)}
+                                        class:selected
+                                        class:is-active={hovering === index}
+                                        class:is-dragging={dragging_index === index}
+                                        class:is-selected={selected}
+                                    >
                                         <AudioListItem
                                             {item}
                                             ctx="Browser"
@@ -182,12 +204,18 @@
         @apply inline-block text-xl text-gray-200 overflow-hidden text-ellipsis text-nowrap selection:bg-gray-200 selection:bg-opacity-20;
     }
 
-    .item-bg {
-        @apply w-full h-full;
+    list-item:hover .item,
+    .selected .item {
+        @apply bg-gray-200 bg-opacity-10;
     }
-    list-item:hover .item-bg,
-    .selected .item-bg {
-        @apply bg-gray-200 bg-opacity-10 rounded-xl;
+    .is-dragging {
+        @apply opacity-40;
+    }
+    .is-selected {
+        @apply bg-gray-200 bg-opacity-10;
+    }
+    .is-active, .is-selected.is-active {
+        @apply bg-green-400 bg-opacity-20;
     }
 
     .scrollbar-hide::-webkit-scrollbar {

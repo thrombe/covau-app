@@ -3,7 +3,7 @@
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";
     import * as stores from "$lib/stores.ts";
-    import type { ListItem, Option } from "$lib/searcher/item.ts";
+    import type { Option } from "$lib/searcher/item.ts";
     import { onDestroy } from "svelte";
     import { get } from "svelte/store";
     import * as icons from "$lib/icons.ts";
@@ -16,49 +16,6 @@
 
     let search_query: string = "";
     let search_input_element: HTMLElement | null;
-
-    let try_scroll_selected_item_in_view: () => Promise<void>;
-
-    let hovering: number | null = null;
-    let dragging_index: number | null = null;
-    const dragstart = (index: number, t: ListItem) => {
-        dragging_index = index;
-        stores.drag_item.set({
-            source_key: get(stores.curr_tab).key,
-            item: t,
-        });
-    };
-    const dragenter = async (index: number) => {
-        if (get(stores.drag_item) == null) {
-            return;
-        }
-        hovering = index;
-        let source_key = get(stores.curr_tab).key;
-        await stores.drag_ops.set_source({
-            source_key: source_key,
-            drop_callback: async () => {
-                let item = get(stores.drag_item);
-                if (!item) {
-                    return;
-                }
-
-                let t = get(stores.curr_tab);
-                switch (t.type) {
-                    case "detail": {} break;
-                    case "browse": {
-                        let s = get(t.searcher);
-                        await s.handle_drop(item.item, index, item.source_key != source_key);
-                    } break;
-                    default:
-                        throw exhausted(t);
-                }
-            },
-            drop_cleanup: async () => {
-                dragging_index = null;
-                hovering = null;
-            },
-        });
-    };
 
     let tabs: stores.Tab[] = [];
     let curr_tab: stores.Tab;
@@ -190,13 +147,17 @@
             {#if tab.type == "browse"}
                 <Explorer
                     searcher={tab.searcher}
+                    source_key={tab.key}
                     {columns}
                     bind:item_height
                     keyboard_control={false}
-                    bind:try_scroll_selected_item_in_view
                     let:item
                     let:index
                     let:selected
+                    let:hovering
+                    let:dragging_index
+                    let:dragstart
+                    let:dragenter
                 >
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <list-item
@@ -204,6 +165,7 @@
                         class:selected
                     >
                         <div
+                            class="item w-full h-full rounded-xl"
                             draggable={true}
                             on:dragstart={() => dragstart(index, item)}
                             on:drop|preventDefault={stores.drag_ops.drop}
@@ -214,7 +176,6 @@
                             class:is-active={hovering === index}
                             class:is-dragging={dragging_index === index}
                             class:is-selected={selected}
-                            class="w-full h-full rounded-xl item"
                         >
                             <AudioListItem
                                 {item}
@@ -226,7 +187,10 @@
                     </list-item>
                 </Explorer>
             {:else if tab.type == "detail"}
-                <DetailItem item={tab.item} />
+                <DetailItem
+                    item={tab.item}
+                    updater={tab.updater}
+                />
             {:else}
                 tab type {tab.type} not handled
             {/if}
@@ -252,27 +216,17 @@
         );
     }
 
-    .open-button {
-        @apply absolute aspect-square p-1 m-2 right-0 top-0 bg-gray-200 bg-opacity-30 rounded-md text-gray-900 text-lg font-bold;
-        @apply hidden;
-    }
-
-    list-item:hover .open-button,
-    .selected .open-button {
-        @apply block;
-    }
     list-item:hover .item,
     .selected .item-bg {
         @apply bg-gray-200 bg-opacity-10;
     }
-
     .is-dragging {
         @apply opacity-40;
     }
     .is-selected {
         @apply bg-gray-200 bg-opacity-10;
     }
-    .is-active {
+    .is-active, .is-selected.is-active {
         @apply bg-green-400 bg-opacity-20;
     }
 </style>
