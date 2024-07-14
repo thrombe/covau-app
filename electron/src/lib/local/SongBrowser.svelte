@@ -147,6 +147,7 @@
             {#if tab.type == "browse"}
                 <Explorer
                     searcher={tab.searcher}
+                    updater={tab.updater}
                     source_key={tab.key}
                     {columns}
                     bind:item_height

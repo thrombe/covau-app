@@ -6,6 +6,7 @@
     import * as stores from "$lib/stores.ts";
 
     export let item: Readable<ListItem>;
+    export let updater: Readable<number> = writable(1);
 
     $: img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
     $: sections = $item?.sections() ?? [];
@@ -122,6 +123,7 @@
                         >
                             <Explorer
                                 searcher={section.searcher}
+                                updater={updater}
                                 source_key={stores.new_key()}
                                 columns={1}
                                 item_height={80}

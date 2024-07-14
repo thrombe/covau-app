@@ -16,6 +16,7 @@ import { tick } from "svelte";
 export type DetailTab = {
     type: "detail",
     item: Writable<ListItem>,
+    updater: Writable<number>,
     key: number;
     name: string;
 };
@@ -24,6 +25,7 @@ export type BrowseTab = {
     key: number;
     name: string;
     searcher: Writable<Searcher>;
+    updater: Writable<number>,
     new_searcher: NewSearcher | null;
     thumbnail: string | null; // TODO: don't need this to override thumbnail. do that using some kinda mixin
     query: Writable<string>;
@@ -32,7 +34,7 @@ export type BrowseTab = {
 export type Tab = DetailTab | BrowseTab;
 
 export type MenubarOption = { name: string, key: number } & (
-    | { content_type: "list"; type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
+    | { content_type: "list", type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music", source: "Yt" | "Mbz" }
@@ -177,6 +179,7 @@ export const new_detail_tab = (
         let tab: DetailTab = {
             type: "detail",
             key: new_key(),
+            updater: writable(1),
             name,
             item: writable(item),
         };
@@ -210,6 +213,7 @@ export const new_tab = (
             type: "browse",
             name: title,
             searcher: searcher,
+            updater: writable(1),
             new_searcher: new_searcher,
             thumbnail: thumb,
             query: q,
@@ -245,13 +249,16 @@ export const pop_tab = (index: number | null = null) => {
     curr_tab_index.set(new_curr);
 };
 
-let tab_updater = writable(0);
 export let update_current_tab = () => {
-    tab_updater.update(t => t + 1);
+    let tab = get(curr_tab);
+    if (!tab) {
+        return;
+    }
+    tab.updater.update(t => t + 1);
 };
 export let curr_tab = derived(
-    [tabs, curr_tab_index, tab_updater],
-    ([$tabs, $index, _t]) => $tabs[$index],
+    [tabs, curr_tab_index],
+    ([$tabs, $index]) => $tabs[$index],
 );
 
 export type MessageHandler = ((msg: types.server.PlayerMessage) => Promise<void>) | ((msg: types.server.PlayerMessage) => void);

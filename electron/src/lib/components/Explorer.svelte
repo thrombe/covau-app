@@ -11,6 +11,7 @@
     export let columns: number;
     export let item_height: number;
     export let end_is_visible = true;
+    export let updater: Readable<number>;
     export let source_key: number;
     export let on_item_click: (
         t: Unique<ListItem, unknown>
@@ -116,6 +117,11 @@
         } else {
             items = [];
         }
+    });
+    onDestroy(unsub);
+
+    unsub = updater.subscribe(async _ => {
+        await next_page(searcher);
     });
     onDestroy(unsub);
 
