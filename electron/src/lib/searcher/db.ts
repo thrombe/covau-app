@@ -1143,22 +1143,9 @@ export class DbListItem extends ListItem {
     }
 
     sections(): DetailSection[] {
-        let sections = {
-            options: {
-                type: "Options",
-                title: "Options",
-                options: this.options("DetailSection"),
-            },
-            json: {
-                type: "PrettyJson",
-                title: "Internal data",
-                content: JSON.stringify(this.data, null, 2),
-            },
-        };
-        const maybe = <T, P>(t: T | null, fn: (t: T) => P) => {
-            let non_null = [t].filter(n => n != null) as T[];
-            return non_null.map(n => fn(n));
-        };
+        let sections = this.common_sections(this.data);
+        let maybe = sections.ops.maybe;
+
         switch (this.data.typ) {
             case "Song": {
                 let song = this.data.t;

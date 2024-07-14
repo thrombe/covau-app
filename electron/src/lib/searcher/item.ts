@@ -119,6 +119,27 @@ export abstract class ListItem implements Keyed {
         };
         return common_options;
     }
+    common_sections(json_data: Object) {
+        let sections = {
+            options: {
+                type: "Options",
+                title: "Options",
+                options: this.options("DetailSection"),
+            },
+            json: {
+                type: "PrettyJson",
+                title: "Internal data",
+                content: JSON.stringify(json_data, null, 2),
+            },
+            ops: {
+                maybe<T, P>(t: T | null, fn: (t: T) => P) {
+                    let non_null = [t].filter(n => n != null) as T[];
+                    return non_null.map(n => fn(n));
+                },
+            },
+        };
+        return sections;
+    }
     is_playable(): boolean {
         let typ = this.typ();
         switch (typ) {
