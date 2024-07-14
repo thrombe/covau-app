@@ -70,7 +70,7 @@ pub struct Artist {
     pub name: String,
     pub id: String,
     pub aliases: Vec<Alias>,
-    pub disambiguation: String,
+    pub disambiguation: Option<String>,
     #[serde(rename = "type")]
     pub typ: Option<String>,
     pub area: Option<Area>,
@@ -348,7 +348,7 @@ mod trait_impls {
                 name: a.name,
                 id: a.id,
                 aliases: a.aliases.into_iter().flatten().map(Into::into).collect(),
-                disambiguation: a.disambiguation,
+                disambiguation: (a.disambiguation.len() > 0).then_some(a.disambiguation),
                 typ: a.artist_type.map(type_to_string),
                 area: a.area.map(Into::into),
             }

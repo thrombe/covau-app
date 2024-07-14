@@ -129,7 +129,7 @@ export class MbzListItem extends ListItem {
         return icons.default_music_icon;
     }
     title_sub(): string | null {
-        function authors(a: Artist[]) {
+        function names<T extends { name: string }>(a: T[]) {
             if (a.length == 0) {
                 return '';
             } else {
@@ -150,19 +150,19 @@ export class MbzListItem extends ListItem {
 
         switch (this.data.typ) {
             case "MbzReleaseWithInfo":
-                return authors(this.data.data.credit);
+                return names(this.data.data.credit);
             case "MbzReleaseGroupWithInfo":
-                return authors(this.data.data.credit);
+                return names(this.data.data.credit);
             case "MbzRelease":
                 return null;
             case "MbzReleaseGroup":
                 return null;
             case "MbzArtist":
-                return this.data.data.disambiguation;
+                return this.data.data.disambiguation ?? names(this.data.data.aliases);
             case "MbzRecording":
                 return null;
             case "MbzRecordingWithInfo":
-                return authors(this.data.data.credit);
+                return names(this.data.data.credit);
             case "MbzRadioSong":
                 return this.data.data.creator;
             default:
