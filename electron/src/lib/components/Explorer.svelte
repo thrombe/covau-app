@@ -69,7 +69,10 @@
                 }
 
                 try {
-                    await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+                    let handled = await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+                    if (!handled) {
+                        toast("could not handle this drop", "error");
+                    }
                 } catch (e: any) {
                     if (e instanceof Error) {
                         toast(e.message, "error")
