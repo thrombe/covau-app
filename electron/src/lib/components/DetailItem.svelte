@@ -1,12 +1,12 @@
 <script lang="ts">
     import type { ListItem } from "$lib/searcher/item.ts";
-    import { writable, type Readable } from "svelte/store";
+    import { type Readable } from "svelte/store";
     import AudioListItem from "./AudioListItem.svelte";
     import Explorer from "./Explorer.svelte";
     import * as stores from "$lib/stores.ts";
 
     export let item: Readable<ListItem>;
-    export let updater: Readable<number> = writable(1);
+    export let updater: Readable<number>;
 
     $: img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
     $: sections = $item?.sections() ?? [];
