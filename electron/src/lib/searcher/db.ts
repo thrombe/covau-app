@@ -459,6 +459,95 @@ export class DbListItem extends ListItem {
         }
     }
 
+    async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
+        const editable_list = (list: number[]) => ({
+            items: list,
+            get_item_index(item: DB.DbItem<unknown>) {
+                for (let i = 0; i < this.items.length; i++) {
+                    if (this.items[i] == item.id) {
+                        return i;
+                    }
+                }
+                return null;
+            },
+            move(from: number, to: number) {
+                if (from < to) {
+                    this.items.splice(to + 1, 0, this.items[from]);
+                    this.items.splice(from, 1);
+                } else {
+                    this.items.splice(to, 0, this.items[from]);
+                    this.items.splice(from + 1, 1);
+                }
+            },
+            insert(index: number, dbitem: DB.DbItem<unknown>) {
+                if (this.get_item_index(dbitem) != null) {
+                    throw new Error(`item "${item.title()}" already in list`);
+                }
+                this.items.splice(index, 0, dbitem.id);
+            },
+            move_item(dbitem: DB.DbItem<unknown>, to: number) {
+                let index = this.get_item_index(dbitem);
+                if (index != null) {
+                    this.move(index, to);
+                } else {
+                    throw new Error(`item "${item.title()}" not in list`);
+                }
+            },
+        });
+        const save_in_list = async (list: ReturnType<typeof editable_list>) => {
+            if (!item.is_playable()) {
+                return false;
+            }
+            await db.txn(async db => {
+                let song = await item.saved_covau_song(db);
+                if (song == null) {
+                    throw new Error(`can't save item ${item.title()}`);
+                }
+                if (is_outsider) {
+                    if (target == null) {
+                        target = list.items.length;
+                    }
+                    list.insert(target, song);
+                } else {
+                    if (target == null) {
+                        target = list.items.length - 1;
+                    }
+                    list.move_item(song, target);
+                }
+                let dbitem = await db.update(this.data as DB.DbItem<unknown>);
+                this.data = keyed([dbitem])[0] as MusicListItem;
+            });
+            return true;
+        };
+
+        switch (this.data.typ) {
+            case "Playlist": {
+                let playlist = this.data.t;
+                let list = editable_list(playlist.songs);
+                return await save_in_list(list);
+            } break;
+            case "Queue": {
+                let queue = this.data.t;
+                let list = editable_list(queue.queue.songs);
+                return await save_in_list(list);
+            } break;
+            case "MmSong":
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Song":
+            case "Updater":
+                return false;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
     impl_options(ctx: RenderContext): Option[] {
         let common_options = this.common_options();
 
@@ -777,7 +866,7 @@ export class DbListItem extends ListItem {
                                 query_type: "ids",
                                 type: "Song",
                                 ids: queue.queue.songs,
-                            }, 30);
+                            }, 30, null, this);
                             stores.new_tab(s, queue.queue.title);
                         },
                     },
@@ -1154,7 +1243,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: playlist.songs,
-                        }, 10)),
+                        }, 10, null, this)),
                     },
                     sections.json,
                 ] as DetailSection[];
@@ -1185,7 +1274,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: queue.queue.songs,
-                        }, 10)),
+                        }, 10, null, this)),
                     },
                     sections.json,
                 ] as DetailSection[];

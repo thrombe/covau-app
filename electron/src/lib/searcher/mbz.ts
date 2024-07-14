@@ -65,6 +65,10 @@ export class MbzListItem extends ListItem {
         return this.data.typ;
     }
 
+    async handle_drop(): Promise<boolean> {
+        return false;
+    }
+
     song_ids(): string[] {
         switch (this.data.typ) {
             case "MbzRadioSong":

@@ -156,19 +156,24 @@ export abstract class ListItem implements Keyed {
         }
     }
 
-    abstract get_key(): unknown; // literally anything unique
+    // song methods
     abstract song_ids(): string[]; // a id that might identify this song
     abstract yt_id(): Promise<string | null>; // get yt id for playing purposes
+    abstract audio_uri(): Promise<string | null>;
+    abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
+    abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
+
+    // container methods
+    abstract handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean>;
+
+    // common methods
+    abstract get_key(): unknown; // literally anything unique
     abstract typ(): Typ;
-    async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> { return false; }
     abstract title(): string;
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
     abstract title_sub(): string | null;
     abstract impl_options(ctx: RenderContext): Option[];
-    abstract audio_uri(): Promise<string | null>;
-    abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
-    abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
     abstract sections(): DetailSection[];
 }
 
@@ -183,12 +188,22 @@ export class CustomListItem extends ListItem {
     _options: Option[] = [];
     _sections: DetailSection[] = [];
     _typ: Typ;
+    _yt_id: string | null = null;
 
-    constructor(key: string, title: string, typ: Typ) {
+    constructor(key: string, title: string, typ: Typ, title_sub: string | null = null) {
         super();
         this._key = key;
         this._title = title;
         this._typ = typ;
+        this._title_sub = title_sub;
+    }
+
+    async yt_id(): Promise<string | null> {
+        return this._yt_id;
+    }
+
+    async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
+        return false;
     }
 
     get_key() {

@@ -52,6 +52,10 @@ export class StListItem extends ListItem {
         }
     }
 
+    async handle_drop(): Promise<boolean> {
+        return false;
+    }
+
     song_ids(): string[] {
         switch (this.data.type) {
             case "Song": {

@@ -1,6 +1,6 @@
 import { type Keyed } from "$lib/virtual.ts";
-import type { ListItem, Option } from "./item";
-import type { Searcher } from "./searcher";
+import type { ListItem, Option } from "./item.ts";
+import type { Searcher } from "./searcher.ts";
 
 export type Constructor<T> = new (...args: any[]) => T;
 
@@ -85,7 +85,7 @@ export function DropWrapper<S extends Constructor<{
         }
         insert(index: number, item: ListItem) {
             if (this.get_item_index(item) != null) {
-                throw new Error(`item "${item.title()}" already in queue`);
+                throw new Error(`item "${item.title()}" already in list`);
             }
             this.items.splice(index, 0, item);
         }
@@ -94,14 +94,25 @@ export function DropWrapper<S extends Constructor<{
             if (index != null) {
                 this.move(index, to);
             } else {
-                throw new Error(`item "${item.title()}" not in queue`);
+                throw new Error(`item "${item.title()}" not in list`);
             }
         }
 
-        async handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean> {
+        async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
             if (!d) {
                 return false;
             }
+
+            if (is_outsider) {
+                if (target == null) {
+                    target = this.items.length;
+                }
+            } else {
+                if (target == null) {
+                    target = this.items.length - 1;
+                }
+            }
+
             let handled = await d.handle_drop(item, target, is_outsider);
             if (!handled) {
                 return false;
@@ -112,6 +123,9 @@ export function DropWrapper<S extends Constructor<{
             } else {
                 this.move_item(item, target);
             }
+
+            let stores = await import("$lib/stores.ts");
+            stores.update_current_tab();
 
             return true;
         }
