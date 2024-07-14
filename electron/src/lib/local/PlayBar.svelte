@@ -9,6 +9,7 @@
     import * as icons from "$lib/icons.ts";
     import type { QueueManager } from "./queue.ts";
     import type { PlayerMessage } from "$types/server.ts";
+    import * as utils from "$lib/utils.ts";
 
     export let mobile = false;
     export let keyboard_control = true;
@@ -83,15 +84,8 @@
         volume = v;
     };
 
-    const fmt_time = (t: number) => {
-        let hours = ("000" + Math.floor(t / 3600)).slice(-2);
-        let mins = ("000" + Math.floor(t / 60)).slice(-2);
-        let secs = ("000" + Math.floor(t % 60)).slice(-2);
-        return `${Math.floor(t / 3600) ? hours + ":" : ""}${mins}:${secs}`;
-    };
-
-    $: fmt_duration = fmt_time(audio_duration);
-    $: fmt_video_pos = fmt_time(video_pos * audio_duration);
+    $: fmt_duration = utils.fmt_time(audio_duration);
+    $: fmt_video_pos = utils.fmt_time(video_pos * audio_duration);
 
     let dragging_volume = false;
 
