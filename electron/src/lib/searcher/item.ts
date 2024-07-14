@@ -45,7 +45,7 @@ export type DetailSection = ({
     title: string,
     content: string,
 });
-export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Nothing";
+export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Custom" | "Nothing";
 
 
 export abstract class ListItem implements Keyed {
@@ -171,6 +171,7 @@ export abstract class ListItem implements Keyed {
             case "YtPlaylist":
             case "YtArtist":
             case "Nothing":
+            case "Custom":
                 return false;
             default:
                 throw exhausted(typ);

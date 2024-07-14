@@ -4,7 +4,7 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
-import { type Option, ListItem, type RenderContext, type DetailSection } from "./item.ts";
+import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
@@ -730,7 +730,7 @@ export class DbListItem extends ListItem {
             case "MmArtist": {
                 let a = this.data.t;
                 let options = {
-                    open: {
+                    open_saved: {
                         icon: icons.open_new_tab,
                         location: "TopRight",
                         title: "open saved",
@@ -791,7 +791,7 @@ export class DbListItem extends ListItem {
                     case "DetailSection":
                     case "Browser":
                         return [
-                            options.open,
+                            options.open_saved,
                             options.open_unexplored,
                             options.add_saved_to_queue,
                             options.add_all_unexplored_to_queue,
@@ -958,22 +958,30 @@ export class DbListItem extends ListItem {
                     case "MusimanagerSearch": {
                         let ss = u.source.content;
                         let options = {
-                            open: {
+                            open_songs: {
                                 icon: icons.open_new_tab,
                                 location: "TopRight",
-                                title: "open",
+                                title: "open songs",
                                 onclick: async () => {
-                                    let s1 = Db.new({
+                                    let s = Db.new({
                                         query_type: "refids",
                                         type: "MmSong",
                                         ids: ss.songs.queue.map(s => s.item),
-                                    }, 100);
-                                    let songs = await s1.next_page();
-                                    while (s1.has_next_page) {
-                                        songs = await s1.next_page();
-                                    }
-                                    let s = StaticSearcher(songs);
+                                    }, 50);
                                     stores.new_tab(s, u.title);
+                                },
+                            },
+                            open_known_albums: {
+                                icon: icons.open_new_tab,
+                                location: "OnlyMenu",
+                                title: "open known albums",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "refids",
+                                        type: "MmAlbum",
+                                        ids: ss.known_albums.map(a => a.item),
+                                    }, 50);
+                                    stores.new_tab(s, `${u.title} Albums`);
                                 },
                             },
                             add_all_to_queue: {
@@ -981,14 +989,14 @@ export class DbListItem extends ListItem {
                                 location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
-                                    let s1 = Db.new({
+                                    let s = Db.new({
                                         query_type: "refids",
                                         type: "MmSong",
                                         ids: ss.songs.queue.map(s => s.item),
-                                    }, 100);
-                                    let songs = await s1.next_page();
-                                    while (s1.has_next_page) {
-                                        songs = await s1.next_page();
+                                    }, 50);
+                                    let songs = await s.next_page();
+                                    while (s.has_next_page) {
+                                        songs = await s.next_page();
                                     }
                                     await stores.queue_ops.add_item(...songs);
                                 },
@@ -999,7 +1007,8 @@ export class DbListItem extends ListItem {
                             case "DetailSection":
                             case "Browser":
                                 return [
-                                    options.open,
+                                    options.open_songs,
+                                    options.open_known_albums,
                                     options.add_all_to_queue,
                                     common_options.open_details,
                                 ] as Option[];
@@ -1014,10 +1023,10 @@ export class DbListItem extends ListItem {
                     case "SongTubeSearch": {
                         let ss = u.source.content;
                         let options = {
-                            open: {
+                            open_songs: {
                                 icon: icons.open_new_tab,
                                 location: "TopRight",
-                                title: "open",
+                                title: "open songs",
                                 onclick: async () => {
                                     let s = Db.new({
                                         query_type: "refids",
@@ -1025,6 +1034,19 @@ export class DbListItem extends ListItem {
                                         ids: ss.songs.queue.map(s => s.item),
                                     }, 50);
                                     stores.new_tab(s, u.title);
+                                },
+                            },
+                            open_known_albums: {
+                                icon: icons.open_new_tab,
+                                location: "OnlyMenu",
+                                title: "open known albums",
+                                onclick: async () => {
+                                    let s = Db.new({
+                                        query_type: "refids",
+                                        type: "StAlbum",
+                                        ids: ss.known_albums.map(a => a.item),
+                                    }, 50);
+                                    stores.new_tab(s, `${u.title} Albums`);
                                 },
                             },
                             add_all_to_queue: {
@@ -1050,7 +1072,8 @@ export class DbListItem extends ListItem {
                             case "DetailSection":
                             case "Browser":
                                 return [
-                                    options.open,
+                                    options.open_songs,
+                                    options.open_known_albums,
                                     options.add_all_to_queue,
                                     common_options.open_details,
                                 ] as Option[];
