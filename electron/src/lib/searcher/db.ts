@@ -902,6 +902,54 @@ export class DbListItem extends ListItem {
                         throw exhausted(ctx);
                 }
             } break;
+            case "Playlist": {
+                let playlist = this.data.t;
+                let options = {
+                    open: {
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "open",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "ids",
+                                type: "Song",
+                                ids: playlist.songs,
+                            }, 30, null, this);
+                            stores.new_tab(s, playlist.title);
+                        },
+                    },
+                    add_all_to_queue: {
+                        icon: icons.add,
+                        location: "OnlyMenu",
+                        title: "add all to queue",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "ids",
+                                type: "Song",
+                                ids: playlist.songs,
+                            }, playlist.songs.length);
+                            let items = await s.next_page();
+                            await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "DetailSection":
+                    case "Browser":
+                        return [
+                            options.open,
+                            options.add_all_to_queue,
+                            common_options.open_details,
+                        ] as Option[];
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return [];
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
             case "Updater": {
                 let u = this.data.t;
                 switch (u.source.type) {
@@ -1073,23 +1121,6 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StArtist": {
-                let t = this.data.t;
-
-                switch (ctx) {
-                    case "DetailSection":
-                    case "Browser":
-                        return [
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Queue":
-                    case "Playbar":
-                    case "Prompt":
-                        return [];
-                    default:
-                        throw exhausted(ctx);
-                }
-            } break;
-            case "Playlist": {
                 let t = this.data.t;
 
                 switch (ctx) {
