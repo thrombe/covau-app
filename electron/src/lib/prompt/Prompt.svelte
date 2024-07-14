@@ -100,7 +100,7 @@
         />
         {#if prompt_info.type == "Input"}
             <div
-                class="flex flex-row mt-32 gap-4 h-20 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
+                class="flex flex-row mt-32 h-20 pl-4 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
                 style="transition-duration: 800ms;"
             >
                 <InputBar
@@ -124,7 +124,7 @@
                 class="flex flex-col gap-1 w-[80%] max-w-[40rem] mx-4 my-16 rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
             >
                 <div
-                    class="w-full flex flex-row gap-4 h-16 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl"
+                    class="w-full flex flex-row h-16 pl-4 bg-gray-400 bg-opacity-20 background-blur-lg rounded-t-xl"
                 >
                     <InputBar
                         classes={"text-2xl font-semibold placeholder-gray-200 placeholder-opacity-60"}
