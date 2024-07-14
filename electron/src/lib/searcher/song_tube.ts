@@ -1,7 +1,7 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
-import { ListItem, type Option, type RenderContext } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
@@ -373,6 +373,132 @@ export class StListItem extends ListItem {
                 }
             } break;
                 break
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
+    sections(): DetailSection[] {
+        let sections = this.common_sections(this.data);
+        let maybe = sections.ops.maybe;
+
+        switch (this.data.type) {
+            case "Song": {
+                let song = this.data.content;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            {
+                                heading: "VideoId",
+                                content: song.id,
+                            },
+                            ...maybe(song.album?.name ?? null, a => ({
+                                heading: "Album",
+                                content: a,
+                            })),
+                            ...song.authors.map(a => ({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "Album": {
+                let album = this.data.content;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: album.title,
+                            },
+                            {
+                                heading: "AlbumId",
+                                content: album.id,
+                            },
+                            ...maybe(album.author?.name ?? null, a => ({
+                                heading: "Artist",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "Playlist": {
+                let list = this.data.content;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: list.title,
+                            },
+                            {
+                                heading: "PlaylistId",
+                                content: list.id,
+                            },
+                            ...maybe(list.author?.name ?? null, a => ({
+                                heading: "Artist",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "Artist": {
+                let artist = this.data.content;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Name",
+                                content: artist.name,
+                            },
+                            {
+                                heading: "ArtistId",
+                                content: artist.id,
+                            },
+                            ...maybe(artist.subscribers, a => ({
+                                heading: "Subscribers",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             default:
                 throw exhausted(this.data);
         }
