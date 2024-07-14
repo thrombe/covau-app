@@ -6,6 +6,7 @@
     import { get, readable, type Readable } from "svelte/store";
     import type { Searcher } from "$lib/searcher/searcher.ts";
     import * as stores from "$lib/stores.ts";
+    import { toast } from "$lib/toast/toast.ts";
 
     export let searcher: Readable<Searcher>;
     export let columns: number;
@@ -67,7 +68,15 @@
                     return;
                 }
 
-                await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+                try {
+                    await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+                } catch (e: any) {
+                    if (e instanceof Error) {
+                        toast(e.message, "error")
+                    } else {
+                        toast(e.toString(), "error")
+                    }
+                }
             },
             drop_cleanup: async () => {
                 dragging_index = null;
