@@ -1537,34 +1537,69 @@ export class DbListItem extends ListItem {
             } break;
             case "Updater": {
                 let updater = this.data.t;
-                return [
-                    {
-                        type: "Info",
-                        info: [
+                let source = updater.source;
+                switch (source.type) {
+                    case "MusimanagerSearch":
+                    case "SongTubeSearch":
+                        return [
                             {
-                                heading: "Type",
-                                content: this.data.typ,
+                                type: "Info",
+                                info: [
+                                    {
+                                        heading: "Type",
+                                        content: this.data.typ,
+                                    },
+                                    {
+                                        heading: "Name",
+                                        content: updater.title,
+                                    },
+                                    {
+                                        heading: "Enabled",
+                                        content: updater.enabled.toString(),
+                                    },
+                                    {
+                                        heading: "Updater Type",
+                                        content: source.type,
+                                    },
+                                    ...source.content.search_words.map(w => ({
+                                        heading: "Search Word",
+                                        content: w,
+                                    })),
+                                ]
+                            },
+                            sections.options,
+                            {
+                                type: "Searcher",
+                                title: "Known Albums",
+                                options: [],
+                                height: Math.min(5, source.content.known_albums.length),
+                                searcher: writable(Db.new({
+                                    query_type: "refids",
+                                    type: "MmAlbum",
+                                    ids: source.content.known_albums.map(a => a.item),
+                                }, 10)),
                             },
                             {
-                                heading: "Name",
-                                content: updater.title,
+                                type: "Searcher",
+                                title: "Songs",
+                                options: [],
+                                height: Math.min(5, source.content.songs.queue.length),
+                                searcher: writable(Db.new({
+                                    query_type: "refids",
+                                    type: "MmSong",
+                                    ids: source.content.songs.queue.map(a => a.item),
+                                }, 10)),
                             },
-                            {
-                                heading: "Enabled",
-                                content: updater.enabled.toString(),
-                            },
-                            {
-                                heading: "Updater Type",
-                                content: updater.source.type,
-                            },
-                        ]
-                    },
-                    sections.options,
-                    sections.json,
-                ] as DetailSection[];
+                            sections.json,
+                        ] as DetailSection[];
+                    case "Mbz":
+                        return [];
+                    default:
+                        throw exhausted(source);
+                }
             } break;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 }
