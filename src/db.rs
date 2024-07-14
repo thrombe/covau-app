@@ -1326,24 +1326,32 @@ pub mod db {
             &self,
             ids: Vec<DbId>,
         ) -> anyhow::Result<Vec<DbItem<T>>> {
-            let mut condition = Condition::any();
+            // let mut condition = Condition::any();
+            // for id in ids {
+            //     condition = condition.add(object::Column::Id.eq(id));
+            // }
+            // let e = object::Entity::find()
+            //     .filter(object::Column::Typ.eq(T::typ()))
+            //     .filter(condition)
+            //     .all(&self.db)
+            //     .await?
+            //     .into_iter()
+            //     .map(|e| DbItem {
+            //         metadata: e.parse_assume_metadata(),
+            //         t: e.parsed_assume(),
+            //         id: e.id,
+            //         typ: T::typ(),
+            //     })
+            //     .collect();
+            // Ok(e)
+
+            let mut items = vec![];
             for id in ids {
-                condition = condition.add(object::Column::Id.eq(id));
+                let item = self.search_by_id::<T>(id).await?;
+                let item = item.context("item with refid not found")?;
+                items.push(item);
             }
-            let e = object::Entity::find()
-                .filter(object::Column::Typ.eq(T::typ()))
-                .filter(condition)
-                .all(&self.db)
-                .await?
-                .into_iter()
-                .map(|e| DbItem {
-                    metadata: e.parse_assume_metadata(),
-                    t: e.parsed_assume(),
-                    id: e.id,
-                    typ: T::typ(),
-                })
-                .collect();
-            Ok(e)
+            Ok(items)
         }
 
         pub async fn search_by_ref_id<T: DbAble>(
@@ -1374,27 +1382,35 @@ pub mod db {
             // TODO: crash on building query if this condition has a lot of items (1000 ish)
             // - maybe create a temporary table for refids and join on it
             // - maybe just use a rust hashmap (slow tho :/)
-            let mut condition = Condition::any();
-            for id in ref_ids {
-                condition = condition.add(refid::Column::Refid.eq(id));
+            // let mut condition = Condition::any();
+            // for id in ref_ids {
+            //     condition = condition.add(refid::Column::Refid.eq(id));
+            // }
+            // let e = refid::Entity::find()
+            //     .filter(refid::Column::Typ.eq(T::typ()))
+            //     .filter(condition)
+            //     .find_also_related(object::Entity)
+            //     .all(&self.db)
+            //     .await?
+            //     .into_iter()
+            //     .map(|(_refid, obj)| obj)
+            //     .flatten()
+            //     .map(|e| DbItem {
+            //         metadata: e.parse_assume_metadata(),
+            //         t: e.parsed_assume(),
+            //         id: e.id,
+            //         typ: T::typ(),
+            //     })
+            //     .collect();
+            // Ok(e)
+
+            let mut items = vec![];
+            for refid in ref_ids {
+                let item = self.search_by_ref_id::<T>(refid).await?;
+                let item = item.context("item with refid not found")?;
+                items.push(item);
             }
-            let e = refid::Entity::find()
-                .filter(refid::Column::Typ.eq(T::typ()))
-                .filter(condition)
-                .find_also_related(object::Entity)
-                .all(&self.db)
-                .await?
-                .into_iter()
-                .map(|(_refid, obj)| obj)
-                .flatten()
-                .map(|e| DbItem {
-                    metadata: e.parse_assume_metadata(),
-                    t: e.parsed_assume(),
-                    id: e.id,
-                    typ: T::typ(),
-                })
-                .collect();
-            Ok(e)
+            Ok(items)
         }
 
         pub fn timestamp() -> u64 {
