@@ -1,7 +1,7 @@
 import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/virtual.ts";
-import { ListItem, type Option, type RenderContext } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
 import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
@@ -13,6 +13,7 @@ import { StaticSearcher, type Searcher, type SearcherConstructorMapper } from ".
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import * as types from "$types/types.ts";
 import * as icons from "$lib/icons.ts";
+import * as utils from "$lib/utils.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -809,6 +810,284 @@ export class MbzListItem extends ListItem {
                     default:
                         throw exhausted(ctx);
                 }
+            } break;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
+    sections(): DetailSection[] {
+        let sections = this.common_sections(this.data);
+        let maybe = sections.ops.maybe;
+
+        switch (this.data.typ) {
+            case "MbzRadioSong": {
+                let song = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            ...maybe(song.duration, d => ({
+                                heading: "Duration",
+                                content: utils.fmt_time(d),
+                            })),
+                            {
+                                heading: "Artist",
+                                content: song.creator,
+                            },
+                            ...maybe(song.album, a => ({
+                                heading: "Album",
+                                content: a,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzRecording": {
+                let song = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: song.id,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzRecordingWithInfo": {
+                let song = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: song.id,
+                            },
+                            ...song.credit.map(a => ({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                            ...song.releases.map(r => ({
+                                heading: "Release",
+                                content: r.title,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzRelease": {
+                let release = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: release.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: release.id,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzReleaseWithInfo": {
+                let release = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: release.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: release.id,
+                            },
+                            ...release.credit.map(a => ({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                            ...maybe(release.release_group, rg => ({
+                                heading: "ReleaseGroup",
+                                content: rg.title,
+                            })),
+                            ...maybe(release.release_group?.primary_type ?? null, t => ({
+                                heading: "Type",
+                                content: t,
+                            })),
+                            ...release.media.map(r => ({
+                                heading: "Media",
+                                content: `${r.format} with ${r.track_count} tracks`,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzReleaseGroup": {
+                let rg = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: rg.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: rg.id,
+                            },
+                            {
+                                heading: "Disambiguation",
+                                content: rg.disambiguation,
+                            },
+                            ...maybe(rg.primary_type, t => ({
+                                heading: "Type",
+                                content: t,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzReleaseGroupWithInfo": {
+                let rg = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: rg.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: rg.id,
+                            },
+                            ...maybe(rg.primary_type, t => ({
+                                heading: "Type",
+                                content: t,
+                            })),
+                            ...rg.credit.map(a => ({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                            {
+                                heading: "Disambiguation",
+                                content: rg.disambiguation,
+                            },
+                            ...rg.releases.map(r => ({
+                                heading: "Release",
+                                content: r.title,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzArtist": {
+                let a = this.data.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Name",
+                                content: a.name,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: a.id,
+                            },
+                            ...a.aliases.map(a => ({
+                                heading: "Alias",
+                                content: a.name,
+                            })),
+                            ...maybe(a.disambiguation, s => ({
+                                heading: "Disambiguation",
+                                content: s,
+                            })),
+                            {
+                                heading: "Disambiguation",
+                                content: a.disambiguation,
+                            },
+                            ...maybe(a.area, t => ({
+                                heading: "Area",
+                                content: t.name,
+                            })),
+                            ...maybe(a.type, t => ({
+                                heading: "Type",
+                                content: t,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
             } break;
             default:
                 throw exhausted(this.data);
