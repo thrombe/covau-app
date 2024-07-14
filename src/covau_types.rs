@@ -218,18 +218,12 @@ impl UpdateManager {
                 releases,
                 recordings,
             } => todo!(),
+            UpdateSource::MusimanagerSearch { .. } => {}
             UpdateSource::SongTubeSearch {
                 search_words,
                 artist_keys,
                 known_albums,
                 songs,
-            }
-            | UpdateSource::MusimanagerSearch {
-                search_words,
-                artist_keys,
-                known_albums,
-                songs,
-                ..
             } => {
                 let mut keys: HashSet<String> = artist_keys.iter().map(String::from).collect();
                 let mut known: HashSet<String> =
