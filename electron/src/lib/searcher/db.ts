@@ -1274,7 +1274,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: playlist.songs,
-                        }, 10, null, this)),
+                        }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
@@ -1305,7 +1305,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: queue.queue.songs,
-                        }, 10, null, this)),
+                        }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
