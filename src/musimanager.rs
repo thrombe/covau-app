@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub use crate::yt::{ VideoId, AlbumId };
+pub use crate::yt::{AlbumId, VideoId};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Tracker<S = Song, A = Album<Song>> {
@@ -249,6 +249,10 @@ impl Tracker<Song> {
                 artist_keys: al.artist_keys,
             })
             .collect();
+        et.albums.iter_mut().for_each(|a| {
+            a.playlist_id = a.playlist_id.take().filter(|id| !id.is_empty());
+            a.artist_keys.retain(|t| !t.is_empty());
+        });
 
         let mut m_artists = HashMap::new();
         for a in artists.iter() {
@@ -336,6 +340,12 @@ impl Tracker<Song> {
                 last_auto_search: a.last_auto_search,
             })
             .collect();
+        et.artists.iter_mut().for_each(|a| {
+            a.keys.retain(|t| !t.is_empty());
+            a.keywords.retain(|t| !t.is_empty());
+            a.non_keywords.retain(|t| !t.is_empty());
+            a.search_keywords.retain(|t| !t.is_empty());
+        });
 
         for pl in playlists.iter() {
             et.playlists.push(Playlist(SongProvider {
