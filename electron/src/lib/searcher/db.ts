@@ -611,6 +611,7 @@ export class DbListItem extends ListItem {
                             common_options.queue_play,
                             common_options.queue_remove_while_in_queue,
                             options.copy_url,
+                            ...common_options.open_album(s.album),
                             common_options.open_details,
                         ] as Option[];
                     case "DetailSection":
@@ -619,6 +620,7 @@ export class DbListItem extends ListItem {
                             common_options.detour,
                             common_options.queue_add,
                             options.copy_url,
+                            ...common_options.open_album(s.album),
                             common_options.open_details,
                         ] as Option[];
                     case "Playbar":

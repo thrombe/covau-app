@@ -116,6 +116,26 @@ export abstract class ListItem implements Keyed {
                     stores.new_detail_tab(this, title);
                 },
             },
+            open_album: (a: types.yt.SmolAlbum | null) => {
+                if (!a) {
+                    return [];
+                }
+                let op = {
+                    icon: icons.open_new_tab,
+                    location: "OnlyMenu",
+                    title: "open album",
+                    onclick: async () => {
+                        let st = await import("$lib/searcher/song_tube.ts");
+                        let stores = await stores_ts;
+                        let s = st.SongTube.new({
+                            type: "Album",
+                            content: a.id,
+                        });
+                        stores.new_tab(s, "Album " + a.name, this.thumbnail());
+                    },
+                };
+                return [op];
+            },
         };
         return common_options;
     }
