@@ -13,6 +13,8 @@ export let fused_searcher: Searcher = {
     async next_page(): Promise<ListItem[]> { return [] },
     has_next_page: false,
     options: () => [],
+    handle_drop: () => Promise.resolve(false),
+    items: [] as ListItem[],
 };
 
 export type SearcherConstructorMapper = (s: Constructor<Searcher>) => Constructor<Searcher>;
@@ -22,12 +24,32 @@ export function StaticSearcher(items: ListItem[]): Searcher {
         async next_page() {
             return items;
         },
-        async handle_drop(_item: ListItem, _target: number, _is_outsider: boolean) {
+        async handle_drop() {
             return false;
         },
         options: () => [],
         has_next_page: false,
         items: items,
     };
+}
+
+export function AsyncStaticSearcher(get_items: () => Promise<ListItem[]>): Searcher {
+    let s = {
+        got_items: false,
+        async next_page() {
+            if (!this.got_items) {
+                this.items = await get_items();
+                this.got_items = true;
+            }
+            return this.items;
+        },
+        async handle_drop() {
+            return false;
+        },
+        options: () => [],
+        has_next_page: false,
+        items: [] as ListItem[],
+    };
+    return s as Searcher;
 }
 
