@@ -46,7 +46,7 @@
     onDestroy(unsub);
 </script>
 
-<div class="w-full h-full flex flex-col">
+<div class="relative w-full h-full flex flex-col">
     <bar-area class="flex flex-col bg-gray-900 bg-opacity-30">
         <search-bar class="flex flex-row h-full">
             {#if curr_tab && curr_tab.type == "browse" && curr_tab.new_searcher != null}
@@ -143,7 +143,7 @@
     </bar-area>
 
     {#each tabs as tab (tab.key)}
-        <browse-area class={curr_tab == tab ? "" : "hidden"}>
+        <browse-area class={curr_tab == tab ? "" : "absolute -z-[70]"}>
             {#if tab.type == "browse"}
                 <Explorer
                     searcher={tab.searcher}
