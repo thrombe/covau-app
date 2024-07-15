@@ -218,7 +218,7 @@
     }
 
     list-item:hover .item,
-    .selected .item-bg {
+    .selected .item {
         @apply bg-gray-200 bg-opacity-10;
     }
     .is-dragging {

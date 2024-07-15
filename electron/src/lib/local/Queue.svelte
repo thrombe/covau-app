@@ -13,6 +13,7 @@
     import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
+    import { toast } from "$lib/toast/toast.ts";
 
     export let item_height: number;
     let items: Unique<ListItem, string>[] = [];
@@ -44,6 +45,7 @@
                 }
 
                 if (!item.item.is_playable()) {
+                    toast(`type ${item.item.typ()} is not playable`, "error");
                     return;
                 }
 
