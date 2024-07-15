@@ -133,7 +133,7 @@ export class StListItem extends ListItem {
                 if (!data) {
                     return null;
                 }
-                let thumbs = SongTube.get_thumbnail(data.info.basic_info.thumbnail);
+                let thumbs = st.get_thumbnails(data.info.basic_info.thumbnail);
                 this.data.content.thumbnails = thumbs;
                 return data.uri;
             } break;
@@ -544,7 +544,7 @@ export const st = {
         return {
             id: id,
             title: s.basic_info.title ?? null,
-            thumbnails: SongTube.get_thumbnail(s.basic_info.thumbnail),
+            thumbnails: this.get_thumbnails(s.basic_info.thumbnail),
             album: null,
             authors: s.basic_info.author ? [
                 {
@@ -588,7 +588,7 @@ export const st = {
             return {
                 id: s.id!,
                 title: s.title ?? null,
-                thumbnails: SongTube.get_thumbnail(s.thumbnail),
+                thumbnails: this.get_thumbnails(s.thumbnail),
                 album: s.album?.id ? {
                     name: s.album.name,
                     id: s.album.id,
@@ -602,7 +602,7 @@ export const st = {
             return {
                 id: s.video_id,
                 title: s.title.text ?? null,
-                thumbnails: SongTube.get_thumbnail(s.thumbnail),
+                thumbnails: this.get_thumbnails(s.thumbnail),
                 album: s.album?.id ? {
                     name: s.album.name,
                     id: s.album.id,
@@ -938,7 +938,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        thumbnails: st.get_thumbnails(e.thumbnail),
                         authors: e.authors?.map(a => ({
                             name: a.name,
                             channel_id: a.channel_id ?? null,
@@ -952,7 +952,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        thumbnails: st.get_thumbnails(e.thumbnail),
                         author: e.author ? {
                             name: e.author.name,
                             channel_id: e.author?.channel_id ?? null,
@@ -965,7 +965,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        thumbnails: st.get_thumbnails(e.thumbnail),
                         author: e.author ? {
                             name: e.author.name,
                             channel_id: e.author?.channel_id ?? null,
@@ -978,7 +978,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     content: {
                         id: e.id!,
                         name: e.name ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        thumbnails: st.get_thumbnails(e.thumbnail),
                         subscribers: e.subscribers ?? null,
                     }
                 }
@@ -988,7 +988,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     content: {
                         id: e.id!,
                         title: e.title ?? null,
-                        thumbnails: SongTube.get_thumbnail(e.thumbnail),
+                        thumbnails: st.get_thumbnails(e.thumbnail),
                         authors: [],
                         album: null,
                     }
@@ -999,21 +999,6 @@ export class SongTube extends Unpaged<MusicListItem> {
 
         this.has_next_page = this.results.has_continuation;
         return k as RObject[];
-    }
-
-    static get_thumbnail(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['content']['thumbnails'] {
-        if (node === null || !node) {
-            return [];
-        }
-
-        let t;
-        if (node instanceof YTNodes.MusicThumbnail) {
-            t = node.contents.map(t => ({ url: t.url, width: t.width, height: t.height }));
-        } else {
-            t = node.map(t => ({ url: t.url, width: t.width, height: t.height }));
-        }
-
-        return [...t];
     }
 }
 
