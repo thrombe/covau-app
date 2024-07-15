@@ -1260,7 +1260,7 @@ interface IClassTypeWrapper {
 function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<MusicListItem[]>;
 }>>(s: S) {
-    return class extends s implements IClassTypeWrapper {
+    return class ClassTypeWrapper extends s implements IClassTypeWrapper {
         // @ts-ignore
         async next_page(): Promise<MbzListItem[]> {
             let res = await super.next_page();
@@ -1276,7 +1276,7 @@ function UnionTypeWrapper<T extends Keyed, S extends Constructor<{
     query: BrowseQuery;
     next_page(): Promise<T[]>;
 }>>(s: S) {
-    return class extends s implements IUnionTypeWrapper {
+    return class UnionTypeWrapper extends s implements IUnionTypeWrapper {
         // @ts-ignore
         async next_page(): Promise<MusicListItem[]> {
             let res = await super.next_page();

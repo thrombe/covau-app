@@ -511,7 +511,7 @@ interface IClassTypeWrapper {
 function ClassTypeWrapper<S extends Constructor<{
     next_page(): Promise<(MusicListItem & Keyed)[]>;
 }>>(s: S) {
-    return class extends s implements IClassTypeWrapper {
+    return class ClassTypeWrapper extends s implements IClassTypeWrapper {
         // @ts-ignore
         async next_page(): Promise<StListItem[]> {
             let res = await super.next_page();

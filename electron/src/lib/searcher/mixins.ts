@@ -32,7 +32,7 @@ export interface ISlow<T, Q> {
 export function SlowSearch<T, Q, S extends Constructor<{
     search_query(q: Q): Promise<T | null>;
 }>>(s: S) {
-    return class extends s implements ISlow<T, Q> {
+    return class SlowSearch extends s implements ISlow<T, Q> {
         last_search: number = 0;
         search_generation: number = 0;
         async search_query(q: Q) {
@@ -65,7 +65,7 @@ export interface IDropWrapper {
 export function DropWrapper<S extends Constructor<{
     items: ListItem[];
 }>>(s: S, d: ListItem | null) {
-    return class extends s implements IDropWrapper {
+    return class DropWrapper extends s implements IDropWrapper {
         get_item_index(item: ListItem) {
             for (let i = 0; i < this.items.length; i++) {
                 if (this.items[i].get_key() == item.get_key()) {
@@ -138,10 +138,10 @@ export interface IDebounceWrapper<T> {
 export function DebounceWrapper<T, S extends Constructor<{
     next_page(): Promise<T[]>;
 }>>(s: S) {
-    return class extends s implements IDebounceWrapper<T> {
+    return class DebounceWrapper extends s implements IDebounceWrapper<T> {
         promise: Promise<T[]> = Promise.resolve([]);
         is_resolved = true;
-        async next_page(): Promise<T[]> {
+        override async next_page(): Promise<T[]> {
             if (this.is_resolved) {
                 this.is_resolved = false;
                 this.promise = this.promise.then(async (_) => {
@@ -157,9 +157,9 @@ export function DebounceWrapper<T, S extends Constructor<{
 }
 
 export interface IMapWrapper { };
-export function MapWrapper<S extends Constructor<Searcher>>(mapper: (item: ListItem) => Promise<ListItem>) {
-    return (s: S) => class extends s implements IMapWrapper {
-        async next_page(): Promise<ListItem[]> {
+export function MapWrapper(mapper: (item: ListItem) => Promise<ListItem>) {
+    return <S extends Constructor<Searcher>>(s: S) => class MapWrapper extends s implements IMapWrapper {
+        override async next_page(): Promise<ListItem[]> {
             let res = await super.next_page();
             let items = await Promise.all(res.map(e => mapper(e)));
             return items;
@@ -169,7 +169,7 @@ export function MapWrapper<S extends Constructor<Searcher>>(mapper: (item: ListI
 
 export interface IOptionsWrapper { };
 export function OptionsWrapper<S extends Constructor<Searcher>>(fn: (old: Option[], s: Searcher) => Option[]) {
-    return (s: S) => class extends s implements IOptionsWrapper {
+    return (s: S) => class OptionsWrapper extends s implements IOptionsWrapper {
         options() {
             let old = super.options();
             let new_ops = fn(old, this);
@@ -186,7 +186,7 @@ export interface ISaved<T> {
 export function SavedSearch<T, S extends Constructor<{
     next_page(): Promise<(T & Keyed)[]>;
 }>>(s: S) {
-    return class extends s implements ISaved<T> {
+    return class SavedSearch extends s implements ISaved<T> {
         items: Array<(T & Keyed)>;
 
         // this essentially acts as an async semaphore
@@ -198,7 +198,7 @@ export function SavedSearch<T, S extends Constructor<{
             this.last_op = Promise.resolve([]);
         }
 
-        override next_page = async () => {
+        override async next_page() {
             await this.last_op;
             this.last_op = super.next_page();
             let r = await this.last_op;
@@ -215,14 +215,14 @@ export interface IUnique<T> {
 export function UniqueSearch<T extends Keyed, S extends Constructor<{
     next_page(): Promise<T[]>;
 }>>(s: S) {
-    return class extends s implements IUnique<T> {
+    return class UniqueWrapper extends s implements IUnique<T> {
         uniq: Set<T>;
         constructor(...args: any[]) {
             super(...args);
             this.uniq = new Set();
         }
 
-        async next_page() {
+        override async next_page() {
             let r = await super.next_page();
             let items = r.filter((item) => {
                 let k: any = item.get_key();
@@ -293,5 +293,3 @@ export abstract class Offset<T> {
         return r;
     }
 }
-
-
