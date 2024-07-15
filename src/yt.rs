@@ -38,7 +38,8 @@ pub mod song_tube {
     pub enum BrowseQuery {
         Search { search: Typ, query: String },
         VideoSearch { query: String },
-        Artist(ArtistId),
+        ArtistSongs(ArtistId),
+        ArtistReleases(ArtistId),
         Album(AlbumId),
         Playlist(PlaylistId),
         UpNext(VideoId),

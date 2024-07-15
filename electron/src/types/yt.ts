@@ -1,6 +1,6 @@
 export type Typ = "YtSong" | "YtAlbum" | "YtPlaylist" | "YtArtist";
 export type MusicListItem = { type: "Song"; content: Song } | { type: "Album"; content: Album } | { type: "Playlist"; content: Playlist } | { type: "Artist"; content: Artist };
-export type BrowseQuery = { type: "Search"; content: { search: Typ; query: string } } | { type: "VideoSearch"; content: { query: string } } | { type: "Artist"; content: ArtistId } | { type: "Album"; content: AlbumId } | { type: "Playlist"; content: PlaylistId } | { type: "UpNext"; content: VideoId } | { type: "SongIds"; content: { ids: VideoId[]; batch_size: number } } | { type: "HomeFeed" };
+export type BrowseQuery = { type: "Search"; content: { search: Typ; query: string } } | { type: "VideoSearch"; content: { query: string } } | { type: "ArtistSongs"; content: ArtistId } | { type: "ArtistReleases"; content: ArtistId } | { type: "Album"; content: AlbumId } | { type: "Playlist"; content: PlaylistId } | { type: "UpNext"; content: VideoId } | { type: "SongIds"; content: { ids: VideoId[]; batch_size: number } } | { type: "HomeFeed" };
 export type Thumbnail = { url: string; width: number; height: number };
 export type Album = { id: string; title: string | null; thumbnails: Thumbnail[]; author: Author | null };
 export type SmolAlbum = { name: string | null; id: string };

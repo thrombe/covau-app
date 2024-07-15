@@ -343,13 +343,13 @@ export class StListItem extends ListItem {
             case "Artist": {
                 let a = this.data.content;
                 let options = {
-                    open: {
+                    explore_songs: {
                         icon: icons.open_new_tab,
                         location: "TopRight",
                         title: "explore songs",
                         onclick: async () => {
                             let s = SongTube.new({
-                                type: "Artist",
+                                type: "ArtistSongs",
                                 content: a.id,
                             });
                             stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
@@ -361,7 +361,7 @@ export class StListItem extends ListItem {
                     case "DetailSection":
                     case "Browser":
                         return [
-                            options.open,
+                            options.explore_songs,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -555,6 +555,21 @@ export const st = {
         }
     },
 
+    get_thumbnails(node: Misc.Thumbnail[] | YTNodes.MusicThumbnail | null | undefined): MusicListItem['content']['thumbnails'] {
+        if (node === null || !node) {
+            return [];
+        }
+
+        let t;
+        if (node instanceof YTNodes.MusicThumbnail) {
+            t = node.contents.map(t => ({ url: t.url, width: t.width, height: t.height }));
+        } else {
+            t = node.map(t => ({ url: t.url, width: t.width, height: t.height }));
+        }
+
+        return [...t];
+    },
+
     get_wrapped<T extends { id?: any }>(items: T[], typ: MusicListItem["type"]): StListItem[] {
         let k = keyed(items.map(e => ({ type: typ, content: e as unknown } as MusicListItem)));
         return k.map(e => new StListItem(e))
@@ -650,8 +665,11 @@ export class SongTube extends Unpaged<MusicListItem> {
             return await this.next_page_search(this.query.content.query, this.query.content.search);
         } else if (this.query.type == "VideoSearch") {
             return await this.next_page_search(this.query.content.query, "YtVideo");
-        } else if (this.query.type == 'Artist') {
+        } else if (this.query.type == 'ArtistSongs') {
             let r = await this.next_page_artist_songs(this.query.content);
+            return r;
+        } else if (this.query.type == 'ArtistReleases') {
+            let r = await this.next_page_artist_releases(this.query.content);
             return r;
         } else if (this.query.type == 'Album') {
             let r = await this.next_page_album(this.query.content);
@@ -732,6 +750,61 @@ export class SongTube extends Unpaged<MusicListItem> {
         let mli: MusicListItem[] = k.map(s => ({
             type: 'Song',
             content: st.get_st_song(s),
+        }));
+        return keyed(mli) as RObject[];
+    }
+    releases: YT.Channel | null = null;
+    releases_cont: YT.ChannelListContinuation | null = null;
+    protected async next_page_artist_releases(artist_id: string) {
+        let items: YTNodes.Playlist[] = [];
+        if (this.releases_cont) {
+            this.releases_cont = await this.releases_cont.getContinuation();
+
+            items = this.releases_cont.contents?.contents?.filterType(YTNodes.RichItem).map(s => s.content.as(YTNodes.Playlist)) ?? [];
+            this.has_next_page = this.releases_cont.has_continuation;
+        } else if (this.releases) {
+            this.releases_cont = await this.releases.getContinuation();
+
+            items = this.releases_cont.contents?.contents?.filterType(YTNodes.RichItem).map(s => s.content.as(YTNodes.Playlist)) ?? [];
+            this.has_next_page = this.releases_cont.has_continuation;
+        } else {
+            let artist = await this.tube.getChannel(artist_id);
+            if (artist.has_releases) {
+                this.releases = await artist.getReleases();
+                console.log(this.releases);
+                this.has_next_page = this.releases.has_continuation;
+                items = this.releases?.playlists?.filterType(YTNodes.Playlist) ?? [];
+            }
+        }
+        if (this.has_next_page) {
+            if (items.length == 0) {
+                this.has_next_page = false;
+                return [];
+            }
+        }
+
+        let mli: MusicListItem[] = items.map(s => ({
+            type: 'Playlist',
+            content: {
+                id: s.id,
+                title: s.title.text ?? s.id,
+                thumbnails: st.get_thumbnails(s.thumbnails),
+                author: (() => {
+                    if ("id" in s.author) {
+                        return {
+                            name: s.author.name,
+                            id: s.author.id ?? null,
+                        };
+                    } else if (s.author.text) {
+                        return {
+                            name: s.author.text!,
+                            id: null,
+                        };
+                    } else {
+                        return null;
+                    }
+                })(),
+            } as yt.Playlist,
         }));
         return keyed(mli) as RObject[];
     }
