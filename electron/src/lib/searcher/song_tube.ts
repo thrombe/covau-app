@@ -979,6 +979,7 @@ export class SongTube extends Unpaged<MusicListItem> {
                     type: 'Artist',
                     content: {
                         id: e.id!,
+                        typ: "Artist",
                         name: e.name ?? null,
                         thumbnails: st.get_thumbnails(e.thumbnail),
                         subscribers: e.subscribers ?? null,

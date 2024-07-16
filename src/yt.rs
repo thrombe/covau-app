@@ -34,10 +34,17 @@ pub mod song_tube {
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+    pub enum ArtistTyp {
+        Channel,
+        Artist,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     #[serde(tag = "type", content = "content")]
     pub enum BrowseQuery {
         Search { search: Typ, query: String },
         VideoSearch { query: String },
+        ChannelSearch { query: String },
         ArtistSongs(ArtistId),
         ArtistReleases(ArtistId),
         Album(AlbumId),
@@ -107,6 +114,7 @@ pub mod song_tube {
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct Artist {
         pub id: String,
+        pub typ: ArtistTyp,
         pub name: Option<String>,
         pub subscribers: Option<String>,
         pub thumbnails: Vec<Thumbnail>,
@@ -312,6 +320,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<song_tube::Album>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::SmolAlbum>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<song_tube::ArtistTyp>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::Artist>(config)?;
     types += ";\n";
