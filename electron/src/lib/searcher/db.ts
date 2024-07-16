@@ -549,8 +549,29 @@ export class DbListItem extends ListItem {
         }
     }
 
+    protected ops() {
+        return {
+            get_artist_searcher_from_keys: (keys: string[]) => {
+                return AsyncStaticSearcher(async () => {
+                    return await Promise.all(keys
+                        .map(k => {
+                            return st
+                                .get_artist(k)
+                                .then(a => st.get_wrapped_item(a, "Artist"))
+                                .catch(err => {
+                                    let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
+                                    return item;
+                                });
+                        }
+                        ));
+                });
+            },
+        };
+    }
+
     impl_options(ctx: RenderContext): Option[] {
         let common_options = this.common_options();
+        let ops = this.ops();
 
         switch (this.data.typ) {
             case "MmSong": {
@@ -1012,6 +1033,15 @@ export class DbListItem extends ListItem {
                                 return [
                                     options.open_songs,
                                     options.open_known_albums,
+                                    {
+                                        icon: icons.open_new_tab,
+                                        location: "OnlyMenu",
+                                        title: "open sources",
+                                        onclick: async () => {
+                                            let s = ops.get_artist_searcher_from_keys(ss.artist_keys.filter(k => k.length > 0));
+                                            stores.new_tab(s, `${u.title} Sources`);
+                                        },
+                                    },
                                     options.add_all_to_queue,
                                     common_options.open_details,
                                 ] as Option[];
@@ -1151,6 +1181,7 @@ export class DbListItem extends ListItem {
     sections(): DetailSection[] {
         let sections = this.common_sections(this.data);
         let maybe = sections.ops.maybe;
+        let ops = this.ops();
 
         switch (this.data.typ) {
             case "Song": {
@@ -1545,19 +1576,7 @@ export class DbListItem extends ListItem {
                     case "MusimanagerSearch":
                     case "SongTubeSearch": {
                         let keys = source.content.artist_keys.filter(k => k.length > 0);
-                        let sources = AsyncStaticSearcher(async () => {
-                            return await Promise.all(keys
-                                .map(k => {
-                                    return st
-                                        .get_artist(k)
-                                        .then(a => st.get_wrapped_item(a, "Artist"))
-                                        .catch(err => {
-                                            let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
-                                            return item;
-                                        });
-                                }
-                                ));
-                        });
+                        let sources = ops.get_artist_searcher_from_keys(keys);
                         return [
                             {
                                 type: "Info",
