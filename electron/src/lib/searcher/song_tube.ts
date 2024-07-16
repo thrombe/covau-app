@@ -226,18 +226,7 @@ export class StListItem extends ListItem {
         switch (this.data.type) {
             case "Song": {
                 let s = this.data.content;
-                let options = {
-                    copy_url: {
-                        icon: icons.copy,
-                        location: "OnlyMenu",
-                        title: "copy url",
-                        onclick: async () => {
-                            let url = st.get_yt_url(s.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                };
+                let options = st.options.get_song_ops(s);
 
                 switch (ctx) {
                     case "Queue":
@@ -266,33 +255,7 @@ export class StListItem extends ListItem {
             } break;
             case "Album": {
                 let a = this.data.content;
-                let options = {
-                    open: {
-                        icon: icons.open_new_tab,
-                        location: "TopRight",
-                        title: "open",
-                        onclick: async () => {
-                            let s = SongTube.new({
-                                type: "Album",
-                                content: a.id,
-                            });
-                            stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
-                        },
-                    },
-                    add_all_to_queue: {
-                        icon: icons.add,
-                        location: "OnlyMenu",
-                        title: "add all to queue",
-                        onclick: async () => {
-                            let s = SongTube.new({
-                                type: "Album",
-                                content: a.id,
-                            });
-                            let items = await s.next_page();
-                            await stores.queue_ops.add_item(...items);
-                        },
-                    },
-                };
+                let options = st.options.get_album_ops(a);
 
                 switch (ctx) {
                     case "DetailSection":
@@ -312,20 +275,7 @@ export class StListItem extends ListItem {
             } break;
             case "Playlist": {
                 let p = this.data.content;
-                let options = {
-                    open: {
-                        icon: icons.open_new_tab,
-                        location: "TopRight",
-                        title: "open",
-                        onclick: async () => {
-                            let s = SongTube.new({
-                                type: "Playlist",
-                                content: p.id,
-                            });
-                            stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
-                        },
-                    },
-                };
+                let options = st.options.get_playlist_ops(p);
 
                 switch (ctx) {
                     case "DetailSection":
@@ -344,44 +294,7 @@ export class StListItem extends ListItem {
             } break;
             case "Artist": {
                 let a = this.data.content;
-                let options = {
-                    explore_songs: () => {
-                        if (a.typ == "Artist") {
-                            return [{
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore songs",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "ArtistSongs",
-                                        content: a.id,
-                                    });
-                                    stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
-                                },
-                            }];
-                        } else {
-                            return [];
-                        }
-                    },
-                    explore_releases: () => {
-                        if (a.typ == "Channel") {
-                            return [{
-                                icon: icons.open_new_tab,
-                                location: "TopRight",
-                                title: "explore releases",
-                                onclick: async () => {
-                                    let s = SongTube.new({
-                                        type: "ArtistReleases",
-                                        content: a.id,
-                                    });
-                                    stores.new_tab(s, "Artist " + a.name + " releases", a.thumbnails.at(0)?.url ?? null);
-                                },
-                            }];
-                        } else {
-                            return [];
-                        }
-                    },
-                };
+                let options = st.options.get_artist_ops(a);
 
                 switch (ctx) {
                     case "DetailSection":
@@ -389,6 +302,8 @@ export class StListItem extends ListItem {
                         return [
                             ...options.explore_songs(),
                             ...options.explore_releases(),
+                            options.copy_channel_url,
+                            options.copy_artist_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -635,6 +550,14 @@ export const st = {
         return `https://www.youtube.com/watch?v=${id}`;
     },
 
+    get_channel_url(artist_id: string) {
+        return `https://www.youtube.com/channel/${artist_id}`;
+    },
+
+    get_artist_url(artist_id: string) {
+        return `https://music.youtube.com/channel/${artist_id}`;
+    },
+
     get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem) {
         if (s.is(YTNodes.MusicResponsiveListItem)) {
             return {
@@ -667,6 +590,120 @@ export const st = {
         } else {
             throw exhausted(s);
         }
+    },
+
+    options: {
+        get_song_ops: (s: yt.Song) => ({
+            copy_url: {
+                icon: icons.copy,
+                location: "OnlyMenu",
+                title: "copy url",
+                onclick: async () => {
+                    let url = st.get_yt_url(s.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+        }),
+        get_album_ops: (a: yt.Album) => ({
+            open: {
+                icon: icons.open_new_tab,
+                location: "TopRight",
+                title: "open",
+                onclick: async () => {
+                    let s = SongTube.new({
+                        type: "Album",
+                        content: a.id,
+                    });
+                    stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
+                },
+            },
+            add_all_to_queue: {
+                icon: icons.add,
+                location: "OnlyMenu",
+                title: "add all to queue",
+                onclick: async () => {
+                    let s = SongTube.new({
+                        type: "Album",
+                        content: a.id,
+                    });
+                    let items = await s.next_page();
+                    await stores.queue_ops.add_item(...items);
+                },
+            },
+        }),
+        get_playlist_ops: (p: yt.Playlist) => ({
+            open: {
+                icon: icons.open_new_tab,
+                location: "TopRight",
+                title: "open",
+                onclick: async () => {
+                    let s = SongTube.new({
+                        type: "Playlist",
+                        content: p.id,
+                    });
+                    stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
+                },
+            },
+        }),
+        get_artist_ops: (a: yt.Artist) => ({
+            copy_channel_url: {
+                icon: icons.copy,
+                location: "OnlyMenu",
+                title: "copy channel url",
+                onclick: async () => {
+                    let url = st.get_channel_url(a.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+            copy_artist_url: {
+                icon: icons.copy,
+                location: "OnlyMenu",
+                title: "copy artist url",
+                onclick: async () => {
+                    let url = st.get_artist_url(a.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+            explore_songs: () => {
+                if (a.typ == "Artist") {
+                    return [{
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore songs",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "ArtistSongs",
+                                content: a.id,
+                            });
+                            stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
+                        },
+                    }];
+                } else {
+                    return [];
+                }
+            },
+            explore_releases: () => {
+                if (a.typ == "Channel") {
+                    return [{
+                        icon: icons.open_new_tab,
+                        location: "TopRight",
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = SongTube.new({
+                                type: "ArtistReleases",
+                                content: a.id,
+                            });
+                            stores.new_tab(s, "Artist " + a.name + " releases", a.thumbnails.at(0)?.url ?? null);
+                        },
+                    }];
+                } else {
+                    return [];
+                }
+            },
+        }),
     },
 };
 

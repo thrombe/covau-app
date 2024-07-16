@@ -11,7 +11,7 @@ import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
-import { StaticSearcher, type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
+import { type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { writable } from "svelte/store";
@@ -614,18 +614,7 @@ export class DbListItem extends ListItem {
             } break;
             case "StSong": {
                 let s = this.data.t;
-                let options = {
-                    copy_url: {
-                        icon: icons.copy,
-                        location: "OnlyMenu",
-                        title: "copy url",
-                        onclick: async () => {
-                            let url = st.get_yt_url(s.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                };
+                let options = st.options.get_song_ops(s);
 
                 switch (ctx) {
                     case "Queue":
@@ -1123,12 +1112,15 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StAlbum": {
-                let t = this.data.t;
+                let a = this.data.t;
+                let options = st.options.get_album_ops(a);
 
                 switch (ctx) {
                     case "DetailSection":
                     case "Browser":
                         return [
+                            options.open,
+                            options.add_all_to_queue,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -1140,12 +1132,14 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StPlaylist": {
-                let t = this.data.t;
+                let p = this.data.t;
+                let options = st.options.get_playlist_ops(p);
 
                 switch (ctx) {
                     case "DetailSection":
                     case "Browser":
                         return [
+                            options.open,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -1157,12 +1151,17 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StArtist": {
-                let t = this.data.t;
+                let a = this.data.t;
+                let options = st.options.get_artist_ops(a);
 
                 switch (ctx) {
                     case "DetailSection":
                     case "Browser":
                         return [
+                            ...options.explore_songs(),
+                            ...options.explore_releases(),
+                            options.copy_channel_url,
+                            options.copy_artist_url,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
