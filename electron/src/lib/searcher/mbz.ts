@@ -265,7 +265,7 @@ export class MbzListItem extends ListItem {
             },
             async play_song(recording: RecordingWithInfo, type: "song" | "video") {
                 if (self.yt_song) {
-                    return st.st.get_wrapped([self.yt_song], "Song")[0];
+                    return st.st.get_wrapped_items([self.yt_song], "Song")[0];
                 }
 
                 let query = await this.get_query(recording);

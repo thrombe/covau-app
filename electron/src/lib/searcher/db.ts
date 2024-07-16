@@ -11,10 +11,11 @@ import { st } from "./song_tube.ts";
 import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import { utils as server } from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
-import { StaticSearcher, type SearcherConstructorMapper } from "./searcher.ts";
+import { StaticSearcher, type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { writable } from "svelte/store";
+import * as utils from "$lib/utils.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -1230,7 +1231,7 @@ export class DbListItem extends ListItem {
                                 heading: "Album",
                                 content: n,
                             })),
-                            ...song.authors.map(a =>({
+                            ...song.authors.map(a => ({
                                 heading: "Artist",
                                 content: a.name,
                             })),
@@ -1542,7 +1543,21 @@ export class DbListItem extends ListItem {
                 let source = updater.source;
                 switch (source.type) {
                     case "MusimanagerSearch":
-                    case "SongTubeSearch":
+                    case "SongTubeSearch": {
+                        let keys = source.content.artist_keys.filter(k => k.length > 0);
+                        let sources = AsyncStaticSearcher(async () => {
+                            return await Promise.all(keys
+                                .map(k => {
+                                    return st
+                                        .get_artist(k)
+                                        .then(a => st.get_wrapped_item(a, "Artist"))
+                                        .catch(err => {
+                                            let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
+                                            return item;
+                                        });
+                                }
+                                ));
+                        });
                         return [
                             {
                                 type: "Info",
@@ -1572,6 +1587,13 @@ export class DbListItem extends ListItem {
                             sections.options,
                             {
                                 type: "Searcher",
+                                title: "Sources",
+                                options: [],
+                                height: Math.min(5, keys.length),
+                                searcher: writable(sources),
+                            },
+                            {
+                                type: "Searcher",
                                 title: "Known Albums",
                                 options: [],
                                 height: Math.min(5, source.content.known_albums.length),
@@ -1594,6 +1616,7 @@ export class DbListItem extends ListItem {
                             },
                             sections.json,
                         ] as DetailSection[];
+                    } break;
                     case "Mbz":
                         return [];
                     default:

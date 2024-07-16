@@ -618,9 +618,13 @@ export const st = {
         return [...t];
     },
 
-    get_wrapped<T extends { id?: any }>(items: T[], typ: MusicListItem["type"]): StListItem[] {
+    get_wrapped_items<T extends { id?: any }>(items: T[], typ: MusicListItem["type"]): StListItem[] {
         let k = keyed(items.map(e => ({ type: typ, content: e as unknown } as MusicListItem)));
         return k.map(e => new StListItem(e))
+    },
+
+    get_wrapped_item<T extends { id?: any }>(item: T, typ: MusicListItem["type"]): StListItem {
+        return new StListItem(keyed([{ type: typ, content: item as unknown } as MusicListItem])[0])
     },
 
     get_thumbnail(id: string) {

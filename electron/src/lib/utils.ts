@@ -6,3 +6,11 @@ export const fmt_time = (t: number) => {
     return `${Math.floor(t / 3600) ? hours + ":" : ""}${mins}:${secs}`;
 };
 
+export const err_msg = (e: any) => {
+    if (e instanceof Error) {
+        return e.message;
+    } else {
+        return e.toString();
+    }
+}
+
