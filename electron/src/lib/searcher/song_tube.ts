@@ -363,6 +363,23 @@ export class StListItem extends ListItem {
                             return [];
                         }
                     },
+                    explore_releases: () => {
+                        if (a.typ == "Channel") {
+                            return [{
+                                icon: icons.open_new_tab,
+                                location: "TopRight",
+                                title: "explore releases",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        type: "ArtistReleases",
+                                        content: a.id,
+                                    });
+                                    stores.new_tab(s, "Artist " + a.name + " releases", a.thumbnails.at(0)?.url ?? null);
+                                },
+                            }];
+                        } else {
+                            return [];
+                        }
                     },
                 };
 
@@ -371,6 +388,7 @@ export class StListItem extends ListItem {
                     case "Browser":
                         return [
                             ...options.explore_songs(),
+                            ...options.explore_releases(),
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -561,6 +579,27 @@ export const st = {
                     channel_id: s.basic_info.channel_id ?? null
                 }
             ] : [],
+        }
+    },
+
+    async get_artist(id: string): Promise<yt.Artist> {
+        let a = await get(stores.tube).getChannel(id);
+        return {
+            id,
+            typ: (!!a.metadata.music_artist_name) ? "Artist" : "Channel",
+            name: a.metadata.music_artist_name ?? a.metadata.title ?? id,
+            subscribers: null,
+            thumbnails: this.get_thumbnails(a.metadata.thumbnail),
+        };
+    },
+
+    async get_album_playlist_id(id: string) {
+        let a3 = await get(stores.tube).music.getAlbum(id);
+        if (a3.url) {
+            let u = new URL(a3.url);
+            return u.searchParams.get("list") ?? null;
+        } else {
+            return null;
         }
     },
 
