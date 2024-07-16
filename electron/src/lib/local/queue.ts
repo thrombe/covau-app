@@ -7,7 +7,7 @@ import type { Searcher } from "$lib/searcher/searcher.ts";
 import * as icons from "$lib/icons.ts";
 
 import * as covau from "$types/covau.ts";
-import { exhausted } from "$lib/virtual.ts";
+import { exhausted } from "$lib/utils.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import { get } from "svelte/store";

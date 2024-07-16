@@ -17,7 +17,7 @@
 </script>
 
 <script lang="ts">
-    import { type Unique } from "../virtual.ts";
+    import { type Unique } from "../utils.ts";
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import Explorer from "$lib/components/Explorer.svelte";
     import InputBar from "$lib/components/InputBar.svelte";

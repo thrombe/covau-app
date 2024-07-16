@@ -16,7 +16,7 @@
     import SongBrowser from "$lib/local/SongBrowser.svelte";
     import Video from "./Video.svelte";
     import { SyncPlayer } from "./player.ts";
-    import type { Unique } from "$lib/virtual.ts";
+    import type { Unique } from "$lib/utils.ts";
     import { onMount } from "svelte";
     import type { Typ, VideoInfo } from "$lib/searcher/song_tube.ts";
     import Toasts from "$lib/toast/Toasts.svelte";

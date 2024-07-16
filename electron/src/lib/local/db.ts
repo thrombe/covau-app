@@ -1,4 +1,4 @@
-import { exhausted } from "$lib/virtual.ts";
+import { exhausted } from "$lib/utils.ts";
 import * as DB from "$types/db.ts";
 import * as server from "$types/server.ts";
 import { utils } from "$lib/server.ts";

@@ -1,7 +1,7 @@
 <script lang="ts">
     import Observer from "./Observer.svelte";
     import { tick } from "svelte";
-    import type { Unique } from "../virtual.ts";
+    import type { Unique } from "../utils.ts";
     import Scrollbar from "./Scrollbar.svelte";
 
     export let columns: number;

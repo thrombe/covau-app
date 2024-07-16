@@ -2,7 +2,7 @@ import type { ErrorMessage, Message, FeRequest } from '$types/server.ts';
 import { toast } from './toast/toast.ts';
 import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
-import { exhausted } from './virtual.ts';
+import { exhausted } from './utils.ts';
 import * as types from "$types/types.ts";
 
 export const utils = {

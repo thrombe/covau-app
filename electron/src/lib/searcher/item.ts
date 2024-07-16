@@ -1,6 +1,6 @@
 import type { DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
-import { exhausted, type Keyed } from "$lib/virtual";
+import { exhausted, type Keyed } from "$lib/utils.ts";
 import * as covau from "$types/covau.ts";
 import type { DbItem } from "$types/db";
 import * as icons from "$lib/icons.ts";

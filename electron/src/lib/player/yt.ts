@@ -1,5 +1,5 @@
 
-import { exhausted } from '$lib/virtual.ts';
+import { exhausted } from '$lib/utils.ts';
 import * as types from "$types/types.ts";
 import type { MessageHandler } from '$lib/stores.ts';
 import type { ListItem } from '$lib/searcher/item.ts';

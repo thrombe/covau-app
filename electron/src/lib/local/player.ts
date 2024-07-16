@@ -1,5 +1,5 @@
 import { toast } from "$lib/toast/toast.ts";
-import { exhausted } from "$lib/virtual.ts";
+import { exhausted } from "$lib/utils.ts";
 import type { PlayerMessage, PlayerCommand } from "$types/server.ts";
 import type { MessageHandler } from "$lib/stores.ts";
 import type { ListItem } from "$lib/searcher/item.ts";

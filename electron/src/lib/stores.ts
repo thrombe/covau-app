@@ -4,7 +4,7 @@ import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
 import * as Mbz from "$lib/searcher/mbz.ts";
-import { exhausted } from "$lib/virtual.ts";
+import { exhausted } from "$lib/utils.ts";
 import { toast } from "./toast/toast";
 import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
 import { type Searcher, fused_searcher, type NewSearcher } from "./searcher/searcher.ts";

@@ -1,4 +1,4 @@
-import { type Keyed } from "$lib/virtual.ts";
+import { type Keyed } from "$lib/utils.ts";
 import type { ListItem, Option } from "./item.ts";
 import type { Searcher } from "./searcher.ts";
 

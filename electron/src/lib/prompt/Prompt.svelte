@@ -10,7 +10,7 @@
     import * as icons from "$lib/icons.ts";
     import Explorer from "$lib/components/Explorer.svelte";
     import AudioListItem from "$lib/components/AudioListItem.svelte";
-    import type { Unique } from "$lib/virtual.ts";
+    import type { Unique } from "$lib/utils.ts";
     import type { ListItem } from "$lib/searcher/item.ts";
     import { writable } from "svelte/store";
     import * as stores from "$lib/stores.ts";

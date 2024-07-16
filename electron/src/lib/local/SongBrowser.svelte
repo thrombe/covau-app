@@ -8,7 +8,7 @@
     import { get } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
-    import { exhausted } from "$lib/virtual";
+    import { exhausted } from "$lib/utils.ts";
     import DetailItem from "$lib/components/DetailItem.svelte";
 
     export let columns: number;

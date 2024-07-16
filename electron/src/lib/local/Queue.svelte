@@ -6,7 +6,7 @@
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import type { ListItem } from "$lib/searcher/item.ts";
     import { onDestroy, tick } from "svelte";
-    import type { Unique } from "../virtual";
+    import type { Unique } from "../utils.ts";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import * as stores from "$lib/stores.ts";
     import { type QueueManager } from "./queue.ts";

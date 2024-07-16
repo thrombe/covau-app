@@ -3,7 +3,7 @@
     import AudioListItem from "$lib/components/AudioListItem.svelte";
     import ProgressBar from "$lib/components/ProgressBar.svelte";
     import * as stores from "$lib/stores.ts";
-    import { exhausted } from "$lib/virtual.ts";
+    import { exhausted } from "$lib/utils.ts";
     import { CustomListItem } from "$lib/searcher/item";
     import type { Writable } from "svelte/store";
     import * as icons from "$lib/icons.ts";

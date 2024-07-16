@@ -1,6 +1,6 @@
 <script lang="ts">
     import type Innertube from 'youtubei.js/web';
-    import type { Unique } from '../virtual';
+    import type { Unique } from '../utils.ts';
     import AudioListItem from '$lib/components/AudioListItem.svelte';
     import InputBar from '$lib/components/InputBar.svelte';
     import VirtualScrollable from '$lib/components/VirtualScrollable.svelte';

@@ -3,7 +3,7 @@ import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
-import { exhausted, type Keyed } from "$lib/virtual.ts";
+import { exhausted, type Keyed } from "$lib/utils.ts";
 import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";

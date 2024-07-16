@@ -1,6 +1,6 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
-import { exhausted, type Keyed } from "$lib/virtual.ts";
+import { exhausted, type Keyed } from "$lib/utils.ts";
 import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";

@@ -2,7 +2,7 @@
     import type { ListItem } from "$lib/searcher/item.ts";
     import VirtualScrollable from "./VirtualScrollable.svelte";
     import { onDestroy, tick } from "svelte";
-    import { type Unique } from "../virtual.ts";
+    import { type Unique } from "../utils.ts";
     import { get, readable, type Readable } from "svelte/store";
     import type { Searcher } from "$lib/searcher/searcher.ts";
     import * as stores from "$lib/stores.ts";

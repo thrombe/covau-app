@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import * as firestore from "firebase/firestore";
 import { Mutex } from 'async-mutex';
-import { exhausted } from '$lib/virtual';
+import { exhausted } from '$lib/utils.ts';
 
 type PlayerSyncedData = {
     state: 'Initialised';
@@ -721,5 +721,4 @@ async function get_local_time_error(db: Firestore) {
     let time_offset = now - server_now;
     return time_offset;
 }
-
 

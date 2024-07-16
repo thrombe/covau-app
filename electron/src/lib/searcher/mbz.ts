@@ -1,6 +1,6 @@
 import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
-import { exhausted, type Keyed } from "$lib/virtual.ts";
+import { exhausted, type Keyed } from "$lib/utils.ts";
 import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
 import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
