@@ -34,7 +34,7 @@ export type BrowseTab = {
 export type Tab = DetailTab | BrowseTab;
 
 export type MenubarOption = { name: string, key: number } & (
-    | { content_type: "list", type: Db.Typ | St.Typ | "YtVideo" | Mbz.SearchTyp | "covau-group" }
+    | { content_type: "list", type: Db.Typ | St.Typ | "YtVideo" | "YtChannel" | Mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music", source: "Yt" | "Mbz" }
@@ -416,6 +416,15 @@ selected_menubar_option.subscribe(async (option) => {
                         content: {
                             query: q,
                             search: type, // trick it
+                        },
+                    });
+                    s = new_searcher(get(query_input));
+                } break;
+                case "YtChannel": {
+                    new_searcher = (q: string) => St.SongTube.new({
+                        type: "ChannelSearch",
+                        content: {
+                            query: q,
                         },
                     });
                     s = new_searcher(get(query_input));

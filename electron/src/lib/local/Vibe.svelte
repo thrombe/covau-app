@@ -30,6 +30,7 @@
         { key: stores.new_key(), name: "Yt Album", content_type: "list", type: "YtAlbum" },
         { key: stores.new_key(), name: "Yt Playlist", content_type: "list", type: "YtPlaylist" },
         { key: stores.new_key(), name: "Yt Artist", content_type: "list", type: "YtArtist" },
+        { key: stores.new_key(), name: "Yt Channel", content_type: "list", type: "YtChannel" },
         { key: stores.new_key(), name: "St Song", content_type: "list", type: "StSong" },
         { key: stores.new_key(), name: "St Video", content_type: "list", type: "StVideo" },
         { key: stores.new_key(), name: "St Album", content_type: "list", type: "StAlbum" },

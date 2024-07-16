@@ -345,17 +345,24 @@ export class StListItem extends ListItem {
             case "Artist": {
                 let a = this.data.content;
                 let options = {
-                    explore_songs: {
-                        icon: icons.open_new_tab,
-                        location: "TopRight",
-                        title: "explore songs",
-                        onclick: async () => {
-                            let s = SongTube.new({
-                                type: "ArtistSongs",
-                                content: a.id,
-                            });
-                            stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
-                        },
+                    explore_songs: () => {
+                        if (a.typ == "Artist") {
+                            return [{
+                                icon: icons.open_new_tab,
+                                location: "TopRight",
+                                title: "explore songs",
+                                onclick: async () => {
+                                    let s = SongTube.new({
+                                        type: "ArtistSongs",
+                                        content: a.id,
+                                    });
+                                    stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
+                                },
+                            }];
+                        } else {
+                            return [];
+                        }
+                    },
                     },
                 };
 
@@ -363,7 +370,7 @@ export class StListItem extends ListItem {
                     case "DetailSection":
                     case "Browser":
                         return [
-                            options.explore_songs,
+                            ...options.explore_songs(),
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -667,6 +674,8 @@ export class SongTube extends Unpaged<MusicListItem> {
             return await this.next_page_search(this.query.content.query, this.query.content.search);
         } else if (this.query.type == "VideoSearch") {
             return await this.next_page_search(this.query.content.query, "YtVideo");
+        } else if (this.query.type == "ChannelSearch") {
+            return await this.next_page_channel_search(this.query.content.query);
         } else if (this.query.type == 'ArtistSongs') {
             let r = await this.next_page_artist_songs(this.query.content);
             return r;
@@ -857,6 +866,47 @@ export class SongTube extends Unpaged<MusicListItem> {
                 return await this.next_page_playlist(r.playlist_id);
             }
         }
+    }
+    channel_results: YT.Search | null = null;
+    protected async next_page_channel_search(query: string) {
+        if (query.length == 0) {
+            this.has_next_page = false;
+            return [];
+        }
+
+        let items: Array<YTNodes.Channel> = [];
+        if (this.channel_results == null) {
+            this.channel_results = await this.tube.search(query, { type: "channel" });
+
+            if (!this.channel_results.results) {
+                this.has_next_page = false;
+                return [];
+            }
+
+            items = this.channel_results.results.filterType(YTNodes.Channel).map(a => a);
+        } else {
+            this.channel_results = await this.channel_results.getContinuation();
+
+            if (!this.channel_results.results) {
+                this.has_next_page = false;
+                return [];
+            }
+
+            items = this.channel_results.results.filterType(YTNodes.Channel).map(a => a);
+        }
+        
+        let mli: MusicListItem[] = items.map(ch => ({
+            type: "Artist",
+            content: {
+                id: ch.id,
+                typ: "Channel",
+                thumbnails: st.get_thumbnails(ch.author.thumbnails),
+                name: ch.author.name ?? ch.id,
+                subscribers: ch.video_count.text ?? ch.subscriber_count.text ?? null,
+            },
+        }));
+        let k = keyed(mli);
+        return k as RObject[];
     }
     protected async next_page_search(query: string, typ: Typ | "YtVideo") {
         if (query.length == 0) {
