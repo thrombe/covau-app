@@ -54,7 +54,7 @@ export class DbListItem extends ListItem {
     }
 
     get_key(): unknown {
-        return this.data.get_key();
+        return this.data.id;
     }
 
     typ() {
@@ -551,6 +551,57 @@ export class DbListItem extends ListItem {
 
     protected ops() {
         return {
+            options: {
+                like: {
+                    icon: icons.covau_icon,
+                    location: "OnlyMenu",
+                    title: "like",
+                    onclick: async () => {
+                        await db.txn(async db => {
+                            let item = this.data as DB.DbItem<unknown>;
+                            console.log(item);
+                            item.metadata.likes += 1;
+                            this.data.metadata = await db.update_metadata(item);
+                        });
+                    },
+                },
+                dislike: {
+                    icon: icons.covau_icon,
+                    location: "OnlyMenu",
+                    title: "dislike",
+                    onclick: async () => {
+                        await db.txn(async db => {
+                            let item = this.data as DB.DbItem<unknown>;
+                            item.metadata.dislikes += 1;
+                            this.data.metadata = await db.update_metadata(item);
+                        });
+                    },
+                },
+                unlike: {
+                    icon: icons.covau_icon,
+                    location: "OnlyMenu",
+                    title: "un-like",
+                    onclick: async () => {
+                        await db.txn(async db => {
+                            let item = this.data as DB.DbItem<unknown>;
+                            item.metadata.likes -= 1;
+                            this.data.metadata = await db.update_metadata(item);
+                        });
+                    },
+                },
+                undislike: {
+                    icon: icons.covau_icon,
+                    location: "OnlyMenu",
+                    title: "un-dislike",
+                    onclick: async () => {
+                        await db.txn(async db => {
+                            let item = this.data as DB.DbItem<unknown>;
+                            item.metadata.dislikes -= 1;
+                            this.data.metadata = await db.update_metadata(item);
+                        });
+                    },
+                },
+            },
             get_artist_searcher_from_keys: (keys: string[]) => {
                 return AsyncStaticSearcher(async () => {
                     return await Promise.all(keys
@@ -562,8 +613,7 @@ export class DbListItem extends ListItem {
                                     let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
                                     return item;
                                 });
-                        }
-                        ));
+                        }));
                 });
             },
         };
@@ -594,6 +644,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.queue_play,
                             common_options.queue_remove_while_in_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -602,6 +656,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -621,6 +679,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.queue_play,
                             common_options.queue_remove_while_in_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             ...common_options.open_album(s.album),
                             common_options.open_details,
@@ -630,6 +692,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             ...common_options.open_album(s.album),
                             common_options.open_details,
@@ -674,6 +740,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.queue_play,
                             common_options.queue_remove_while_in_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -682,6 +752,10 @@ export class DbListItem extends ListItem {
                         return [
                             common_options.detour,
                             common_options.queue_add,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
@@ -730,6 +804,10 @@ export class DbListItem extends ListItem {
                         return [
                             options.open,
                             options.add_all_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -808,6 +886,10 @@ export class DbListItem extends ListItem {
                             options.open_unexplored,
                             options.add_saved_to_queue,
                             options.add_all_unexplored_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -857,6 +939,10 @@ export class DbListItem extends ListItem {
                         return [
                             options.open,
                             options.add_all_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -905,6 +991,10 @@ export class DbListItem extends ListItem {
                         return [
                             options.open,
                             options.add_all_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -953,6 +1043,10 @@ export class DbListItem extends ListItem {
                         return [
                             options.open,
                             options.add_all_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -1014,6 +1108,15 @@ export class DbListItem extends ListItem {
                                     await stores.queue_ops.add_item(...songs);
                                 },
                             },
+                            open_sources: {
+                                icon: icons.open_new_tab,
+                                location: "OnlyMenu",
+                                title: "open sources",
+                                onclick: async () => {
+                                    let s = ops.get_artist_searcher_from_keys(ss.artist_keys.filter(k => k.length > 0));
+                                    stores.new_tab(s, `${u.title} Sources`);
+                                },
+                            },
                         };
 
                         switch (ctx) {
@@ -1022,16 +1125,12 @@ export class DbListItem extends ListItem {
                                 return [
                                     options.open_songs,
                                     options.open_known_albums,
-                                    {
-                                        icon: icons.open_new_tab,
-                                        location: "OnlyMenu",
-                                        title: "open sources",
-                                        onclick: async () => {
-                                            let s = ops.get_artist_searcher_from_keys(ss.artist_keys.filter(k => k.length > 0));
-                                            stores.new_tab(s, `${u.title} Sources`);
-                                        },
-                                    },
+                                    options.open_sources,
                                     options.add_all_to_queue,
+                                    ops.options.like,
+                                    ops.options.dislike,
+                                    ops.options.unlike,
+                                    ops.options.undislike,
                                     common_options.open_details,
                                 ] as Option[];
                             case "Queue":
@@ -1097,6 +1196,10 @@ export class DbListItem extends ListItem {
                                     options.open_songs,
                                     options.open_known_albums,
                                     options.add_all_to_queue,
+                                    ops.options.like,
+                                    ops.options.dislike,
+                                    ops.options.unlike,
+                                    ops.options.undislike,
                                     common_options.open_details,
                                 ] as Option[];
                             case "Queue":
@@ -1121,6 +1224,10 @@ export class DbListItem extends ListItem {
                         return [
                             options.open,
                             options.add_all_to_queue,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -1140,6 +1247,10 @@ export class DbListItem extends ListItem {
                     case "Browser":
                         return [
                             options.open,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
@@ -1162,6 +1273,10 @@ export class DbListItem extends ListItem {
                             ...options.explore_releases(),
                             options.copy_channel_url,
                             options.copy_artist_url,
+                            ops.options.like,
+                            ops.options.dislike,
+                            ops.options.unlike,
+                            ops.options.undislike,
                             common_options.open_details,
                         ] as Option[];
                     case "Queue":
