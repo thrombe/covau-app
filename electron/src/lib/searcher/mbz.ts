@@ -1,7 +1,7 @@
 import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type OptionsDescription } from "./item.ts";
 import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
@@ -181,10 +181,9 @@ export class MbzListItem extends ListItem {
                 if (ctx == "Playbar") {
                     return old;
                 }
-                old.push({
+                old.menu.push({
                     title: "Set as play source",
                     icon: icons.floppy_disk,
-                    location: "OnlyMenu",
                     onclick: () => {
                         self.yt_song = stitem.data.content as types.yt.Song;
                         toast("song set as play source for Mbz item");
@@ -289,7 +288,7 @@ export class MbzListItem extends ListItem {
             }
         };
     }
-    impl_options(ctx: RenderContext): Option[] {
+    impl_options(ctx: RenderContext): OptionsDescription {
         let common_options = this.common_options();
         let ops = this.ops();
 
@@ -299,7 +298,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     search_song: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtSong play source",
                         onclick: async () => {
                             let query = song.title + " by " + song.creator;
@@ -308,7 +306,6 @@ export class MbzListItem extends ListItem {
                     },
                     search_video: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtVideo play source",
                         onclick: async () => {
                             let query = song.title + " by " + song.creator;
@@ -319,25 +316,41 @@ export class MbzListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            options.search_song,
-                            options.search_video,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            options.search_song,
-                            options.search_video,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                options.search_song,
+                                options.search_video,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -347,7 +360,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.recording.mbz(r.id);
@@ -357,7 +369,6 @@ export class MbzListItem extends ListItem {
                     },
                     lbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy listenbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.recording.lbz(r.id);
@@ -367,7 +378,6 @@ export class MbzListItem extends ListItem {
                     },
                     search_song: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtSong play source",
                         onclick: async () => {
                             let rec = await ops.upgrade_to_recording_with_info(r);
@@ -379,7 +389,6 @@ export class MbzListItem extends ListItem {
                     },
                     search_video: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtVideo play source",
                         onclick: async () => {
                             let rec = await ops.upgrade_to_recording_with_info(r);
@@ -391,32 +400,49 @@ export class MbzListItem extends ListItem {
                     },
                 };
 
-                
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            options.search_song,
-                            options.search_video,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            options.search_song,
-                            options.search_video,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Prompt":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -426,7 +452,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.recording.mbz(rec.id);
@@ -436,7 +461,6 @@ export class MbzListItem extends ListItem {
                     },
                     lbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy listenbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.recording.lbz(rec.id);
@@ -446,7 +470,6 @@ export class MbzListItem extends ListItem {
                     },
                     search_song: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtSong play source",
                         onclick: async () => {
                             let query = await ops.get_query(rec)
@@ -457,7 +480,6 @@ export class MbzListItem extends ListItem {
                     },
                     search_video: {
                         icon: icons.floppy_disk,
-                        location: "OnlyMenu",
                         title: "search YtVideo play source",
                         onclick: async () => {
                             let query = await ops.get_query(rec)
@@ -470,29 +492,47 @@ export class MbzListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            options.search_song,
-                            options.search_video,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            options.search_song,
-                            options.search_video,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Prompt":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -502,7 +542,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release.mbz(a.id);
@@ -512,7 +551,6 @@ export class MbzListItem extends ListItem {
                     },
                     lbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy listenbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release.lbz(a.id);
@@ -522,7 +560,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_recordings: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore recordings",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -536,18 +573,30 @@ export class MbzListItem extends ListItem {
                 };
                 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.explore_recordings,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_recordings,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_recordings,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -557,7 +606,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release.mbz(a.id);
@@ -567,7 +615,6 @@ export class MbzListItem extends ListItem {
                     },
                     lbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy listenbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release.lbz(a.id);
@@ -577,7 +624,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_recordings: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore recordings",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -591,18 +637,30 @@ export class MbzListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.explore_recordings,
-                            options.mbz_url,
-                            options.lbz_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_recordings,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_recordings,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -612,7 +670,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release_group.mbz(a.id);
@@ -622,7 +679,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_releases: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore releases",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -635,7 +691,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_recordings: {
                         icon: icons.open_new_tab,
-                        location: "OnlyMenu",
                         title: "explore recordings",
                         onclick: async () => {
                             let releases = await mbz.recordings_from_releases(a.releases);
@@ -645,7 +700,6 @@ export class MbzListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let releases = await mbz.recordings_from_releases(a.releases);
@@ -655,19 +709,32 @@ export class MbzListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.explore_releases,
-                            options.explore_recordings,
-                            options.add_all_to_queue,
-                            options.mbz_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.add_all_to_queue,
+                                options.mbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.add_all_to_queue,
+                                options.mbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -677,7 +744,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release_group.mbz(a.id);
@@ -687,7 +753,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_releases: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore releases",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -700,7 +765,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_recordings: {
                         icon: icons.open_new_tab,
-                        location: "OnlyMenu",
                         title: "explore recordings",
                         onclick: async () => {
                             let rel = await ops.upgrade_to_recording_with_info(a);
@@ -711,7 +775,6 @@ export class MbzListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let rel = await ops.upgrade_to_recording_with_info(a);
@@ -722,19 +785,32 @@ export class MbzListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.explore_releases,
-                            options.explore_recordings,
-                            options.add_all_to_queue,
-                            options.mbz_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.add_all_to_queue,
+                                options.mbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.add_all_to_queue,
+                                options.mbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -744,7 +820,6 @@ export class MbzListItem extends ListItem {
                 let options = {
                     mbz_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy musicbrainz url",
                         onclick: async () => {
                             let url = mbz.urls.release_group.mbz(a.id);
@@ -754,7 +829,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_release_groups: {
                         icon: icons.open_new_tab,
-                        location: "OnlyMenu",
                         title: "explore release groups",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -767,7 +841,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_releases: {
                         icon: icons.open_new_tab,
-                        location: "OnlyMenu",
                         title: "explore releases",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -780,7 +853,6 @@ export class MbzListItem extends ListItem {
                     },
                     explore_recordings: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore recordings",
                         onclick: async () => {
                             let s = Mbz.new({
@@ -794,19 +866,32 @@ export class MbzListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.explore_release_groups,
-                            options.explore_releases,
-                            options.explore_recordings,
-                            options.mbz_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_release_groups,
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.mbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_release_groups,
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.mbz_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }

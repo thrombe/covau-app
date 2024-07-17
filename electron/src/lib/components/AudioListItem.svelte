@@ -69,54 +69,51 @@
         </div>
     </div>
 
-    {#each options as option}
-        {#if option.location == "TopRight"}
-            <button class="absolute pop-button top-0 right-0 p-1 m-2" on:pointerup={option.onclick}>
+    {#if options.top_right != null}
+        <button class="absolute pop-button top-0 right-0 p-1 m-2" on:pointerup={options.top_right.onclick}>
+            <img
+                alt="remove"
+                draggable={false}
+                class="h-3 opacity-50"
+                src={options.top_right.icon}
+            />
+        </button>
+    {/if}
+    {#if options.icon_top != null}
+        <div
+            class="absolute h-full flex flex-col justify-center left-0 top-0"
+        >
+            <button
+                class="queue-button"
+                class:play-button={true}
+                on:pointerup={options.icon_top.onclick}
+            >
                 <img
-                    alt="remove"
+                    alt="play"
                     draggable={false}
-                    class="h-3 opacity-50"
+                    class="scale-[50%]"
+                    src={options.icon_top.icon}
+                />
+            </button>
+        </div>
+    {/if}
+
+    <div class="absolute bottom-0 right-0 flex flex-row gap-1 max-w-[80%] m-2">
+        {#each options.bottom as option}
+            <button class="pop-button p-1" on:pointerup={option.onclick}>
+                <img
+                    alt={option.title}
+                    draggable={false}
+                    class="h-3 w-3 opacity-50"
                     src={option.icon}
                 />
             </button>
-        {:else if option.location == "IconTop"}
-            <div
-                class="absolute h-full flex flex-col justify-center left-0 top-0"
-            >
-                <button
-                    class="queue-button"
-                    class:play-button={true}
-                    on:pointerup={option.onclick}
-                >
-                    <img
-                        alt="play"
-                        draggable={false}
-                        class="scale-[50%]"
-                        src={option.icon}
-                    />
-                </button>
-            </div>
-        {/if}
-    {/each}
-
-    <div class="absolute bottom-0 right-0 flex flex-row gap-1 max-w-[80%] m-2">
-        {#each options as option}
-            {#if option.location == "BottomRight"}
-                <button class="pop-button p-1" on:pointerup={option.onclick}>
-                    <img
-                        alt={option.title}
-                        draggable={false}
-                        class="h-3 w-3 opacity-50"
-                        src={option.icon}
-                    />
-                </button>
-            {/if}
         {/each}
 
-        {#if options.length > 0}
+        {#if options.menu.length > 0}
             <div class="relative">
                 <ThreeDotMenu
-                    {options}
+                    options={options.menu}
                     classes="-top-8 right-8"
                     let:show_menu
                     let:on_menu_click

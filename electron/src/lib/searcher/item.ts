@@ -10,15 +10,21 @@ import * as types from "$types/types.ts";
 import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
+
+export type OptionsDescription = {
+    icon_top: Option | null,
+    top_right: Option | null,
+    bottom: Option[],
+    menu: Option[],
+};
+
 export type Callback = (() => void) | (() => Promise<void>);
 export type Option = {
     icon: string,
     title: string,
-    location: "IconTop" | "TopRight" | "BottomRight" | "OnlyMenu",
     onclick: Callback,
 };
 
-export type DetailOption = Omit<Option, "location">;
 export type InfoPiece = {
     heading: string,
     content: string | null,
@@ -30,12 +36,12 @@ export type DetailSection = ({
     type: "Searcher",
     title: string,
     searcher: Writable<Searcher>,
-    options: DetailOption[],
+    options: Option[],
     height: number,
 } | {
     type: "Options",
     title: string,
-    options: DetailOption[],
+    options: Option[],
 } | {
     type: "Rearrange",
     title: string,
@@ -49,7 +55,7 @@ export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Custom" | "Not
 
 
 export abstract class ListItem implements Keyed {
-    custom_options: ((ctx: RenderContext, old: Option[]) => Option[])[] = [];
+    custom_options: ((ctx: RenderContext, old: OptionsDescription) => OptionsDescription)[] = [];
 
     options(ctx: RenderContext) {
         let ops = this.impl_options(ctx);
@@ -63,7 +69,6 @@ export abstract class ListItem implements Keyed {
         let common_options = {
             queue_play: {
                 icon: icons.play,
-                location: "IconTop",
                 title: "play",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -72,7 +77,6 @@ export abstract class ListItem implements Keyed {
             },
             queue_remove_while_in_queue: {
                 icon: icons.remove,
-                location: "TopRight",
                 title: "remove item",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -81,7 +85,6 @@ export abstract class ListItem implements Keyed {
             },
             // queue_remove: {
             //     icon: icons.remove,
-            //     location: "OnlyMenu",
             //     title: "remove from queue",
             //     onclick: async () => {
             //         let stores = await stores_ts;
@@ -90,7 +93,6 @@ export abstract class ListItem implements Keyed {
             // },
             detour: {
                 icon: icons.play,
-                location: "IconTop",
                 title: "play",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -99,7 +101,6 @@ export abstract class ListItem implements Keyed {
             },
             queue_add: {
                 icon: icons.add,
-                location: "TopRight",
                 title: "add to queue",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -108,7 +109,6 @@ export abstract class ListItem implements Keyed {
             },
             open_details: {
                 icon: icons.open_new_tab,
-                location: "BottomRight",
                 title: "details",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -118,7 +118,6 @@ export abstract class ListItem implements Keyed {
             },
             refresh_details: {
                 icon: icons.repeat,
-                location: "OnlyMenu",
                 title: "refresh details",
                 onclick: async () => {
                     let stores = await stores_ts;
@@ -133,7 +132,6 @@ export abstract class ListItem implements Keyed {
                 }
                 let op = {
                     icon: icons.open_new_tab,
-                    location: "OnlyMenu",
                     title: "open album",
                     onclick: async () => {
                         let st = await import("$lib/searcher/song_tube.ts");
@@ -147,6 +145,12 @@ export abstract class ListItem implements Keyed {
                 };
                 return [op];
             },
+            empty_ops: {
+                icon_top: null,
+                top_right: null,
+                bottom: [] as Option[],
+                menu: [] as Option[],
+            } as OptionsDescription,
         };
         return common_options;
     }
@@ -155,7 +159,7 @@ export abstract class ListItem implements Keyed {
             options: {
                 type: "Options",
                 title: "Options",
-                options: this.options("DetailSection"),
+                options: this.options("DetailSection").menu,
             },
             json: {
                 type: "PrettyJson",
@@ -226,7 +230,7 @@ export abstract class ListItem implements Keyed {
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
     abstract title_sub(): string | null;
-    abstract impl_options(ctx: RenderContext): Option[];
+    abstract impl_options(ctx: RenderContext): OptionsDescription;
     abstract sections(): DetailSection[];
 }
 
@@ -255,7 +259,7 @@ export class CustomListItem extends ListItem {
         return this._yt_id;
     }
 
-    async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
+    async handle_drop(): Promise<boolean> {
         return false;
     }
 
@@ -292,7 +296,7 @@ export class CustomListItem extends ListItem {
     }
 
     impl_options(_ctx: RenderContext) {
-        return this._options;
+        return this.common_options().empty_ops;
     }
 
     async saved_covau_song() {

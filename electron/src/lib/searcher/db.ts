@@ -4,7 +4,7 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem } from "./item.ts";
+import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem, type OptionsDescription } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
@@ -554,7 +554,6 @@ export class DbListItem extends ListItem {
             options: {
                 like: {
                     icon: icons.thumbs_up,
-                    location: "BottomRight",
                     title: "like",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -567,7 +566,6 @@ export class DbListItem extends ListItem {
                 },
                 dislike: {
                     icon: icons.thumbs_down,
-                    location: "BottomRight",
                     title: "dislike",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -579,7 +577,6 @@ export class DbListItem extends ListItem {
                 },
                 unlike: {
                     icon: icons.thumbs_up,
-                    location: "OnlyMenu",
                     title: "un-like",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -591,7 +588,6 @@ export class DbListItem extends ListItem {
                 },
                 undislike: {
                     icon: icons.thumbs_down,
-                    location: "OnlyMenu",
                     title: "un-dislike",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -619,7 +615,7 @@ export class DbListItem extends ListItem {
         };
     }
 
-    impl_options(ctx: RenderContext): Option[] {
+    impl_options(ctx: RenderContext): OptionsDescription {
         let common_options = this.common_options();
         let ops = this.ops();
 
@@ -629,7 +625,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     copy_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy url",
                         onclick: async () => {
                             let url = st.get_yt_url(s.key);
@@ -641,37 +636,48 @@ export class DbListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            options.copy_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            options.copy_url,
-                            common_options.open_details,
-                            ops.options.like,
-                            ops.options.dislike,
-                        ] as Option[];
+                        return {
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "DetailSection":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            options.copy_url,
-                            common_options.refresh_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                options.copy_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -682,31 +688,51 @@ export class DbListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            options.copy_url,
-                            ...common_options.open_album(s.album),
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                ...common_options.open_album(s.album),
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            options.copy_url,
-                            ...common_options.open_album(s.album),
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                ...common_options.open_album(s.album),
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                options.copy_url,
+                                ...common_options.open_album(s.album),
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -716,7 +742,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     copy_url: {
                         icon: icons.copy,
-                        location: "OnlyMenu",
                         title: "copy source url",
                         onclick: async () => {
                             for (let source of s.play_sources) {
@@ -741,31 +766,48 @@ export class DbListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            options.copy_url,
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            options.copy_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.copy_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                options.copy_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -775,7 +817,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "open",
                         onclick: async () => {
                             let s = Db.new({
@@ -788,7 +829,6 @@ export class DbListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let s = Db.new({
@@ -803,21 +843,36 @@ export class DbListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -827,7 +882,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     open_saved: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "open saved",
                         onclick: async () => {
                             let s = Db.new({
@@ -840,7 +894,6 @@ export class DbListItem extends ListItem {
                     },
                     open_unexplored: {
                         icon: icons.open_new_tab,
-                        location: "OnlyMenu",
                         title: "open unexplored",
                         onclick: async () => {
                             let s = Db.new({
@@ -853,7 +906,6 @@ export class DbListItem extends ListItem {
                     },
                     add_saved_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all saved to queue",
                         onclick: async () => {
                             let s = Db.new({
@@ -867,7 +919,6 @@ export class DbListItem extends ListItem {
                     },
                     add_all_unexplored_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all unexplored to queue",
                         onclick: async () => {
                             let songs = a.unexplored_songs ?? [];
@@ -883,23 +934,40 @@ export class DbListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open_saved,
-                            options.open_unexplored,
-                            options.add_saved_to_queue,
-                            options.add_all_unexplored_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open_saved,
+                                options.open_unexplored,
+                                options.add_saved_to_queue,
+                                options.add_all_unexplored_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open_saved,
+                                options.open_unexplored,
+                                options.add_saved_to_queue,
+                                options.add_all_unexplored_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -910,7 +978,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "open",
                         onclick: async () => {
                             let s = Db.new({
@@ -923,7 +990,6 @@ export class DbListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let s = Db.new({
@@ -938,21 +1004,36 @@ export class DbListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -962,7 +1043,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "open",
                         onclick: async () => {
                             let s = Db.new({
@@ -975,7 +1055,6 @@ export class DbListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let s = Db.new({
@@ -990,21 +1069,36 @@ export class DbListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -1014,7 +1108,6 @@ export class DbListItem extends ListItem {
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "open",
                         onclick: async () => {
                             let s = Db.new({
@@ -1027,7 +1120,6 @@ export class DbListItem extends ListItem {
                     },
                     add_all_to_queue: {
                         icon: icons.add,
-                        location: "OnlyMenu",
                         title: "add all to queue",
                         onclick: async () => {
                             let s = Db.new({
@@ -1042,21 +1134,36 @@ export class DbListItem extends ListItem {
                 };
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -1064,14 +1171,11 @@ export class DbListItem extends ListItem {
             case "Updater": {
                 let u = this.data.t;
                 switch (u.source.type) {
-                    case "Mbz":
-                        return [];
                     case "MusimanagerSearch": {
                         let ss = u.source.content;
                         let options = {
                             open_songs: {
                                 icon: icons.open_new_tab,
-                                location: "TopRight",
                                 title: "open songs",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1084,7 +1188,6 @@ export class DbListItem extends ListItem {
                             },
                             open_known_albums: {
                                 icon: icons.open_new_tab,
-                                location: "OnlyMenu",
                                 title: "open known albums",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1097,7 +1200,6 @@ export class DbListItem extends ListItem {
                             },
                             add_all_to_queue: {
                                 icon: icons.add,
-                                location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1114,7 +1216,6 @@ export class DbListItem extends ListItem {
                             },
                             open_sources: {
                                 icon: icons.open_new_tab,
-                                location: "OnlyMenu",
                                 title: "open sources",
                                 onclick: async () => {
                                     let s = ops.get_artist_searcher_from_keys(ss.artist_keys.filter(k => k.length > 0));
@@ -1124,23 +1225,40 @@ export class DbListItem extends ListItem {
                         };
 
                         switch (ctx) {
-                            case "DetailSection":
                             case "Browser":
-                                return [
-                                    options.open_songs,
-                                    options.open_known_albums,
-                                    options.open_sources,
-                                    options.add_all_to_queue,
-                                    ops.options.like,
-                                    ops.options.dislike,
-                                    ops.options.unlike,
-                                    ops.options.undislike,
-                                    common_options.open_details,
-                                ] as Option[];
+                                return {
+                                    ...common_options.empty_ops,
+                                    bottom: [
+                                        ops.options.like,
+                                        ops.options.dislike,
+                                    ],
+                                    menu: [
+                                        options.open_songs,
+                                        options.open_known_albums,
+                                        options.open_sources,
+                                        options.add_all_to_queue,
+                                        common_options.open_details,
+                                    ],
+                                };
+                            case "DetailSection":
+                                return {
+                                    ...common_options.empty_ops,
+                                    menu: [
+                                        options.open_songs,
+                                        options.open_known_albums,
+                                        options.open_sources,
+                                        options.add_all_to_queue,
+                                        ops.options.like,
+                                        ops.options.dislike,
+                                        ops.options.unlike,
+                                        ops.options.undislike,
+                                        common_options.refresh_details,
+                                    ],
+                                };
                             case "Queue":
                             case "Playbar":
                             case "Prompt":
-                                return [];
+                                return common_options.empty_ops;
                             default:
                                 throw exhausted(ctx);
                         }
@@ -1150,7 +1268,6 @@ export class DbListItem extends ListItem {
                         let options = {
                             open_songs: {
                                 icon: icons.open_new_tab,
-                                location: "TopRight",
                                 title: "open songs",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1163,7 +1280,6 @@ export class DbListItem extends ListItem {
                             },
                             open_known_albums: {
                                 icon: icons.open_new_tab,
-                                location: "OnlyMenu",
                                 title: "open known albums",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1176,7 +1292,6 @@ export class DbListItem extends ListItem {
                             },
                             add_all_to_queue: {
                                 icon: icons.add,
-                                location: "OnlyMenu",
                                 title: "add all to queue",
                                 onclick: async () => {
                                     let s = Db.new({
@@ -1194,26 +1309,44 @@ export class DbListItem extends ListItem {
                         };
 
                         switch (ctx) {
-                            case "DetailSection":
                             case "Browser":
-                                return [
-                                    options.open_songs,
-                                    options.open_known_albums,
-                                    options.add_all_to_queue,
-                                    ops.options.like,
-                                    ops.options.dislike,
-                                    ops.options.unlike,
-                                    ops.options.undislike,
-                                    common_options.open_details,
-                                ] as Option[];
+                                return {
+                                    ...common_options.empty_ops,
+                                    bottom: [
+                                        ops.options.like,
+                                        ops.options.dislike,
+                                    ],
+                                    menu: [
+                                        options.open_songs,
+                                        options.open_known_albums,
+                                        options.add_all_to_queue,
+                                        common_options.open_details,
+                                    ],
+                                };
+                            case "DetailSection":
+                                return {
+                                    ...common_options.empty_ops,
+                                    menu: [
+                                        options.open_songs,
+                                        options.open_known_albums,
+                                        options.add_all_to_queue,
+                                        ops.options.like,
+                                        ops.options.dislike,
+                                        ops.options.unlike,
+                                        ops.options.undislike,
+                                        common_options.refresh_details,
+                                    ],
+                                };
                             case "Queue":
                             case "Playbar":
                             case "Prompt":
-                                return [];
+                                return common_options.empty_ops;
                             default:
                                 throw exhausted(ctx);
                         }
                     } break;
+                    case "Mbz":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(u.source);
                 }
@@ -1223,21 +1356,36 @@ export class DbListItem extends ListItem {
                 let options = st.options.get_album_ops(a);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -1247,20 +1395,34 @@ export class DbListItem extends ListItem {
                 let options = st.options.get_playlist_ops(p);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -1270,23 +1432,40 @@ export class DbListItem extends ListItem {
                 let options = st.options.get_artist_ops(a);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            ...options.explore_songs(),
-                            ...options.explore_releases(),
-                            options.copy_channel_url,
-                            options.copy_artist_url,
-                            ops.options.like,
-                            ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                ...options.explore_songs(),
+                                ...options.explore_releases(),
+                                options.copy_channel_url,
+                                options.copy_artist_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                ...options.explore_songs(),
+                                ...options.explore_releases(),
+                                options.copy_channel_url,
+                                options.copy_artist_url,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
                     case "Playbar":
                     case "Prompt":
-                        return [];
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }

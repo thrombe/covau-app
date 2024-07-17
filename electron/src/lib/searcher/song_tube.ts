@@ -1,7 +1,7 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type OptionsDescription } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
@@ -220,7 +220,7 @@ export class StListItem extends ListItem {
         }
     }
 
-    impl_options(ctx: RenderContext): Option[] {
+    impl_options(ctx: RenderContext): OptionsDescription {
         let common_options = this.common_options();
 
         switch (this.data.type) {
@@ -230,25 +230,40 @@ export class StListItem extends ListItem {
 
                 switch (ctx) {
                     case "Queue":
-                        return [
-                            common_options.queue_play,
-                            common_options.queue_remove_while_in_queue,
-                            options.copy_url,
-                            ...common_options.open_album(s.album),
-                            common_options.open_details,
-                        ] as Option[];
-                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            menu: [
+                                options.copy_url,
+                                common_options.open_details,
+                            ],
+                        };
                     case "Browser":
-                        return [
-                            common_options.detour,
-                            common_options.queue_add,
-                            options.copy_url,
-                            ...common_options.open_album(s.album),
-                            common_options.open_details,
-                        ] as Option[];
-                    case "Prompt":
+                        return {
+                            ...common_options.empty_ops,
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            menu: [
+                                options.copy_url,
+                                ...common_options.open_album(s.album),
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                options.copy_url,
+                                ...common_options.open_album(s.album),
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -258,17 +273,28 @@ export class StListItem extends ListItem {
                 let options = st.options.get_album_ops(a);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            options.add_all_to_queue,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                options.add_all_to_queue,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -278,16 +304,26 @@ export class StListItem extends ListItem {
                 let options = st.options.get_playlist_ops(p);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            options.open,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -297,19 +333,32 @@ export class StListItem extends ListItem {
                 let options = st.options.get_artist_ops(a);
 
                 switch (ctx) {
-                    case "DetailSection":
                     case "Browser":
-                        return [
-                            ...options.explore_songs(),
-                            ...options.explore_releases(),
-                            options.copy_channel_url,
-                            options.copy_artist_url,
-                            common_options.open_details,
-                        ] as Option[];
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                ...options.explore_songs(),
+                                ...options.explore_releases(),
+                                options.copy_channel_url,
+                                options.copy_artist_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                ...options.explore_songs(),
+                                ...options.explore_releases(),
+                                options.copy_channel_url,
+                                options.copy_artist_url,
+                                common_options.refresh_details,
+                            ],
+                        };
                     case "Queue":
-                    case "Prompt":
                     case "Playbar":
-                        return [];
+                    case "Prompt":
+                        return common_options.empty_ops;
                     default:
                         throw exhausted(ctx);
                 }
@@ -596,7 +645,6 @@ export const st = {
         get_song_ops: (s: yt.Song) => ({
             copy_url: {
                 icon: icons.copy,
-                location: "OnlyMenu",
                 title: "copy url",
                 onclick: async () => {
                     let url = st.get_yt_url(s.id);
@@ -608,7 +656,6 @@ export const st = {
         get_album_ops: (a: yt.Album) => ({
             open: {
                 icon: icons.open_new_tab,
-                location: "TopRight",
                 title: "open",
                 onclick: async () => {
                     let s = SongTube.new({
@@ -620,7 +667,6 @@ export const st = {
             },
             add_all_to_queue: {
                 icon: icons.add,
-                location: "OnlyMenu",
                 title: "add all to queue",
                 onclick: async () => {
                     let s = SongTube.new({
@@ -635,7 +681,6 @@ export const st = {
         get_playlist_ops: (p: yt.Playlist) => ({
             open: {
                 icon: icons.open_new_tab,
-                location: "TopRight",
                 title: "open",
                 onclick: async () => {
                     let s = SongTube.new({
@@ -649,7 +694,6 @@ export const st = {
         get_artist_ops: (a: yt.Artist) => ({
             copy_channel_url: {
                 icon: icons.copy,
-                location: "OnlyMenu",
                 title: "copy channel url",
                 onclick: async () => {
                     let url = st.get_channel_url(a.id);
@@ -659,7 +703,6 @@ export const st = {
             },
             copy_artist_url: {
                 icon: icons.copy,
-                location: "OnlyMenu",
                 title: "copy artist url",
                 onclick: async () => {
                     let url = st.get_artist_url(a.id);
@@ -671,7 +714,6 @@ export const st = {
                 if (a.typ == "Artist") {
                     return [{
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore songs",
                         onclick: async () => {
                             let s = SongTube.new({
@@ -689,7 +731,6 @@ export const st = {
                 if (a.typ == "Channel") {
                     return [{
                         icon: icons.open_new_tab,
-                        location: "TopRight",
                         title: "explore releases",
                         onclick: async () => {
                             let s = SongTube.new({

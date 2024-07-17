@@ -474,7 +474,6 @@ selected_menubar_option.subscribe(async (option) => {
                             old.push({
                                 title: "add all to queue",
                                 icon: icons.add,
-                                location: "OnlyMenu",
                                 onclick: async () => {
                                     let items = await s.next_page();
                                     await queue_ops.add_item(...items);

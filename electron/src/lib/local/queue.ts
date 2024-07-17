@@ -263,7 +263,6 @@ export class QueueManager implements Searcher {
             {
                 title: "empty queue",
                 icon: icons.remove,
-                location: "OnlyMenu",
                 onclick: () => {
                     let q = get(queue) as AutoplayQueueManager;
                     let state = q.state;
@@ -277,7 +276,6 @@ export class QueueManager implements Searcher {
             {
                 title: "save queue",
                 icon: icons.floppy_disk,
-                location: "OnlyMenu",
                 onclick: async () => {
                     let _name = await prompter.prompt("Enter queue name");
                     if (!_name) {
@@ -310,7 +308,6 @@ export class QueueManager implements Searcher {
             {
                 title: "reseed autoplay",
                 icon: icons.repeat,
-                location: "OnlyMenu",
                 onclick: async () => {
                     let q = get(queue) as AutoplayQueueManager;
                     let item = q.items.at(q.playing_index ?? (q.items.length - 1)) ?? null;
@@ -325,7 +322,6 @@ export class QueueManager implements Searcher {
             {
                 title: "searcher prompt test",
                 icon: icons.covau_icon,
-                location: "OnlyMenu",
                 onclick: async () => {
                     let new_searcher = (q: string) => Db.new({
                         type: "MmSong",
