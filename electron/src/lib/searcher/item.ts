@@ -5,9 +5,10 @@ import * as covau from "$types/covau.ts";
 import type { DbItem } from "$types/db";
 import * as icons from "$lib/icons.ts";
 import type { Searcher } from "./searcher";
-import type { Writable } from "svelte/store";
+import { get, type Writable } from "svelte/store";
 import * as types from "$types/types.ts";
 import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
+import { toast } from "$lib/toast/toast";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 
@@ -73,6 +74,20 @@ export abstract class ListItem implements Keyed {
                 onclick: async () => {
                     let stores = await stores_ts;
                     await stores.queue_ops.play_item(this);
+                },
+            },
+            set_as_seed: {
+                icon: icons.repeat,
+                title: "set as autoplay seed",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    let queues = await import("$lib/local/queue.ts");
+                    let q = get(stores.queue);
+                    if (q instanceof queues.AutoplayQueueManager) {
+                        await q.init_with_seed(this);
+                    } else {
+                        toast("autoplay is disabled", "error");
+                    }
                 },
             },
             queue_remove_while_in_queue: {

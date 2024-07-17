@@ -659,6 +659,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -672,6 +673,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -686,6 +688,7 @@ export class DbListItem extends ListItem {
                                 ops.options.unlike,
                                 ops.options.undislike,
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };
@@ -720,6 +723,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -734,6 +738,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -749,6 +754,7 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };
@@ -805,6 +811,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -818,6 +825,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -832,6 +840,7 @@ export class DbListItem extends ListItem {
                                 ops.options.unlike,
                                 ops.options.undislike,
                                 options.copy_url,
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };

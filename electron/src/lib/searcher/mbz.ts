@@ -332,6 +332,7 @@ export class MbzListItem extends ListItem {
                             menu: [
                                 options.search_song,
                                 options.search_video,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -343,6 +344,7 @@ export class MbzListItem extends ListItem {
                             menu: [
                                 options.search_song,
                                 options.search_video,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -354,6 +356,7 @@ export class MbzListItem extends ListItem {
                                 common_options.queue_add,
                                 options.search_song,
                                 options.search_video,
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };
@@ -426,6 +429,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -439,6 +443,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -452,6 +457,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };
@@ -522,6 +528,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -535,6 +542,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.open_details,
                             ],
                         };
@@ -548,6 +556,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
                         };
