@@ -265,6 +265,7 @@ export type MessageHandler = ((msg: types.server.PlayerMessage) => Promise<void>
 export interface Player {
     play_item(item: ListItem): (Promise<void> | void);
     pause(): void;
+    unpause(): void;
     on_message(handler: MessageHandler): void;
     destroy(): Promise<void>;
     set_volume(v: number): void;
@@ -279,10 +280,13 @@ export interface Queue {
     add(...item: ListItem[]): Promise<void>;
     play_queue_item(item: ListItem): Promise<void>;
     remove_queue_item(item: ListItem): Promise<void>;
+    play_next(): Promise<void>;
+    play_prev(): Promise<void>;
 }
 export let dummy_player: Player = {
     play_item() { },
     pause() { },
+    unpause() { },
     on_message() { },
     async destroy() { },
     set_volume() { },

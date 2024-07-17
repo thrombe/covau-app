@@ -170,6 +170,15 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+
+    async like(): Promise<void> {
+        toast("can't like this item", "error")
+    }
+
+    async dislike(): Promise<void> {
+        toast("can't dislike this item", "error")
+    }
+
     protected ops() {
         let self = this;
         let wrapper = MapWrapper(async (item) => {

@@ -549,6 +549,14 @@ export class DbListItem extends ListItem {
         }
     }
 
+    async like(): Promise<void> {
+        await this.ops().options.like.onclick();
+    }
+
+    async dislike(): Promise<void> {
+        await this.ops().options.dislike.onclick();
+    }
+
     protected ops() {
         return {
             options: {

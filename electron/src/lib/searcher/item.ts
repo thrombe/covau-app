@@ -220,6 +220,10 @@ export abstract class ListItem implements Keyed {
     abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
 
+    // dbitem methods
+    abstract like(): Promise<void>; 
+    abstract dislike(): Promise<void>; 
+
     // container methods
     abstract handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean>;
 

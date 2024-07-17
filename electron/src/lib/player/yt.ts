@@ -169,6 +169,10 @@ export class YtPlayer {
         }
     }
 
+    unpause() {
+        this.play(null);
+    }
+
     async play_item(item: ListItem) {
         let id = await item.yt_id();
         if (id) {

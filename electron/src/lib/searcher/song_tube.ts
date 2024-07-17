@@ -125,6 +125,14 @@ export class StListItem extends ListItem {
         }
     }
 
+    async like(): Promise<void> {
+        toast("can't like this item", "error")
+    }
+
+    async dislike(): Promise<void> {
+        toast("can't dislike this item", "error")
+    }
+
     async audio_uri() {
         switch (this.data.type) {
             case "Song": {

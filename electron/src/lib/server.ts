@@ -4,6 +4,8 @@ import * as St from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
 import { exhausted } from './utils.ts';
 import * as types from "$types/types.ts";
+import * as stores from "$lib/stores.ts";
+import { get } from 'svelte/store';
 
 export const utils = {
     base_url: `http://localhost:${import.meta.env.SERVER_PORT}/`,
@@ -164,14 +166,46 @@ class FeServer extends Server<FeRequest> {
                 toast(req.content, "error");
                 return null;
             } break;
-            case 'Like':
-            case 'Dislike':
-            case 'Next':
-            case 'Prev':
-            case 'Pause':
-            case 'Play':
-            case 'ToggleMute':
-            case 'TogglePlay':
+            case 'Like': {
+                await get(stores.playing_item).like();
+                stores.playing_item.update(t => t);
+                return null;
+            } break;
+            case 'Dislike': {
+                await get(stores.playing_item).dislike();
+                stores.playing_item.update(t => t);
+                return null;
+            } break;
+            case 'Next': {
+                await get(stores.queue).play_next();
+                stores.queue.update(t => t);
+                return null;
+            } break;
+            case 'Prev': {
+                await get(stores.queue).play_prev();
+                stores.queue.update(t => t);
+                return null;
+            } break;
+            case 'Pause': {
+                get(stores.player).pause();
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'Play': {
+                get(stores.player).unpause();
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'ToggleMute': {
+                get(stores.player).toggle_mute();
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'TogglePlay': {
+                get(stores.player).toggle_pause();
+                stores.player.update(t => t);
+                return null;
+            } break;
             default:
                 throw exhausted(req);
         }
