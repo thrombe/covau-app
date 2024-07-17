@@ -12,7 +12,7 @@
     import { prompter } from "$lib/prompt/prompt";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
-    import type { DetailOption } from "$lib/searcher/item.ts";
+    import type { Option } from "$lib/searcher/item.ts";
     import Video from "$lib/components/Video.svelte";
 
     let player_type = stores.player_type;
@@ -107,7 +107,7 @@
                             }
                             stores.selected_menubar_option_index.set(i);
                         },
-                    } as DetailOption)
+                    } as Option)
             );
 
             let player_options = [
@@ -132,7 +132,7 @@
                         await stores.set_player_type("YtVideoPlayer");
                     },
                 },
-            ] as DetailOption[];
+            ] as Option[];
 
             return [
                 {
