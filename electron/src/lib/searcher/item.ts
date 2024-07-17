@@ -12,7 +12,7 @@ import { toast } from "$lib/toast/toast";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 
-export type OptionsDescription = {
+export type ItemOptions = {
     icon_top: Option | null,
     top_right: Option | null,
     bottom: Option[],
@@ -56,7 +56,7 @@ export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Custom" | "Not
 
 
 export abstract class ListItem implements Keyed {
-    custom_options: ((ctx: RenderContext, old: OptionsDescription) => OptionsDescription)[] = [];
+    custom_options: ((ctx: RenderContext, old: ItemOptions) => ItemOptions)[] = [];
 
     options(ctx: RenderContext) {
         let ops = this.impl_options(ctx);
@@ -165,7 +165,7 @@ export abstract class ListItem implements Keyed {
                 top_right: null,
                 bottom: [] as Option[],
                 menu: [] as Option[],
-            } as OptionsDescription,
+            } as ItemOptions,
         };
         return common_options;
     }
@@ -249,7 +249,7 @@ export abstract class ListItem implements Keyed {
     abstract thumbnail(): string | null;
     abstract default_thumbnail(): string;
     abstract title_sub(): string | null;
-    abstract impl_options(ctx: RenderContext): OptionsDescription;
+    abstract impl_options(ctx: RenderContext): ItemOptions;
     abstract sections(): DetailSection[];
 }
 

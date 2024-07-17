@@ -1,7 +1,7 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext, type OptionsDescription } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
@@ -228,7 +228,7 @@ export class StListItem extends ListItem {
         }
     }
 
-    impl_options(ctx: RenderContext): OptionsDescription {
+    impl_options(ctx: RenderContext): ItemOptions {
         let common_options = this.common_options();
 
         switch (this.data.type) {

@@ -1,7 +1,7 @@
 import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext, type OptionsDescription } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions } from "./item.ts";
 import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
@@ -297,7 +297,7 @@ export class MbzListItem extends ListItem {
             }
         };
     }
-    impl_options(ctx: RenderContext): OptionsDescription {
+    impl_options(ctx: RenderContext): ItemOptions {
         let common_options = this.common_options();
         let ops = this.ops();
 

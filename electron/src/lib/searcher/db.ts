@@ -4,7 +4,7 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem, type OptionsDescription } from "./item.ts";
+import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem, type ItemOptions } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
@@ -629,7 +629,7 @@ export class DbListItem extends ListItem {
         };
     }
 
-    impl_options(ctx: RenderContext): OptionsDescription {
+    impl_options(ctx: RenderContext): ItemOptions {
         let common_options = this.common_options();
         let ops = this.ops();
 
