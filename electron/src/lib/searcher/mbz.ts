@@ -171,12 +171,12 @@ export class MbzListItem extends ListItem {
         }
     }
 
-    async like(): Promise<void> {
-        toast("can't like this item", "error")
+    async like(): Promise<boolean> {
+        return false;
     }
 
-    async dislike(): Promise<void> {
-        toast("can't dislike this item", "error")
+    async dislike(): Promise<boolean> {
+        return false;
     }
 
     protected ops() {

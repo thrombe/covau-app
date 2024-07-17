@@ -221,8 +221,8 @@ export abstract class ListItem implements Keyed {
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
 
     // dbitem methods
-    abstract like(): Promise<void>; 
-    abstract dislike(): Promise<void>; 
+    abstract like(): Promise<boolean>; 
+    abstract dislike(): Promise<boolean>; 
 
     // container methods
     abstract handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean>;
@@ -293,6 +293,14 @@ export class CustomListItem extends ListItem {
 
     default_thumbnail() {
         return this._default_thumbnail;
+    }
+
+    async like(): Promise<boolean> {
+        return false;
+    }
+
+    async dislike(): Promise<boolean> {
+        return false;
     }
 
     async audio_uri() {

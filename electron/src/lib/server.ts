@@ -74,6 +74,7 @@ abstract class Server<Req> {
             try {
                 resp = await this.handle_req(mesg.content);
             } catch (e: any) {
+                console.error(e);
                 let err: string;
                 let trace: string;
                 if (e instanceof Error) {
@@ -167,13 +168,21 @@ class FeServer extends Server<FeRequest> {
                 return null;
             } break;
             case 'Like': {
-                await get(stores.playing_item).like();
+                let item = get(stores.playing_item);
+                let res = await item.dislike();
                 stores.playing_item.update(t => t);
+                if (!res) {
+                    toast(`could not like "${item.title()}"`, "error")
+                }
                 return null;
             } break;
             case 'Dislike': {
-                await get(stores.playing_item).dislike();
+                let item = get(stores.playing_item);
+                let res = await item.dislike();
                 stores.playing_item.update(t => t);
+                if (!res) {
+                    toast(`could not dislike "${item.title()}"`, "error")
+                }
                 return null;
             } break;
             case 'Next': {

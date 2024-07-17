@@ -128,12 +128,6 @@
             $player.toggle_mute();
         }
     };
-
-    let default_item = new CustomListItem(
-        "default",
-        "Nothing is playing",
-        "Nothing"
-    );
 </script>
 
 <div
@@ -144,7 +138,7 @@
     "
 >
     <audio-info class="flex flex-row {mobile ? 'hidden' : ''}">
-        <AudioListItem item={$playing_item ?? default_item} ctx="Playbar" show_buttons={true} />
+        <AudioListItem item={$playing_item} ctx="Playbar" show_buttons={true} />
     </audio-info>
 
     <audio-controls class="pt-4 pb-2">

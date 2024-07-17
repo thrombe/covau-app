@@ -549,12 +549,14 @@ export class DbListItem extends ListItem {
         }
     }
 
-    async like(): Promise<void> {
+    async like(): Promise<boolean> {
         await this.ops().options.like.onclick();
+        return true;
     }
 
-    async dislike(): Promise<void> {
+    async dislike(): Promise<boolean> {
         await this.ops().options.dislike.onclick();
+        return true;
     }
 
     protected ops() {
@@ -570,6 +572,7 @@ export class DbListItem extends ListItem {
                             item.metadata.likes += 1;
                             this.data.metadata = await db.update_metadata(item);
                         });
+                        toast(`"${this.title()}" liked`, "info");
                     },
                 },
                 dislike: {
@@ -581,6 +584,7 @@ export class DbListItem extends ListItem {
                             item.metadata.dislikes += 1;
                             this.data.metadata = await db.update_metadata(item);
                         });
+                        toast(`"${this.title()}" disliked`, "info");
                     },
                 },
                 unlike: {
@@ -592,6 +596,7 @@ export class DbListItem extends ListItem {
                             item.metadata.likes -= 1;
                             this.data.metadata = await db.update_metadata(item);
                         });
+                        toast(`"${this.title()}" un-unliked`, "info");
                     },
                 },
                 undislike: {
@@ -603,6 +608,7 @@ export class DbListItem extends ListItem {
                             item.metadata.dislikes -= 1;
                             this.data.metadata = await db.update_metadata(item);
                         });
+                        toast(`"${this.title()}" un-disliked`, "info");
                     },
                 },
             },

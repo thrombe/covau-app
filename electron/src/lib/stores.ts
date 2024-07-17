@@ -1,5 +1,5 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
-import type { ListItem, Option } from "$lib/searcher/item.ts";
+import { CustomListItem, type ListItem, type Option } from "$lib/searcher/item.ts";
 import * as Db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
 import * as St from "$lib/searcher/song_tube.ts";
@@ -296,7 +296,11 @@ export let dummy_player: Player = {
     is_playing() { return false; },
 };
 
-export let playing_item: Writable<ListItem> = writable();
+export let playing_item: Writable<ListItem> = writable(new CustomListItem(
+    "default",
+    "Nothing is playing",
+    "Nothing"
+));
 // TODO: also allow sync/player
 export let player: Writable<Player> = writable(dummy_player);
 export type PlayerType = "YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None";
