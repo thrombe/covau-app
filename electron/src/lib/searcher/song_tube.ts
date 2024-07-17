@@ -262,6 +262,12 @@ export class StListItem extends ListItem {
                             ],
                         };
                     case "Playbar":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                common_options.open_details,
+                            ],
+                        };
                     case "Prompt":
                         return common_options.empty_ops;
                     default:

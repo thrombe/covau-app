@@ -144,7 +144,7 @@
     "
 >
     <audio-info class="flex flex-row {mobile ? 'hidden' : ''}">
-        <AudioListItem item={$playing_item ?? default_item} ctx="Playbar" />
+        <AudioListItem item={$playing_item ?? default_item} ctx="Playbar" show_buttons={true} />
     </audio-info>
 
     <audio-controls class="pt-4 pb-2">

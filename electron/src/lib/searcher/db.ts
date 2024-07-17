@@ -676,6 +676,14 @@ export class DbListItem extends ListItem {
                             ],
                         };
                     case "Playbar":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                common_options.open_details,
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                        };
                     case "Prompt":
                         return common_options.empty_ops;
                     default:
@@ -731,6 +739,14 @@ export class DbListItem extends ListItem {
                             ],
                         };
                     case "Playbar":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                common_options.open_details,
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                        };
                     case "Prompt":
                         return common_options.empty_ops;
                     default:
@@ -806,6 +822,14 @@ export class DbListItem extends ListItem {
                             ],
                         };
                     case "Playbar":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                common_options.open_details,
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                        };
                     case "Prompt":
                         return common_options.empty_ops;
                     default:
