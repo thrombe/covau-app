@@ -71,7 +71,7 @@
 
     {#each options as option}
         {#if option.location == "TopRight"}
-            <button class="pop-button top-0" on:pointerup={option.onclick}>
+            <button class="absolute pop-button top-0 right-0 p-1 m-2" on:pointerup={option.onclick}>
                 <img
                     alt="remove"
                     draggable={false}
@@ -96,40 +96,47 @@
                     />
                 </button>
             </div>
-        {:else if option.location == "BottomRight"}
-            <button class="pop-button bottom-0" on:pointerup={option.onclick}>
-                <img
-                    alt="remove"
-                    draggable={false}
-                    class="h-3 opacity-50"
-                    src={option.icon}
-                />
-            </button>
         {/if}
     {/each}
 
-    {#if options.length > 0}
-        <div class="relative">
-            <ThreeDotMenu
-                {options}
-                classes="-top-8 right-8"
-                let:show_menu
-                let:on_menu_click
-            >
-                <button
-                    class="pop-button bottom-0 menu-button"
-                    on:pointerup={on_menu_click}
-                    class:menu-open={show_menu}
-                >
+    <div class="absolute bottom-0 right-0 flex flex-row gap-1 max-w-[80%] m-2">
+        {#each options as option}
+            {#if option.location == "BottomRight"}
+                <button class="pop-button p-1" on:pointerup={option.onclick}>
                     <img
-                        alt="three dot menu icon"
-                        class="h-3 w-3"
-                        src={icons.three_dot_menu}
+                        alt={option.title}
+                        draggable={false}
+                        class="h-3 w-3 opacity-50"
+                        src={option.icon}
                     />
                 </button>
-            </ThreeDotMenu>
-        </div>
-    {/if}
+            {/if}
+        {/each}
+
+        {#if options.length > 0}
+            <div class="relative">
+                <ThreeDotMenu
+                    {options}
+                    classes="-top-8 right-8"
+                    let:show_menu
+                    let:on_menu_click
+                >
+                    <button
+                        class="pop-button bottom-0 right-0 p-1"
+                        on:pointerup={on_menu_click}
+                        class:menu-open={show_menu}
+                    >
+                        <img
+                            alt="three dot menu icon"
+                            class="h-3 w-3"
+                            src={icons.three_dot_menu}
+                        />
+                    </button>
+                </ThreeDotMenu>
+            </div>
+        {/if}
+    </div>
+
 </item>
 
 <style lang="postcss">
@@ -146,7 +153,7 @@
     }
 
     .pop-button {
-        @apply absolute p-1 m-2 rounded-md hover:bg-gray-200 hover:bg-opacity-30 text-gray-900 font-bold right-0;
+        @apply rounded-md hover:bg-gray-200 hover:bg-opacity-30 text-gray-900 font-bold;
     }
     .queue-button {
         @apply aspect-square h-full scale-[50%] rounded-md bg-gray-600 bg-opacity-50 text-xl text-gray-900 font-bold;

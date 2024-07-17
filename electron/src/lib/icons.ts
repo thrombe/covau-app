@@ -19,4 +19,6 @@ export const volume_mid = "/static/volume-mid.svg"
 export const volume_min = "/static/volume-min.svg"
 export const xmark = "/static/xmark.svg"
 export const caret_down = "/static/caret-down.svg"
+export const thumbs_up = "/static/thumbs-up.svg"
+export const thumbs_down = "/static/thumbs-down.svg"
 

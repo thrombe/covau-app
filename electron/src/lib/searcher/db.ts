@@ -553,8 +553,8 @@ export class DbListItem extends ListItem {
         return {
             options: {
                 like: {
-                    icon: icons.covau_icon,
-                    location: "OnlyMenu",
+                    icon: icons.thumbs_up,
+                    location: "BottomRight",
                     title: "like",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -566,8 +566,8 @@ export class DbListItem extends ListItem {
                     },
                 },
                 dislike: {
-                    icon: icons.covau_icon,
-                    location: "OnlyMenu",
+                    icon: icons.thumbs_down,
+                    location: "BottomRight",
                     title: "dislike",
                     onclick: async () => {
                         await db.txn(async db => {
@@ -578,7 +578,7 @@ export class DbListItem extends ListItem {
                     },
                 },
                 unlike: {
-                    icon: icons.covau_icon,
+                    icon: icons.thumbs_up,
                     location: "OnlyMenu",
                     title: "un-like",
                     onclick: async () => {
@@ -590,7 +590,7 @@ export class DbListItem extends ListItem {
                     },
                 },
                 undislike: {
-                    icon: icons.covau_icon,
+                    icon: icons.thumbs_down,
                     location: "OnlyMenu",
                     title: "un-dislike",
                     onclick: async () => {
