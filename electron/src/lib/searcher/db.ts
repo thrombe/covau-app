@@ -646,13 +646,19 @@ export class DbListItem extends ListItem {
                             common_options.queue_remove_while_in_queue,
                             ops.options.like,
                             ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
                             options.copy_url,
                             common_options.open_details,
                         ] as Option[];
-                    case "DetailSection":
                     case "Browser":
+                        return [
+                            common_options.detour,
+                            common_options.queue_add,
+                            options.copy_url,
+                            common_options.open_details,
+                            ops.options.like,
+                            ops.options.dislike,
+                        ] as Option[];
+                    case "DetailSection":
                         return [
                             common_options.detour,
                             common_options.queue_add,
@@ -661,7 +667,7 @@ export class DbListItem extends ListItem {
                             ops.options.unlike,
                             ops.options.undislike,
                             options.copy_url,
-                            common_options.open_details,
+                            common_options.refresh_details,
                         ] as Option[];
                     case "Playbar":
                     case "Prompt":
@@ -681,8 +687,6 @@ export class DbListItem extends ListItem {
                             common_options.queue_remove_while_in_queue,
                             ops.options.like,
                             ops.options.dislike,
-                            ops.options.unlike,
-                            ops.options.undislike,
                             options.copy_url,
                             ...common_options.open_album(s.album),
                             common_options.open_details,
@@ -1344,10 +1348,10 @@ export class DbListItem extends ListItem {
                                 heading: "Key",
                                 content: song.key,
                             },
-                            {
+                            ...maybe(song.last_known_path, p => ({
                                 heading: "File",
-                                content: song.last_known_path,
-                            },
+                                content: p,
+                            })),
                         ]
                     },
                     sections.options,

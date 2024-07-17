@@ -108,11 +108,22 @@ export abstract class ListItem implements Keyed {
             },
             open_details: {
                 icon: icons.open_new_tab,
-                location: "OnlyMenu",
+                location: "BottomRight",
                 title: "details",
                 onclick: async () => {
                     let stores = await stores_ts;
                     let title = `${this.title()} details`
+                    stores.new_detail_tab(this, title);
+                },
+            },
+            refresh_details: {
+                icon: icons.repeat,
+                location: "OnlyMenu",
+                title: "refresh details",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    let title = `${this.title()} details`
+                    stores.pop_tab();
                     stores.new_detail_tab(this, title);
                 },
             },
