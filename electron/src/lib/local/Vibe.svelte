@@ -284,7 +284,9 @@
             <queue-area class="h-full">
                 <div
                     class="flex flex-col"
-                    style={`height: calc(100% - calc(var(--queue-area-width) * 9 / 16));`}
+                    style={$player_type == "YtVideoPlayer"
+                        ? "height: calc(100% - calc(var(--queue-area-width) * 9 / 16));"
+                        : "height: 100%;"}
                 >
                     <Queue bind:item_height {mobile} />
                 </div>
