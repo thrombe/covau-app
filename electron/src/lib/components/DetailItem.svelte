@@ -39,12 +39,12 @@
 
 <div class="h-full w-full pb-4 flex flex-row">
     <div
-        class="flex flex-col px-4 pt-4 place-items-center w-full h-full overflow-y-auto overflow-x-auto scrollbar-hide"
+        class="flex flex-col px-4 pt-4 place-items-center w-full h-full overflow-y-auto overflow-x-hidden scrollbar-hide"
     >
         <div class="flex flex-col gap-4 w-full md:max-w-[60rem]">
             {#each sections as section}
                 {#if section.type == "Info"}
-                    <div class="flex flex-row gap-4">
+                    <div class="flex flex-row gap-4 flex-wrap">
                         {#if thumbnail != null}
                             <img
                                 class={`h-56 w-56 rounded-xl object-cover ${
