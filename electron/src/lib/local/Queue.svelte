@@ -85,14 +85,16 @@
 
     let unsub = queue.subscribe(async (q) => {
         if (q.playing_index != null && playing != null) {
-            if (q.playing_index == playing + 1) {
-                setTimeout(() => {
-                    scroll_relative(1);
-                }, 0);
-            } else if (q.playing_index == playing - 1) {
-                setTimeout(() => {
-                    scroll_relative(-1);
-                }, 0);
+            if (is_in_view(playing)) {
+                if (q.playing_index == playing + 1) {
+                    setTimeout(() => {
+                        scroll_relative(1);
+                    }, 0);
+                } else if (q.playing_index == playing - 1) {
+                    setTimeout(() => {
+                        scroll_relative(-1);
+                    }, 0);
+                }
             }
             if (playing == selected_item_index) {
             }
@@ -219,6 +221,7 @@
     let selected_item: Unique<QueueItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
     let scroll_relative: (items: number) => void;
+    let is_in_view: (index: number) => boolean;
 </script>
 
 <div class="flex flex-col h-full w-full">
@@ -277,6 +280,7 @@
             bind:selected={selected_item_index}
             bind:end_is_visible
             bind:scroll_relative
+            bind:is_in_view
             bind:selected_item
             let:item
             let:selected

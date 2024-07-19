@@ -159,6 +159,10 @@
         let scroll = items * item_height + root.scrollTop;
         root.scrollTo(0, scroll);
     };
+    export const is_in_view = (index: number) => {
+        let scroll = (Math.floor(index / columns) + 0.5) * item_height - root.scrollTop;
+        return root.clientHeight > scroll && scroll > 0;
+    };
 
     const update_selected_item = () => {
         let ele = document.getElementById("selected");
