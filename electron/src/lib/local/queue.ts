@@ -468,6 +468,9 @@ export class AutoplayQueueManager extends QueueManager {
                 };
             }
         }
+        if (this.state == "Finished") {
+            await this.play_next();
+        }
     }
 
     autoplay_is_enabled() {
@@ -507,6 +510,10 @@ export class AutoplayQueueManager extends QueueManager {
         };
 
         await this.skip_dups();
+
+        if (this.state == "Unstarted" || this.state == "Finished") {
+            await this.play_next();
+        }
 
         return true;
     }
