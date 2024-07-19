@@ -14,6 +14,7 @@
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import { toast } from "$lib/toast/toast.ts";
+    import { StaticSearcher } from "$lib/searcher/searcher.ts";
 
     // prettier-ignore
     type QueueItem = {
@@ -158,12 +159,14 @@
                         }, 100);
                     },
                 },
-                menu: [
+                bottom: [
                     ops.open_details,
                     {
                         title: "Explore autoplay items",
                         icon: icons.open_new_tab,
                         onclick: async () => {
+                            let s = StaticSearcher(queue.autoplay_items() ?? []);
+                            stores.new_tab(s, "Autoplay items");
                         },
                     },
                 ],

@@ -518,6 +518,12 @@ export class AutoplayQueueManager extends QueueManager {
         return true;
     }
 
+    autoplay_items() {
+        if (this.autoplay_state.state == "Init") {
+            return this.autoplay_state.items.slice(this.autoplay_state.index);
+        }
+    }
+
     autoplay_peek_item() {
         if (this.autoplay_state.state === "Init") {
             let item = this.autoplay_state.items.at(this.autoplay_state.index)!;
