@@ -245,12 +245,12 @@ export class QueueManager implements Searcher {
             return false;
         }
         if (is_outsider) {
-            if (target == null) {
+            if (target == null || target > this.items.length) {
                 target = this.items.length;
             }
             await this.insert(target, item);
         } else {
-            if (target == null) {
+            if (target == null || target > this.items.length) {
                 target = this.items.length - 1;
             }
             await this.move_queue_item(item, target);
@@ -414,40 +414,59 @@ export async function autoplay_try_all(item: ListItem) {
     return null;
 }
 
-type AutoplayState = {
-    state: 'Uninit';
-} | {
-    state: 'Disabled';
-} | {
-    state: 'Init';
+type AutoplayInfo = {
     searcher: Searcher;
     seed_item: ListItem;
     items: ListItem[];
     index: number; // index is always valid
+};
+type AutoplayState = {
+    state: 'Uninit';
 } | {
+    state: 'Disabled';
+    info: AutoplayInfo | null,
+} | ({
+    state: 'Init';
+} & AutoplayInfo) | {
     state: "Finished";
     items: ListItem[];
 };
 
 export class AutoplayQueueManager extends QueueManager {
-    autoplay_state: AutoplayState = { state: "Disabled" };
+    autoplay_state: AutoplayState = { state: "Disabled", info: null };
     autoplayed_ids: Set<string> = new Set();
 
-    autoplay_toggle() {
+    async autoplay_toggle() {
         if (this.autoplay_state.state === "Disabled") {
-            this.autoplay_state = { state: "Uninit" };
+            await this.autoplay_enable();
         } else {
-            this.autoplay_state = { state: "Disabled" };
+            this.autoplay_disable();
         }
     }
 
     autoplay_disable() {
-        this.autoplay_state = { state: "Disabled" };
+        if (this.autoplay_state.state == "Init") {
+            this.autoplay_state = { state: "Disabled", info: this.autoplay_state  };
+        } else if (this.autoplay_state.state == "Disabled") {
+            // pass
+        } else {
+            this.autoplay_state = { state: "Disabled", info: null };
+        }
     }
 
-    autoplay_enable() {
+    async autoplay_enable() {
         if (this.autoplay_state.state === "Disabled") {
-            this.autoplay_state = { state: "Uninit" };
+            if (this.autoplay_state.info == null) {
+                this.autoplay_state = { state: "Uninit" };
+                if (this.playing_index != null) {
+                    await this.init_with_seed(this.items[this.playing_index]);
+                }
+            } else {
+                this.autoplay_state = {
+                    ...this.autoplay_state.info,
+                    state: "Init",
+                };
+            }
         }
     }
 
@@ -457,7 +476,7 @@ export class AutoplayQueueManager extends QueueManager {
 
     reset() {
         super.reset();
-        this.autoplay_state = { state: "Disabled" };
+        this.autoplay_state = { state: "Disabled", info: null };
     }
 
     async init_with_seed(item: ListItem) {
@@ -492,12 +511,39 @@ export class AutoplayQueueManager extends QueueManager {
         return true;
     }
 
-    protected autoplay_peek_item() {
+    autoplay_peek_item() {
         if (this.autoplay_state.state === "Init") {
             let item = this.autoplay_state.items.at(this.autoplay_state.index)!;
             return item;
         } else {
             return null;
+        }
+    }
+
+    async autoplay_skip() {
+        let item = await this.autoplay_consume();
+        if (item) {
+            let ids = item.song_ids();
+            for (let id of ids) {
+                this.autoplayed_ids.add(id);
+            }
+
+            let next = this.autoplay_peek_item();
+            if (next == null) {
+                await this.init_with_seed(item);
+            }
+        } else {
+            toast("No next item found", "error");
+        }
+    }
+
+    async autoplay_next() {
+        let item = await this.autoplay_consume();
+        if (item) {
+            await this.add(item);
+            await super.play_queue_item(item);
+        } else {
+            toast("No next item found", "error");
         }
     }
 

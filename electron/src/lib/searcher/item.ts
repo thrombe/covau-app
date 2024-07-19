@@ -85,6 +85,7 @@ export abstract class ListItem implements Keyed {
                     let q = get(stores.queue);
                     if (q instanceof queues.AutoplayQueueManager) {
                         await q.init_with_seed(this);
+                        stores.queue.update(t => t);
                     } else {
                         toast("autoplay is disabled", "error");
                     }
@@ -261,7 +262,7 @@ export class CustomListItem extends ListItem {
     _artists: string[] = [];
     _thumbnail: string | null = null;
     _default_thumbnail: string = icons.default_music_icon
-    _options: Option[] = [];
+    _options: ItemOptions;
     _sections: DetailSection[] = [];
     _typ: Typ;
     _yt_id: string | null = null;
@@ -272,6 +273,7 @@ export class CustomListItem extends ListItem {
         this._title = title;
         this._typ = typ;
         this._title_sub = title_sub;
+        this._options = this.common_options().empty_ops;
     }
 
     async yt_id(): Promise<string | null> {
@@ -323,7 +325,7 @@ export class CustomListItem extends ListItem {
     }
 
     impl_options(_ctx: RenderContext) {
-        return this.common_options().empty_ops;
+        return this._options;
     }
 
     async saved_covau_song() {

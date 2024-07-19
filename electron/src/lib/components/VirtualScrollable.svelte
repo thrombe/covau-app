@@ -15,7 +15,9 @@
         _: KeyboardEvent,
         _a: () => Promise<void>
     ) => {};
-    export let on_item_click = async (_: Unique<T, unknown>) => {};
+    export let on_item_click = async (t: Unique<T, unknown>) => {
+        console.log(t);
+    };
     export let end_is_visible = true;
     export let keyboard_control = true;
     export let width: number = undefined as unknown as number;

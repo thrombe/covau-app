@@ -4,22 +4,35 @@
 
 <script lang="ts">
     import AudioListItem from "$lib/components/AudioListItem.svelte";
-    import type { ListItem } from "$lib/searcher/item.ts";
+    import { CustomListItem, type ListItem } from "$lib/searcher/item.ts";
     import { onDestroy, tick } from "svelte";
     import type { Unique } from "../utils.ts";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import * as stores from "$lib/stores.ts";
-    import { type QueueManager } from "./queue.ts";
+    import { AutoplayQueueManager, type QueueManager } from "./queue.ts";
     import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import { toast } from "$lib/toast/toast.ts";
 
+    // prettier-ignore
+    type QueueItem = {
+        typ: "Song",
+        item: ListItem,
+    } | {
+        typ: "AutoplaySong",
+        item: ListItem,
+    } | {
+        typ: "AutoplayOption",
+        enabled: boolean,
+        onclick: (() => Promise<void>) | (() => void),
+    };
+
     export let item_height: number;
-    let items: Unique<ListItem, string>[] = [];
+    let items: Unique<QueueItem, string>[] = [];
     export let mobile = false;
 
-    let queue = stores.queue as Writable<QueueManager>;
+    let queue = stores.queue as Writable<AutoplayQueueManager>;
 
     let hovering: number | null = null;
     let dragging_index: number | null = null;
@@ -77,7 +90,7 @@
     onDestroy(unsub);
 
     let end_is_visible = false;
-    const end_reached = async (q: Readable<QueueManager> = queue) => {
+    const end_reached = async (q: Readable<AutoplayQueueManager> = queue) => {
         while (true) {
             if (!end_is_visible || !$queue.has_next_page) {
                 break;
@@ -88,11 +101,93 @@
             await tick();
         }
     };
-    const next_page = async (q: Readable<QueueManager>) => {
-        let r = await get(q).next_page();
-        items = r.map((e) => ({ id: e.get_key(), data: e })) as typeof items;
+    const next_page = async (q: Readable<AutoplayQueueManager>) => {
+        let queue = get(q);
+        let r = await queue.next_page();
+        let r2 = r.map((e) => ({
+            id: e.get_key(),
+            data: {
+                typ: "Song",
+                item: e,
+            },
+        })) as typeof items;
+        let autoplay_next = queue.autoplay_peek_item();
+        if (autoplay_next) {
+            let autoplay_item = new CustomListItem(
+                autoplay_next.get_key() as string,
+                `Autoplay: ${autoplay_next.title()}`,
+                "Custom",
+                autoplay_next.title_sub()
+            );
+            autoplay_item._thumbnail = autoplay_next.thumbnail();
+            let ops = autoplay_item.common_options();
+            autoplay_item._sections = autoplay_next.sections();
+            autoplay_item._options = {
+                ...autoplay_item._options,
+                top_right: {
+                    title: "Skip",
+                    icon: icons.remove,
+                    onclick: async () => {
+                        await queue.autoplay_skip();
+                        stores.queue.update((t) => t);
+                    },
+                },
+                icon_top: {
+                    title: "Play",
+                    icon: icons.play,
+                    onclick: async () => {
+                        await queue.autoplay_next();
+                        stores.queue.update((t) => t);
+                    },
+                },
+                menu: [
+                    ops.open_details,
+                    {
+                        title: "Explore autoplay items",
+                        icon: icons.open_new_tab,
+                        onclick: async () => {
+                            await queue.autoplay_next();
+                            stores.queue.update((t) => t);
+                        },
+                    },
+                ],
+            };
+            r2.push({
+                id: autoplay_next.get_key() as string,
+                data: {
+                    typ: "AutoplaySong",
+                    item: autoplay_item,
+                },
+            });
+            r2.push({
+                id: stores.new_key().toString(),
+                data: {
+                    typ: "AutoplayOption",
+                    enabled: true,
+                    onclick: async () => {
+                        queue.autoplay_disable();
+                        stores.queue.update((t) => t);
+                    },
+                },
+            });
+        } else {
+            r2.push({
+                id: stores.new_key().toString(),
+                data: {
+                    typ: "AutoplayOption",
+                    enabled: queue.autoplay_is_enabled(),
+                    onclick: async () => {
+                        await queue.autoplay_toggle();
+                        stores.queue.update((t) => t);
+                    },
+                },
+            });
+        }
+        items = r2;
     };
-    export const search_objects = async (q: Readable<QueueManager> = queue) => {
+    export const search_objects = async (
+        q: Readable<AutoplayQueueManager> = queue
+    ) => {
         await next_page(q);
         await tick();
         selected_item_index = 0;
@@ -107,8 +202,7 @@
     });
     onDestroy(unsub);
 
-    const on_item_click = async (_: Unique<ListItem, unknown>) => {};
-    let selected_item: Unique<ListItem, unknown>;
+    let selected_item: Unique<QueueItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
 </script>
 
@@ -162,10 +256,6 @@
             bind:items
             columns={1}
             {item_height}
-            on_item_click={async (e) => {
-                console.log(selected_item);
-                on_item_click(e);
-            }}
             {end_reached}
             bind:try_scroll_into_view={try_scroll_selected_item_in_view}
             keyboard_control={false}
@@ -176,22 +266,83 @@
             let:selected
             let:index
         >
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div
-                class="item w-full h-full block relative rounded-xl"
-                draggable={true}
-                on:dragstart={() => dragstart(index, item)}
-                on:drop|preventDefault={stores.drag_ops.drop}
-                on:dragend={stores.drag_ops.dragend}
-                ondragover="return false"
-                on:dragenter={() => dragenter(index)}
-                class:is-active={hovering === index}
-                class:is-dragging={dragging_index === index}
-                class:is-playing={index === playing}
-                class:is-selected={selected}
-            >
-                <AudioListItem {item} ctx="Queue" show_buttons={selected} />
-            </div>
+            {#if item.typ == "Song"}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                    class="item w-full h-full block relative rounded-xl"
+                    draggable={true}
+                    on:dragstart={() => dragstart(index, item.item)}
+                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:dragend={stores.drag_ops.dragend}
+                    ondragover="return false"
+                    on:dragenter={() => dragenter(index)}
+                    class:is-active={hovering === index}
+                    class:is-dragging={dragging_index === index}
+                    class:is-playing={index === playing}
+                    class:is-selected={selected}
+                >
+                    <AudioListItem
+                        item={item.item}
+                        ctx="Queue"
+                        show_buttons={selected}
+                    />
+                </div>
+            {:else if item.typ == "AutoplaySong"}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                    class="item w-full h-full block relative rounded-xl opacity-70"
+                    draggable={false}
+                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:dragend={stores.drag_ops.dragend}
+                    ondragover="return false"
+                    on:dragenter={() => dragenter(index)}
+                    class:is-active={hovering === index}
+                    class:is-dragging={dragging_index === index}
+                    class:is-playing={index === playing}
+                    class:is-selected={selected}
+                >
+                    <AudioListItem
+                        item={item.item}
+                        ctx="Queue"
+                        show_buttons={selected}
+                    />
+                </div>
+            {:else if item.typ == "AutoplayOption"}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                    class="w-full h-full block relative rounded-xl"
+                    draggable={false}
+                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:dragenter={() => dragenter(index)}
+                    ondragover="return false"
+                    class:is-active={hovering === index}
+                    class:is-dragging={dragging_index === index}
+                >
+                    <div
+                        class="p-2 h-full flex justify-center place-items-center"
+                        on:pointerup={item.onclick}
+                    >
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={item.enabled}
+                                class="sr-only peer"
+                            />
+                            <div
+                                class="
+                              relative peer-focus:outline-none peer-focus:ring-0 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:rounded-full after:transition-all
+                              w-11 h-6 after:h-5 after:w-5
+                              bg-gray-200 bg-opacity-20 peer-checked:bg-blue-600 peer-checked:bg-opacity-50 after:bg-gray-200"
+                            />
+                            <span
+                                class="ms-3 text-sm font-medium select-none text-gray-900 dark:text-gray-300"
+                            >
+                                Autoplay
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            {/if}
         </VirtualScrollable>
     </div>
 </div>
