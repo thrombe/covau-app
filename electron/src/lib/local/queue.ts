@@ -61,7 +61,7 @@ export class QueueManager implements Searcher {
     }
     async remove_queue_item(item: ListItem) {
         let index = this.get_item_index(item);
-        if (index) {
+        if (index != null) {
             await this.remove(index);
         } else {
             toast(`item "${item.title()}" not in queue`, "error");
