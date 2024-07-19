@@ -3,7 +3,7 @@ import { player, playing_item, queue } from "$lib/stores.ts";
 import type { ListItem, Option } from "$lib/searcher/item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { prompter } from "$lib/prompt/prompt.ts";
-import type { Searcher } from "$lib/searcher/searcher.ts";
+import { StaticSearcher, type Searcher } from "$lib/searcher/searcher.ts";
 import * as icons from "$lib/icons.ts";
 
 import * as covau from "$types/covau.ts";
@@ -317,6 +317,16 @@ export class QueueManager implements Searcher {
                     }
 
                     await q.init_with_seed(item);
+                },
+            },
+            {
+                title: "Explore autoplay items",
+                icon: icons.open_new_tab,
+                onclick: async () => {
+                    let stores = await import("$lib/stores.ts");
+                    let q = get(queue) as AutoplayQueueManager;
+                    let s = StaticSearcher(q.autoplay_items() ?? []);
+                    stores.new_tab(s, "Autoplay items");
                 },
             },
             {
