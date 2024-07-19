@@ -9,7 +9,7 @@
     import type { Unique } from "../utils.ts";
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import * as stores from "$lib/stores.ts";
-    import { AutoplayQueueManager, type QueueManager } from "./queue.ts";
+    import { AutoplayQueueManager } from "./queue.ts";
     import { get, readable, type Readable, type Writable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
@@ -83,7 +83,20 @@
     let playing: number | null = null;
     let options = $queue.options();
 
-    let unsub = queue.subscribe((q) => {
+    let unsub = queue.subscribe(async (q) => {
+        if (q.playing_index != null && playing != null) {
+            if (q.playing_index == playing + 1) {
+                setTimeout(() => {
+                    scroll_relative(1);
+                }, 0);
+            } else if (q.playing_index == playing - 1) {
+                setTimeout(() => {
+                    scroll_relative(-1);
+                }, 0);
+            }
+            if (playing == selected_item_index) {
+            }
+        }
         playing = q.playing_index;
         options = q.options();
     });
@@ -138,6 +151,9 @@
                     onclick: async () => {
                         await queue.autoplay_next();
                         stores.queue.update((t) => t);
+                        setTimeout(() => {
+                            scroll_relative(1);
+                        }, 100);
                     },
                 },
                 menu: [
@@ -146,8 +162,6 @@
                         title: "Explore autoplay items",
                         icon: icons.open_new_tab,
                         onclick: async () => {
-                            await queue.autoplay_next();
-                            stores.queue.update((t) => t);
                         },
                     },
                 ],
@@ -204,6 +218,7 @@
 
     let selected_item: Unique<QueueItem, unknown>;
     let try_scroll_selected_item_in_view: () => Promise<void>;
+    let scroll_relative: (items: number) => void;
 </script>
 
 <div class="flex flex-col h-full w-full">
@@ -261,6 +276,7 @@
             keyboard_control={false}
             bind:selected={selected_item_index}
             bind:end_is_visible
+            bind:scroll_relative
             bind:selected_item
             let:item
             let:selected

@@ -155,6 +155,10 @@
             on_update();
         }
     };
+    export const scroll_relative = (items: number) => {
+        let scroll = items * item_height + root.scrollTop;
+        root.scrollTo(0, scroll);
+    };
 
     const update_selected_item = () => {
         let ele = document.getElementById("selected");
