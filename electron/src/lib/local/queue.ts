@@ -609,6 +609,49 @@ export class AutoplayQueueManager extends QueueManager {
         return item;
     }
 
+    async remove(index: number): Promise<void> {
+        if (this.playing_index != null) {
+            if (this.playing_index > index) {
+                this.playing_index -= 1;
+                this.items.splice(index, 1);
+            } else if (this.playing_index == index) {
+                if (this.items.length <= 1 && this.state != "Playing") {
+                    // queue will have no items after removing
+                    this.items = [];
+                    this.playing_index = null;
+                    this.detour();
+                    return;
+                } else if (index == this.items.length - 1) {
+                    let item = this.autoplay_peek_item();
+                    if (item != null && this.state == "Playing") {
+                        this.items.splice(index, 1);
+                        await this.autoplay_consume();
+                        await this.add(item);
+                        await this.play_queue_item(item);
+                    } else {
+                        // queue.length > 1
+                        this.playing_index -= 1;
+                        this.items.splice(index, 1);
+                        if (this.state == "Playing") {
+                            await this.play(this.playing_index);
+                        }
+                    }
+                } else {
+                    this.playing_index -= 1;
+                    this.items.splice(index, 1);
+                    if (this.state == "Playing") {
+                        await this.play_next();
+                    }
+                }
+            } else {
+                // if removed item comes after the currently playing one
+                this.items.splice(index, 1);
+            }
+        } else {
+            this.items.splice(index, 1);
+        }
+    }
+
     async play_item(item: ListItem): Promise<void> {
         await super.play_item(item);
 
