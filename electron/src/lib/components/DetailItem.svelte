@@ -47,9 +47,9 @@
                     <div class="flex flex-row gap-4">
                         {#if thumbnail != null}
                             <img
-                                class="h-56 w-56 rounded-xl object-cover {hide_border
-                                    ? 'scale-150'
-                                    : ''}"
+                                class={`h-56 w-56 rounded-xl object-cover ${
+                                    hide_border ? "scale-150" : ""
+                                }`}
                                 src={thumbnail}
                                 draggable={false}
                                 alt=""
@@ -123,7 +123,7 @@
                         >
                             <Explorer
                                 searcher={section.searcher}
-                                updater={updater}
+                                {updater}
                                 source_key={stores.new_key()}
                                 columns={1}
                                 item_height={80}
@@ -144,14 +144,17 @@
                                     <div
                                         class="item w-full h-full rounded-xl"
                                         draggable={true}
-                                        on:dragstart={() => dragstart(index, item)}
-                                        on:drop|preventDefault={stores.drag_ops.drop}
+                                        on:dragstart={() =>
+                                            dragstart(index, item)}
+                                        on:drop|preventDefault={stores.drag_ops
+                                            .drop}
                                         on:dragend={stores.drag_ops.dragend}
                                         ondragover="return false"
                                         on:dragenter={() => dragenter(index)}
                                         class:selected
                                         class:is-active={hovering === index}
-                                        class:is-dragging={dragging_index === index}
+                                        class:is-dragging={dragging_index ===
+                                            index}
                                         class:is-selected={selected}
                                     >
                                         <AudioListItem
@@ -216,7 +219,8 @@
     .is-selected {
         @apply bg-gray-200 bg-opacity-10;
     }
-    .is-active, .is-selected.is-active {
+    .is-active,
+    .is-selected.is-active {
         @apply bg-green-400 bg-opacity-20;
     }
 

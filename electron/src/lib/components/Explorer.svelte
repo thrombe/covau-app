@@ -69,15 +69,19 @@
                 }
 
                 try {
-                    let handled = await get(searcher).handle_drop(item.item, index, item.source_key != source_key);
+                    let handled = await get(searcher).handle_drop(
+                        item.item,
+                        index,
+                        item.source_key != source_key
+                    );
                     if (!handled) {
                         toast("could not handle this drop", "error");
                     }
                 } catch (e: any) {
                     if (e instanceof Error) {
-                        toast(e.message, "error")
+                        toast(e.message, "error");
                     } else {
-                        toast(e.toString(), "error")
+                        toast(e.toString(), "error");
                     }
                 }
             },
@@ -132,7 +136,7 @@
     });
     onDestroy(unsub);
 
-    unsub = updater.subscribe(async _ => {
+    unsub = updater.subscribe(async (_) => {
         await next_page(searcher);
     });
     onDestroy(unsub);
@@ -150,8 +154,8 @@
 </script>
 
 <cl
-    class="main"
-    style="--info-width: {info_width}px; --info-margin: {info_margin}px;"
+    class="main overflow-visible"
+    style={`--info-width: ${info_width}px; --info-margin: ${info_margin}px;`}
 >
     <scrollable>
         <VirtualScrollable

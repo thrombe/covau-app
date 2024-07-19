@@ -40,9 +40,9 @@
         <div class="block p-1 aspect-square flex-none h-full">
             <div class="w-full h-full rounded-md overflow-hidden">
                 <img
-                    class="w-full h-full object-cover {hide_border
-                        ? 'scale-150'
-                        : ''}"
+                    class={`w-full h-full object-cover ${
+                        hide_border ? "scale-150" : ""
+                    }`}
                     src={img_src}
                     draggable={false}
                     alt=""
@@ -70,7 +70,10 @@
     </div>
 
     {#if options.top_right != null}
-        <button class="absolute pop-button top-0 right-0 p-1 m-2" on:pointerup={options.top_right.onclick}>
+        <button
+            class="absolute pop-button top-0 right-0 p-1 m-2"
+            on:pointerup={options.top_right.onclick}
+        >
             <img
                 alt="remove"
                 draggable={false}
@@ -80,9 +83,7 @@
         </button>
     {/if}
     {#if options.icon_top != null}
-        <div
-            class="absolute h-full flex flex-col justify-center left-0 top-0"
-        >
+        <div class="absolute h-full flex flex-col justify-center left-0 top-0">
             <button
                 class="queue-button"
                 class:play-button={true}
@@ -133,7 +134,6 @@
             </div>
         {/if}
     </div>
-
 </item>
 
 <style lang="postcss">

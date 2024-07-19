@@ -160,7 +160,8 @@
         root.scrollTo(0, scroll);
     };
     export const is_in_view = (index: number) => {
-        let scroll = (Math.floor(index / columns) + 0.5) * item_height - root.scrollTop;
+        let scroll =
+            (Math.floor(index / columns) + 0.5) * item_height - root.scrollTop;
         return root.clientHeight > scroll && scroll > 0;
     };
 
@@ -219,14 +220,14 @@
         class="flex flex-row flex-wrap content-start overflow-y-auto h-full scrollbar-hide"
         style="width: calc(100% - var(--scrollbar-width));"
     >
-        <pad style="height: {top_padding}px;" class="w-full mx-4" />
+        <pad style={`height: ${top_padding}px;`} class="w-full mx-4" />
         <gd
             bind:this={grid}
             class="grid justify-evenly justify-items-center content-start overflow-visible w-full"
-            style="
-            --list-item-width: {item_width}px;
-            grid-template-columns: repeat({columns}, minmax(var(--list-item-width), 1fr));
-        "
+            style={`
+            --list-item-width: ${item_width}px;
+            grid-template-columns: repeat(${columns}, minmax(var(--list-item-width), 1fr));
+        `}
         >
             {#each visible as item, i (item.id)}
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -236,7 +237,7 @@
                         _on_item_click(i);
                     }}
                     on:keydown={() => {}}
-                    style="width: var(--list-item-width); height: {item_height}px;"
+                    style={`width: var(--list-item-width); height: ${item_height}px;`}
                 >
                     <slot
                         {item_width}
@@ -249,11 +250,11 @@
                 </sel>
             {/each}
         </gd>
-        <pad style="height: {bottom_padding}px;" class="w-full" />
+        <pad style={`height: ${bottom_padding}px;`} class="w-full" />
 
         <!-- observer -->
         <obs
-            style="top: {offset_observer ? -margin : 0}px;"
+            style={`top: ${offset_observer ? -margin : 0}px;`}
             class="w-full relative"
         >
             <Observer

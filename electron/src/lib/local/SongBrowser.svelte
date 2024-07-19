@@ -30,6 +30,7 @@
         if (!t) {
             return;
         }
+        // prettier-ignore
         switch (t.type) {
             case "detail": {
                 options = [];
@@ -104,10 +105,12 @@
         >
             {#each tabs as tab, i}
                 <div
-                    class="flex flex-row border-b-2 px-1 items-center content-center
-                            {curr_tab == tab
-                        ? 'font-bold border-gray-200'
-                        : 'border-gray-600'}"
+                    class={`flex flex-row border-b-2 px-1 items-center content-center
+                            ${
+                                curr_tab == tab
+                                    ? "font-bold border-gray-200"
+                                    : "border-gray-600"
+                            }`}
                 >
                     <button
                         class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
@@ -143,7 +146,7 @@
     </bar-area>
 
     {#each tabs as tab (tab.key)}
-        <browse-area class={curr_tab == tab ? "" : "absolute -z-[70]"}>
+        <browse-area class={`${curr_tab == tab ? "" : "absolute -z-[70]"}`}>
             {#if tab.type == "browse"}
                 <Explorer
                     searcher={tab.searcher}
@@ -188,10 +191,7 @@
                     </list-item>
                 </Explorer>
             {:else if tab.type == "detail"}
-                <DetailItem
-                    item={tab.item}
-                    updater={tab.updater}
-                />
+                <DetailItem item={tab.item} updater={tab.updater} />
             {:else}
                 tab type {tab.type} not handled
             {/if}
@@ -227,7 +227,8 @@
     .is-selected {
         @apply bg-gray-200 bg-opacity-10;
     }
-    .is-active, .is-selected.is-active {
+    .is-active,
+    .is-selected.is-active {
         @apply bg-green-400 bg-opacity-20;
     }
 </style>
