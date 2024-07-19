@@ -406,7 +406,9 @@ fn client_ws_route<R: Send + Sync + Serialize + 'static>(
                     fe: &FrontendClient<R>,
                     msg: ws::Message,
                 ) -> anyhow::Result<()> {
-                    let msg = msg.to_str().ok().context("message was not a string")?;
+                    let Some(msg) = msg.to_str().ok() else {
+                        return Ok(());
+                    };
                     let msg = serde_json::from_str::<Message<String>>(msg)?;
                     match msg.id {
                         Some(id) => {
