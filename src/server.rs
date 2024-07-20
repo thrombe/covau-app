@@ -740,6 +740,27 @@ fn db_search_route<T: DbAble + Send>(db: Db, path: &'static str) -> BoxedFilter<
     search.boxed()
 }
 
+fn db_search_many_by_refid_route<T: DbAble + Send>(
+    db: Db,
+    path: &'static str,
+) -> BoxedFilter<(impl Reply,)> {
+    let search = warp::path("search")
+        .and(warp::path(path))
+        .and(warp::path("refids"))
+        .and(warp::path::end())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::body::json())
+        .and_then(|db: Db, query: Vec<String>| async move {
+            let res = db
+                .search_many_by_ref_id::<T>(query)
+                .await
+                .map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&res))
+        });
+    let search = search.with(warp::cors().allow_any_origin());
+    search.boxed()
+}
+
 fn db_search_by_refid_route<T: DbAble + Send>(
     db: Db,
     path: &'static str,
@@ -750,9 +771,9 @@ fn db_search_by_refid_route<T: DbAble + Send>(
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
-        .and_then(|db: Db, query: Vec<String>| async move {
+        .and_then(|db: Db, refid: String| async move {
             let res = db
-                .search_many_by_ref_id::<T>(query)
+                .search_by_ref_id::<T>(refid)
                 .await
                 .map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply::json(&res))
@@ -997,6 +1018,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
         warp::path("musimanager").and(
             db_search_route::<Song<Option<SongInfo>>>(db.clone(), "songs")
+                .or(db_search_many_by_refid_route::<Song<Option<SongInfo>>>(
+                    db.clone(),
+                    "songs",
+                ))
                 .or(db_search_by_refid_route::<Song<Option<SongInfo>>>(
                     db.clone(),
                     "songs",
@@ -1022,6 +1047,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                     "songs",
                 ))
                 .or(db_search_route::<Album<VideoId>>(db.clone(), "albums"))
+                .or(db_search_many_by_refid_route::<Album<VideoId>>(
+                    db.clone(),
+                    "albums",
+                ))
                 .or(db_search_by_refid_route::<Album<VideoId>>(
                     db.clone(),
                     "albums",
@@ -1105,6 +1134,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
         warp::path("song_tube").and(
             db_search_route::<Song>(db.clone(), "songs")
+                .or(db_search_many_by_refid_route::<Song>(db.clone(), "songs"))
                 .or(db_search_by_refid_route::<Song>(db.clone(), "songs"))
                 .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
@@ -1112,6 +1142,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                 .or(db_update_metadata_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 .or(db_search_route::<Album>(db.clone(), "albums"))
+                .or(db_search_many_by_refid_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_refid_route::<Album>(db.clone(), "albums"))
                 .or(db_search_by_id_route::<Album>(db.clone(), "albums"))
                 .or(db_insert_route::<Album>(db.clone(), "albums"))
@@ -1119,6 +1150,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                 .or(db_update_metadata_route::<Album>(db.clone(), "albums"))
                 .or(db_delete_route::<Album>(db.clone(), "albums"))
                 .or(db_search_route::<Artist>(db.clone(), "artists"))
+                .or(db_search_many_by_refid_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_by_refid_route::<Artist>(db.clone(), "artists"))
                 .or(db_search_by_id_route::<Artist>(db.clone(), "artists"))
                 .or(db_insert_route::<Artist>(db.clone(), "artists"))
@@ -1133,6 +1165,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                     "playlists",
                 ))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_search_many_by_refid_route::<Playlist>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_search_by_refid_route::<Playlist>(
                     db.clone(),
                     "playlists",
@@ -1153,6 +1189,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
         warp::path("covau").and(
             db_search_route::<Song>(db.clone(), "songs")
+                .or(db_search_many_by_refid_route::<Song>(db.clone(), "songs"))
                 .or(db_search_by_refid_route::<Song>(db.clone(), "songs"))
                 .or(db_search_by_id_route::<Song>(db.clone(), "songs"))
                 .or(db_insert_route::<Song>(db.clone(), "songs"))
@@ -1160,6 +1197,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                 .or(db_update_metadata_route::<Song>(db.clone(), "songs"))
                 .or(db_delete_route::<Song>(db.clone(), "songs"))
                 .or(db_search_route::<Updater>(db.clone(), "updaters"))
+                .or(db_search_many_by_refid_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_by_refid_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_by_id_route::<Updater>(db.clone(), "updaters"))
                 .or(db_insert_route::<Updater>(db.clone(), "updaters"))
@@ -1167,6 +1205,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                 .or(db_update_metadata_route::<Updater>(db.clone(), "updaters"))
                 .or(db_delete_route::<Updater>(db.clone(), "updaters"))
                 .or(db_search_route::<Playlist>(db.clone(), "playlists"))
+                .or(db_search_many_by_refid_route::<Playlist>(
+                    db.clone(),
+                    "playlists",
+                ))
                 .or(db_search_by_refid_route::<Playlist>(
                     db.clone(),
                     "playlists",
@@ -1180,6 +1222,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
                 ))
                 .or(db_delete_route::<Playlist>(db.clone(), "playlists"))
                 .or(db_search_route::<Queue>(db.clone(), "queues"))
+                .or(db_search_many_by_refid_route::<Queue>(db.clone(), "queues"))
                 .or(db_search_by_refid_route::<Queue>(db.clone(), "queues"))
                 .or(db_search_by_id_route::<Queue>(db.clone(), "queues"))
                 .or(db_insert_route::<Queue>(db.clone(), "queues"))

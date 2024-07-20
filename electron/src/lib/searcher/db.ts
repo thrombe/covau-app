@@ -2119,7 +2119,7 @@ export class Db extends Unpaged<MusicListItem> {
             }
 
             let matches: DB.DbItem<unknown>[] = await server.api_request(
-                db.route(this.query.type, "search") + "/refid",
+                db.route(this.query.type, "search") + "/refids",
                 ids,
             );
             return keyed(matches) as MusicListItem[];

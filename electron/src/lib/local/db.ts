@@ -2,6 +2,7 @@ import { exhausted } from "$lib/utils.ts";
 import * as DB from "$types/db.ts";
 import * as server from "$types/server.ts";
 import { utils } from "$lib/server.ts";
+import * as types from "$types/types.ts";
 
 export type AlmostDbItem<T> = Omit<Omit<DB.DbItem<T>, "id">, "metadata">;
 
@@ -92,6 +93,23 @@ export const db = {
             default:
                 throw exhausted(type);
         }
+    },
+
+    search: {
+        refid: {
+            st: {
+                async song(id: string) {
+                    let url = db.route("StSong", "search") + "/refid";
+                    let t: types.db.DbItem<types.yt.Song> | null = await utils.api_request(url, id);
+                    return t
+                },
+                async artist(id: string) {
+                    let url = db.route("StArtist", "search") + "/refid";
+                    let t: types.db.DbItem<types.yt.Artist> | null = await utils.api_request(url, id);
+                    return t
+                },
+            },
+        },
     },
 
     async begin() {
