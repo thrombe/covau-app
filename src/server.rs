@@ -4,6 +4,7 @@ use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::ops::Deref;
+use std::sync::atomic;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio::time::Duration;
@@ -13,7 +14,6 @@ use warp::filters::BoxedFilter;
 use warp::ws::WebSocket;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
-use std::sync::atomic;
 
 use crate::covau_types;
 use crate::db::{Db, DbAble};
@@ -248,20 +248,18 @@ fn player_route() -> BoxedFilter<(impl Reply,)> {
 
                 while let Some(msg) = wsrx.next().await {
                     match msg {
-                        Ok(msg) => {
-                            match player_command_handler(msg, &player, tx.clone()).await {
-                                Ok(_) => (),
-                                Err(e) => {
-                                    eprintln!("Error in command handler: {}", &e);
-                                    let _ = tx
-                                        .send_timeout(
-                                            PlayerMessage::Error(e.to_string()),
-                                            Duration::from_millis(300),
-                                        )
-                                        .await;
-                                }
+                        Ok(msg) => match player_command_handler(msg, &player, tx.clone()).await {
+                            Ok(_) => (),
+                            Err(e) => {
+                                eprintln!("Error in command handler: {}", &e);
+                                let _ = tx
+                                    .send_timeout(
+                                        PlayerMessage::Error(e.to_string()),
+                                        Duration::from_millis(300),
+                                    )
+                                    .await;
                             }
-                        }
+                        },
                         Err(e) => {
                             eprintln!("Error: {}", &e);
                         }
@@ -949,24 +947,24 @@ fn app_state_handler_route(state: AppState, path: &'static str) -> BoxedFilter<(
             match message {
                 AppMessage::Online => {
                     state.0.is_online.store(true, atomic::Ordering::Relaxed);
-                },
+                }
                 AppMessage::Offline => {
                     state.0.is_online.store(false, atomic::Ordering::Relaxed);
-                },
+                }
                 AppMessage::Load => {
                     state.0.is_loaded.store(true, atomic::Ordering::Relaxed);
-                },
+                }
                 AppMessage::Unload => {
                     state.0.is_loaded.store(false, atomic::Ordering::Relaxed);
-                },
+                }
                 AppMessage::Visible => {
                     state.0.is_visible.store(true, atomic::Ordering::Relaxed);
-                },
+                }
                 AppMessage::NotVisible => {
                     state.0.is_visible.store(false, atomic::Ordering::Relaxed);
-                },
+                }
             }
-            
+
             Ok::<_, warp::Rejection>(warp::reply())
         });
     let webui = webui.with(warp::cors().allow_any_origin());
@@ -1295,11 +1293,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
 
     println!("Starting server at {}:{}", ip_addr, port);
 
-
     if config.run_in_background {
         warp::serve(all).run((ip_addr, port)).await;
     } else {
-        tokio::select!{
+        tokio::select! {
             _ = warp::serve(all).run((ip_addr, port)) => { },
             _ = state.wait() => { },
         }
