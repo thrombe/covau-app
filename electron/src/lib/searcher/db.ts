@@ -248,7 +248,7 @@ export class DbListItem extends ListItem {
                     if (!data) {
                         return null;
                     }
-                    let thumbs = data.info.basic_info.thumbnail ?? [];
+                    let thumbs = data.song.thumbnails;
                     if (thumbs.length > 0 && !song.info?.thumbnail_url) {
                         if (song.info) {
                             song.info.thumbnail_url = thumbs[0].url;
@@ -258,7 +258,7 @@ export class DbListItem extends ListItem {
                                 tags: [],
                                 album: null,
                                 artist_names: [], // TODO: data.info.basic_info.author?
-                                channel_id: data.info.basic_info.channel_id ?? '',
+                                channel_id: data.song.authors.at(0)?.channel_id ?? '',
                                 uploader_id: null,
                                 video_id: song.key,
                                 titles: [song.title],

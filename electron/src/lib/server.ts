@@ -147,24 +147,7 @@ class YtiServer extends Server<yt.YtiRequest> {
                 return res;
             } break;
             case 'GetSongUri': {
-                let tube = get(stores.tube);
-                let vinfo = await tube.getInfo(req.content.id);
-                let format = vinfo.chooseFormat({
-                    type: 'audio',
-                    quality: 'best',
-                    format: 'opus',
-                    client: 'YTMUSIC_ANDROID',
-                });
-                let uri = format.decipher(tube.session.player);
-
-                let info: types.yt.SongUriInfo = {
-                    song: st.st.get_st_song(vinfo),
-                    uri,
-                    approx_duration_ms: format.approx_duration_ms,
-                    content_length: format.content_length!,
-                    mime_type: format.mime_type,
-                };
-                return info;
+                return await st.st.try_get_uri(req.content.id);
             } break;
             default:
                 throw exhausted(req);

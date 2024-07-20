@@ -141,8 +141,7 @@ export class StListItem extends ListItem {
                 if (!data) {
                     return null;
                 }
-                let thumbs = st.get_thumbnails(data.info.basic_info.thumbnail);
-                this.data.content.thumbnails = thumbs;
+                this.data.content.thumbnails = data.song.thumbnails;
                 return data.uri;
             } break;
             case "Album":
@@ -529,17 +528,34 @@ function ClassTypeWrapper<S extends Constructor<{
 }
 
 export const st = {
+    async try_get_uri(id: string) {
+        let tube = get(stores.tube);
+        let vinfo = await tube.getInfo(id);
+        console.log(vinfo);
+        let format = vinfo.chooseFormat({
+            type: 'audio',
+            quality: 'best',
+            format: 'opus',
+            client: 'YTMUSIC_ANDROID',
+        });
+        console.log(format);
+        // let url = d.getStreamingInfo();
+        let uri = format.decipher(tube.session.player);
+        console.log(uri);
+
+        let info: yt.SongUriInfo = {
+            song: st.get_st_song(vinfo),
+            uri,
+            approx_duration_ms: format.approx_duration_ms,
+            content_length: format.content_length!,
+            mime_type: format.mime_type,
+        };
+        return info;
+    },
+
     async get_uri(id: string) {
-        let itube = get(stores.tube);
         try {
-            let d = await itube.getInfo(id);
-            console.log(d);
-            let f = d.chooseFormat({ type: 'audio', quality: 'best', format: 'opus', client: 'YTMUSIC_ANDROID' });
-            console.log(f);
-            // let url = d.getStreamingInfo();
-            let uri = f.decipher(itube.session.player);
-            console.log(uri)
-            return { info: d, uri: uri };
+            return await this.try_get_uri(id);
         } catch (e) {
             console.error(e);
             return null;
