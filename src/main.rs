@@ -102,7 +102,7 @@ pub mod cli {
                 .transpose()?;
 
             let music_path = self
-                .musimanager_db_path
+                .music_path
                 .as_ref()
                 .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
                 .map(|s| s.to_string())
