@@ -147,7 +147,7 @@ class YtiServer extends Server<yt.YtiRequest> {
                 return res;
             } break;
             case 'GetSongUri': {
-                return await st.st.try_get_uri(req.content.id);
+                return await st.st.fetch.try_uri(req.content.id);
             } break;
             default:
                 throw exhausted(req);

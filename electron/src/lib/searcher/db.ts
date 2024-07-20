@@ -161,7 +161,7 @@ export class DbListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MmSong":
-                return this.data.t.info?.thumbnail_url ?? st.get_thumbnail(this.data.t.key);
+                return this.data.t.info?.thumbnail_url ?? st.url.song_thumbnail(this.data.t.key);
             case "MmAlbum":
                 return null;
             case "MmArtist":
@@ -171,7 +171,7 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? st.get_thumbnail(this.data.t.id);
+                return this.data.t.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.t.id);
             case "StAlbum":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "StPlaylist":
@@ -244,7 +244,7 @@ export class DbListItem extends ListItem {
                 if (song.last_known_path) {
                     return "file://" + song.last_known_path;
                 } else {
-                    let data = await st.get_uri(song.key);
+                    let data = await st.fetch.uri(song.key);
                     if (!data) {
                         return null;
                     }
@@ -271,7 +271,7 @@ export class DbListItem extends ListItem {
             } break;
             case "StSong": {
                 let song = this.data.t;
-                let data = await st.get_uri(song.id);
+                let data = await st.fetch.uri(song.id);
                 if (!data) {
                     return null;
                 }
@@ -284,7 +284,7 @@ export class DbListItem extends ListItem {
                         case "File":
                             return "file://" + source.content;
                         case "YtId": {
-                            let data = await st.get_uri(source.content);
+                            let data = await st.fetch.uri(source.content);
                             if (!data) {
                                 continue;
                             }
@@ -411,12 +411,12 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = this.data.t;
 
-                let vid = await st.get_video(song.key);
+                let vid = await st.fetch.video(song.key);
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: vid.authors.map(a => a.name),
-                    thumbnails: [...vid.thumbnails.map(t => t.url), st.get_thumbnail(vid.id)],
+                    thumbnails: [...vid.thumbnails.map(t => t.url), st.url.song_thumbnail(vid.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
@@ -435,7 +435,7 @@ export class DbListItem extends ListItem {
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: vid.authors.map(a => a.name),
-                    thumbnails: [...vid.thumbnails.map(t => t.url), st.get_thumbnail(vid.id)],
+                    thumbnails: [...vid.thumbnails.map(t => t.url), st.url.song_thumbnail(vid.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
@@ -617,8 +617,8 @@ export class DbListItem extends ListItem {
                     return await Promise.all(keys
                         .map(k => {
                             return st
-                                .get_artist(k)
-                                .then(a => st.get_wrapped_item(a, "Artist"))
+                                .fetch.artist(k)
+                                .then(a => st.parse.wrap_item(a, "Artist"))
                                 .catch(err => {
                                     let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
                                     return item;
@@ -641,7 +641,7 @@ export class DbListItem extends ListItem {
                         icon: icons.copy,
                         title: "copy url",
                         onclick: async () => {
-                            let url = st.get_yt_url(s.key);
+                            let url = st.url.video(s.key);
                             await navigator.clipboard.writeText(url);
                             toast("url copied", "info");
                         },
@@ -786,7 +786,7 @@ export class DbListItem extends ListItem {
                                         continue;
                                     } break;
                                     case "YtId": {
-                                        let url = st.get_yt_url(source.content);
+                                        let url = st.url.video(source.content);
                                         await navigator.clipboard.writeText(url);
                                         toast("url copied", "info");
                                         return;
