@@ -549,18 +549,7 @@ export const st = {
     // TODO: fetch info from cache first. sqlite db cache on app, browser storage on web
     async get_video(id: string): Promise<yt.Song> {
         let s = await get(stores.tube).getBasicInfo(id);
-        return {
-            id: id,
-            title: s.basic_info.title ?? null,
-            thumbnails: this.get_thumbnails(s.basic_info.thumbnail),
-            album: null,
-            authors: s.basic_info.author ? [
-                {
-                    name: s.basic_info.author,
-                    channel_id: s.basic_info.channel_id ?? null
-                }
-            ] : [],
-        }
+        return st.get_st_song(s);
     },
 
     async get_artist(id: string): Promise<yt.Artist> {
@@ -624,8 +613,21 @@ export const st = {
         return `https://music.youtube.com/channel/${artist_id}`;
     },
 
-    get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem) {
-        if (s.is(YTNodes.MusicResponsiveListItem)) {
+    get_st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem | VideoInfo) {
+        if (s instanceof YT.VideoInfo) {
+            return {
+                id: s.basic_info.id!,
+                title: s.basic_info.title ?? null,
+                thumbnails: this.get_thumbnails(s.basic_info.thumbnail),
+                album: null,
+                authors: s.basic_info.author ? [
+                    {
+                        name: s.basic_info.author,
+                        channel_id: s.basic_info.channel_id ?? null
+                    }
+                ] : [],
+            };
+        } else if (s.is(YTNodes.MusicResponsiveListItem)) {
             return {
                 id: s.id!,
                 title: s.title ?? null,

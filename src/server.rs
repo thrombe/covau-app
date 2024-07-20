@@ -1283,12 +1283,13 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         Result::<_, std::convert::Infallible>::Ok(r)
     });
 
+    let conf = config.clone();
     let j = tokio::task::spawn(async move {
         let yti = yti;
         let db = db;
         let fec = fe;
 
-        updater_system(yti, fec, db).await;
+        updater_system(yti, fec, client, db, conf).await;
     });
 
     println!("Starting server at {}:{}", ip_addr, port);
@@ -1373,15 +1374,24 @@ pub enum FeRequest {
 async fn _updater_system(
     yti: FrontendClient<YtiRequest>,
     fec: FrontendClient<FeRequest>,
+    client: reqwest::Client,
     db: Db,
+    config: Arc<crate::cli::DerivedConfig>,
 ) -> anyhow::Result<()> {
-    let manager = covau_types::UpdateManager::new(crate::yt::SongTubeFac::new(yti), fec, db);
+    let ytf = crate::yt::SongTubeFac::new(yti, client, config);
+    let manager = covau_types::UpdateManager::new(ytf, fec, db);
     // manager.start().await?;
     Ok(())
 }
 
-async fn updater_system(yti: FrontendClient<YtiRequest>, fec: FrontendClient<FeRequest>, db: Db) {
-    match _updater_system(yti, fec, db).await {
+async fn updater_system(
+    yti: FrontendClient<YtiRequest>,
+    fec: FrontendClient<FeRequest>,
+    client: reqwest::Client,
+    db: Db,
+    config: Arc<crate::cli::DerivedConfig>,
+) {
+    match _updater_system(yti, fec, client, db, config).await {
         Ok(()) => (),
         Err(e) => {
             eprintln!("updater error: {}", e);

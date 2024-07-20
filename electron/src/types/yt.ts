@@ -15,4 +15,5 @@ export type ChannelId = string;
 export type ArtistId = ChannelId;
 export type PlaylistId = string;
 export type SearchResults<T> = { has_next_page: boolean; items: T[] };
-export type YtiRequest = { type: "CreateSongTube"; content: { id: string; query: BrowseQuery } } | { type: "DestroySongTube"; content: { id: string } } | { type: "NextPageSongTube"; content: { id: string } };
+export type YtiRequest = { type: "CreateSongTube"; content: { id: string; query: BrowseQuery } } | { type: "DestroySongTube"; content: { id: string } } | { type: "NextPageSongTube"; content: { id: string } } | { type: "GetSongUri"; content: { id: string } };
+export type SongUriInfo = { song: Song; uri: string; approx_duration_ms: number; content_length: number; mime_type: string };

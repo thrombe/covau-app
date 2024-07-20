@@ -1,6 +1,6 @@
 import type { ErrorMessage, Message, FeRequest } from '$types/server.ts';
 import { toast } from './toast/toast.ts';
-import * as St from "$lib/searcher/song_tube.ts";
+import * as st from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
 import { exhausted } from './utils.ts';
 import * as types from "$types/types.ts";
@@ -125,11 +125,11 @@ class YtiServer extends Server<yt.YtiRequest> {
         super("serve/yti");
     }
 
-    tubes: Map<string, St.SongTube> = new Map();
+    tubes: Map<string, st.SongTube> = new Map();
     async handle_req(req: yt.YtiRequest): Promise<Object | null | undefined> {
         switch (req.type) {
             case 'CreateSongTube': {
-                let tube = new St.SongTube(req.content.query);
+                let tube = new st.SongTube(req.content.query);
                 this.tubes.set(req.content.id, tube);
                 return null;
             } break;
@@ -145,6 +145,26 @@ class YtiServer extends Server<yt.YtiRequest> {
                     has_next_page: tube.has_next_page,
                 };
                 return res;
+            } break;
+            case 'GetSongUri': {
+                let tube = get(stores.tube);
+                let vinfo = await tube.getInfo(req.content.id);
+                let format = vinfo.chooseFormat({
+                    type: 'audio',
+                    quality: 'best',
+                    format: 'opus',
+                    client: 'YTMUSIC_ANDROID',
+                });
+                let uri = format.decipher(tube.session.player);
+
+                let info: types.yt.SongUriInfo = {
+                    song: st.st.get_st_song(vinfo),
+                    uri,
+                    approx_duration_ms: format.approx_duration_ms,
+                    content_length: format.content_length!,
+                    mime_type: format.mime_type,
+                };
+                return info;
             } break;
             default:
                 throw exhausted(req);

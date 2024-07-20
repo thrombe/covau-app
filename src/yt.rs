@@ -1,6 +1,9 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, path::PathBuf, sync::Arc};
 
+use bytes::Buf;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use tokio::io::AsyncWriteExt;
 
 use crate::server::{FrontendClient, MessageResult};
 
@@ -187,6 +190,18 @@ pub enum YtiRequest {
     NextPageSongTube {
         id: String,
     },
+    GetSongUri {
+        id: String,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct SongUriInfo {
+    song: song_tube::Song,
+    uri: String,
+    approx_duration_ms: u32,
+    content_length: u32,
+    mime_type: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -266,11 +281,68 @@ impl InnerSongTube {
 }
 
 #[derive(Clone)]
-pub struct SongTubeFac(pub FrontendClient<YtiRequest>);
+pub struct SongTubeFac {
+    fe: FrontendClient<YtiRequest>,
+    client: reqwest::Client,
+    config: Arc<crate::cli::DerivedConfig>,
+}
 
 impl SongTubeFac {
-    pub fn new(fe: FrontendClient<YtiRequest>) -> Self {
-        Self(fe)
+    pub fn new(
+        fe: FrontendClient<YtiRequest>,
+        client: reqwest::Client,
+        config: Arc<crate::cli::DerivedConfig>,
+    ) -> Self {
+        Self { fe, client, config }
+    }
+
+    pub async fn get_song(&self, id: String) -> anyhow::Result<PathBuf> {
+        let info: SongUriInfo = self
+            .fe
+            .execute(YtiRequest::GetSongUri { id: id.clone() })
+            .await?;
+        let bufsize = 500_000; // 500k
+
+        let fullchunks = info.content_length / bufsize;
+        let chunkpoints = (0..fullchunks)
+            .map(|i| i * bufsize)
+            .chain(std::iter::once(info.content_length));
+
+        let mut byteses: futures::stream::FuturesOrdered<_> = chunkpoints
+            .clone()
+            .zip(chunkpoints.clone().skip(1))
+            .filter(|(s, e)| *e > *s)
+            .map(|(start, end)| format!("bytes={}-{}", start, end - 1))
+            .map(|r| (r, info.uri.clone(), self.client.clone()))
+            .map(|(range, uri, client)| async move {
+                let mut req = client
+                    .get(uri)
+                    .header("User-Agent", "Mozilla/5.0")
+                    .header("accept-language", "en-US,en")
+                    .header("Range", range);
+
+                let req = req.build()?;
+                let res = client.execute(req).await?;
+                let bytes = res.bytes().await?;
+                Ok::<_, anyhow::Error>(bytes)
+            })
+            .collect();
+        let bytes = byteses
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .collect::<anyhow::Result<Vec<_>>>()?
+            .into_iter()
+            .fold(Vec::new(), |mut vec, bytes| {
+                vec.extend(bytes.into_iter());
+                vec
+            });
+
+        let dest = self.config.music_path.join(format!("{}.webm", &id));
+        let mut file = tokio::fs::File::create_new(&dest).await?;
+        file.write_all(&bytes).await?;
+
+        Ok(dest)
     }
 
     pub async fn with_search_query<T: song_tube::TMusicListItem>(
@@ -292,7 +364,7 @@ impl SongTubeFac {
     pub async fn with_query(&self, query: song_tube::BrowseQuery) -> anyhow::Result<InnerSongTube> {
         let id = ulid::Ulid::new().to_string();
         let _: () = self
-            .0
+            .fe
             .execute(YtiRequest::CreateSongTube {
                 query,
                 id: id.clone(),
@@ -300,7 +372,7 @@ impl SongTubeFac {
             .await?;
 
         Ok(InnerSongTube {
-            client: self.0.clone(),
+            client: self.fe.clone(),
             id,
             alive: Arc::new(true.into()),
         })
@@ -345,6 +417,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<SearchResults<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<YtiRequest>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<SongUriInfo>(config)?;
     types += ";\n";
 
     Ok(types)
