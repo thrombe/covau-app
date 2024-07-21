@@ -402,7 +402,6 @@ selected_menubar_option.subscribe(async (option) => {
                 case "Queue":
                 case "Updater":
                 case "StSong":
-                case "StVideo":
                 case "StAlbum":
                 case "StPlaylist":
                 case "StArtist": {

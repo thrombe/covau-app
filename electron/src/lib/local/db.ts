@@ -82,8 +82,6 @@ export const db = {
                 return utils.base_url + `covau/${op}/updaters`;
             case "StSong":
                 return utils.base_url + `song_tube/${op}/songs`;
-            case "StVideo":
-                return utils.base_url + `song_tube/${op}/videos`;
             case "StAlbum":
                 return utils.base_url + `song_tube/${op}/albums`;
             case "StPlaylist":

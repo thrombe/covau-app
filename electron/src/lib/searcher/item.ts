@@ -198,7 +198,6 @@ export abstract class ListItem implements Keyed {
             case "Song":
             case "StSong":
             case "YtSong":
-            case "StVideo":
             case "MbzRadioSong":
             case "MbzRecordingWithInfo":
             case "MbzRecording":

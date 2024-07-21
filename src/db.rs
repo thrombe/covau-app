@@ -32,8 +32,6 @@ pub enum Typ {
     Updater,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
     StSong,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
-    StVideo,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 12))]
     StAlbum,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 13))]
