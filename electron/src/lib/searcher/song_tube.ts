@@ -630,8 +630,11 @@ export const st = {
     parse: {
         st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem | VideoInfo) {
             if (s instanceof YT.VideoInfo) {
+                if (!s.basic_info.id) {
+                    throw new Error(s.playability_status.status);
+                }
                 return {
-                    id: s.basic_info.id!,
+                    id: s.basic_info.id,
                     title: s.basic_info.title ?? null,
                     thumbnails: this.thumbnails(s.basic_info.thumbnail),
                     album: null,
