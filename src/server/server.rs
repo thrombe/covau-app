@@ -60,12 +60,7 @@ pub struct Message<T> {
 }
 
 pub mod db_server {
-    use std::convert::Infallible;
-
-    use futures::Future;
     use sea_orm::ConnectionTrait;
-    use warp::filters::BoxedFilter;
-    use warp::Reply;
 
     use crate::db::{DbAble, DbId, DbItem, DbMetadata, TransactionId, Typ};
 
@@ -717,8 +712,6 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlayerCommand>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlayerMessage>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<UpdateMetadataQuery>(config)?;
     types += ";\n";
     types += &specta::ts::export::<ProxyRequest>(config)?;
     types += ";\n";

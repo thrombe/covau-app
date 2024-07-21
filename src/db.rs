@@ -154,7 +154,7 @@ pub enum SearchQuery {
 pub use db::*;
 #[cfg(feature = "bindeps")]
 pub mod db {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashSet;
     use std::sync::atomic::AtomicU32;
     use std::sync::Arc;
 
