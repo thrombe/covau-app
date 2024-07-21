@@ -150,17 +150,12 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
 
                     while let Some(msg) = wsrx.next().await {
                         match msg {
-                            Ok(msg) => {
-                                if msg.is_close() {
-                                    break;
+                            Ok(msg) => match message_handler(&fe, msg).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    eprintln!("Error: {}", &e);
                                 }
-                                match message_handler(&fe, msg).await {
-                                    Ok(_) => (),
-                                    Err(e) => {
-                                        eprintln!("Error: {}", &e);
-                                    }
-                                }
-                            }
+                            },
                             Err(e) => {
                                 eprintln!("Error: {}", &e);
                             }

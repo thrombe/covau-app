@@ -155,12 +155,15 @@ pub use db::*;
 #[cfg(feature = "bindeps")]
 pub mod db {
     use std::collections::{HashMap, HashSet};
+    use std::sync::atomic::AtomicU32;
+    use std::sync::Arc;
 
     use anyhow::Context;
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::{entity::prelude::*, Schema};
     use sea_orm::{Condition, DeriveEntityModel};
     use sea_orm::{RelationTrait, TransactionTrait};
+    use tokio::sync::{Mutex, Notify};
     use tokio_stream::StreamExt;
 
     use super::*;
@@ -169,7 +172,7 @@ pub mod db {
 
     #[async_trait::async_trait]
     pub trait DbAble:
-        Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone + Sync + Send
+        Serialize + for<'de> Deserialize<'de> + std::fmt::Debug + Clone + Sync + Send + 'static
     {
         fn to_json(&self) -> String;
         fn typ() -> Typ;
@@ -348,7 +351,8 @@ pub mod db {
             + Clone
             + AutoDbAble
             + Sync
-            + Send,
+            + Send
+            + 'static,
     {
         fn to_json(&self) -> String {
             serde_json::to_string(self).expect("won't fail")
@@ -916,9 +920,9 @@ pub mod db {
     #[derive(Clone)]
     pub struct Db {
         pub db: sea_orm::DatabaseConnection,
-        pub transaction_id: std::sync::Arc<std::sync::atomic::AtomicU32>,
-        pub transactions:
-            std::sync::Arc<tokio::sync::Mutex<HashMap<u32, sea_orm::DatabaseTransaction>>>,
+        pub transaction_id: Arc<AtomicU32>,
+        pub transaction: Arc<Mutex<Option<(TransactionId, sea_orm::DatabaseTransaction)>>>,
+        pub notif: Arc<Notify>,
     }
     impl Db {
         pub async fn new(path: impl AsRef<str>) -> anyhow::Result<Self> {
@@ -937,36 +941,62 @@ pub mod db {
 
             let db = Db {
                 db,
-                transaction_id: std::sync::Arc::new(0.into()),
-                transactions: std::sync::Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+                transaction_id: Arc::new(0.into()),
+                transaction: Arc::new(Mutex::new(None)),
+                notif: Arc::new(Notify::new()),
             };
             Ok(db)
         }
 
-        pub async fn begin(&self) -> anyhow::Result<TransactionId> {
-            let txn = self.db.begin().await?;
+        fn new_id(&self) -> TransactionId {
             let id = self
                 .transaction_id
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let mut txns = self.transactions.lock().await;
-            txns.insert(id, txn)
-                .is_none()
-                .then_some(())
-                .expect("new id is generated");
+            id
+        }
+
+        pub async fn begin(&self) -> anyhow::Result<TransactionId> {
+            let id = self.new_id();
+            loop {
+                let mut locked = self.transaction.lock().await;
+                if locked.is_none() {
+                    let txn = self.db.begin().await?;
+                    *locked = Some((id, txn));
+                    break;
+                }
+                drop(locked);
+                self.notif.notified().await;
+            }
             Ok(id)
         }
 
         pub async fn commit(&self, id: TransactionId) -> anyhow::Result<()> {
-            let mut txns = self.transactions.lock().await;
-            let txn = txns.remove(&id).context("Transaction not found")?;
-            txn.commit().await?;
+            let mut locked = self.transaction.lock().await;
+            let Some(txn) = locked.take() else {
+                return Err(anyhow::anyhow!("No active transaction"));
+            };
+            if txn.0 != id {
+                *locked = Some(txn);
+                return Err(anyhow::anyhow!("Wrong transaction Id"));
+            }
+            txn.1.commit().await?;
+
+            self.notif.notify_waiters();
             Ok(())
         }
 
         pub async fn rollback(&self, id: TransactionId) -> anyhow::Result<()> {
-            let mut txns = self.transactions.lock().await;
-            let txn = txns.remove(&id).context("Transaction not found")?;
-            txn.rollback().await?;
+            let mut locked = self.transaction.lock().await;
+            let Some(txn) = locked.take() else {
+                return Err(anyhow::anyhow!("No active transaction"));
+            };
+            if txn.0 != id {
+                *locked = Some(txn);
+                return Err(anyhow::anyhow!("Wrong transaction Id"));
+            }
+            txn.1.rollback().await?;
+
+            self.notif.notify_waiters();
             Ok(())
         }
 

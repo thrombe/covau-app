@@ -61,8 +61,10 @@ fn db_begin_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
         .and(warp::path::end())
         .and(warp::any().map(move || db.clone()))
         .and_then(|db: Db| async move {
-            let id = db.begin().await.map_err(custom_reject)?;
-            Ok::<_, warp::Rejection>(warp::reply::json(&id))
+            // let id = db.begin().await.map_err(custom_reject)?;
+            // Ok::<_, warp::Rejection>(warp::reply::json(&id))
+            todo!();
+            Ok::<_, warp::Rejection>(warp::reply())
         });
 
     let begin = begin.with(warp::cors().allow_any_origin());
@@ -77,7 +79,9 @@ fn db_commit_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, id: u32| async move {
-            db.commit(id).await.map_err(custom_reject)?;
+            // db.commit(id).await.map_err(custom_reject)?;
+            // Ok::<_, warp::Rejection>(warp::reply())
+            todo!();
             Ok::<_, warp::Rejection>(warp::reply())
         });
 
@@ -93,7 +97,9 @@ fn db_rollback_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, id: u32| async move {
-            db.rollback(id).await.map_err(custom_reject)?;
+            // db.rollback(id).await.map_err(custom_reject)?;
+            // Ok::<_, warp::Rejection>(warp::reply())
+            todo!();
             Ok::<_, warp::Rejection>(warp::reply())
         });
 
@@ -101,12 +107,12 @@ fn db_rollback_transaction_route(db: Db) -> BoxedFilter<(impl Reply,)> {
     begin.boxed()
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "type", content = "content")]
-pub enum InsertResponse<T> {
-    New(T),
-    Old(T),
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+// #[serde(tag = "type", content = "content")]
+// pub enum InsertResponse<T> {
+//     New(T),
+//     Old(T),
+// }
 fn db_insert_route<T: DbAble + Send + Sync + 'static>(
     db: Db,
     path: &'static str,
@@ -117,25 +123,27 @@ fn db_insert_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::any().map(move || db.clone()))
         .and(warp::body::json())
         .and_then(|db: Db, item: WithTransaction<T>| async move {
-            let old = item.t.get_by_refid(&db.db).await.map_err(custom_reject)?;
-            match old {
-                Some(e) => Ok(warp::reply::json(&InsertResponse::Old(e))),
-                None => {
-                    let txns = db.transactions.lock().await;
-                    let txn = txns
-                        .get(&item.transaction_id)
-                        .context("Transaction not found")
-                        .map_err(custom_reject)?;
-                    let id = item.t.insert(txn).await.map_err(custom_reject)?;
-                    let db_item = crate::db::DbItem {
-                        id,
-                        typ: T::typ(),
-                        t: item,
-                        metadata: crate::db::DbMetadata::new(),
-                    };
-                    Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
-                }
-            }
+            // let old = item.t.get_by_refid(&db.db).await.map_err(custom_reject)?;
+            // match old {
+            //     Some(e) => Ok(warp::reply::json(&InsertResponse::Old(e))),
+            //     None => {
+            //         let txns = db.transactions.lock().await;
+            //         let txn = txns
+            //             .get(&item.transaction_id)
+            //             .context("Transaction not found")
+            //             .map_err(custom_reject)?;
+            //         let id = item.t.insert(txn).await.map_err(custom_reject)?;
+            //         let db_item = crate::db::DbItem {
+            //             id,
+            //             typ: T::typ(),
+            //             t: item,
+            //             metadata: crate::db::DbMetadata::new(),
+            //         };
+            //         Ok::<_, warp::Rejection>(warp::reply::json(&InsertResponse::New(db_item)))
+            //     }
+            // }
+            todo!();
+            Ok::<_, warp::Rejection>(warp::reply())
         });
     let insert = insert.with(warp::cors().allow_any_origin());
     insert.boxed()
@@ -157,15 +165,17 @@ fn db_update_metadata_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::body::json())
         .and_then(
             |db: Db, q: WithTransaction<UpdateMetadataQuery>| async move {
-                let txns = db.transactions.lock().await;
-                let txn = txns
-                    .get(&q.transaction_id)
-                    .context("Transaction not found")
-                    .map_err(custom_reject)?;
-                let mdata = T::update_mdata(txn, q.t.id, q.t.metadata)
-                    .await
-                    .map_err(custom_reject)?;
-                Ok::<_, warp::Rejection>(warp::reply::json(&mdata))
+                // let txns = db.transactions.lock().await;
+                // let txn = txns
+                //     .get(&q.transaction_id)
+                //     .context("Transaction not found")
+                //     .map_err(custom_reject)?;
+                // let mdata = T::update_mdata(txn, q.t.id, q.t.metadata)
+                //     .await
+                //     .map_err(custom_reject)?;
+                // Ok::<_, warp::Rejection>(warp::reply::json(&mdata))
+                todo!();
+                Ok::<_, warp::Rejection>(warp::reply())
             },
         );
     let update = update.with(warp::cors().allow_any_origin());
@@ -183,16 +193,18 @@ fn db_update_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::body::json())
         .and_then(
             |db: Db, item: WithTransaction<crate::db::DbItem<T>>| async move {
-                let txns = db.transactions.lock().await;
-                let txn = txns
-                    .get(&item.transaction_id)
-                    .context("Transaction not found")
-                    .map_err(custom_reject)?;
-                let mdata = item.t.update(txn).await.map_err(custom_reject)?;
+                // let txns = db.transactions.lock().await;
+                // let txn = txns
+                //     .get(&item.transaction_id)
+                //     .context("Transaction not found")
+                //     .map_err(custom_reject)?;
+                // let mdata = item.t.update(txn).await.map_err(custom_reject)?;
 
-                let mut item = item.t;
-                item.metadata = mdata;
-                Ok::<_, warp::Rejection>(warp::reply::json(&item))
+                // let mut item = item.t;
+                // item.metadata = mdata;
+                // Ok::<_, warp::Rejection>(warp::reply::json(&item))
+                todo!();
+                Ok::<_, warp::Rejection>(warp::reply())
             },
         );
     let update = update.with(warp::cors().allow_any_origin());
@@ -210,12 +222,14 @@ fn db_delete_route<T: DbAble + Send + Sync + 'static>(
         .and(warp::body::json())
         .and_then(
             |db: Db, item: WithTransaction<crate::db::DbItem<T>>| async move {
-                let txns = db.transactions.lock().await;
-                let txn = txns
-                    .get(&item.transaction_id)
-                    .context("Transaction not found")
-                    .map_err(custom_reject)?;
-                item.t.delete(txn).await.map_err(custom_reject)?;
+                // let txns = db.transactions.lock().await;
+                // let txn = txns
+                //     .get(&item.transaction_id)
+                //     .context("Transaction not found")
+                //     .map_err(custom_reject)?;
+                // item.t.delete(txn).await.map_err(custom_reject)?;
+                // Ok::<_, warp::Rejection>(warp::reply())
+                todo!();
                 Ok::<_, warp::Rejection>(warp::reply())
             },
         );

@@ -44,6 +44,14 @@ pub enum MessageResult<T> {
     Ok(T),
     Err(ErrorMessage),
 }
+impl<T: Serialize> MessageResult<T> {
+    pub fn json(self) -> MessageResult<String> {
+        match self {
+            MessageResult::Ok(t) => MessageResult::Ok(serde_json::to_string(&t).unwrap()),
+            MessageResult::Err(e) => MessageResult::Err(e),
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 pub struct Message<T> {
     pub id: Option<u32>,
@@ -51,24 +59,334 @@ pub struct Message<T> {
     pub data: MessageResult<T>,
 }
 
-// pub struct InnerMessageServer<R> {
-//     id_count: std::sync::atomic::AtomicU32,
-//     request_sender: mpsc::Sender<Message<R>>,
-//     request_receiver: Mutex<ReceiverStream<Message<R>>>,
-// }
-// pub struct MessageServer<R>(pub Arc<InnerMessageServer<R>>);
-// impl<R> Clone for MessageServer<R> {
-//     fn clone(&self) -> Self {
-//         Self(self.0.clone())
-//     }
-// }
-// impl<R> Deref for MessageServer<R> {
-//     type Target = InnerMessageServer<R>;
+pub mod db_server {
+    use std::convert::Infallible;
 
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
+    use futures::Future;
+    use sea_orm::ConnectionTrait;
+    use warp::filters::BoxedFilter;
+    use warp::Reply;
+
+    use crate::db::{DbAble, DbItem, TransactionId, Typ};
+
+    use super::message_server::*;
+    use super::*;
+
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum InsertResponse<T> {
+        New(T),
+        Old(T),
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
+    #[serde(tag = "type", content = "content")]
+    pub enum DbRequest {
+        Begin,
+        Commit(TransactionId),
+        Rollback(TransactionId),
+        Insert {
+            transaction_id: TransactionId,
+            typ: Typ,
+            item: String,
+        },
+        InsertOrGet {
+            transaction_id: TransactionId,
+            typ: Typ,
+            item: String,
+        },
+        Update {
+            transaction_id: TransactionId,
+            item: DbItem<String>,
+        },
+        UpdateMetadata {
+            transaction_id: TransactionId,
+            id: crate::db::DbId,
+            metadata: crate::db::DbMetadata,
+        },
+        Delete {
+            transaction_id: TransactionId,
+            item: DbItem<String>,
+        },
+    }
+
+    type Song = crate::covau_types::Song;
+    type Playlist = crate::covau_types::Playlist;
+    type Queue = crate::covau_types::Queue;
+    type Updater = crate::covau_types::Updater;
+    type StSong = crate::yt::song_tube::Song;
+    type StAlbum = crate::yt::song_tube::Album;
+    type StPlaylist = crate::yt::song_tube::Playlist;
+    type StArtist = crate::yt::song_tube::Artist;
+    type MmSong = crate::musimanager::Song<Option<crate::musimanager::SongInfo>>;
+    type MmAlbum = crate::musimanager::Album<crate::yt::VideoId>;
+    type MmPlaylist = crate::musimanager::Playlist<crate::yt::VideoId>;
+    type MmQueue = crate::musimanager::Queue<crate::yt::VideoId>;
+    type MmArtist = crate::musimanager::Artist<crate::yt::VideoId, crate::yt::AlbumId>;
+
+    #[async_trait::async_trait]
+    impl MessageServerRequest for DbRequest {
+        type Ctx = crate::db::Db;
+
+        async fn handle(self, db: Self::Ctx) -> anyhow::Result<MessageResult<String>> {
+            async fn insert<T: DbAble>(
+                txn: &impl ConnectionTrait,
+                data: String,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let item: T = serde_json::from_str(&data)?;
+                let old = item.get_by_refid(txn).await?;
+                let dbitem = match old {
+                    Some(e) => InsertResponse::Old(e),
+                    None => {
+                        let id = item.insert(txn).await?;
+                        let dbitem = DbItem {
+                            metadata: crate::db::DbMetadata::new(),
+                            id,
+                            typ: T::typ(),
+                            t: item,
+                        };
+                        InsertResponse::New(dbitem)
+                    }
+                };
+                Ok(MessageResult::Ok(dbitem).json())
+            }
+
+            let res = match self {
+                DbRequest::Begin => {
+                    let id = db.begin().await?;
+                    MessageResult::Ok(id).json()
+                }
+                DbRequest::Commit(id) => {
+                    db.commit(id).await?;
+                    MessageResult::Ok(()).json()
+                }
+                DbRequest::Rollback(id) => {
+                    db.rollback(id).await?;
+                    MessageResult::Ok(()).json()
+                }
+                DbRequest::Insert {
+                    transaction_id,
+                    typ,
+                    item,
+                } => todo!(),
+                DbRequest::InsertOrGet {
+                    transaction_id,
+                    typ,
+                    item,
+                } => {
+                    let txn = db.transaction.lock().await;
+                    match txn.as_ref() {
+                        Some((id, txn)) => {
+                            if *id != transaction_id {
+                                let msg = "Transaction Inactive";
+                                MessageResult::Err(ErrorMessage {
+                                    message: msg.into(),
+                                    stack_trace: msg.into(),
+                                })
+                            } else {
+                                match typ {
+                                    Typ::MmSong => insert::<MmSong>(txn, item).await?,
+                                    Typ::MmAlbum => insert::<MmAlbum>(txn, item).await?,
+                                    Typ::MmArtist => insert::<MmArtist>(txn, item).await?,
+                                    Typ::MmPlaylist => insert::<MmPlaylist>(txn, item).await?,
+                                    Typ::MmQueue => insert::<MmQueue>(txn, item).await?,
+                                    Typ::Song => insert::<Song>(txn, item).await?,
+                                    Typ::Playlist => insert::<Playlist>(txn, item).await?,
+                                    Typ::Queue => insert::<Queue>(txn, item).await?,
+                                    Typ::Updater => insert::<Updater>(txn, item).await?,
+                                    Typ::StSong => insert::<StSong>(txn, item).await?,
+                                    Typ::StAlbum => insert::<StAlbum>(txn, item).await?,
+                                    Typ::StPlaylist => insert::<StPlaylist>(txn, item).await?,
+                                    Typ::StArtist => insert::<StArtist>(txn, item).await?,
+                                }
+                            }
+                        }
+                        None => {
+                            let msg = "No Transaction Active";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        }
+                    }
+                }
+                DbRequest::Update {
+                    transaction_id,
+                    item,
+                } => todo!(),
+                DbRequest::UpdateMetadata {
+                    transaction_id,
+                    id,
+                    metadata,
+                } => todo!(),
+                DbRequest::Delete {
+                    transaction_id,
+                    item,
+                } => todo!(),
+            };
+            Ok(res)
+        }
+    }
+}
+
+pub mod message_server {
+    use std::convert::Infallible;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    use futures::{SinkExt, StreamExt};
+    use tokio::sync::mpsc::{self, Sender};
+    use tokio_stream::wrappers::ReceiverStream;
+    use warp::filters::BoxedFilter;
+    use warp::Reply;
+
+    use super::*;
+
+    fn get_id_route(path: &'static str) -> BoxedFilter<(impl Reply,)> {
+        let id: Arc<AtomicU32> = Arc::new(0.into());
+        let route = warp::path("serve")
+            .and(warp::path(path))
+            .and(warp::path("new_id"))
+            .and(warp::path::end())
+            .and(warp::any().map(move || id.clone()))
+            .and_then(|id: Arc<AtomicU32>| async move {
+                let id = id.fetch_add(1, Ordering::Relaxed);
+                Ok::<_, Infallible>(warp::reply::json(&id))
+            });
+
+        let route = route.with(warp::cors().allow_any_origin());
+        route.boxed()
+    }
+
+    fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send + 'static>(
+        path: &'static str,
+        ctx: Ctx,
+    ) -> BoxedFilter<(impl Reply,)> {
+        let ws_route = warp::path("serve")
+            .and(warp::path(path))
+            .and(warp::path::end())
+            .and(warp::ws())
+            .and(warp::any().map(move || ctx.clone()))
+            .then(|ws: warp::ws::Ws, ctx: Ctx| async move {
+                ws.on_upgrade(move |ws| async move {
+                    let ctx = ctx.clone();
+                    let (mut wstx, mut wsrx) = ws.split();
+                    let (tx, rx) = mpsc::channel::<Message<String>>(100);
+                    let mut rx = ReceiverStream::new(rx);
+
+                    let j = tokio::task::spawn(async move {
+                        while let Some(msg) = rx.next().await {
+                            let msg = serde_json::to_string(&msg).unwrap();
+                            let msg = warp::ws::Message::text(msg);
+                            match wstx.send(msg).await {
+                                Ok(_) => (),
+                                Err(e) => {
+                                    eprintln!(
+                                        "Failed to send message using websocket - {}",
+                                        e.to_string()
+                                    );
+                                }
+                            }
+                        }
+                    });
+
+                    async fn message_handler<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone>(
+                        sender: Sender<Message<String>>,
+                        msg: warp::ws::Message,
+                        ctx: Ctx,
+                    ) -> anyhow::Result<()> {
+                        let Some(msg) = msg.to_str().ok() else {
+                            return Ok(());
+                        };
+                        let msg = serde_json::from_str::<Message<String>>(msg)?;
+                        match msg.id {
+                            Some(id) => match msg.data {
+                                MessageResult::Ok(data) => {
+                                    let req: R = serde_json::from_str(&data)?;
+                                    match req.handle(ctx).await {
+                                        Ok(res) => {
+                                            sender
+                                                .send(Message {
+                                                    id: Some(id),
+                                                    data: res,
+                                                })
+                                                .await?;
+                                        }
+                                        Err(err) => {
+                                            sender
+                                                .send(Message {
+                                                    id: Some(id),
+                                                    data: MessageResult::Err(ErrorMessage {
+                                                        message: format!("{}", err),
+                                                        stack_trace: format!("{:?}", err),
+                                                    }),
+                                                })
+                                                .await?;
+                                        }
+                                    }
+                                }
+                                MessageResult::Err(err) => {
+                                    println!("frontend sent an error: {}", err);
+                                }
+                            },
+                            None => match msg.data {
+                                MessageResult::Ok(msg) => {
+                                    return Err(anyhow::anyhow!(
+                                        "frontend sent a message without id :/ : {:?}",
+                                        msg
+                                    ));
+                                }
+                                MessageResult::Err(e) => {
+                                    println!("frontend sent an error: {}", e);
+                                }
+                            },
+                        }
+                        Ok(())
+                    }
+
+                    while let Some(msg) = wsrx.next().await {
+                        match msg {
+                            Ok(msg) => {
+                                let tx = tx.clone();
+                                let ctx = ctx.clone();
+                                let _j = tokio::task::spawn(async move {
+                                    match message_handler::<R, Ctx>(tx, msg, ctx).await {
+                                        Ok(_) => (),
+                                        Err(e) => {
+                                            eprintln!("Error: {}", &e);
+                                        }
+                                    }
+                                });
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {}", &e);
+                            }
+                        }
+                    }
+
+                    // NOTE: abort drops everything correctly. so this is fine
+                    j.abort();
+                })
+            });
+        let ws_route = ws_route.with(warp::cors().allow_any_origin());
+        ws_route.boxed()
+    }
+
+    #[async_trait::async_trait]
+    pub trait MessageServerRequest
+    where
+        Self: Sized + Send + Sync + Serialize + for<'de> Deserialize<'de> + 'static,
+    {
+        type Ctx: Clone + Send + Sync + 'static;
+
+        async fn handle(self, ctx: Self::Ctx) -> anyhow::Result<MessageResult<String>>;
+
+        fn routes(ctx: Self::Ctx, path: &'static str) -> BoxedFilter<(impl Reply,)> {
+            client_ws_route::<Self, _>(path, ctx)
+                .or(get_id_route(path))
+                .boxed()
+        }
+    }
+}
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
     let client = reqwest::Client::new();
@@ -98,11 +416,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
             .allow_methods(["POST", "GET"]),
     );
 
+    use message_server::MessageServerRequest;
+
     // TODO: expose db transactions somehow T_T
     let all = FrontendClient::client_ws_route(yti.clone(), "yti")
         .or(FrontendClient::client_ws_route(fe.clone(), "fec"))
         .or(FeRequest::cli_command_route(fe.clone(), "cli"))
         .or(AppState::app_state_handler_route(state.clone(), "app"))
+        .or(db_server::DbRequest::routes(db.clone(), "db"))
         .or(crate::server::player::player_route())
         .or(ProxyRequest::cors_proxy_route(client.clone()))
         .or(crate::server::db::db_routes(db.clone(), client.clone()))
@@ -190,6 +511,8 @@ async fn updater_system(
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     use crate::server::{db::*, player::*, routes::*};
+    use db_server::*;
+
     let mut types = String::new();
     types += "import type { DbMetadata } from '$types/db.ts';\n";
     types += ";\n";
@@ -212,6 +535,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<InsertResponse<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<WithTransaction<()>>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<DbRequest>(config)?;
     types += ";\n";
     types += &specta::ts::export::<ErrorMessage>(config)?;
     types += ";\n";
