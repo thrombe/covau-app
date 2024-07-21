@@ -327,6 +327,7 @@ class DbClient extends Client<types.server.DbRequest> {
                     content: {
                         transaction_id: this.id,
                         id: item.id,
+                        typ: item.typ,
                         metadata: item.metadata,
                     },
                 };

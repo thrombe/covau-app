@@ -67,7 +67,7 @@ pub mod db_server {
     use warp::filters::BoxedFilter;
     use warp::Reply;
 
-    use crate::db::{DbAble, DbItem, TransactionId, Typ};
+    use crate::db::{DbAble, DbId, DbItem, DbMetadata, TransactionId, Typ};
 
     use super::message_server::*;
     use super::*;
@@ -102,6 +102,7 @@ pub mod db_server {
         UpdateMetadata {
             transaction_id: TransactionId,
             id: crate::db::DbId,
+            typ: Typ,
             metadata: crate::db::DbMetadata,
         },
         Delete {
@@ -134,6 +135,20 @@ pub mod db_server {
                 data: String,
             ) -> anyhow::Result<MessageResult<String>> {
                 let item: T = serde_json::from_str(&data)?;
+                let id = item.insert(txn).await?;
+                let dbitem = DbItem {
+                    metadata: crate::db::DbMetadata::new(),
+                    id,
+                    typ: T::typ(),
+                    t: item,
+                };
+                Ok(MessageResult::Ok(dbitem).json())
+            }
+            async fn insert_or_get<T: DbAble>(
+                txn: &impl ConnectionTrait,
+                data: String,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let item: T = serde_json::from_str(&data)?;
                 let old = item.get_by_refid(txn).await?;
                 let dbitem = match old {
                     Some(e) => InsertResponse::Old(e),
@@ -149,6 +164,36 @@ pub mod db_server {
                     }
                 };
                 Ok(MessageResult::Ok(dbitem).json())
+            }
+            async fn update<T: DbAble>(
+                txn: &impl ConnectionTrait,
+                data: DbItem<String>,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let item: DbItem<T> = data.parsed()?;
+                let meta = item.update(txn).await?;
+                let dbitem = DbItem {
+                    metadata: meta,
+                    id: item.id,
+                    typ: T::typ(),
+                    t: item.t,
+                };
+                Ok(MessageResult::Ok(dbitem).json())
+            }
+            async fn update_metadata<T: DbAble>(
+                txn: &impl ConnectionTrait,
+                id: DbId,
+                mdata: DbMetadata,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let mdata = T::update_mdata(txn, id, mdata).await?;
+                Ok(MessageResult::Ok(mdata).json())
+            }
+            async fn delete<T: DbAble>(
+                txn: &impl ConnectionTrait,
+                data: DbItem<String>,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let item: DbItem<T> = data.parsed()?;
+                item.delete(txn).await?;
+                Ok(MessageResult::Ok(()).json())
             }
 
             let res = match self {
@@ -168,16 +213,11 @@ pub mod db_server {
                     transaction_id,
                     typ,
                     item,
-                } => todo!(),
-                DbRequest::InsertOrGet {
-                    transaction_id,
-                    typ,
-                    item,
                 } => {
                     let txn = db.transaction.lock().await;
                     match txn.as_ref() {
-                        Some((id, txn)) => {
-                            if *id != transaction_id {
+                        Some((tid, txn)) => {
+                            if *tid != transaction_id {
                                 let msg = "Transaction Inactive";
                                 MessageResult::Err(ErrorMessage {
                                     message: msg.into(),
@@ -209,20 +249,170 @@ pub mod db_server {
                             })
                         }
                     }
+                },
+                DbRequest::InsertOrGet {
+                    transaction_id,
+                    typ,
+                    item,
+                } => {
+                    let txn = db.transaction.lock().await;
+                    match txn.as_ref() {
+                        Some((tid, txn)) => {
+                            if *tid != transaction_id {
+                                let msg = "Transaction Inactive";
+                                MessageResult::Err(ErrorMessage {
+                                    message: msg.into(),
+                                    stack_trace: msg.into(),
+                                })
+                            } else {
+                                match typ {
+                                    Typ::MmSong => insert_or_get::<MmSong>(txn, item).await?,
+                                    Typ::MmAlbum => insert_or_get::<MmAlbum>(txn, item).await?,
+                                    Typ::MmArtist => insert_or_get::<MmArtist>(txn, item).await?,
+                                    Typ::MmPlaylist => insert_or_get::<MmPlaylist>(txn, item).await?,
+                                    Typ::MmQueue => insert_or_get::<MmQueue>(txn, item).await?,
+                                    Typ::Song => insert_or_get::<Song>(txn, item).await?,
+                                    Typ::Playlist => insert_or_get::<Playlist>(txn, item).await?,
+                                    Typ::Queue => insert_or_get::<Queue>(txn, item).await?,
+                                    Typ::Updater => insert_or_get::<Updater>(txn, item).await?,
+                                    Typ::StSong => insert_or_get::<StSong>(txn, item).await?,
+                                    Typ::StAlbum => insert_or_get::<StAlbum>(txn, item).await?,
+                                    Typ::StPlaylist => insert_or_get::<StPlaylist>(txn, item).await?,
+                                    Typ::StArtist => insert_or_get::<StArtist>(txn, item).await?,
+                                }
+                            }
+                        }
+                        None => {
+                            let msg = "No Transaction Active";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        }
+                    }
                 }
                 DbRequest::Update {
                     transaction_id,
                     item,
-                } => todo!(),
+                } => {
+                    let txn = db.transaction.lock().await;
+                    match txn.as_ref() {
+                        Some((tid, txn)) => {
+                            if *tid != transaction_id {
+                                let msg = "Transaction Inactive";
+                                MessageResult::Err(ErrorMessage {
+                                    message: msg.into(),
+                                    stack_trace: msg.into(),
+                                })
+                            } else {
+                                match item.typ {
+                                    Typ::MmSong => update::<MmSong>(txn, item).await?,
+                                    Typ::MmAlbum => update::<MmAlbum>(txn, item).await?,
+                                    Typ::MmArtist => update::<MmArtist>(txn, item).await?,
+                                    Typ::MmPlaylist => update::<MmPlaylist>(txn, item).await?,
+                                    Typ::MmQueue => update::<MmQueue>(txn, item).await?,
+                                    Typ::Song => update::<Song>(txn, item).await?,
+                                    Typ::Playlist => update::<Playlist>(txn, item).await?,
+                                    Typ::Queue => update::<Queue>(txn, item).await?,
+                                    Typ::Updater => update::<Updater>(txn, item).await?,
+                                    Typ::StSong => update::<StSong>(txn, item).await?,
+                                    Typ::StAlbum => update::<StAlbum>(txn, item).await?,
+                                    Typ::StPlaylist => update::<StPlaylist>(txn, item).await?,
+                                    Typ::StArtist => update::<StArtist>(txn, item).await?,
+                                }
+                            }
+                        }
+                        None => {
+                            let msg = "No Transaction Active";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        }
+                    }
+                },
                 DbRequest::UpdateMetadata {
                     transaction_id,
                     id,
+                    typ,
                     metadata,
-                } => todo!(),
+                } => {
+                    let txn = db.transaction.lock().await;
+                    match txn.as_ref() {
+                        Some((tid, txn)) => {
+                            if *tid != transaction_id {
+                                let msg = "Transaction Inactive";
+                                MessageResult::Err(ErrorMessage {
+                                    message: msg.into(),
+                                    stack_trace: msg.into(),
+                                })
+                            } else {
+                                match typ {
+                                    Typ::MmSong => update_metadata::<MmSong>(txn, id, metadata).await?,
+                                    Typ::MmAlbum => update_metadata::<MmAlbum>(txn, id, metadata).await?,
+                                    Typ::MmArtist => update_metadata::<MmArtist>(txn, id, metadata).await?,
+                                    Typ::MmPlaylist => update_metadata::<MmPlaylist>(txn, id, metadata).await?,
+                                    Typ::MmQueue => update_metadata::<MmQueue>(txn, id, metadata).await?,
+                                    Typ::Song => update_metadata::<Song>(txn, id, metadata).await?,
+                                    Typ::Playlist => update_metadata::<Playlist>(txn, id, metadata).await?,
+                                    Typ::Queue => update_metadata::<Queue>(txn, id, metadata).await?,
+                                    Typ::Updater => update_metadata::<Updater>(txn, id, metadata).await?,
+                                    Typ::StSong => update_metadata::<StSong>(txn, id, metadata).await?,
+                                    Typ::StAlbum => update_metadata::<StAlbum>(txn, id, metadata).await?,
+                                    Typ::StPlaylist => update_metadata::<StPlaylist>(txn, id, metadata).await?,
+                                    Typ::StArtist => update_metadata::<StArtist>(txn, id, metadata).await?,
+                                }
+                            }
+                        }
+                        None => {
+                            let msg = "No Transaction Active";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        }
+                    }
+                },
                 DbRequest::Delete {
                     transaction_id,
                     item,
-                } => todo!(),
+                } => {
+                    let txn = db.transaction.lock().await;
+                    match txn.as_ref() {
+                        Some((tid, txn)) => {
+                            if *tid != transaction_id {
+                                let msg = "Transaction Inactive";
+                                MessageResult::Err(ErrorMessage {
+                                    message: msg.into(),
+                                    stack_trace: msg.into(),
+                                })
+                            } else {
+                                match item.typ {
+                                    Typ::MmSong => delete::<MmSong>(txn, item).await?,
+                                    Typ::MmAlbum => delete::<MmAlbum>(txn, item).await?,
+                                    Typ::MmArtist => delete::<MmArtist>(txn, item).await?,
+                                    Typ::MmPlaylist => delete::<MmPlaylist>(txn, item).await?,
+                                    Typ::MmQueue => delete::<MmQueue>(txn, item).await?,
+                                    Typ::Song => delete::<Song>(txn, item).await?,
+                                    Typ::Playlist => delete::<Playlist>(txn, item).await?,
+                                    Typ::Queue => delete::<Queue>(txn, item).await?,
+                                    Typ::Updater => delete::<Updater>(txn, item).await?,
+                                    Typ::StSong => delete::<StSong>(txn, item).await?,
+                                    Typ::StAlbum => delete::<StAlbum>(txn, item).await?,
+                                    Typ::StPlaylist => delete::<StPlaylist>(txn, item).await?,
+                                    Typ::StArtist => delete::<StArtist>(txn, item).await?,
+                                }
+                            }
+                        }
+                        None => {
+                            let msg = "No Transaction Active";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        }
+                    }
+                },
             };
             Ok(res)
         }

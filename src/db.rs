@@ -168,6 +168,22 @@ pub mod db {
 
     use super::*;
 
+    impl DbItem<String> {
+        pub fn parsed<T: DbAble>(self) -> anyhow::Result<DbItem<T>> {
+            let t: T = serde_json::from_str(&self.t)?;
+            if T::typ() != self.typ {
+                return Err(anyhow::anyhow!("type mismatch while parsing"));
+            }
+            let dbitem = DbItem {
+                metadata: self.metadata,
+                id: self.id,
+                typ: T::typ(),
+                t,
+            };
+            Ok(dbitem)
+        }
+    }
+
     pub type DbId = i32;
 
     #[async_trait::async_trait]
