@@ -803,7 +803,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(db_server::DbRequest::routes(db.clone(), "db"))
         .or(crate::server::player::player_route())
         .or(ProxyRequest::cors_proxy_route(client.clone()))
-        .or(crate::server::db::db_routes(client.clone()))
+        .or(crate::server::mbz::mbz_routes(client.clone()))
         .or(webui_js_route(client.clone()))
         .or(options_route.boxed());
     // let all = all.or(redirect_route(client.clone()));

@@ -13,7 +13,7 @@ pub mod mbz;
 pub mod musimanager;
 mod musiplayer;
 pub mod server {
-    pub mod db;
+    pub mod mbz;
     pub mod player;
     pub mod routes;
     pub mod server;

@@ -75,7 +75,7 @@ fn id_search<T: IdSearch + Serialize + Send>(path: &'static str) -> BoxedFilter<
     search.boxed()
 }
 
-pub fn db_routes(client: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
+pub fn mbz_routes(client: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
     let mbz_search_routes = {
         use crate::mbz::*;
         use musicbrainz_rs::entity::{artist, release, release_group};
