@@ -292,21 +292,21 @@ struct Message<T> {
     data: MessageResult<T>,
 }
 
-pub struct FrontendClient<R>(Arc<InnerFrontendClient<R>>);
+pub struct FrontendClient<R>(Arc<RequestTracker<R>>);
 impl<R> Clone for FrontendClient<R> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 impl<R> Deref for FrontendClient<R> {
-    type Target = InnerFrontendClient<R>;
+    type Target = RequestTracker<R>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-pub struct InnerFrontendClient<R> {
+pub struct RequestTracker<R> {
     id_count: std::sync::atomic::AtomicU32,
     request_sender: mpsc::Sender<Message<R>>,
     request_receiver: Mutex<ReceiverStream<Message<R>>>,
@@ -316,7 +316,7 @@ pub struct InnerFrontendClient<R> {
 impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::channel(100);
-        Self(Arc::new(InnerFrontendClient {
+        Self(Arc::new(RequestTracker {
             id_count: Default::default(),
             request_sender: tx,
             request_receiver: Mutex::new(ReceiverStream::new(rx)),
