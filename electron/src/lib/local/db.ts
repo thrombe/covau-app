@@ -110,6 +110,8 @@ export const db = {
         },
     },
 
+    client: () => server.dbclient!,
+
     async begin() {
         let id: number = await utils.api_request(utils.base_url + "db/transaction/begin", null);
         return id;

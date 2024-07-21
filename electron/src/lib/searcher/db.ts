@@ -411,7 +411,7 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = this.data.t;
 
-                let vid = await st.fetch.video(song.key);
+                let vid = await st.cached.video(song.key);
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
@@ -499,7 +499,7 @@ export class DbListItem extends ListItem {
             if (!item.is_playable()) {
                 return false;
             }
-            await db.txn(async db => {
+            await db.client().txn(async db => {
                 let song = await item.saved_covau_song(db);
                 if (song == null) {
                     throw new Error(`can't save item ${item.title()}`);
@@ -566,7 +566,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "like",
                     onclick: async () => {
-                        await db.txn(async db => {
+                        await db.client().txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             console.log(item);
                             item.metadata.likes += 1;
@@ -579,7 +579,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "dislike",
                     onclick: async () => {
-                        await db.txn(async db => {
+                        await db.client().txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes += 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -591,7 +591,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "un-like",
                     onclick: async () => {
-                        await db.txn(async db => {
+                        await db.client().txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.likes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -603,7 +603,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "un-dislike",
                     onclick: async () => {
-                        await db.txn(async db => {
+                        await db.client().txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -617,7 +617,7 @@ export class DbListItem extends ListItem {
                     return await Promise.all(keys
                         .map(k => {
                             return st
-                                .fetch.artist(k)
+                                .cached.artist(k)
                                 .then(a => st.parse.wrap_item(a, "Artist"))
                                 .catch(err => {
                                     let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));

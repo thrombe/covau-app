@@ -11,6 +11,8 @@ import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
+import * as db from "$lib/local/db.ts"
+import * as server from "$lib/server.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -609,6 +611,33 @@ export const st = {
         // },
     },
 
+    cached: {
+        async video(id: string) {
+            let v = await db.db.search.refid.st.song(id);
+            if (v == null) {
+                let item = await st.fetch.video(id);
+                let dbitem = await db.db.client().txn(async db => {
+                    return await db.insert_or_get({ typ: "StSong", t: item });
+                });
+                return item;
+            } else {
+                return v.t;
+            }
+        },
+        async artist(id: string) {
+            let v = await db.db.search.refid.st.artist(id);
+            if (v == null) {
+                let item = await st.fetch.artist(id);
+                let dbitem = await db.db.client().txn(async db => {
+                    return await db.insert_or_get({ typ: "StArtist", t: item });
+                });
+                return item;
+            } else {
+                return v.t;
+            }
+        },
+    },
+
     url: {
         song_thumbnail(id: string) {
             return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
@@ -898,7 +927,7 @@ export class SongTube extends Unpaged<MusicListItem> {
         }
 
         let promises = batch.map(id => {
-            return st.fetch.video(id).then(s => ({
+            return st.cached.video(id).then(s => ({
                 type: 'Song',
                 content: s,
             } as MusicListItem)).catch(reason => ({

@@ -283,7 +283,7 @@ export class QueueManager implements Searcher {
                     }
                     let name = _name;
 
-                    await db.txn(async (db) => {
+                    await db.client().txn(async (db) => {
                         let items = await Promise.all(this.items.map(async (item) => {
                             let song = await item.saved_covau_song(db);
                             if (!song) {
