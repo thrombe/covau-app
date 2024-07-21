@@ -1,4 +1,4 @@
-import type { ErrorMessage, Message, FeRequest } from '$types/server.ts';
+import type { ErrorMessage, Message, FeRequest, MessageResult } from '$types/server.ts';
 import { toast } from './toast/toast.ts';
 import * as st from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
@@ -224,6 +224,143 @@ class FeServer extends Server<FeRequest> {
     }
 }
 
+type Resolver<T> = (res: any) => void;
+class Client<Req> {
+    ws: WebSocket;
+    path: string;
+
+    constructor(path: string) {
+        this.path = utils.base_url + path + "/new_id";
+        this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
+
+        this.ws.addEventListener('message', async (e) => {
+            let mesg: Message<unknown> = JSON.parse(e.data);
+
+            if (mesg.id == null) {
+                toast("backend sent some data without id", "error");
+                console.error(mesg.content);
+                return;
+            }
+
+            let resolver = this.resolves.get(mesg.id) ?? null;
+            if (resolver == null) {
+                toast("backend sent some data with unknown id", "error");
+                console.error(mesg.content);
+                return;
+            }
+            this.resolves.delete(mesg.id);
+
+            resolver(mesg);
+        });
+    }
+
+    resolves: Map<number, Resolver<string>> = new Map();
+    async execute<T>(req: Req): Promise<T> {
+        let id: number = await utils.api_request(this.path, null);
+
+        let resolve: Resolver<string> = undefined as unknown as Resolver<string>;
+        let promise = new Promise<MessageResult<string>>(r => {
+            resolve = r;
+        });
+        this.resolves.set(id, resolve);
+
+        let msg: Message<string> = {
+            id: id,
+            type: "Ok",
+            content: JSON.stringify(req),
+        };
+        this.ws.send(JSON.stringify(msg));
+        let resp = await promise;
+
+        if (resp.type == "Err") {
+            console.error(resp.content.stack_trace);
+            throw new Error(resp.content.message);
+        }
+
+        return JSON.parse(resp.content);
+    }
+}
+
+export type AlmostDbItem<T> = Omit<Omit<types.db.DbItem<T>, "id">, "metadata">;
+
+class DbClient extends Client<types.server.DbRequest> {
+    constructor() {
+        super("serve/db")
+    }
+
+    private db_cud(id: number) {
+        let self = this;
+        return {
+            id: id,
+
+            async insert_or_get<T>(t: AlmostDbItem<T>): Promise<types.server.InsertResponse<types.db.DbItem<T>>> {
+                let req: types.server.DbRequest = {
+                    type: "InsertOrGet",
+                    content: {
+                        transaction_id: this.id,
+                        typ: t.typ,
+                        item: JSON.stringify(t.t),
+                    },
+                };
+                let dbitem: types.server.InsertResponse<types.db.DbItem<T>> = await self.execute(req);
+                return dbitem;
+            },
+
+            async update<T>(item: types.db.DbItem<T>) {
+                let req: types.server.DbRequest = {
+                    type: "Update",
+                    content: {
+                        transaction_id: this.id,
+                        item: {
+                            ...item,
+                            t: JSON.stringify(item.t),
+                        },
+                    },
+                };
+                let dbitem: types.db.DbItem<T> = await self.execute(req);
+                return dbitem;
+            },
+
+            async update_metadata<T>(item: types.db.DbItem<T>) {
+                let req: types.server.DbRequest = {
+                    type: "UpdateMetadata",
+                    content: {
+                        transaction_id: this.id,
+                        id: item.id,
+                        metadata: item.metadata,
+                    },
+                };
+                let dbitem: types.db.DbMetadata = await self.execute(req);
+                return dbitem;
+            },
+
+            async delete<T>(item: types.db.DbItem<T>) {
+                let req: types.server.DbRequest = {
+                    type: "Delete",
+                    content: {
+                        transaction_id: this.id,
+                        item: JSON.stringify(item)
+                    },
+                };
+                let _: null = await self.execute(req);
+            },
+        }
+    }
+
+    async txn<Ret>(fn: (db_ops: ReturnType<DbClient["db_cud"]>) => Promise<Ret>) {
+        let id: number = await this.execute({ type: "Begin" });
+        try {
+            let res = await fn(this.db_cud(id));
+            await this.execute({ type: "Commit", content: id });
+            return res;
+        } catch (e: any) {
+            await this.execute({ type: "Rollback", content: id });
+
+            throw e;
+        }
+    }
+}
+
 const app_ops = {
     async send(state: types.server.AppMessage) {
         let route = utils.base_url + "app";
@@ -271,9 +408,11 @@ function app_unhook() {
 
 export let ytiserver: YtiServer | null = null;
 export let feserver: FeServer | null = null;
+export let dbclient: DbClient | null = null;
 export const serve = async () => {
     ytiserver = new YtiServer();
     feserver = new FeServer();
+    dbclient = new DbClient();
     app_hook();
     app_ops.load(null);
 
@@ -300,5 +439,6 @@ export const serve = async () => {
 export const unserve = async () => {
     ytiserver = null;
     feserver = null;
+    dbclient = null;
     app_unhook();
 };

@@ -10,4 +10,5 @@ export type UpdateMetadataQuery = { id: number; metadata: DbMetadata };
 export type ProxyRequest = { url: string; body?: string | null; headers: string; method: string };
 export type InsertResponse<T> = { type: "New"; content: T } | { type: "Old"; content: T };
 export type WithTransaction<T> = { transaction_id: number; t: T };
+export type DbRequest = { type: "Begin" } | { type: "Commit"; content: number } | { type: "Rollback"; content: number } | { type: "Insert"; content: { transaction_id: number; typ: Typ; item: string } } | { type: "InsertOrGet"; content: { transaction_id: number; typ: Typ; item: string } } | { type: "Update"; content: { transaction_id: number; item: DbItem<string> } } | { type: "UpdateMetadata"; content: { transaction_id: number; id: number; metadata: DbMetadata } } | { type: "Delete"; content: { transaction_id: number; item: DbItem<string> } };
 export type ErrorMessage = { message: string; stack_trace: string };
