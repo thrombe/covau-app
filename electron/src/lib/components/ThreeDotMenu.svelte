@@ -22,7 +22,7 @@
 
 <slot {show_menu} {on_menu_click} />
 <div
-    class="absolute flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-md z-10 overflow-y-auto scrollbar-hide {classes}"
+    class="absolute flex flex-col gap-1 p-2 bg-gray-300 bg-opacity-20 rounded-xl backdrop-blur-lg backdrop-brightness-[85%] z-10 overflow-y-auto scrollbar-hide {classes}"
     style={styles}
     class:hidden={!show_menu}
 >

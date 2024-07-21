@@ -178,9 +178,9 @@
 
 <div
     class="relative flex flex-col w-full h-full bg-gray-900 bg-opacity-30"
-    style="--queue-area-width: {!mobile
-        ? 'min(475px, max(330px, 33.333vw))'
-        : '0px'};"
+    style={`--queue-area-width: ${
+        !mobile ? "min(475px, max(330px, 33.333vw))" : "0px"
+    };`}
 >
     <all-contents class="flex flex-row">
         <search-area class="flex flex-col">
