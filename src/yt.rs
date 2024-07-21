@@ -1,11 +1,10 @@
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 
-use bytes::Buf;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 
-use crate::server::{FrontendClient, MessageResult};
+use crate::server::server::FrontendClient;
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct VideoId(pub String);
@@ -308,14 +307,14 @@ impl SongTubeFac {
             .map(|i| i * bufsize)
             .chain(std::iter::once(info.content_length));
 
-        let mut byteses: futures::stream::FuturesOrdered<_> = chunkpoints
+        let bytes: futures::stream::FuturesOrdered<_> = chunkpoints
             .clone()
             .zip(chunkpoints.clone().skip(1))
             .filter(|(s, e)| *e > *s)
             .map(|(start, end)| format!("bytes={}-{}", start, end - 1))
             .map(|r| (r, info.uri.clone(), self.client.clone()))
             .map(|(range, uri, client)| async move {
-                let mut req = client
+                let req = client
                     .get(uri)
                     .header("User-Agent", "Mozilla/5.0")
                     .header("accept-language", "en-US,en")
@@ -327,7 +326,7 @@ impl SongTubeFac {
                 Ok::<_, anyhow::Error>(bytes)
             })
             .collect();
-        let bytes = byteses
+        let bytes = bytes
             .collect::<Vec<_>>()
             .await
             .into_iter()

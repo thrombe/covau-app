@@ -12,7 +12,11 @@ pub mod db;
 pub mod mbz;
 pub mod musimanager;
 mod musiplayer;
-pub mod server;
+pub mod server {
+    pub mod server;
+    pub mod player;
+    pub mod db;
+}
 pub mod yt;
 
 #[cfg(feature = "webui")]
@@ -283,7 +287,7 @@ fn dump_types() -> Result<()> {
         types_dir.join("covau.ts"),
         covau_types::dump_types(&tsconfig)?,
     )?;
-    std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
+    std::fs::write(types_dir.join("server.ts"), server::server::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
@@ -340,12 +344,12 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     {
         let mut app_fut = std::pin::pin!(tokio::task::spawn(async {
             let mut child = tokio::process::Command::new("qweb");
-            let mut child2 = child
+            let child2 = child
                 .arg(url)
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .spawn()?;
-            let s = child2.wait_with_output().await?;
+            let _s = child2.wait_with_output().await?;
             Ok::<_, anyhow::Error>(())
         }));
         let mut server_fut = std::pin::pin!(server_start(config.clone()));
@@ -406,7 +410,7 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::start(
+    server::server::start(
         "127.0.0.1".parse()?,
         core::env!("SERVER_PORT").parse().unwrap(),
         config,
@@ -421,7 +425,7 @@ async fn main() -> Result<()> {
     let config = cli.config()?.derived()?;
     let config = Arc::new(config);
 
-    init_logger(&config.log_path)?;
+    // init_logger(&config.log_path)?;
 
     match cli.command.clone().unwrap_or(cli::Command::Default {
         #[cfg(ui_backend = "WEBUI")]
@@ -460,19 +464,19 @@ async fn main() -> Result<()> {
         }
         cli::Command::FeCommand { command } => {
             let fereq = match command {
-                cli::FeCommand::Like => server::FeRequest::Like,
-                cli::FeCommand::Dislike => server::FeRequest::Dislike,
-                cli::FeCommand::Next => server::FeRequest::Next,
-                cli::FeCommand::Prev => server::FeRequest::Prev,
-                cli::FeCommand::Pause => server::FeRequest::Pause,
-                cli::FeCommand::Play => server::FeRequest::Play,
-                cli::FeCommand::ToggleMute => server::FeRequest::ToggleMute,
-                cli::FeCommand::TogglePlay => server::FeRequest::TogglePlay,
+                cli::FeCommand::Like => server::server::FeRequest::Like,
+                cli::FeCommand::Dislike => server::server::FeRequest::Dislike,
+                cli::FeCommand::Next => server::server::FeRequest::Next,
+                cli::FeCommand::Prev => server::server::FeRequest::Prev,
+                cli::FeCommand::Pause => server::server::FeRequest::Pause,
+                cli::FeCommand::Play => server::server::FeRequest::Play,
+                cli::FeCommand::ToggleMute => server::server::FeRequest::ToggleMute,
+                cli::FeCommand::TogglePlay => server::server::FeRequest::TogglePlay,
                 cli::FeCommand::Message { message, error } => {
                     if error {
-                        server::FeRequest::NotifyError(message)
+                        server::server::FeRequest::NotifyError(message)
                     } else {
-                        server::FeRequest::Notify(message)
+                        server::server::FeRequest::Notify(message)
                     }
                 }
             };
@@ -489,13 +493,12 @@ async fn main() -> Result<()> {
                 Ok(resp) => {
                     // server responded with something
 
-                    let status = resp.status();
                     let res = resp.error_for_status_ref();
                     match res {
                         Ok(_resp) => {
                             println!("Ok");
                         }
-                        Err(e) => match resp.json::<server::ErrorMessage>().await {
+                        Err(_) => match resp.json::<server::server::ErrorMessage>().await {
                             Ok(errmsg) => {
                                 if cli.debug {
                                     return Err(anyhow::anyhow!(format!("{:?}", errmsg)));

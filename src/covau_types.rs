@@ -1,16 +1,14 @@
-use std::path::PathBuf;
-use std::{borrow::Borrow, collections::HashSet};
+use std::collections::HashSet;
 
-use futures::stream::{FuturesOrdered, FuturesUnordered};
+use futures::stream::FuturesUnordered;
 use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
 use crate::{
-    db,
     db::{Db, DbAble, DbId},
     mbz,
-    server::{FeRequest, FrontendClient, MessageResult},
+    server::server::{FeRequest, FrontendClient, MessageResult},
     yt,
     yt::song_tube::TMusicListItem,
 };
@@ -179,7 +177,7 @@ impl UpdateManager {
         let check_delta = week * 2;
 
         let mut item: Option<crate::db::DbItem<Updater>> = None;
-        let mut max_delta = 0;
+        let max_delta = 0;
         while let Some(m) = it.next().await {
             let m = m?;
             let t: Updater = m.parsed_assume();
@@ -212,12 +210,7 @@ impl UpdateManager {
         };
 
         match &mut updater.t.source {
-            UpdateSource::Mbz {
-                artist_id,
-                release_groups,
-                releases,
-                recordings,
-            } => todo!(),
+            UpdateSource::Mbz {..} => todo!(),
             UpdateSource::MusimanagerSearch { .. } => {}
             UpdateSource::SongTubeSearch {
                 search_words,
@@ -225,7 +218,7 @@ impl UpdateManager {
                 known_albums,
                 songs,
             } => {
-                let mut keys: HashSet<String> = artist_keys.iter().map(String::from).collect();
+                let keys: HashSet<String> = artist_keys.iter().map(String::from).collect();
                 let mut known: HashSet<String> =
                     known_albums.iter().map(|a| a.item.0.to_string()).collect();
                 let mut new_albums = vec![];
@@ -346,7 +339,6 @@ impl UpdateManager {
             tokio::time::sleep(dur).await;
             self.update_one().await?;
         }
-        Ok(())
     }
 }
 

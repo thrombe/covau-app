@@ -230,12 +230,11 @@ mod trait_impls {
     use super::*;
     use musicbrainz_rs::{
         entity::{
-            alias, area, artist, artist_credit, coverart, recording, relations, release,
-            release_group, search::Searchable, work::Work, Browsable, BrowseResult,
+            alias, area, artist, artist_credit, recording, relations, release,
+            release_group,
         },
-        Browse, Fetch, FetchCoverart, Path, Search,
+        Browse, Fetch, Search,
     };
-    use serde::de::DeserializeOwned;
 
     impl From<recording::Recording> for Recording {
         fn from(r: recording::Recording) -> Self {
@@ -768,24 +767,25 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
 
 #[cfg(feature = "bindeps")]
 pub async fn api_test() -> anyhow::Result<()> {
-    use musicbrainz_rs::{
-        entity::{
-            alias, area, artist, artist_credit, coverart, recording, relations, release,
-            release_group, search::Searchable, work::Work, Browsable, BrowseResult,
-        },
-        Browse, Fetch, FetchCoverart, Path, Search,
-    };
+    // use musicbrainz_rs::{
+    //     entity::{
+    //         alias, area, artist, artist_credit, coverart, recording, relations, release,
+    //         release_group, search::Searchable, work::Work, Browsable, BrowseResult,
+    //     },
+    //     Browse, Fetch, FetchCoverart, Path, Search,
+    // };
 
-    let r = artist::Artist::search("query=aimer".into()).execute().await?;
-    dbg!(&r);
-    let r = recording::Recording::browse()
-        .by_artist(&r.entities[0].id)
-        // .with_releases()
-        .execute()
-        .await?;
-    dbg!(&r);
-    let r = recording::Recording::fetch().id(&r.entities[0].id).with_artists().with_releases().execute().await?;
-    dbg!(&r);
+    // let r = artist::Artist::search("query=aimer".into()).execute().await?;
+    // dbg!(&r);
+    // let r = recording::Recording::browse()
+    //     .by_artist(&r.entities[0].id)
+    //     // .with_releases()
+    //     .execute()
+    //     .await?;
+    // dbg!(&r);
+    // let r = recording::Recording::fetch().id(&r.entities[0].id).with_artists().with_releases().execute().await?;
+    // dbg!(&r);
+
     // let r = Work::search("method=indexed&query=violence".into()).execute().await?;
     // let r = release::Release::search("query=visions milet".into()).execute().await?;
     // let r = release_group::ReleaseGroup::search("query=visions milet".into())

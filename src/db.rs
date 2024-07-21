@@ -161,7 +161,7 @@ pub mod db {
     use anyhow::Context;
     use intrusive_collections::{intrusive_adapter, KeyAdapter, RBTreeLink};
     use sea_orm::{entity::prelude::*, Schema};
-    use sea_orm::{Condition, DeriveEntityModel, QuerySelect, SelectColumns};
+    use sea_orm::{Condition, DeriveEntityModel};
     use sea_orm::{RelationTrait, TransactionTrait};
     use tokio_stream::StreamExt;
 
@@ -269,7 +269,7 @@ pub mod db {
                 typ: sea_orm::ActiveValue::Unchanged(Self::typ()),
                 metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
             };
-            let obj = object::Entity::update(am).exec(conn).await?;
+            let _obj = object::Entity::update(am).exec(conn).await?;
             Ok(mdata)
         }
     }
@@ -294,7 +294,7 @@ pub mod db {
                 typ: sea_orm::ActiveValue::Unchanged(T::typ()),
                 metadata: sea_orm::ActiveValue::Set(mdata.to_json()),
             };
-            let obj = object::Entity::update(am).exec(conn).await?;
+            let _ = object::Entity::update(am).exec(conn).await?;
 
             let _ = refid::Entity::delete_many()
                 .filter(refid::Column::ObjectId.eq(self.id))
@@ -430,7 +430,7 @@ pub mod db {
                                     to_typ: crate::yt::song_tube::Song::typ(),
                                 });
                             }
-                            InfoSource::MbzId(id) => {
+                            InfoSource::MbzId(_) => {
                                 // hs.push(id.to_owned());
                             }
                         }
@@ -480,7 +480,7 @@ pub mod db {
                     UpdateSource::Mbz { artist_id, .. } => {
                         rids.push(artist_id.to_owned());
                     }
-                    UpdateSource::MusimanagerSearch { artist_keys, .. } => {
+                    UpdateSource::MusimanagerSearch { .. } => {
                         // OOF: it's all messed up
                         // rids.extend(artist_keys.iter().map(String::from));
                     }
@@ -496,7 +496,7 @@ pub mod db {
 
                 for from in self.refids() {
                     match &self.source {
-                        UpdateSource::Mbz { artist_id, .. } => {
+                        UpdateSource::Mbz { .. } => {
                             // links.push(artist_id.to_owned());
                         }
                         UpdateSource::MusimanagerSearch { artist_keys, .. } => {
@@ -523,7 +523,7 @@ pub mod db {
     }
 
     mod yt {
-        use super::{db, AutoDbAble, Link, Linked, Typ};
+        use super::{db, AutoDbAble, Link, Linked};
         use crate::yt::song_tube::*;
 
         impl Linked<Album> for Song {}
@@ -817,7 +817,7 @@ pub mod db {
 
         #[async_trait::async_trait]
         impl ActiveModelBehavior for ActiveModel {
-            async fn before_delete<C>(self, db: &C) -> Result<Self, DbErr>
+            async fn before_delete<C>(self, _db: &C) -> Result<Self, DbErr>
             where
                 C: ConnectionTrait,
             {
