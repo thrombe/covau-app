@@ -1,8 +1,8 @@
 import { exhausted } from "$lib/utils.ts";
 import * as DB from "$types/db.ts";
-import * as server from "$types/server.ts";
 import { utils } from "$lib/server.ts";
 import * as types from "$types/types.ts";
+import * as server from "$lib/server.ts";
 
 export type AlmostDbItem<T> = Omit<Omit<DB.DbItem<T>, "id">, "metadata">;
 
@@ -10,21 +10,21 @@ function db_cud(id: number) {
     return {
         id: id,
 
-        async insert_or_get<T>(t: AlmostDbItem<T>): Promise<server.InsertResponse<DB.DbItem<T>>> {
+        async insert_or_get<T>(t: AlmostDbItem<T>): Promise<types.server.InsertResponse<DB.DbItem<T>>> {
             let route = db.route(t.typ, "insert");
 
-            let txn: server.WithTransaction<T> = {
+            let txn: types.server.WithTransaction<T> = {
                 transaction_id: this.id,
                 t: t.t,
             };
-            let dbitem: server.InsertResponse<DB.DbItem<T>> = await utils.api_request(route, txn);
+            let dbitem: types.server.InsertResponse<DB.DbItem<T>> = await utils.api_request(route, txn);
             return dbitem;
         },
 
         async update<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "update");
 
-            let txn: server.WithTransaction<DB.DbItem<T>> = {
+            let txn: types.server.WithTransaction<DB.DbItem<T>> = {
                 transaction_id: this.id,
                 t: item,
             };
@@ -35,7 +35,7 @@ function db_cud(id: number) {
         async update_metadata<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "update_metadata");
 
-            let txn: server.WithTransaction<server.UpdateMetadataQuery> = {
+            let txn: types.server.WithTransaction<types.server.UpdateMetadataQuery> = {
                 transaction_id: this.id,
                 t: {
                     id: item.id,
@@ -49,7 +49,7 @@ function db_cud(id: number) {
         async delete<T>(item: DB.DbItem<T>) {
             let route = db.route(item.typ, "delete");
 
-            let txn: server.WithTransaction<DB.DbItem<T>> = {
+            let txn: types.server.WithTransaction<DB.DbItem<T>> = {
                 transaction_id: this.id,
                 t: item,
             };
