@@ -62,7 +62,7 @@ pub struct Message<T> {
 pub mod db_server {
     use sea_orm::ConnectionTrait;
 
-    use crate::db::{DbAble, DbId, DbItem, DbMetadata, TransactionId, Typ};
+    use crate::db::{Db, DbAble, DbId, DbItem, DbMetadata, SearchQuery, TransactionId, Typ};
 
     use super::message_server::*;
     use super::*;
@@ -104,6 +104,26 @@ pub mod db_server {
             transaction_id: TransactionId,
             item: DbItem<String>,
         },
+        Search {
+            typ: Typ,
+            query: SearchQuery,
+        },
+        GetByRefid {
+            typ: Typ,
+            refid: String,
+        },
+        GetManyByRefid {
+            typ: Typ,
+            refids: Vec<String>,
+        },
+        GetById {
+            typ: Typ,
+            id: DbId,
+        },
+        GetManyById {
+            typ: Typ,
+            ids: Vec<DbId>,
+        },
     }
 
     type Song = crate::covau_types::Song;
@@ -126,7 +146,7 @@ pub mod db_server {
 
     #[async_trait::async_trait]
     impl MessageServerRequest for DbRequest {
-        type Ctx = crate::db::Db;
+        type Ctx = Db;
 
         async fn handle(self, db: Self::Ctx) -> anyhow::Result<MessageResult<String>> {
             async fn insert<T: DbAble>(
@@ -193,6 +213,49 @@ pub mod db_server {
                 let item: DbItem<T> = data.parsed()?;
                 item.delete(txn).await?;
                 Ok(MessageResult::Ok(()).json())
+            }
+            async fn search<T: DbAble>(
+                db: Db,
+                query: SearchQuery,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db.search::<T>(query).await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_by_refid<T: DbAble>(
+                db: Db,
+                refid: String,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_by_ref_id::<T>(refid)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_many_by_refid<T: DbAble>(
+                db: Db,
+                refids: Vec<String>,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_many_by_ref_id::<T>(refids)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_by_id<T: DbAble>(
+                db: Db,
+                id: DbId,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_by_id::<T>(id)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_many_by_id<T: DbAble>(
+                db: Db,
+                ids: Vec<DbId>,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_many_by_id::<T>(ids)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
             }
 
             let res = match self {
@@ -432,6 +495,111 @@ pub mod db_server {
                         }
                     }
                 },
+                DbRequest::Search { typ, query } => {
+                    match typ {
+                        Typ::MmSong => search::<MmSong>(db, query).await?,
+                        Typ::MmAlbum => search::<MmAlbum>(db, query).await?,
+                        Typ::MmArtist => search::<MmArtist>(db, query).await?,
+                        Typ::MmPlaylist => search::<MmPlaylist>(db, query).await?,
+                        Typ::MmQueue => search::<MmQueue>(db, query).await?,
+                        Typ::Song => search::<Song>(db, query).await?,
+                        Typ::Playlist => search::<Playlist>(db, query).await?,
+                        Typ::Queue => search::<Queue>(db, query).await?,
+                        Typ::ArtistBlacklist => search::<ArtistBlacklist>(db, query).await?,
+                        Typ::SongBlacklist => search::<SongBlacklist>(db, query).await?,
+                        Typ::Updater => search::<Updater>(db, query).await?,
+                        Typ::StSong => search::<StSong>(db, query).await?,
+                        Typ::StAlbum => search::<StAlbum>(db, query).await?,
+                        Typ::StPlaylist => search::<StPlaylist>(db, query).await?,
+                        Typ::StArtist => search::<StArtist>(db, query).await?,
+                        Typ::MbzRecording => search::<MbzRecording>(db, query).await?,
+                        Typ::MbzArtist => search::<MbzArtist>(db, query).await?,
+                    }
+                },
+                DbRequest::GetByRefid { typ, refid } => {
+                    match typ {
+                        Typ::MmSong => get_by_refid::<MmSong>(db, refid).await?,
+                        Typ::MmAlbum => get_by_refid::<MmAlbum>(db, refid).await?,
+                        Typ::MmArtist => get_by_refid::<MmArtist>(db, refid).await?,
+                        Typ::MmPlaylist => get_by_refid::<MmPlaylist>(db, refid).await?,
+                        Typ::MmQueue => get_by_refid::<MmQueue>(db, refid).await?,
+                        Typ::Song => get_by_refid::<Song>(db, refid).await?,
+                        Typ::Playlist => get_by_refid::<Playlist>(db, refid).await?,
+                        Typ::Queue => get_by_refid::<Queue>(db, refid).await?,
+                        Typ::ArtistBlacklist => get_by_refid::<ArtistBlacklist>(db, refid).await?,
+                        Typ::SongBlacklist => get_by_refid::<SongBlacklist>(db, refid).await?,
+                        Typ::Updater => get_by_refid::<Updater>(db, refid).await?,
+                        Typ::StSong => get_by_refid::<StSong>(db, refid).await?,
+                        Typ::StAlbum => get_by_refid::<StAlbum>(db, refid).await?,
+                        Typ::StPlaylist => get_by_refid::<StPlaylist>(db, refid).await?,
+                        Typ::StArtist => get_by_refid::<StArtist>(db, refid).await?,
+                        Typ::MbzRecording => get_by_refid::<MbzRecording>(db, refid).await?,
+                        Typ::MbzArtist => get_by_refid::<MbzArtist>(db, refid).await?,
+                    }
+                },
+                DbRequest::GetManyByRefid { typ, refids } => {
+                    match typ {
+                        Typ::MmSong => get_many_by_refid::<MmSong>(db, refids).await?,
+                        Typ::MmAlbum => get_many_by_refid::<MmAlbum>(db, refids).await?,
+                        Typ::MmArtist => get_many_by_refid::<MmArtist>(db, refids).await?,
+                        Typ::MmPlaylist => get_many_by_refid::<MmPlaylist>(db, refids).await?,
+                        Typ::MmQueue => get_many_by_refid::<MmQueue>(db, refids).await?,
+                        Typ::Song => get_many_by_refid::<Song>(db, refids).await?,
+                        Typ::Playlist => get_many_by_refid::<Playlist>(db, refids).await?,
+                        Typ::Queue => get_many_by_refid::<Queue>(db, refids).await?,
+                        Typ::ArtistBlacklist => get_many_by_refid::<ArtistBlacklist>(db, refids).await?,
+                        Typ::SongBlacklist => get_many_by_refid::<SongBlacklist>(db, refids).await?,
+                        Typ::Updater => get_many_by_refid::<Updater>(db, refids).await?,
+                        Typ::StSong => get_many_by_refid::<StSong>(db, refids).await?,
+                        Typ::StAlbum => get_many_by_refid::<StAlbum>(db, refids).await?,
+                        Typ::StPlaylist => get_many_by_refid::<StPlaylist>(db, refids).await?,
+                        Typ::StArtist => get_many_by_refid::<StArtist>(db, refids).await?,
+                        Typ::MbzRecording => get_many_by_refid::<MbzRecording>(db, refids).await?,
+                        Typ::MbzArtist => get_many_by_refid::<MbzArtist>(db, refids).await?,
+                    }
+                },
+                DbRequest::GetById { typ, id } => {
+                    match typ {
+                        Typ::MmSong => get_by_id::<MmSong>(db, id).await?,
+                        Typ::MmAlbum => get_by_id::<MmAlbum>(db, id).await?,
+                        Typ::MmArtist => get_by_id::<MmArtist>(db, id).await?,
+                        Typ::MmPlaylist => get_by_id::<MmPlaylist>(db, id).await?,
+                        Typ::MmQueue => get_by_id::<MmQueue>(db, id).await?,
+                        Typ::Song => get_by_id::<Song>(db, id).await?,
+                        Typ::Playlist => get_by_id::<Playlist>(db, id).await?,
+                        Typ::Queue => get_by_id::<Queue>(db, id).await?,
+                        Typ::ArtistBlacklist => get_by_id::<ArtistBlacklist>(db, id).await?,
+                        Typ::SongBlacklist => get_by_id::<SongBlacklist>(db, id).await?,
+                        Typ::Updater => get_by_id::<Updater>(db, id).await?,
+                        Typ::StSong => get_by_id::<StSong>(db, id).await?,
+                        Typ::StAlbum => get_by_id::<StAlbum>(db, id).await?,
+                        Typ::StPlaylist => get_by_id::<StPlaylist>(db, id).await?,
+                        Typ::StArtist => get_by_id::<StArtist>(db, id).await?,
+                        Typ::MbzRecording => get_by_id::<MbzRecording>(db, id).await?,
+                        Typ::MbzArtist => get_by_id::<MbzArtist>(db, id).await?,
+                    }
+                },
+                DbRequest::GetManyById { typ, ids } => {
+                    match typ {
+                        Typ::MmSong => get_many_by_id::<MmSong>(db, ids).await?,
+                        Typ::MmAlbum => get_many_by_id::<MmAlbum>(db, ids).await?,
+                        Typ::MmArtist => get_many_by_id::<MmArtist>(db, ids).await?,
+                        Typ::MmPlaylist => get_many_by_id::<MmPlaylist>(db, ids).await?,
+                        Typ::MmQueue => get_many_by_id::<MmQueue>(db, ids).await?,
+                        Typ::Song => get_many_by_id::<Song>(db, ids).await?,
+                        Typ::Playlist => get_many_by_id::<Playlist>(db, ids).await?,
+                        Typ::Queue => get_many_by_id::<Queue>(db, ids).await?,
+                        Typ::ArtistBlacklist => get_many_by_id::<ArtistBlacklist>(db, ids).await?,
+                        Typ::SongBlacklist => get_many_by_id::<SongBlacklist>(db, ids).await?,
+                        Typ::Updater => get_many_by_id::<Updater>(db, ids).await?,
+                        Typ::StSong => get_many_by_id::<StSong>(db, ids).await?,
+                        Typ::StAlbum => get_many_by_id::<StAlbum>(db, ids).await?,
+                        Typ::StPlaylist => get_many_by_id::<StPlaylist>(db, ids).await?,
+                        Typ::StArtist => get_many_by_id::<StArtist>(db, ids).await?,
+                        Typ::MbzRecording => get_many_by_id::<MbzRecording>(db, ids).await?,
+                        Typ::MbzArtist => get_many_by_id::<MbzArtist>(db, ids).await?,
+                    }
+                },
             };
             Ok(res)
         }
@@ -635,7 +803,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(db_server::DbRequest::routes(db.clone(), "db"))
         .or(crate::server::player::player_route())
         .or(ProxyRequest::cors_proxy_route(client.clone()))
-        .or(crate::server::db::db_routes(db.clone(), client.clone()))
+        .or(crate::server::db::db_routes(client.clone()))
         .or(webui_js_route(client.clone()))
         .or(options_route.boxed());
     // let all = all.or(redirect_route(client.clone()));
@@ -719,7 +887,7 @@ async fn updater_system(
 }
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
-    use crate::server::{db::*, player::*, routes::*};
+    use crate::server::{player::*, routes::*};
     use db_server::*;
 
     let mut types = String::new();
@@ -740,8 +908,6 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<ProxyRequest>(config)?;
     types += ";\n";
     types += &specta::ts::export::<InsertResponse<()>>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<WithTransaction<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<DbRequest>(config)?;
     types += ";\n";
