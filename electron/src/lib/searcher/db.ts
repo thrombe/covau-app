@@ -8,8 +8,8 @@ import { type Option, ListItem, type RenderContext, type DetailSection, CustomLi
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
-import { db, type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
-import { utils as server } from "$lib/server.ts";
+import { db } from "$lib/local/db.ts";
+import * as server from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import { type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
@@ -403,7 +403,7 @@ export class DbListItem extends ListItem {
         }
     }
 
-    async saved_covau_song(db: DbOps) {
+    async saved_covau_song(db: server.DbOps) {
         switch (this.data.typ) {
             case "Song": {
                 return this.data;
@@ -421,8 +421,8 @@ export class DbListItem extends ListItem {
                     info_sources: [id],
                 };
 
-                let s1: AlmostDbItem<yt.Song> = { typ: "StSong", t: vid };
-                let s2: AlmostDbItem<covau.Song> = { typ: "Song", t };
+                let s1: server.AlmostDbItem<yt.Song> = { typ: "StSong", t: vid };
+                let s2: server.AlmostDbItem<covau.Song> = { typ: "Song", t };
 
                 await db.insert_or_get(s1);
                 let res = await db.insert_or_get(s2);
@@ -439,7 +439,7 @@ export class DbListItem extends ListItem {
                     play_sources: [id],
                     info_sources: [id],
                 };
-                let s: AlmostDbItem<covau.Song> = { typ: "Song", t };
+                let s: server.AlmostDbItem<covau.Song> = { typ: "Song", t };
 
                 let res = await db.insert_or_get(s);
                 return res.content;
@@ -2062,8 +2062,8 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await server.api_request(
-            db.route(this.query.type, "search"),
+        let matches: DB.SearchMatches<unknown> = await server.utils.api_request(
+            db.route(this.query.type),
             q,
         );
         this.cont = matches.continuation;
@@ -2091,8 +2091,8 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await server.api_request(
-                    db.route(this.query.type, "search"),
+                let matches: DB.SearchMatches<unknown> = await server.utils.api_request(
+                    db.route(this.query.type),
                     q,
                 );
                 this.cont = matches.continuation;
@@ -2118,8 +2118,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.api_request(
-                db.route(this.query.type, "search") + "/refids",
+            let matches: DB.DbItem<unknown>[] = await server.utils.api_request(
+                db.route(this.query.type) + "/refids",
                 ids,
             );
             return keyed(matches) as MusicListItem[];
@@ -2136,8 +2136,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.api_request(
-                db.route(this.query.type, "search") + "/dbid",
+            let matches: DB.DbItem<unknown>[] = await server.utils.api_request(
+                db.route(this.query.type) + "/dbid",
                 ids,
             );
             return keyed(matches) as MusicListItem[];

@@ -282,6 +282,7 @@ class Client<Req> {
 }
 
 export type AlmostDbItem<T> = Omit<Omit<types.db.DbItem<T>, "id">, "metadata">;
+export type DbOps = ReturnType<DbClient["db_cud"]>;
 
 class DbClient extends Client<types.server.DbRequest> {
     constructor() {
@@ -348,7 +349,7 @@ class DbClient extends Client<types.server.DbRequest> {
         }
     }
 
-    async txn<Ret>(fn: (db_ops: ReturnType<DbClient["db_cud"]>) => Promise<Ret>) {
+    async txn<Ret>(fn: (db_ops: DbOps) => Promise<Ret>) {
         let id: number = await this.execute({ type: "Begin" });
         try {
             let res = await fn(this.db_cud(id));

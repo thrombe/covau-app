@@ -2,12 +2,11 @@ import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type C
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
 import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions } from "./item.ts";
-import type { AlmostDbItem, DbOps } from "$lib/local/db.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
 import * as stores from "$lib/stores.ts";
 import { toast } from "$lib/toast/toast.ts";
-import { utils as server } from "$lib/server.ts";
+import * as server from "$lib/server.ts";
 import { prompter } from "$lib/prompt/prompt.ts";
 import { StaticSearcher, type Searcher, type SearcherConstructorMapper } from "./searcher.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
@@ -1328,7 +1327,7 @@ export class MbzListItem extends ListItem {
         }
     }
 
-    async saved_covau_song(db: DbOps) {
+    async saved_covau_song(db: server.DbOps) {
         let ops = this.ops();
         switch (this.data.typ) {
             case "MbzRadioSong": {
@@ -1358,7 +1357,7 @@ export class MbzListItem extends ListItem {
                     play_sources: playsource,
                     info_sources: info_source,
                 };
-                let s: AlmostDbItem<types.covau.Song> = { typ: "Song", t };
+                let s: server.AlmostDbItem<types.covau.Song> = { typ: "Song", t };
 
                 let res = await db.insert_or_get(s);
                 return res.content;
@@ -1431,7 +1430,7 @@ let server_base = `http://localhost:${import.meta.env.SERVER_PORT}/`;
 export const mbz = {
     async id_fetch<T>(id: string, type: IdFetchTyp) {
         let route = this.id_fetch_route(type);
-        let res: T = await server.api_request(route, id);
+        let res: T = await server.utils.api_request(route, id);
         let k = keyed([res], "id")[0];
         return k;
     },
@@ -1581,7 +1580,7 @@ export class Mbz<T> extends Unpaged<T> {
                 page_size: this.page_size,
             },
         };
-        let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
+        let matches: MBZ.SearchResults<T> = await server.utils.api_request(this.route, q);
         this.cont = matches.continuation;
         if (!this.cont) {
             this.has_next_page = false;
@@ -1605,7 +1604,7 @@ export class Mbz<T> extends Unpaged<T> {
             if (this.query.type == "MbzRadioSong") {
                 this.has_next_page = false;
                 this.route = mbz.search_route(this.query.type);
-                let songs: RadioSong[] = await server.api_request(this.route, this.query.query);
+                let songs: RadioSong[] = await server.utils.api_request(this.route, this.query.query);
                 let k: (RadioSong & Keyed)[] = songs.map(s => {
                     let p = s as unknown as RadioSong & Keyed;
                     p.get_key = () => {
@@ -1621,7 +1620,7 @@ export class Mbz<T> extends Unpaged<T> {
                         type: "Continuation",
                         content: this.cont,
                     };
-                    let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
+                    let matches: MBZ.SearchResults<T> = await server.utils.api_request(this.route, q);
                     this.cont = matches.continuation;
                     if (!this.cont) {
                         this.has_next_page = false;
@@ -1643,7 +1642,7 @@ export class Mbz<T> extends Unpaged<T> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: MBZ.SearchResults<T> = await server.api_request(this.route, q);
+                let matches: MBZ.SearchResults<T> = await server.utils.api_request(this.route, q);
                 this.cont = matches.continuation;
                 if (!this.cont) {
                     this.has_next_page = false;

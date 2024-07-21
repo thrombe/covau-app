@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { type DetailOption } from "$lib/searcher/item.ts";
+    import { type Option } from "$lib/searcher/item.ts";
 
-    export let options: DetailOption[];
+    export let options: Option[];
     export let classes: string = "";
     export let styles: string = "";
 

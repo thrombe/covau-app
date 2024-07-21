@@ -165,7 +165,7 @@
 <div 
     bind:clientWidth={width}
     bind:clientHeight={height}
-    class='w-full h-full relative scale-100 overflow-hidden blur-3xl scale-125'
+    class='w-full h-full relative overflow-hidden blur-3xl scale-125'
 >
     <canvas bind:this={canvas} class='w-full h-full'></canvas>
 </div>

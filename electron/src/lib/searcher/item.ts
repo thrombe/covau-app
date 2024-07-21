@@ -1,4 +1,4 @@
-import type { DbOps } from "$lib/local/db.ts";
+import type { DbOps } from "$lib/server.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
 import * as covau from "$types/covau.ts";

@@ -7,12 +7,11 @@ import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
-import { type AlmostDbItem, type DbOps } from "$lib/local/db.ts";
+import { type AlmostDbItem, type DbOps } from "$lib/server.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as db from "$lib/local/db.ts"
-import * as server from "$lib/server.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
