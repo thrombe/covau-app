@@ -13,9 +13,10 @@ pub mod mbz;
 pub mod musimanager;
 mod musiplayer;
 pub mod server {
-    pub mod server;
-    pub mod player;
     pub mod db;
+    pub mod player;
+    pub mod routes;
+    pub mod server;
 }
 pub mod yt;
 
@@ -184,7 +185,10 @@ pub mod cli {
             run_in_background: bool,
         },
         Default {
-            #[cfg(any(all(ui_backend = "WEBUI", feature = "webui"), all(ui_backend = "QWEB", feature = "qweb")))]
+            #[cfg(any(
+                all(ui_backend = "WEBUI", feature = "webui"),
+                all(ui_backend = "QWEB", feature = "qweb")
+            ))]
             #[arg(long, short, default_value_t = false)]
             run_in_background: bool,
         },
@@ -239,7 +243,10 @@ pub mod cli {
                 Command::Server => {
                     config.run_in_background = true;
                 }
-                #[cfg(any(all(ui_backend = "WEBUI", feature = "webui"), all(ui_backend = "QWEB", feature = "qweb")))]
+                #[cfg(any(
+                    all(ui_backend = "WEBUI", feature = "webui"),
+                    all(ui_backend = "QWEB", feature = "qweb")
+                ))]
                 Command::Default { run_in_background } => {
                     config.run_in_background = *run_in_background;
                 }
@@ -287,7 +294,10 @@ fn dump_types() -> Result<()> {
         types_dir.join("covau.ts"),
         covau_types::dump_types(&tsconfig)?,
     )?;
-    std::fs::write(types_dir.join("server.ts"), server::server::dump_types(&tsconfig)?)?;
+    std::fs::write(
+        types_dir.join("server.ts"),
+        server::server::dump_types(&tsconfig)?,
+    )?;
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
@@ -463,20 +473,23 @@ async fn main() -> Result<()> {
             server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {
+            use crate::server::routes::FeRequest;
+            use crate::server::server::ErrorMessage;
+
             let fereq = match command {
-                cli::FeCommand::Like => server::server::FeRequest::Like,
-                cli::FeCommand::Dislike => server::server::FeRequest::Dislike,
-                cli::FeCommand::Next => server::server::FeRequest::Next,
-                cli::FeCommand::Prev => server::server::FeRequest::Prev,
-                cli::FeCommand::Pause => server::server::FeRequest::Pause,
-                cli::FeCommand::Play => server::server::FeRequest::Play,
-                cli::FeCommand::ToggleMute => server::server::FeRequest::ToggleMute,
-                cli::FeCommand::TogglePlay => server::server::FeRequest::TogglePlay,
+                cli::FeCommand::Like => FeRequest::Like,
+                cli::FeCommand::Dislike => FeRequest::Dislike,
+                cli::FeCommand::Next => FeRequest::Next,
+                cli::FeCommand::Prev => FeRequest::Prev,
+                cli::FeCommand::Pause => FeRequest::Pause,
+                cli::FeCommand::Play => FeRequest::Play,
+                cli::FeCommand::ToggleMute => FeRequest::ToggleMute,
+                cli::FeCommand::TogglePlay => FeRequest::TogglePlay,
                 cli::FeCommand::Message { message, error } => {
                     if error {
-                        server::server::FeRequest::NotifyError(message)
+                        FeRequest::NotifyError(message)
                     } else {
-                        server::server::FeRequest::Notify(message)
+                        FeRequest::Notify(message)
                     }
                 }
             };
@@ -498,7 +511,7 @@ async fn main() -> Result<()> {
                         Ok(_resp) => {
                             println!("Ok");
                         }
-                        Err(_) => match resp.json::<server::server::ErrorMessage>().await {
+                        Err(_) => match resp.json::<ErrorMessage>().await {
                             Ok(errmsg) => {
                                 if cli.debug {
                                     return Err(anyhow::anyhow!(format!("{:?}", errmsg)));

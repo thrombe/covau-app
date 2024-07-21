@@ -4,7 +4,7 @@ use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 
-use crate::server::server::FrontendClient;
+use crate::server::routes::FrontendClient;
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct VideoId(pub String);

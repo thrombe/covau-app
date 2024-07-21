@@ -1,4 +1,4 @@
-import type { FetchRequest } from "$types/server";
+import type { ProxyRequest } from "$types/server";
 import Innertube, { UniversalCache } from "youtubei.js/web";
 
 export async function new_innertube_instance() {
@@ -35,7 +35,7 @@ export async function new_innertube_instance() {
                 url,
                 input instanceof Request ? input : undefined
             );
-            let req: FetchRequest = {
+            let req: ProxyRequest = {
                 url: url,
                 headers: headers_copy,
                 body: init?.body?.toString(),
