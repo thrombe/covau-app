@@ -109,6 +109,8 @@ pub mod db_server {
     type Song = crate::covau_types::Song;
     type Playlist = crate::covau_types::Playlist;
     type Queue = crate::covau_types::Queue;
+    type ArtistBlacklist = crate::covau_types::ArtistBlacklist;
+    type SongBlacklist = crate::covau_types::SongBlacklist;
     type Updater = crate::covau_types::Updater;
     type StSong = crate::yt::song_tube::Song;
     type StAlbum = crate::yt::song_tube::Album;
@@ -119,6 +121,8 @@ pub mod db_server {
     type MmPlaylist = crate::musimanager::Playlist<crate::yt::VideoId>;
     type MmQueue = crate::musimanager::Queue<crate::yt::VideoId>;
     type MmArtist = crate::musimanager::Artist<crate::yt::VideoId, crate::yt::AlbumId>;
+    type MbzRecording = crate::mbz::RecordingWithInfo;
+    type MbzArtist = crate::mbz::Artist;
 
     #[async_trait::async_trait]
     impl MessageServerRequest for DbRequest {
@@ -228,11 +232,15 @@ pub mod db_server {
                                     Typ::Song => insert::<Song>(txn, item).await?,
                                     Typ::Playlist => insert::<Playlist>(txn, item).await?,
                                     Typ::Queue => insert::<Queue>(txn, item).await?,
+                                    Typ::ArtistBlacklist => insert::<ArtistBlacklist>(txn, item).await?,
+                                    Typ::SongBlacklist => insert::<SongBlacklist>(txn, item).await?,
                                     Typ::Updater => insert::<Updater>(txn, item).await?,
                                     Typ::StSong => insert::<StSong>(txn, item).await?,
                                     Typ::StAlbum => insert::<StAlbum>(txn, item).await?,
                                     Typ::StPlaylist => insert::<StPlaylist>(txn, item).await?,
                                     Typ::StArtist => insert::<StArtist>(txn, item).await?,
+                                    Typ::MbzRecording => insert::<MbzRecording>(txn, item).await?,
+                                    Typ::MbzArtist => insert::<MbzArtist>(txn, item).await?,
                                 }
                             }
                         }
@@ -269,11 +277,15 @@ pub mod db_server {
                                     Typ::Song => insert_or_get::<Song>(txn, item).await?,
                                     Typ::Playlist => insert_or_get::<Playlist>(txn, item).await?,
                                     Typ::Queue => insert_or_get::<Queue>(txn, item).await?,
+                                    Typ::ArtistBlacklist => insert_or_get::<ArtistBlacklist>(txn, item).await?,
+                                    Typ::SongBlacklist => insert_or_get::<SongBlacklist>(txn, item).await?,
                                     Typ::Updater => insert_or_get::<Updater>(txn, item).await?,
                                     Typ::StSong => insert_or_get::<StSong>(txn, item).await?,
                                     Typ::StAlbum => insert_or_get::<StAlbum>(txn, item).await?,
                                     Typ::StPlaylist => insert_or_get::<StPlaylist>(txn, item).await?,
                                     Typ::StArtist => insert_or_get::<StArtist>(txn, item).await?,
+                                    Typ::MbzRecording => insert_or_get::<MbzRecording>(txn, item).await?,
+                                    Typ::MbzArtist => insert_or_get::<MbzArtist>(txn, item).await?,
                                 }
                             }
                         }
@@ -309,11 +321,15 @@ pub mod db_server {
                                     Typ::Song => update::<Song>(txn, item).await?,
                                     Typ::Playlist => update::<Playlist>(txn, item).await?,
                                     Typ::Queue => update::<Queue>(txn, item).await?,
+                                    Typ::ArtistBlacklist => update::<ArtistBlacklist>(txn, item).await?,
+                                    Typ::SongBlacklist => update::<SongBlacklist>(txn, item).await?,
                                     Typ::Updater => update::<Updater>(txn, item).await?,
                                     Typ::StSong => update::<StSong>(txn, item).await?,
                                     Typ::StAlbum => update::<StAlbum>(txn, item).await?,
                                     Typ::StPlaylist => update::<StPlaylist>(txn, item).await?,
                                     Typ::StArtist => update::<StArtist>(txn, item).await?,
+                                    Typ::MbzRecording => update::<MbzRecording>(txn, item).await?,
+                                    Typ::MbzArtist => update::<MbzArtist>(txn, item).await?,
                                 }
                             }
                         }
@@ -351,11 +367,15 @@ pub mod db_server {
                                     Typ::Song => update_metadata::<Song>(txn, id, metadata).await?,
                                     Typ::Playlist => update_metadata::<Playlist>(txn, id, metadata).await?,
                                     Typ::Queue => update_metadata::<Queue>(txn, id, metadata).await?,
+                                    Typ::ArtistBlacklist => update_metadata::<ArtistBlacklist>(txn, id,metadata).await?,
+                                    Typ::SongBlacklist => update_metadata::<SongBlacklist>(txn, id, metadata).await?,
                                     Typ::Updater => update_metadata::<Updater>(txn, id, metadata).await?,
                                     Typ::StSong => update_metadata::<StSong>(txn, id, metadata).await?,
                                     Typ::StAlbum => update_metadata::<StAlbum>(txn, id, metadata).await?,
                                     Typ::StPlaylist => update_metadata::<StPlaylist>(txn, id, metadata).await?,
                                     Typ::StArtist => update_metadata::<StArtist>(txn, id, metadata).await?,
+                                    Typ::MbzRecording => update_metadata::<MbzRecording>(txn, id, metadata).await?,
+                                    Typ::MbzArtist => update_metadata::<MbzArtist>(txn, id, metadata).await?,
                                 }
                             }
                         }
@@ -391,11 +411,15 @@ pub mod db_server {
                                     Typ::Song => delete::<Song>(txn, item).await?,
                                     Typ::Playlist => delete::<Playlist>(txn, item).await?,
                                     Typ::Queue => delete::<Queue>(txn, item).await?,
+                                    Typ::ArtistBlacklist => delete::<ArtistBlacklist>(txn, item).await?,
+                                    Typ::SongBlacklist => delete::<SongBlacklist>(txn, item).await?,
                                     Typ::Updater => delete::<Updater>(txn, item).await?,
                                     Typ::StSong => delete::<StSong>(txn, item).await?,
                                     Typ::StAlbum => delete::<StAlbum>(txn, item).await?,
                                     Typ::StPlaylist => delete::<StPlaylist>(txn, item).await?,
                                     Typ::StArtist => delete::<StArtist>(txn, item).await?,
+                                    Typ::MbzRecording => delete::<MbzRecording>(txn, item).await?,
+                                    Typ::MbzArtist => delete::<MbzArtist>(txn, item).await?,
                                 }
                             }
                         }

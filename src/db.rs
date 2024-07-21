@@ -22,6 +22,7 @@ pub enum Typ {
     MmPlaylist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
     MmQueue,
+
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 6))]
     Song,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 7))]
@@ -29,15 +30,25 @@ pub enum Typ {
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 8))]
     Queue,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 9))]
-    Updater,
+    ArtistBlacklist,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
-    StSong,
+    SongBlacklist,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
+    Updater,
+
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 12))]
-    StAlbum,
+    StSong,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 13))]
-    StPlaylist,
+    StAlbum,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 14))]
+    StPlaylist,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 15))]
     StArtist,
+
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 16))]
+    MbzRecording,
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 17))]
+    MbzArtist,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -459,6 +470,26 @@ pub mod db {
             }
         }
 
+        impl AutoDbAble for ArtistBlacklist {
+            fn typ() -> Typ {
+                Typ::ArtistBlacklist
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                self.title.clone()
+            }
+        }
+
+        impl AutoDbAble for SongBlacklist {
+            fn typ() -> Typ {
+                Typ::SongBlacklist
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                self.title.clone()
+            }
+        }
+
         impl AutoDbAble for Playlist {
             fn typ() -> Typ {
                 Typ::Playlist
@@ -475,7 +506,7 @@ pub mod db {
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = String> {
-                [self.0.queue.title.clone()]
+                [self.queue.queue.title.clone()]
             }
         }
 
@@ -681,6 +712,60 @@ pub mod db {
                 });
 
                 hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.id.clone()]
+            }
+        }
+    }
+
+    mod mbz {
+        use super::{AutoDbAble, Link, Linked, Typ};
+        use crate::mbz::*;
+
+        impl Linked<Artist> for RecordingWithInfo {}
+        impl AutoDbAble for RecordingWithInfo {
+            fn typ() -> Typ {
+                Typ::MbzRecording
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                let mut hs = vec![self.recording.title.clone()];
+
+                self.credit.iter().for_each(|a| {
+                    hs.push(a.name.as_str().to_owned());
+                });
+
+                hs
+            }
+
+            fn refids(&self) -> impl IntoIterator<Item = String> {
+                [self.recording.id.clone()]
+            }
+
+            fn links(&self) -> impl IntoIterator<Item = Link> {
+                let mut links = vec![];
+                for from in self.refids() {
+                    for a in self.credit.iter() {
+                        links.push(Link {
+                            from_refid: from.clone(),
+                            from_typ: Self::typ(),
+                            to_refid: a.id.clone(),
+                            to_typ: Artist::typ(),
+                        });
+                    }
+                }
+                links
+            }
+        }
+        impl AutoDbAble for Artist {
+            fn typ() -> Typ {
+                Typ::MbzArtist
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                [self.name.clone()]
             }
 
             fn refids(&self) -> impl IntoIterator<Item = String> {

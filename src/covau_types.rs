@@ -40,7 +40,30 @@ pub struct Playlist {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Queue(pub ListenQueue<Playlist>);
+pub struct Queue {
+    pub queue: ListenQueue<Playlist>,
+
+    /// ArtistBlacklist
+    pub blacklist: Option<DbId>,
+
+    /// SongBlacklist
+    pub seen: Option<DbId>,
+
+    /// autoplay seed
+    pub seed: Option<InfoSource>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct ArtistBlacklist {
+    pub title: Option<String>,
+    pub artists: Vec<InfoSource>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct SongBlacklist {
+    pub title: Option<String>,
+    pub songs: Vec<InfoSource>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Song {
@@ -358,6 +381,10 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<Song>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Playlist>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<ArtistBlacklist>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<SongBlacklist>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Queue>(config)?;
     types += ";\n";
