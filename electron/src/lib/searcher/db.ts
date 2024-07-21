@@ -8,7 +8,6 @@ import { type Option, ListItem, type RenderContext, type DetailSection, CustomLi
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
-import { db } from "$lib/local/db.ts";
 import * as server from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import { type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
@@ -150,7 +149,7 @@ export class DbListItem extends ListItem {
             case "Playlist":
                 return this.data.t.title;
             case "Queue":
-                return this.data.t.queue.title;
+                return this.data.t.queue.queue.title;
             case "Updater":
                 return this.data.t.title;
             default:
@@ -499,7 +498,7 @@ export class DbListItem extends ListItem {
             if (!item.is_playable()) {
                 return false;
             }
-            await db.client().txn(async db => {
+            await server.dbclient.txn(async db => {
                 let song = await item.saved_covau_song(db);
                 if (song == null) {
                     throw new Error(`can't save item ${item.title()}`);
@@ -529,7 +528,7 @@ export class DbListItem extends ListItem {
             } break;
             case "Queue": {
                 let queue = this.data.t;
-                let list = editable_list(queue.queue.songs);
+                let list = editable_list(queue.queue.queue.songs);
                 return await save_in_list(list);
             } break;
             case "MmSong":
@@ -566,7 +565,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "like",
                     onclick: async () => {
-                        await db.client().txn(async db => {
+                        await server.dbclient.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             console.log(item);
                             item.metadata.likes += 1;
@@ -579,7 +578,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "dislike",
                     onclick: async () => {
-                        await db.client().txn(async db => {
+                        await server.dbclient.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes += 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -591,7 +590,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "un-like",
                     onclick: async () => {
-                        await db.client().txn(async db => {
+                        await server.dbclient.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.likes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -603,7 +602,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "un-dislike",
                     onclick: async () => {
-                        await db.client().txn(async db => {
+                        await server.dbclient.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -1095,9 +1094,9 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: queue.queue.songs,
+                                ids: queue.queue.queue.songs,
                             }, 30, null, this);
-                            stores.new_tab(s, queue.queue.title);
+                            stores.new_tab(s, queue.queue.queue.title);
                         },
                     },
                     add_all_to_queue: {
@@ -1107,8 +1106,8 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: queue.queue.songs,
-                            }, queue.queue.songs.length);
+                                ids: queue.queue.queue.songs,
+                            }, queue.queue.queue.songs.length);
                             let items = await s.next_page();
                             await stores.queue_ops.add_item(...items);
                         },
@@ -1659,7 +1658,7 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Title",
-                                content: queue.queue.title,
+                                content: queue.queue.queue.title,
                             },
                         ]
                     },
@@ -1668,11 +1667,11 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, queue.queue.songs.length),
+                        height: Math.min(5, queue.queue.queue.songs.length),
                         searcher: writable(Db.new({
                             query_type: "ids",
                             type: "Song",
-                            ids: queue.queue.songs,
+                            ids: queue.queue.queue.songs,
                         }, 10)),
                     },
                     sections.json,
@@ -2062,8 +2061,8 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await server.utils.api_request(
-            db.route(this.query.type),
+        let matches: DB.SearchMatches<unknown> = await server.dbclient.search(
+            this.query.type,
             q,
         );
         this.cont = matches.continuation;
@@ -2091,8 +2090,8 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await server.utils.api_request(
-                    db.route(this.query.type),
+                let matches: DB.SearchMatches<unknown> = await server.dbclient.search(
+                    this.query.type,
                     q,
                 );
                 this.cont = matches.continuation;
@@ -2118,8 +2117,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.utils.api_request(
-                db.route(this.query.type) + "/refids",
+            let matches: DB.DbItem<unknown>[] = await server.dbclient.get_many_by_refid(
+                this.query.type,
                 ids,
             );
             return keyed(matches) as MusicListItem[];
@@ -2136,8 +2135,8 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.utils.api_request(
-                db.route(this.query.type) + "/dbid",
+            let matches: DB.DbItem<unknown>[] = await server.dbclient.get_many_by_id(
+                this.query.type,
                 ids,
             );
             return keyed(matches) as MusicListItem[];

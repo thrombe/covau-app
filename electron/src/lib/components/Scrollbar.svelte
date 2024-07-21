@@ -31,6 +31,8 @@
         root.onscroll = (e) => {
             clearTimeout(timeout);
             onscroll();
+
+            // @ts-ignore
             timeout = setTimeout(onscroll, 200);
         };
     }

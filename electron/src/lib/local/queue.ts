@@ -1,10 +1,10 @@
-import { db } from "./db.ts";
 import { player, playing_item, queue } from "$lib/stores.ts";
 import type { ListItem, Option } from "$lib/searcher/item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { prompter } from "$lib/prompt/prompt.ts";
 import { StaticSearcher, type Searcher } from "$lib/searcher/searcher.ts";
 import * as icons from "$lib/icons.ts";
+import * as server from "$lib/server.ts";
 
 import * as covau from "$types/covau.ts";
 import { exhausted } from "$lib/utils.ts";
@@ -283,7 +283,7 @@ export class QueueManager implements Searcher {
                     }
                     let name = _name;
 
-                    await db.client().txn(async (db) => {
+                    await server.dbclient.txn(async (db) => {
                         let items = await Promise.all(this.items.map(async (item) => {
                             let song = await item.saved_covau_song(db);
                             if (!song) {

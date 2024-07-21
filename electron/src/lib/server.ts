@@ -361,6 +361,61 @@ class DbClient extends Client<types.server.DbRequest> {
             throw e;
         }
     }
+
+    async search<T>(typ: types.db.Typ, query: types.db.SearchQuery) {
+        let res: types.db.SearchMatches<T> = await this.execute({
+            type: "Search",
+            content: {
+                typ,
+                query,
+            },
+        });
+        return res;
+    }
+
+    async get_by_refid<T>(typ: types.db.Typ, refid: string) {
+        let res: types.db.DbItem<T> | null = await this.execute({
+            type: "GetByRefid",
+            content: {
+                typ,
+                refid,
+            },
+        });
+        return res;
+    }
+
+    async get_many_by_refid<T>(typ: types.db.Typ, refids: string[]) {
+        let res: types.db.DbItem<T>[] = await this.execute({
+            type: "GetManyByRefid",
+            content: {
+                typ,
+                refids,
+            },
+        });
+        return res;
+    }
+
+    async get_by_id<T>(typ: types.db.Typ, id: number) {
+        let res: types.db.DbItem<T> | null = await this.execute({
+            type: "GetById",
+            content: {
+                typ,
+                id,
+            },
+        });
+        return res;
+    }
+
+    async get_many_by_id<T>(typ: types.db.Typ, ids: number[]) {
+        let res: types.db.DbItem<T>[] = await this.execute({
+            type: "GetManyById",
+            content: {
+                typ,
+                ids,
+            },
+        });
+        return res;
+    }
 }
 
 const app_ops = {
@@ -410,7 +465,8 @@ function app_unhook() {
 
 export let ytiserver: YtiServer | null = null;
 export let feserver: FeServer | null = null;
-export let dbclient: DbClient | null = null;
+// @ts-ignore
+export let dbclient: DbClient = null;
 export const serve = async () => {
     ytiserver = new YtiServer();
     feserver = new FeServer();
@@ -441,6 +497,7 @@ export const serve = async () => {
 export const unserve = async () => {
     ytiserver = null;
     feserver = null;
+    // @ts-ignore
     dbclient = null;
     app_unhook();
 };

@@ -11,7 +11,7 @@ import { type AlmostDbItem, type DbOps } from "$lib/server.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
-import * as db from "$lib/local/db.ts"
+import * as server from "$lib/server.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -612,10 +612,10 @@ export const st = {
 
     cached: {
         async video(id: string) {
-            let v = await db.db.search.refid.st.song(id);
+            let v = await server.dbclient.get_by_refid<yt.Song>("StSong", id);
             if (v == null) {
                 let item = await st.fetch.video(id);
-                let dbitem = await db.db.client().txn(async db => {
+                let dbitem = await server.dbclient.txn(async db => {
                     return await db.insert_or_get({ typ: "StSong", t: item });
                 });
                 return item;
@@ -624,10 +624,10 @@ export const st = {
             }
         },
         async artist(id: string) {
-            let v = await db.db.search.refid.st.artist(id);
+            let v = await server.dbclient.get_by_refid<yt.Artist>("StArtist", id);
             if (v == null) {
                 let item = await st.fetch.artist(id);
-                let dbitem = await db.db.client().txn(async db => {
+                let dbitem = await server.dbclient.txn(async db => {
                     return await db.insert_or_get({ typ: "StArtist", t: item });
                 });
                 return item;
