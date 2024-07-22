@@ -1,9 +1,9 @@
 import { type Writable, writable, derived, get, type Readable } from "svelte/store";
 import { CustomListItem, type ListItem, type Option } from "$lib/searcher/item.ts";
-import * as Db from "$lib/searcher/db.ts";
+import * as db from "$lib/searcher/db.ts";
 import { Innertube } from "youtubei.js/web";
-import * as St from "$lib/searcher/song_tube.ts";
-import * as Mbz from "$lib/searcher/mbz.ts";
+import * as st from "$lib/searcher/song_tube.ts";
+import * as mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/utils.ts";
 import { toast } from "./toast/toast";
 import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
@@ -34,7 +34,7 @@ export type BrowseTab = {
 export type Tab = DetailTab | BrowseTab;
 
 export type MenubarOption = { name: string, key: number } & (
-    | { content_type: "list", type: Db.Typ | St.Typ | "YtVideo" | "YtChannel" | Mbz.SearchTyp | "covau-group" }
+    | { content_type: "list", type: types.db.Typ | types.yt.Typ | "YtVideo" | "YtChannel" | mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music", source: "Yt" | "Mbz" }
@@ -95,9 +95,9 @@ export let query_input = writable("");
 // export let source: Writable<Source> = writable("Musimanager");
 
 export type MetaBrowseQuery = (
-    | ({ source: "Youtube" } & St.BrowseQuery)
-    | ({ source: "Musimanager" } & Db.BrowseQuery)
-    | ({ source: "Musicbrainz" } & Mbz.BrowseQuery)
+    | ({ source: "Youtube" } & st.BrowseQuery)
+    | ({ source: "Musimanager" } & db.BrowseQuery)
+    | ({ source: "Musicbrainz" } & mbz.BrowseQuery)
 );
 
 export let menubar_options: Writable<MenubarOption[]> = writable([]);
@@ -406,7 +406,7 @@ selected_menubar_option.subscribe(async (option) => {
                 case "StPlaylist":
                 case "StArtist": {
                     let type = option.type;
-                    new_searcher = (q: string) => Db.Db.new({
+                    new_searcher = (q: string) => db.Db.new({
                         query_type: "search",
                         type: type,
                         query: q,
@@ -418,7 +418,7 @@ selected_menubar_option.subscribe(async (option) => {
                 case "YtPlaylist":
                 case "YtArtist": {
                     let type = option.type;
-                    new_searcher = (q: string) => St.SongTube.new({
+                    new_searcher = (q: string) => st.SongTube.new({
                         type: "Search",
                         content: {
                             query: q,
@@ -428,7 +428,7 @@ selected_menubar_option.subscribe(async (option) => {
                     s = new_searcher(get(query_input));
                 } break;
                 case "YtChannel": {
-                    new_searcher = (q: string) => St.SongTube.new({
+                    new_searcher = (q: string) => st.SongTube.new({
                         type: "ChannelSearch",
                         content: {
                             query: q,
@@ -437,7 +437,7 @@ selected_menubar_option.subscribe(async (option) => {
                     s = new_searcher(get(query_input));
                 } break;
                 case "YtVideo": {
-                    new_searcher = (q: string) => St.SongTube.new({
+                    new_searcher = (q: string) => st.SongTube.new({
                         type: "VideoSearch",
                         content: {
                             query: q,
@@ -451,7 +451,7 @@ selected_menubar_option.subscribe(async (option) => {
                 case "MbzArtist":
                 case "MbzRecordingWithInfo": {
                     let type = option.type;
-                    new_searcher = (q: string) => Mbz.Mbz.new({
+                    new_searcher = (q: string) => mbz.Mbz.new({
                         query_type: "search",
                         type: type,
                         query: q,
@@ -489,7 +489,7 @@ selected_menubar_option.subscribe(async (option) => {
                             });
                             return old;
                         });
-                        let s = St.SongTube.new({
+                        let s = st.SongTube.new({
                             type: "SongIds",
                             content: {
                                 ids,

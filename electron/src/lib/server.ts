@@ -472,7 +472,7 @@ export const serve = async () => {
     feserver = new FeServer();
     dbclient = new DbClient();
     app_hook();
-    app_ops.load(null);
+    await app_ops.load(null);
 
     // let tube = get(stores.tube);
     // let res = await tube.music.search("Aimer", { type: 'video' });
