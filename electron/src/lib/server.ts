@@ -57,7 +57,8 @@ export const utils = {
 abstract class Server<Req> {
     ws: WebSocket;
 
-    constructor(path: string) {
+    protected wait: Promise<void>;
+    protected constructor(path: string) {
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
 
         this.ws.addEventListener('message', async (e) => {
@@ -110,6 +111,14 @@ abstract class Server<Req> {
             console.log(resp_mesg);
             this.ws.send(JSON.stringify(resp_mesg));
         });
+
+        let resolve: () => {};
+        this.wait = new Promise(r => {
+            resolve = r as () => {};
+        });
+        this.ws.addEventListener('open', async (_e) => {
+            resolve();
+        });
     }
 
     // don't return anything if no response
@@ -121,8 +130,14 @@ abstract class Server<Req> {
 }
 
 class YtiServer extends Server<yt.YtiRequest> {
-    constructor() {
+    protected constructor() {
         super("serve/yti");
+    }
+
+    static async new() {
+        let self = new YtiServer();
+        await self.wait;
+        return self;
     }
 
     tubes: Map<string, st.SongTube> = new Map();
@@ -156,8 +171,14 @@ class YtiServer extends Server<yt.YtiRequest> {
 }
 
 class FeServer extends Server<FeRequest> {
-    constructor() {
+    protected constructor() {
         super("serve/fec");
+    }
+
+    static async new() {
+        let self = new FeServer();
+        await self.wait;
+        return self;
     }
 
     async handle_req(req: FeRequest): Promise<Object | null | undefined> {
@@ -229,7 +250,8 @@ class Client<Req> {
     ws: WebSocket;
     path: string;
 
-    constructor(path: string) {
+    protected wait: Promise<void>;
+    protected constructor(path: string) {
         this.path = utils.base_url + path + "/new_id";
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
 
@@ -251,6 +273,14 @@ class Client<Req> {
             this.resolves.delete(mesg.id);
 
             resolver(mesg);
+        });
+
+        let resolve: () => {};
+        this.wait = new Promise(r => {
+            resolve = r as () => {};
+        });
+        this.ws.addEventListener('open', async (_e) => {
+            resolve();
         });
     }
 
@@ -285,11 +315,17 @@ export type AlmostDbItem<T> = Omit<Omit<types.db.DbItem<T>, "id">, "metadata">;
 export type DbOps = ReturnType<DbClient["db_cud"]>;
 
 class DbClient extends Client<types.server.DbRequest> {
-    constructor() {
+    protected constructor() {
         super("serve/db")
     }
 
-    private db_cud(id: number) {
+    static async new() {
+        let self = new DbClient();
+        await self.wait;
+        return self;
+    }
+
+    db_cud(id: number) {
         let self = this;
         return {
             id: id,
@@ -468,9 +504,9 @@ export let feserver: FeServer | null = null;
 // @ts-ignore
 export let dbclient: DbClient = null;
 export const serve = async () => {
-    ytiserver = new YtiServer();
-    feserver = new FeServer();
-    dbclient = new DbClient();
+    ytiserver = await YtiServer.new();
+    feserver = await FeServer.new();
+    dbclient = await DbClient.new();
     app_hook();
     await app_ops.load(null);
 
