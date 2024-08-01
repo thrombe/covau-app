@@ -358,7 +358,7 @@
                               bg-gray-200 bg-opacity-20 peer-checked:bg-blue-600 peer-checked:bg-opacity-50 after:bg-gray-200"
                             />
                             <span
-                                class="ms-3 text-sm font-medium select-none text-gray-900 dark:text-gray-300"
+                                class="ms-3 text-sm font-medium select-none text-gray-200"
                             >
                                 Autoplay
                             </span>
