@@ -612,10 +612,10 @@ export const st = {
 
     cached: {
         async video(id: string) {
-            let v = await server.dbclient.get_by_refid<yt.Song>("StSong", id);
+            let v = await server.db.get_by_refid<yt.Song>("StSong", id);
             if (v == null) {
                 let item = await st.fetch.video(id);
-                let dbitem = await server.dbclient.txn(async db => {
+                let dbitem = await server.db.txn(async db => {
                     return await db.insert_or_get({ typ: "StSong", t: item });
                 });
                 return item;
@@ -624,10 +624,10 @@ export const st = {
             }
         },
         async artist(id: string) {
-            let v = await server.dbclient.get_by_refid<yt.Artist>("StArtist", id);
+            let v = await server.db.get_by_refid<yt.Artist>("StArtist", id);
             if (v == null) {
                 let item = await st.fetch.artist(id);
-                let dbitem = await server.dbclient.txn(async db => {
+                let dbitem = await server.db.txn(async db => {
                     return await db.insert_or_get({ typ: "StArtist", t: item });
                 });
                 return item;

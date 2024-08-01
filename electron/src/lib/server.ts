@@ -384,22 +384,24 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         }
     }
+}
 
+export const db = {
     async txn<Ret>(fn: (db_ops: DbOps) => Promise<Ret>) {
-        let id: number = await this.execute({ type: "Begin" });
+        let id: number = await dbclient.execute({ type: "Begin" });
         try {
-            let res = await fn(this.db_cud(id));
-            await this.execute({ type: "Commit", content: id });
+            let res = await fn(dbclient.db_cud(id));
+            await dbclient.execute({ type: "Commit", content: id });
             return res;
         } catch (e: any) {
-            await this.execute({ type: "Rollback", content: id });
+            await dbclient.execute({ type: "Rollback", content: id });
 
             throw e;
         }
-    }
+    },
 
     async search<T>(typ: types.db.Typ, query: types.db.SearchQuery) {
-        let res: types.db.SearchMatches<T> = await this.execute({
+        let res: types.db.SearchMatches<T> = await dbclient.execute({
             type: "Search",
             content: {
                 typ,
@@ -407,10 +409,10 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         });
         return res;
-    }
+    },
 
     async get_by_refid<T>(typ: types.db.Typ, refid: string) {
-        let res: types.db.DbItem<T> | null = await this.execute({
+        let res: types.db.DbItem<T> | null = await dbclient.execute({
             type: "GetByRefid",
             content: {
                 typ,
@@ -418,10 +420,10 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         });
         return res;
-    }
+    },
 
     async get_many_by_refid<T>(typ: types.db.Typ, refids: string[]) {
-        let res: types.db.DbItem<T>[] = await this.execute({
+        let res: types.db.DbItem<T>[] = await dbclient.execute({
             type: "GetManyByRefid",
             content: {
                 typ,
@@ -429,10 +431,10 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         });
         return res;
-    }
+    },
 
     async get_by_id<T>(typ: types.db.Typ, id: number) {
-        let res: types.db.DbItem<T> | null = await this.execute({
+        let res: types.db.DbItem<T> | null = await dbclient.execute({
             type: "GetById",
             content: {
                 typ,
@@ -440,10 +442,10 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         });
         return res;
-    }
+    },
 
     async get_many_by_id<T>(typ: types.db.Typ, ids: number[]) {
-        let res: types.db.DbItem<T>[] = await this.execute({
+        let res: types.db.DbItem<T>[] = await dbclient.execute({
             type: "GetManyById",
             content: {
                 typ,
@@ -451,8 +453,8 @@ class DbClient extends Client<types.server.DbRequest> {
             },
         });
         return res;
-    }
-}
+    },
+};
 
 const app_ops = {
     async send(state: types.server.AppMessage) {

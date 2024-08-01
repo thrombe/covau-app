@@ -240,7 +240,7 @@ export class QueueManager implements Searcher {
         }
     }
 
-    async  handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
+    async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
         if (!item.is_playable()) {
             return false;
         }
@@ -283,7 +283,7 @@ export class QueueManager implements Searcher {
                     }
                     let name = _name;
 
-                    await server.dbclient.txn(async (db) => {
+                    await server.db.txn(async (db) => {
                         let items = await Promise.all(this.items.map(async (item) => {
                             let song = await item.saved_covau_song(db);
                             if (!song) {
@@ -456,7 +456,7 @@ export class AutoplayQueueManager extends QueueManager {
 
     autoplay_disable() {
         if (this.autoplay_state.state == "Init") {
-            this.autoplay_state = { state: "Disabled", info: this.autoplay_state  };
+            this.autoplay_state = { state: "Disabled", info: this.autoplay_state };
         } else if (this.autoplay_state.state == "Disabled") {
             // pass
         } else {

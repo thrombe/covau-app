@@ -498,7 +498,7 @@ export class DbListItem extends ListItem {
             if (!item.is_playable()) {
                 return false;
             }
-            await server.dbclient.txn(async db => {
+            await server.db.txn(async db => {
                 let song = await item.saved_covau_song(db);
                 if (song == null) {
                     throw new Error(`can't save item ${item.title()}`);
@@ -565,7 +565,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "like",
                     onclick: async () => {
-                        await server.dbclient.txn(async db => {
+                        await server.db.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             console.log(item);
                             item.metadata.likes += 1;
@@ -578,7 +578,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "dislike",
                     onclick: async () => {
-                        await server.dbclient.txn(async db => {
+                        await server.db.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes += 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -590,7 +590,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_up,
                     title: "un-like",
                     onclick: async () => {
-                        await server.dbclient.txn(async db => {
+                        await server.db.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.likes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -602,7 +602,7 @@ export class DbListItem extends ListItem {
                     icon: icons.thumbs_down,
                     title: "un-dislike",
                     onclick: async () => {
-                        await server.dbclient.txn(async db => {
+                        await server.db.txn(async db => {
                             let item = this.data as DB.DbItem<unknown>;
                             item.metadata.dislikes -= 1;
                             this.data.metadata = await db.update_metadata(item);
@@ -2061,7 +2061,7 @@ export class Db extends Unpaged<MusicListItem> {
                 page_size: this.page_size,
             },
         };
-        let matches: DB.SearchMatches<unknown> = await server.dbclient.search(
+        let matches: DB.SearchMatches<unknown> = await server.db.search(
             this.query.type,
             q,
         );
@@ -2090,7 +2090,7 @@ export class Db extends Unpaged<MusicListItem> {
                     type: "Continuation",
                     content: this.cont,
                 };
-                let matches: DB.SearchMatches<unknown> = await server.dbclient.search(
+                let matches: DB.SearchMatches<unknown> = await server.db.search(
                     this.query.type,
                     q,
                 );
@@ -2117,7 +2117,7 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.dbclient.get_many_by_refid(
+            let matches: DB.DbItem<unknown>[] = await server.db.get_many_by_refid(
                 this.query.type,
                 ids,
             );
@@ -2135,7 +2135,7 @@ export class Db extends Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.dbclient.get_many_by_id(
+            let matches: DB.DbItem<unknown>[] = await server.db.get_many_by_id(
                 this.query.type,
                 ids,
             );
