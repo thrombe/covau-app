@@ -23,6 +23,8 @@ pub enum Typ {
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
     MmQueue,
 
+    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 18))]
+    LocalState,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 6))]
     Song,
     #[cfg_attr(feature = "bindeps", sea_orm(num_value = 7))]
@@ -403,6 +405,16 @@ pub mod db {
 
         use super::{AutoDbAble, Link, Linked, Typ};
         use crate::covau_types::*;
+
+        impl AutoDbAble for LocalState {
+            fn typ() -> Typ {
+                Typ::LocalState
+            }
+
+            fn haystack(&self) -> impl IntoIterator<Item = String> {
+                []
+            }
+        }
 
         impl Linked<crate::yt::song_tube::Song> for Song {}
         impl Linked<crate::mbz::RecordingWithInfo> for Song {}
@@ -1145,6 +1157,17 @@ pub mod db {
                     .to_owned(),
             );
             let _ = self.db.execute(s).await?;
+
+            Ok(())
+        }
+
+        pub async fn init_state(&self) -> anyhow::Result<()> {
+            let state = crate::covau_types::LocalState {
+                queue: None,
+            };
+
+            let id = state.insert(&self.db).await?;
+            assert_eq!(id, 1, "id must be 1");
 
             Ok(())
         }

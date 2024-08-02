@@ -126,6 +126,7 @@ pub mod db_server {
         },
     }
 
+    type LocalState = crate::covau_types::LocalState;
     type Song = crate::covau_types::Song;
     type Playlist = crate::covau_types::Playlist;
     type Queue = crate::covau_types::Queue;
@@ -287,6 +288,13 @@ pub mod db_server {
                                 })
                             } else {
                                 match typ {
+                                    Typ::LocalState => {
+                                        let msg = "Operation Not Allowed";
+                                        MessageResult::Err(ErrorMessage {
+                                            message: msg.into(),
+                                            stack_trace: msg.into(),
+                                        })
+                                    },
                                     Typ::MmSong => insert::<MmSong>(txn, item).await?,
                                     Typ::MmAlbum => insert::<MmAlbum>(txn, item).await?,
                                     Typ::MmArtist => insert::<MmArtist>(txn, item).await?,
@@ -332,6 +340,13 @@ pub mod db_server {
                                 })
                             } else {
                                 match typ {
+                                    Typ::LocalState => {
+                                        let msg = "Operation Not Allowed";
+                                        MessageResult::Err(ErrorMessage {
+                                            message: msg.into(),
+                                            stack_trace: msg.into(),
+                                        })
+                                    },
                                     Typ::MmSong => insert_or_get::<MmSong>(txn, item).await?,
                                     Typ::MmAlbum => insert_or_get::<MmAlbum>(txn, item).await?,
                                     Typ::MmArtist => insert_or_get::<MmArtist>(txn, item).await?,
@@ -381,6 +396,7 @@ pub mod db_server {
                                     Typ::MmArtist => update::<MmArtist>(txn, item).await?,
                                     Typ::MmPlaylist => update::<MmPlaylist>(txn, item).await?,
                                     Typ::MmQueue => update::<MmQueue>(txn, item).await?,
+                                    Typ::LocalState => update::<LocalState>(txn, item).await?,
                                     Typ::Song => update::<Song>(txn, item).await?,
                                     Typ::Playlist => update::<Playlist>(txn, item).await?,
                                     Typ::Queue => update::<Queue>(txn, item).await?,
@@ -427,6 +443,7 @@ pub mod db_server {
                                     Typ::MmArtist => update_metadata::<MmArtist>(txn, id, metadata).await?,
                                     Typ::MmPlaylist => update_metadata::<MmPlaylist>(txn, id, metadata).await?,
                                     Typ::MmQueue => update_metadata::<MmQueue>(txn, id, metadata).await?,
+                                    Typ::LocalState => update_metadata::<LocalState>(txn, id, metadata).await?,
                                     Typ::Song => update_metadata::<Song>(txn, id, metadata).await?,
                                     Typ::Playlist => update_metadata::<Playlist>(txn, id, metadata).await?,
                                     Typ::Queue => update_metadata::<Queue>(txn, id, metadata).await?,
@@ -466,6 +483,13 @@ pub mod db_server {
                                 })
                             } else {
                                 match item.typ {
+                                    Typ::LocalState => {
+                                        let msg = "Operation Not Allowed";
+                                        MessageResult::Err(ErrorMessage {
+                                            message: msg.into(),
+                                            stack_trace: msg.into(),
+                                        })
+                                    },
                                     Typ::MmSong => delete::<MmSong>(txn, item).await?,
                                     Typ::MmAlbum => delete::<MmAlbum>(txn, item).await?,
                                     Typ::MmArtist => delete::<MmArtist>(txn, item).await?,
@@ -502,6 +526,7 @@ pub mod db_server {
                         Typ::MmArtist => search::<MmArtist>(db, query).await?,
                         Typ::MmPlaylist => search::<MmPlaylist>(db, query).await?,
                         Typ::MmQueue => search::<MmQueue>(db, query).await?,
+                        Typ::LocalState => search::<LocalState>(db, query).await?,
                         Typ::Song => search::<Song>(db, query).await?,
                         Typ::Playlist => search::<Playlist>(db, query).await?,
                         Typ::Queue => search::<Queue>(db, query).await?,
@@ -518,16 +543,23 @@ pub mod db_server {
                 },
                 DbRequest::GetByRefid { typ, refid } => {
                     match typ {
+                        Typ::MmPlaylist |
+                        Typ::MmQueue |
+                        Typ::MmArtist |
+                        Typ::Playlist |
+                        Typ::Queue |
+                        Typ::ArtistBlacklist |
+                        Typ::SongBlacklist |
+                        Typ::LocalState => {
+                            let msg = "Item does not support Refids";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        },
                         Typ::MmSong => get_by_refid::<MmSong>(db, refid).await?,
                         Typ::MmAlbum => get_by_refid::<MmAlbum>(db, refid).await?,
-                        Typ::MmArtist => get_by_refid::<MmArtist>(db, refid).await?,
-                        Typ::MmPlaylist => get_by_refid::<MmPlaylist>(db, refid).await?,
-                        Typ::MmQueue => get_by_refid::<MmQueue>(db, refid).await?,
                         Typ::Song => get_by_refid::<Song>(db, refid).await?,
-                        Typ::Playlist => get_by_refid::<Playlist>(db, refid).await?,
-                        Typ::Queue => get_by_refid::<Queue>(db, refid).await?,
-                        Typ::ArtistBlacklist => get_by_refid::<ArtistBlacklist>(db, refid).await?,
-                        Typ::SongBlacklist => get_by_refid::<SongBlacklist>(db, refid).await?,
                         Typ::Updater => get_by_refid::<Updater>(db, refid).await?,
                         Typ::StSong => get_by_refid::<StSong>(db, refid).await?,
                         Typ::StAlbum => get_by_refid::<StAlbum>(db, refid).await?,
@@ -539,16 +571,23 @@ pub mod db_server {
                 },
                 DbRequest::GetManyByRefid { typ, refids } => {
                     match typ {
+                        Typ::MmPlaylist |
+                        Typ::MmQueue |
+                        Typ::MmArtist |
+                        Typ::Playlist |
+                        Typ::Queue |
+                        Typ::ArtistBlacklist |
+                        Typ::SongBlacklist |
+                        Typ::LocalState => {
+                            let msg = "Item does not support Refids";
+                            MessageResult::Err(ErrorMessage {
+                                message: msg.into(),
+                                stack_trace: msg.into(),
+                            })
+                        },
                         Typ::MmSong => get_many_by_refid::<MmSong>(db, refids).await?,
                         Typ::MmAlbum => get_many_by_refid::<MmAlbum>(db, refids).await?,
-                        Typ::MmArtist => get_many_by_refid::<MmArtist>(db, refids).await?,
-                        Typ::MmPlaylist => get_many_by_refid::<MmPlaylist>(db, refids).await?,
-                        Typ::MmQueue => get_many_by_refid::<MmQueue>(db, refids).await?,
                         Typ::Song => get_many_by_refid::<Song>(db, refids).await?,
-                        Typ::Playlist => get_many_by_refid::<Playlist>(db, refids).await?,
-                        Typ::Queue => get_many_by_refid::<Queue>(db, refids).await?,
-                        Typ::ArtistBlacklist => get_many_by_refid::<ArtistBlacklist>(db, refids).await?,
-                        Typ::SongBlacklist => get_many_by_refid::<SongBlacklist>(db, refids).await?,
                         Typ::Updater => get_many_by_refid::<Updater>(db, refids).await?,
                         Typ::StSong => get_many_by_refid::<StSong>(db, refids).await?,
                         Typ::StAlbum => get_many_by_refid::<StAlbum>(db, refids).await?,
@@ -565,6 +604,7 @@ pub mod db_server {
                         Typ::MmArtist => get_by_id::<MmArtist>(db, id).await?,
                         Typ::MmPlaylist => get_by_id::<MmPlaylist>(db, id).await?,
                         Typ::MmQueue => get_by_id::<MmQueue>(db, id).await?,
+                        Typ::LocalState => get_by_id::<LocalState>(db, id).await?,
                         Typ::Song => get_by_id::<Song>(db, id).await?,
                         Typ::Playlist => get_by_id::<Playlist>(db, id).await?,
                         Typ::Queue => get_by_id::<Queue>(db, id).await?,
@@ -586,6 +626,7 @@ pub mod db_server {
                         Typ::MmArtist => get_many_by_id::<MmArtist>(db, ids).await?,
                         Typ::MmPlaylist => get_many_by_id::<MmPlaylist>(db, ids).await?,
                         Typ::MmQueue => get_many_by_id::<MmQueue>(db, ids).await?,
+                        Typ::LocalState => get_many_by_id::<LocalState>(db, ids).await?,
                         Typ::Song => get_many_by_id::<Song>(db, ids).await?,
                         Typ::Playlist => get_many_by_id::<Playlist>(db, ids).await?,
                         Typ::Queue => get_many_by_id::<Queue>(db, ids).await?,
@@ -774,6 +815,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .expect("cannot connect to database");
     if !db_exists {
         db.init_tables().await.expect("could not init database");
+        db.init_state().await.expect("could not init state");
 
         if let Some(path) = config.musimanager_db_path.as_ref() {
             db.init_musimanager_data(path)

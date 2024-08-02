@@ -16,7 +16,9 @@ use crate::{
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
-    queue: Queue,
+    pub queue: Option<DbId>,
+
+    // any more settings :/
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -50,7 +52,7 @@ pub struct Queue {
     pub seen: Option<DbId>,
 
     /// autoplay seed
-    pub seed: Option<InfoSource>,
+    pub seed: Option<DbId>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
