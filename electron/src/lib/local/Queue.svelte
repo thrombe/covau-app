@@ -33,7 +33,7 @@
     let items: Unique<QueueItem, string>[] = [];
     export let mobile = false;
 
-    let queue = stores.queue as Writable<AutoplayQueueManager>;
+    let queue = stores.queue;
 
     let hovering: number | null = null;
     let dragging_index: number | null = null;
@@ -85,6 +85,7 @@
     let options = $queue.options();
 
     let unsub = queue.subscribe(async (q) => {
+        // TODO: moving items in queue triggers this
         if (q.playing_index != null && playing != null) {
             if (is_in_view(playing)) {
                 if (q.playing_index == playing + 1) {

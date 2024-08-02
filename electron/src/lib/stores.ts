@@ -6,7 +6,7 @@ import * as st from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import { exhausted } from "$lib/utils.ts";
 import { toast } from "./toast/toast";
-import { type AutoplayQueryInfo, autoplay_searcher, AutoplayQueueManager } from "./local/queue.ts";
+import type { AutoplayQueryInfo, LocalSyncQueue } from "./local/queue.ts";
 import { type Searcher, fused_searcher, type NewSearcher } from "./searcher/searcher.ts";
 import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
@@ -274,15 +274,6 @@ export interface Player {
     toggle_mute(): void;
     is_playing(): boolean;
 }
-export interface Queue {
-    detour(): void;
-    play_item(item: ListItem): Promise<void>;
-    add(...item: ListItem[]): Promise<void>;
-    play_queue_item(item: ListItem): Promise<void>;
-    remove_queue_item(item: ListItem): Promise<void>;
-    play_next(): Promise<void>;
-    play_prev(): Promise<void>;
-}
 export let dummy_player: Player = {
     play_item() { },
     pause() { },
@@ -357,7 +348,231 @@ export let set_player_type = async (t: PlayerType) => {
     }
 };
 
-export let queue: Writable<Queue> = writable(new AutoplayQueueManager());
+export let queue: Writable<LocalSyncQueue> = writable();
+
+type Syncer = {
+    state: types.db.DbItem<types.covau.LocalState>,
+    queue: types.db.DbItem<types.covau.Queue> | null,
+    blacklist: types.db.DbItem<types.covau.ArtistBlacklist> | null,
+    seen: types.db.DbItem<types.covau.SongBlacklist> | null,
+    seed: types.db.DbItem<types.covau.Song> | null,
+
+    timeout: number,
+};
+export let syncer: Writable<Syncer> = writable();
+export const syncops = {
+    // load everything from db into _
+    async load() {
+        let server = await import("$lib/server.ts");
+        let queue_ts = await import("$lib/local/queue.ts");
+        let q = new queue_ts.LocalSyncQueue();
+
+        let state = await server.db.get_by_id<types.covau.LocalState>("LocalState", 1);
+        if (state == null) {
+            throw new Error("Database does not have state object");
+        }
+        let sync: Syncer = {
+            state,
+            queue: null,
+            blacklist: null,
+            seed: null,
+            seen: null,
+            timeout: 0,
+        };
+
+        if (sync.state.t.queue != null) {
+            let dbq = (await server.db.get_by_id<types.covau.Queue>("Queue", sync.state.t.queue))!;
+            sync.queue = dbq;
+            let items = await server.db.get_many_by_id("Song", dbq.t.queue.queue.songs);
+            q.items = db.db.wrapped_items(items);
+            q.playing_index = dbq.t.queue.current_index;
+            q.state = "Playing";
+            if (q.playing_index != null) {
+                playing_item.set(q.items[q.playing_index]);
+            }
+
+            if (sync.queue.t.blacklist != null) {
+                 let bl = (await server.db.get_by_id<types.covau.ArtistBlacklist>("ArtistBlacklist", sync.queue.t.blacklist))!;
+                sync.blacklist = bl;
+                q.blacklist_artist_ids = [...bl.t.artists];
+                q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
+            }
+            if (sync.queue.t.seen != null) {
+                 let bl = (await server.db.get_by_id<types.covau.SongBlacklist>("SongBlacklist", sync.queue.t.seen))!;
+                sync.seen = bl;
+                q.blacklist_ids = [...bl.t.songs];
+                q.bl_ids = new Set(bl.t.songs.map(id => id.content));
+            }
+            if (sync.queue.t.seed != null) {
+                 let s = (await server.db.get_by_id<types.covau.Song>("Song", sync.queue.t.seed))!;
+                 let w = db.db.wrapped(s);
+                 sync.seed = s;
+                 q.set_seed(w);
+            }
+        }
+
+        syncer.set(sync);
+        queue.set(q);
+    },
+
+    // push state to db
+    save: {
+        debounced: {
+            _timeouts: {
+                queue: 0,
+                blacklist: 0,
+                seen: 0,
+                sync: 0,
+            },
+            queue() {
+                let tim = syncops.save.debounced._timeouts.queue;
+                clearTimeout(tim);
+                syncops.save.debounced._timeouts.queue = setTimeout(syncops.save.queue, 300) as unknown as number;
+            },
+            blacklist() {
+                let tim = syncops.save.debounced._timeouts.blacklist;
+                clearTimeout(tim);
+                syncops.save.debounced._timeouts.blacklist = setTimeout(syncops.save.blacklist, 300) as unknown as number;
+            },
+            seen() {
+                let tim = syncops.save.debounced._timeouts.seen;
+                clearTimeout(tim);
+                syncops.save.debounced._timeouts.seen = setTimeout(syncops.save.seen, 300) as unknown as number;
+            },
+            sync() {
+                let tim = syncops.save.debounced._timeouts.sync;
+                clearTimeout(tim);
+                syncops.save.debounced._timeouts.sync = setTimeout(syncops.save.sync, 300) as unknown as number;
+            },
+        },
+        async queue() {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+
+            await server.db.txn(async db => {
+                sync.queue = await db.update(sync.queue!);
+            });
+
+            syncer.update(t => t);
+        },
+        async blacklist() {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+
+            await server.db.txn(async db => {
+                sync.blacklist = await db.update(sync.blacklist!);
+            });
+
+            syncer.update(t => t);
+        },
+        async seen() {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+
+            await server.db.txn(async db => {
+                sync.seen = await db.update(sync.seen!);
+            });
+
+            syncer.update(t => t);
+        },
+        async sync() {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+
+            await server.db.txn(async db => {
+                sync.state = await db.update(sync.state);
+            });
+
+            syncer.update(t => t);
+        },
+    },
+    new: {
+        async queue() {
+            let server = await import("$lib/server.ts");
+            let q = get(queue);
+            let sync = get(syncer);
+
+            await server.db.txn(async db => {
+                let dbq = await db.insert_or_get<types.covau.Queue>({
+                    typ: "Queue",
+                    t: {
+                        queue: {
+                            queue: {
+                                title: "Queue",
+                                songs: [],
+                            },
+                            current_index: null,
+                        },
+                        blacklist: null,
+                        seen: null,
+                        seed: null,
+                    },
+                });
+                sync.state.t.queue = dbq.content.id;
+                sync.queue = dbq.content;
+                sync.blacklist = null;
+                sync.seen = null;
+                sync.seed = null;
+                sync.state = await db.update(sync.state);
+            });
+            q.reset();
+
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+        async blacklist() {
+            let server = await import("$lib/server.ts");
+            let q = get(queue);
+            let sync = get(syncer);
+            if (sync.queue == null) {
+                throw new Error("no queue set");
+            }
+
+            let bl = await server.db.txn(async db => {
+                let bl = await db.insert_or_get<types.covau.ArtistBlacklist>({
+                    typ: "ArtistBlacklist",
+                    t: {
+                        title: null,
+                        artists: [],
+                    },
+                });
+                sync.queue!.t.blacklist = bl.content.id;
+                sync.queue = await db.update(sync.queue!);
+                sync.blacklist = bl.content;
+                return bl.content;
+            });
+            q.blacklist_artist_ids = [...bl.t.artists];
+            q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
+
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+        async seen() {
+            let server = await import("$lib/server.ts");
+            let q = get(queue);
+            let sync = get(syncer);
+
+            let bl = await server.db.txn(async db => {
+                let bl = await db.insert_or_get<types.covau.SongBlacklist>({
+                    typ: "SongBlacklist",
+                    t: {
+                        title: null,
+                        songs: [],
+                    },
+                });
+                sync.queue!.t.seen = bl.content.id;
+                sync.queue = await db.update(sync.queue!);
+                sync.seen = bl.content;
+                return bl.content;
+            });
+            q.blacklist_ids = [...bl.t.songs];
+            q.bl_ids = new Set(bl.t.songs.map(id => id.content));
+
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+    },
+};
 
 export const queue_ops = {
     async detour(item: ListItem) {
@@ -400,6 +615,10 @@ selected_menubar_option.subscribe(async (option) => {
                 case "Song":
                 case "Playlist":
                 case "Queue":
+                case "ArtistBlacklist":
+                case "SongBlacklist":
+                // case "MbzRecording": // TODO:
+                // case "MbzArtist":
                 case "Updater":
                 case "StSong":
                 case "StAlbum":
@@ -521,6 +740,7 @@ selected_menubar_option.subscribe(async (option) => {
         case "related-music": {
             let item = get(playing_item);
             let query: AutoplayQueryInfo | null = null;
+            let queue_ts = await import("$lib/local/queue.ts");
 
             switch (option.source) {
                 case "Yt": {
@@ -537,7 +757,7 @@ selected_menubar_option.subscribe(async (option) => {
             }
 
             if (query) {
-                s = await autoplay_searcher(query);
+                s = await queue_ts.autoplay_searcher(query);
             } else {
                 toast("could not find related for " + item.title(), "error");
             }

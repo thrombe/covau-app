@@ -98,15 +98,44 @@ export class DbListItem extends ListItem {
         }
     }
 
-    song_ids(): string[] {
+    song_ids(): types.covau.InfoSource[] {
         switch (this.data.typ) {
             case "MmSong":
-                return [this.data.t.key];
+                return [{ type: "YtId", content: this.data.t.key }];
             case "StSong":
-                return [this.data.t.id];
+                return [{ type: "YtId", content: this.data.t.id }];
             case "Song": {
                 let song = this.data.t;
-                return song.info_sources.map(s => s.content)
+                return song.info_sources;
+            } break;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+                return [];
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    artist_ids(): types.covau.InfoSource[] {
+        let sections = this.common_sections(this.data);
+        let maybe = sections.ops.maybe;
+        switch (this.data.typ) {
+            case "MmSong":
+                return maybe(this.data.t.info?.channel_id ?? null, id => ({ type: "YtId", content: id }));
+            case "StSong":
+                return this.data.t.authors
+                    .filter(id => !!id.channel_id)
+                    .map(id => ({ type: "YtId", content: id.channel_id! }));
+            case "Song": {
+                return [];
             } break;
             case "MmAlbum":
             case "MmArtist":
@@ -2006,6 +2035,16 @@ function ClassTypeWrapper<S extends Constructor<{
     } as Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
 }
 
+export const db = {
+    wrapped_items<T>(items: types.db.DbItem<T>[]): DbListItem[] {
+        let k = keyed(items);
+        return k.map(e => new DbListItem(e as MusicListItem))
+    },
+    wrapped<T>(item: types.db.DbItem<T>): DbListItem {
+        let k = keyed([item])[0];
+        return new DbListItem(k as MusicListItem);
+    },
+};
 export class Db extends Unpaged<MusicListItem> {
     query: BrowseQuery;
     page_size: number;

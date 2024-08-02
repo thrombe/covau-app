@@ -5,13 +5,15 @@ import { prompter } from "$lib/prompt/prompt.ts";
 import { StaticSearcher, type Searcher } from "$lib/searcher/searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as server from "$lib/server.ts";
+import * as stores from "$lib/stores.ts";
+import * as types from "$types/types.ts";
 
 import * as covau from "$types/covau.ts";
 import { exhausted } from "$lib/utils.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import { get } from "svelte/store";
-import { Db } from "$lib/searcher/db.ts";
+import * as db from "$lib/searcher/db.ts";
 
 
 export class QueueManager implements Searcher {
@@ -294,11 +296,16 @@ export class QueueManager implements Searcher {
                             return song
                         }));
                         let queue: covau.Queue = {
-                            current_index: this.playing_index,
+                            blacklist: null,
+                            seen: null,
+                            seed: null,
                             queue: {
-                                title: name,
-                                songs: items.map(t => t.id),
-                            },
+                                current_index: this.playing_index,
+                                queue: {
+                                    title: name,
+                                    songs: items.map(t => t.id),
+                                },
+                            }
                         };
                         await db.insert_or_get({ typ: "Queue", t: queue });
                     });
@@ -333,7 +340,7 @@ export class QueueManager implements Searcher {
                 title: "searcher prompt test",
                 icon: icons.covau_icon,
                 onclick: async () => {
-                    let new_searcher = (q: string) => Db.new({
+                    let new_searcher = (q: string) => db.Db.new({
                         type: "MmSong",
                         query_type: "search",
                         query: q,
@@ -368,7 +375,7 @@ export type AutoplayQueryInfo = {
 };
 export type AutoplayTyp = "StSearchRelated" | "StRelated" | "MbzRadio";
 
-export async function autoplay_searcher(q: AutoplayQueryInfo) {
+export async function autoplay_searcher(q: AutoplayQueryInfo): Promise<Searcher> {
     switch (q.type) {
         case "StSearchRelated": {
             let query: string;
@@ -435,6 +442,9 @@ type AutoplayState = {
 } | {
     state: 'Disabled';
     info: AutoplayInfo | null,
+} | {
+    state: 'DisabledWithSeed';
+    seed: ListItem,
 } | ({
     state: 'Init';
 } & AutoplayInfo) | {
@@ -444,10 +454,13 @@ type AutoplayState = {
 
 export class AutoplayQueueManager extends QueueManager {
     autoplay_state: AutoplayState = { state: "Disabled", info: null };
-    autoplayed_ids: Set<string> = new Set();
+    blacklist_ids: types.covau.InfoSource[] | null = null;
+    bl_ids: Set<string> = new Set();
+    blacklist_artist_ids: types.covau.InfoSource[] | null = null;
+    bl_artist_ids: Set<string> = new Set();
 
     async autoplay_toggle() {
-        if (this.autoplay_state.state === "Disabled") {
+        if (this.autoplay_state.state === "Disabled" || this.autoplay_state.state === "DisabledWithSeed") {
             await this.autoplay_enable();
         } else {
             this.autoplay_disable();
@@ -459,13 +472,29 @@ export class AutoplayQueueManager extends QueueManager {
             this.autoplay_state = { state: "Disabled", info: this.autoplay_state };
         } else if (this.autoplay_state.state == "Disabled") {
             // pass
+        } else if (this.autoplay_state.state == "DisabledWithSeed") {
+            // pass
         } else {
             this.autoplay_state = { state: "Disabled", info: null };
         }
     }
 
+    get_seed() {
+        if (this.autoplay_state.state == "Init") {
+            return this.autoplay_state.seed_item;
+        } else if (this.autoplay_state.state == "Disabled") {
+            return this.autoplay_state.info?.seed_item ?? null;
+        } else if (this.autoplay_state.state == "DisabledWithSeed") {
+            return this.autoplay_state.seed;
+        } else {
+            return null;
+        }
+    }
+
     async autoplay_enable() {
-        if (this.autoplay_state.state === "Disabled") {
+        if (this.autoplay_state.state === "DisabledWithSeed") {
+            await this.init_with_seed(this.autoplay_state.seed);
+        } else if (this.autoplay_state.state === "Disabled") {
             if (this.autoplay_state.info == null) {
                 this.autoplay_state = { state: "Uninit" };
                 if (this.playing_index != null) {
@@ -484,12 +513,23 @@ export class AutoplayQueueManager extends QueueManager {
     }
 
     autoplay_is_enabled() {
-        return this.autoplay_state.state !== "Disabled";
+        return this.autoplay_state.state !== "Disabled" && this.autoplay_state.state !== "DisabledWithSeed";
     }
 
     reset() {
         super.reset();
         this.autoplay_state = { state: "Disabled", info: null };
+        this.blacklist_ids = null;
+        this.blacklist_artist_ids = null;
+        this.bl_ids = new Set();
+        this.bl_artist_ids = new Set();
+    }
+
+    set_seed(item: ListItem) {
+        this.autoplay_state = {
+            state: "DisabledWithSeed",
+            seed: item,
+        };
     }
 
     async init_with_seed(item: ListItem) {
@@ -506,10 +546,7 @@ export class AutoplayQueueManager extends QueueManager {
             return false;
         }
 
-        let ids = item.song_ids();
-        for (let id of ids) {
-            this.autoplayed_ids.add(id);
-        }
+        await this.add_to_blacklist(item);
 
         this.autoplay_state = {
             state: "Init",
@@ -526,6 +563,36 @@ export class AutoplayQueueManager extends QueueManager {
         }
 
         return true;
+    }
+
+    protected async add_to_blacklist(item: ListItem) {
+        if (!this.blacklist_ids) {
+            return;
+        }
+        let ids = item.song_ids();
+        for (let id of ids) {
+            if (!this.bl_ids.has(id.content)) {
+                this.blacklist_ids.push(id);
+                this.bl_ids.add(id.content);
+            }
+        }
+    }
+
+    protected async add_artists_to_blacklist(item: ListItem) {
+        let ids = item.artist_ids();
+        for (let id of ids) {
+            await this.add_artist_to_blacklist(id);
+        }
+    }
+
+    protected async add_artist_to_blacklist(id: types.covau.InfoSource) {
+        if (!this.blacklist_artist_ids) {
+            return;
+        }
+        if (!this.bl_artist_ids.has(id.content)) {
+            this.blacklist_artist_ids.push(id);
+            this.bl_artist_ids.add(id.content);
+        }
     }
 
     autoplay_items() {
@@ -546,10 +613,7 @@ export class AutoplayQueueManager extends QueueManager {
     async autoplay_skip() {
         let item = await this.autoplay_consume();
         if (item) {
-            let ids = item.song_ids();
-            for (let id of ids) {
-                this.autoplayed_ids.add(id);
-            }
+            await this.add_to_blacklist(item);
 
             let next = this.autoplay_peek_item();
             if (next == null) {
@@ -564,7 +628,8 @@ export class AutoplayQueueManager extends QueueManager {
         let item = await this.autoplay_consume();
         if (item) {
             await this.add(item);
-            await super.play_queue_item(item);
+            this.playing_index = this.items.length - 1;
+            await this.play(this.playing_index);
         } else {
             toast("No next item found", "error");
         }
@@ -588,7 +653,10 @@ export class AutoplayQueueManager extends QueueManager {
                 }
             }
             let ids = next.song_ids();
-            if (ids.find(id => this.autoplayed_ids.has(id))) {
+            let artist_ids = next.artist_ids();
+            let seen = ids.find(id => this.bl_ids?.has(id.content)) ?? null;
+            let blacklist = artist_ids.find(id => this.bl_artist_ids?.has(id.content)) ?? null;
+            if (seen != null || blacklist != null) {
                 this.autoplay_state.index += 1;
                 continue;
             } else {
@@ -663,6 +731,10 @@ export class AutoplayQueueManager extends QueueManager {
             return;
         }
 
+        if (this.autoplay_state.state === "DisabledWithSeed") {
+            return;
+        }
+
         await this.init_with_seed(item);
     }
 
@@ -687,27 +759,96 @@ export class AutoplayQueueManager extends QueueManager {
     }
 
     async add(...items: ListItem[]): Promise<void> {
-        items.forEach(e => {
-            let ids = e.song_ids();
-            for (let id of ids) {
-                this.autoplayed_ids.add(id);
-            }
-        });
+        for (let e of items) {
+            await this.add_to_blacklist(e);
+        }
         await super.add(...items);
     }
 
     async insert(index: number, item: ListItem) {
-        let ids = item.song_ids();
-        for (let id of ids) {
-            this.autoplayed_ids.add(id);
-        }
+        await this.add_to_blacklist(item);
         await super.insert(index, item);
     }
 }
 
-// export class DbQueueManager extends QueueManager {
-//     queue: DB.DbItem<covau.Queue> = { current_index: null, queue: { title: "Queue", songs: []}};
+export class LocalSyncQueue extends AutoplayQueueManager {
+    protected async add_to_blacklist(item: ListItem) {
+        await super.add_to_blacklist(item);
+        if (!this.blacklist_ids) {
+            return;
+        }
 
-//     async 
-//     }
-// }
+        let sync = get(stores.syncer)
+        sync.seen!.t.songs = [...this.blacklist_ids];
+        stores.syncops.save.debounced.seen();
+    }
+    protected async add_artist_to_blacklist(id: types.covau.InfoSource) {
+        await super.add_artist_to_blacklist(id);
+
+        if (!this.blacklist_artist_ids) {
+            return;
+        }
+
+        let sync = get(stores.syncer)
+        sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
+        stores.syncops.save.debounced.blacklist();
+    }
+
+    protected async update_queue() {
+        let sync = get(stores.syncer);
+
+        let seed = this.get_seed();
+        if (seed) {
+            sync.queue!.t.seed = (seed as db.DbListItem).data.id;
+        }
+
+        sync.queue!.t.queue.current_index = this.playing_index;
+        sync.queue!.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.data.id);
+        stores.syncops.save.debounced.queue();
+    }
+    async add(...items: ListItem[]) {
+        await server.db.txn(async dbops => {
+            items = await Promise.all(items.map(async item => {
+                let e = await item.saved_covau_song(dbops);
+                return db.db.wrapped(e!);
+            }));
+        });
+            
+        await super.add(...items);
+        await this.update_queue();
+    }
+    async insert(index: number, item: ListItem) {
+        await server.db.txn(async dbops => {
+            let dbitem = await item.saved_covau_song(dbops);
+            item = db.db.wrapped(dbitem!);
+        });
+        await super.insert(index, item);
+        await this.update_queue();
+    }
+    async move(from: number, to: number): Promise<void> {
+        await super.move(from, to);
+        await this.update_queue();
+    }
+    async remove(index: number) {
+        await super.remove(index);
+        await this.update_queue();
+    }
+    async play(index: number): Promise<void> {
+        await super.play(index);
+        await this.update_queue();
+    }
+    async init_with_seed(item: ListItem): Promise<boolean> {
+        await server.db.txn(async dbops => {
+            let dbitem = await item.saved_covau_song(dbops);
+            item = db.db.wrapped(dbitem!);
+        });
+        if (this.autoplay_state.state == "Uninit") {
+            await stores.syncops.new.seen();
+        }
+        let res = await super.init_with_seed(item);
+        if (res) {
+            await this.update_queue();
+        }
+        return res;
+    }
+}

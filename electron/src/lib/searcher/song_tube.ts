@@ -12,6 +12,7 @@ import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as server from "$lib/server.ts";
+import * as types from "$types/types.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -57,11 +58,27 @@ export class StListItem extends ListItem {
         return false;
     }
 
-    song_ids(): string[] {
+    song_ids(): types.covau.InfoSource[] {
         switch (this.data.type) {
             case "Song": {
                 let song = this.data.content;
-                return [song.id];
+                return [{ type: "YtId", content: song.id }];
+            } break;
+            case "Album":
+            case "Playlist":
+            case "Artist":
+                return [];
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
+    artist_ids(): types.covau.InfoSource[] {
+        switch (this.data.type) {
+            case "Song": {
+                return this.data.content.authors
+                    .filter(id => !!id.channel_id)
+                    .map(id => ({ type: "YtId", content: id.channel_id! }));
             } break;
             case "Album":
             case "Playlist":

@@ -69,13 +69,18 @@ export class MbzListItem extends ListItem {
         return false;
     }
 
-    song_ids(): string[] {
+    song_ids(): types.covau.InfoSource[] {
+        let url_start = "https://musicbrainz.org/recording/";
         switch (this.data.typ) {
-            case "MbzRadioSong":
-                return this.data.data.identifier
             case "MbzRecording":
             case "MbzRecordingWithInfo":
-                return [this.data.data.id];
+                return [{ type: "MbzId", content: this.data.data.id }];
+            case "MbzRadioSong":
+                return this.data.data.identifier
+                    .filter(id => id.startsWith(url_start))
+                    .map(id => id.split(url_start).at(1) ?? null)
+                    .filter(id => !!id)
+                    .map(id => ({ type: "MbzId", content: id! }));
             case "MbzReleaseWithInfo":
             case "MbzReleaseGroupWithInfo":
             case "MbzRelease":
@@ -86,6 +91,24 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+
+    artist_ids(): types.covau.InfoSource[] {
+        switch (this.data.typ) {
+            case "MbzRecordingWithInfo":
+                return this.data.data.credit.map(a => ({ type: "MbzId", content: a.id }));
+            case "MbzRecording":
+            case "MbzRadioSong":
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "MbzArtist":
+                return [];
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
     title(): string {
         switch (this.data.typ) {
             case "MbzReleaseWithInfo":
@@ -606,7 +629,7 @@ export class MbzListItem extends ListItem {
                         },
                     },
                 };
-                
+
                 switch (ctx) {
                     case "Browser":
                         return {

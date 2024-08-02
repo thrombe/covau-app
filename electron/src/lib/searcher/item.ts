@@ -221,6 +221,9 @@ export abstract class ListItem implements Keyed {
             case "YtPlaylist":
             case "YtArtist":
             case "Nothing":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
             case "Custom":
                 return false;
             default:
@@ -229,7 +232,8 @@ export abstract class ListItem implements Keyed {
     }
 
     // song methods
-    abstract song_ids(): string[]; // a id that might identify this song
+    abstract song_ids(): types.covau.InfoSource[]; // id that might identify this song
+    abstract artist_ids(): types.covau.InfoSource[];
     abstract yt_id(): Promise<string | null>; // get yt id for playing purposes
     abstract audio_uri(): Promise<string | null>;
     abstract saved_covau_song(db: DbOps): Promise<DbItem<covau.Song> | null>;
@@ -255,7 +259,8 @@ export abstract class ListItem implements Keyed {
 
 export class CustomListItem extends ListItem {
     _key: string;
-    _ids: string[] = [];
+    _ids: types.covau.InfoSource[] = [];
+    _artist_ids: types.covau.InfoSource[] = [];
     _title: string;
     _title_sub: string | null = null;
     _artists: string[] = [];
@@ -293,6 +298,10 @@ export class CustomListItem extends ListItem {
 
     song_ids() {
         return this._ids;
+    }
+
+    artist_ids() {
+        return this._artist_ids;
     }
 
     title() {
