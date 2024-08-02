@@ -676,7 +676,7 @@ export const st = {
         st_song(s: YTNodes.PlaylistPanelVideo | YTNodes.MusicResponsiveListItem | VideoInfo) {
             if (s instanceof YT.VideoInfo) {
                 if (!s.basic_info.id) {
-                    throw new Error(s.playability_status.status);
+                    throw new Error(s.playability_status?.status);
                 }
                 return {
                     id: s.basic_info.id,

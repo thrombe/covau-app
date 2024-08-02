@@ -34,7 +34,8 @@ export type BrowseTab = {
 export type Tab = DetailTab | BrowseTab;
 
 export type MenubarOption = { name: string, key: number } & (
-    | { content_type: "list", type: types.db.Typ | types.yt.Typ | "YtVideo" | "YtChannel" | mbz.SearchTyp | "covau-group" }
+    | { content_type: "db", type: types.db.Typ }
+    | { content_type: "list", type: types.yt.Typ | "YtVideo" | "YtChannel" | mbz.SearchTyp | "covau-group" }
     | { content_type: "queue" }
     | { content_type: "watch" }
     | { content_type: "related-music", source: "Yt" | "Mbz" }
@@ -605,7 +606,7 @@ selected_menubar_option.subscribe(async (option) => {
     let s: Searcher = fused_searcher;
     let new_searcher: ((q: string) => Promise<Searcher>) | ((q: string) => Searcher) | null = null;
     switch (option.content_type) {
-        case "list": {
+        case "db": {
             switch (option.type) {
                 case "MmSong":
                 case "MmAlbum":
@@ -617,8 +618,9 @@ selected_menubar_option.subscribe(async (option) => {
                 case "Queue":
                 case "ArtistBlacklist":
                 case "SongBlacklist":
-                // case "MbzRecording": // TODO:
-                // case "MbzArtist":
+                case "MbzRecording":
+                case "MbzArtist":
+                case "LocalState":
                 case "Updater":
                 case "StSong":
                 case "StAlbum":
@@ -632,6 +634,20 @@ selected_menubar_option.subscribe(async (option) => {
                     }, 50);
                     s = new_searcher(get(query_input));
                 } break;
+                default:
+                    throw exhausted(option);
+            }
+            new_tab(
+                s,
+                "Results",
+                null,
+                get(query_input),
+                new_searcher,
+                false,
+            );
+        } break;
+        case "list": {
+            switch (option.type) {
                 case "YtSong":
                 case "YtAlbum":
                 case "YtPlaylist":
@@ -722,7 +738,7 @@ selected_menubar_option.subscribe(async (option) => {
                     s = await new_searcher(get(query_input));
                 } break;
                 default:
-                    throw exhausted(option.type);
+                    throw exhausted(option);
             }
             new_tab(
                 s,

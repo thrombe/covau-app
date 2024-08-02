@@ -15,6 +15,7 @@ import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { writable } from "svelte/store";
 import * as utils from "$lib/utils.ts";
+import * as mbz from "$lib/searcher/mbz.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -36,6 +37,11 @@ export type MusicListItem = Keyed & { id: number, metadata: types.db.DbMetadata 
     | { typ: "Playlist", t: covau.Playlist }
     | { typ: "Queue", t: covau.Queue }
     | { typ: "Updater", t: covau.Updater }
+    | { typ: "LocalState", t: covau.LocalState }
+    | { typ: "ArtistBlacklist", t: covau.ArtistBlacklist }
+    | { typ: "SongBlacklist", t: covau.SongBlacklist }
+    | { typ: "MbzArtist", t: types.mbz.Artist }
+    | { typ: "MbzRecording", t: types.mbz.RecordingWithInfo }
 );
 
 export type Typ = DB.Typ;
@@ -46,6 +52,9 @@ export type BrowseQuery =
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
+
+    // for mbz recording
+    yt_song: types.yt.Song | null = null;
 
     constructor(data: MusicListItem) {
         super();
@@ -82,6 +91,9 @@ export class DbListItem extends ListItem {
                 // TODO: play the first mbz song here
                 return null;
             } break;
+            case "MbzRecording": {
+                return null;
+            } break;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -92,6 +104,10 @@ export class DbListItem extends ListItem {
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
+            case "LocalState":
                 return null;
             default:
                 throw exhausted(this.data)
@@ -108,6 +124,9 @@ export class DbListItem extends ListItem {
                 let song = this.data.t;
                 return song.info_sources;
             } break;
+            case "MbzRecording": {
+                return [{ type: "MbzId", content: this.data.t.id }];
+            } break;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -118,6 +137,10 @@ export class DbListItem extends ListItem {
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
+            case "LocalState":
                 return [];
             default:
                 throw exhausted(this.data)
@@ -137,16 +160,23 @@ export class DbListItem extends ListItem {
             case "Song": {
                 return [];
             } break;
-            case "MmAlbum":
+            case "MbzRecording": {
+                return this.data.t.credit.map(a => ({ type: "MbzId", content: a.id }));
+            } break;
+            case "MbzArtist":
+            case "StArtist":
             case "MmArtist":
+            case "MmAlbum":
             case "MmPlaylist":
             case "MmQueue":
             case "StAlbum":
             case "StPlaylist":
-            case "StArtist":
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "LocalState":
                 return [];
             default:
                 throw exhausted(this.data)
@@ -181,6 +211,16 @@ export class DbListItem extends ListItem {
                 return this.data.t.queue.queue.title;
             case "Updater":
                 return this.data.t.title;
+            case "ArtistBlacklist":
+                return this.data.t.title ?? `${this.data.t.artists.length} Artists`;
+            case "SongBlacklist":
+                return this.data.t.title ?? `${this.data.t.songs.length} Songs`;
+            case "MbzArtist":
+                return this.data.t.name;
+            case "MbzRecording":
+                return this.data.t.title;
+            case "LocalState":
+                return "Local State";
             default:
                 throw exhausted(this.data)
         }
@@ -210,11 +250,21 @@ export class DbListItem extends ListItem {
                 let song = this.data.t;
                 return song.thumbnails.at(0) ?? null;
             } break;
+            case "MbzArtist":
+                return null;
+            case "MbzRecording":
+                return this.data.t.cover_art;
             case "Playlist":
                 return null;
             case "Queue":
                 return null;
             case "Updater":
+                return null;
+            case "ArtistBlacklist":
+                return null;
+            case "SongBlacklist":
+                return null;
+            case "LocalState":
                 return null;
             default:
                 throw exhausted(this.data)
@@ -256,16 +306,27 @@ export class DbListItem extends ListItem {
                 return this.data.t.subscribers ?? null;
             case "Song":
                 return authors(this.data.t.artists);
+            case "MbzArtist":
+                return this.data.t.disambiguation ?? authors(this.data.t.aliases.map(a => a.name))
+            case "MbzRecording":
+                return authors(this.data.t.credit.map(a => a.name));
+            case "LocalState":
+                return `item number ${this.data.id}`;
             case "Playlist":
             case "Queue":
             case "Updater":
                 return null;
+            case "ArtistBlacklist":
+                return `${this.data.t.artists.length} Artists`;
+            case "SongBlacklist":
+                return `${this.data.t.songs.length} Songs`;
             default:
                 throw exhausted(this.data)
         }
     }
 
     async audio_uri(): Promise<string | null> {
+        let mbz_ops = mbz.mbz.ops(this);
         switch (this.data.typ) {
             case "MmSong": {
                 let song = this.data.t;
@@ -324,6 +385,10 @@ export class DbListItem extends ListItem {
                 }
                 return null;
             } break;
+            case "MbzRecording": {
+                let song = this.data.t;
+                return await mbz_ops.play_recording(song, "song");
+            } break;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -334,6 +399,10 @@ export class DbListItem extends ListItem {
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
                 return null;
             default:
                 throw exhausted(this.data);
@@ -415,6 +484,9 @@ export class DbListItem extends ListItem {
 
                 }
             } break;
+            case "MbzRecording": {
+                return mbz.mbz.recording_autoplay(this.data.t, typ);
+            } break;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -425,6 +497,10 @@ export class DbListItem extends ListItem {
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
                 throw new Error("can't play this. so no autoplay.");
             default:
                 throw exhausted(this.data);
@@ -472,6 +548,11 @@ export class DbListItem extends ListItem {
                 let res = await db.insert_or_get(s);
                 return res.content;
             } break;
+            case "MbzRecording": {
+                let t = mbz.mbz.recording_almostdbitem(this.data.t, null);
+                let res = await db.insert_or_get(t);
+                return res.content;
+            } break;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -482,6 +563,10 @@ export class DbListItem extends ListItem {
             case "Playlist":
             case "Queue":
             case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
                 return null;
             default:
                 throw exhausted(this.data);
@@ -571,6 +656,11 @@ export class DbListItem extends ListItem {
             case "StArtist":
             case "Song":
             case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
+            case "MbzRecording":
                 return false;
             default:
                 throw exhausted(this.data);
@@ -782,6 +872,118 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.set_as_seed,
+                                common_options.refresh_details,
+                            ],
+                        };
+                    case "Playbar":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                common_options.open_details,
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                        };
+                    case "Prompt":
+                        return common_options.empty_ops;
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzRecording": {
+                let mbz_ops = mbz.mbz.ops(this);
+                let rec = this.data.t;
+                let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.mbz.urls.recording.mbz(rec.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    lbz_url: {
+                        icon: icons.copy,
+                        title: "copy listenbrainz url",
+                        onclick: async () => {
+                            let url = mbz.mbz.urls.recording.lbz(rec.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    search_song: {
+                        icon: icons.floppy_disk,
+                        title: "search YtSong play source",
+                        onclick: async () => {
+                            let query = await mbz_ops.get_query(rec);
+                            if (query) {
+                                await mbz_ops.search_and_get(query, "song", true);
+                            }
+                        },
+                    },
+                    search_video: {
+                        icon: icons.floppy_disk,
+                        title: "search YtVideo play source",
+                        onclick: async () => {
+                            let query = await mbz_ops.get_query(rec);
+                            if (query) {
+                                await mbz_ops.search_and_get(query, "video", true);
+                            }
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Queue":
+                        return {
+                            icon_top: common_options.queue_play,
+                            top_right: common_options.queue_remove_while_in_queue,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.set_as_seed,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "Browser":
+                        return {
+                            icon_top: common_options.detour,
+                            top_right: common_options.queue_add,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
+                                common_options.set_as_seed,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                common_options.detour,
+                                common_options.queue_add,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                options.search_song,
+                                options.search_video,
+                                options.mbz_url,
+                                options.lbz_url,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1032,6 +1234,96 @@ export class DbListItem extends ListItem {
                                 options.open_unexplored,
                                 options.add_saved_to_queue,
                                 options.add_all_unexplored_to_queue,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return common_options.empty_ops;
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "MbzArtist": {
+                let a = this.data.t;
+                let mbz_ops = mbz.mbz.ops(this);
+                let options = {
+                    mbz_url: {
+                        icon: icons.copy,
+                        title: "copy musicbrainz url",
+                        onclick: async () => {
+                            let url = mbz.mbz.urls.release_group.mbz(a.id);
+                            await navigator.clipboard.writeText(url);
+                            toast("url copied", "info");
+                        },
+                    },
+                    explore_release_groups: {
+                        icon: icons.open_new_tab,
+                        title: "explore release groups",
+                        onclick: async () => {
+                            let s = mbz.Mbz.new({
+                                query_type: "linked",
+                                type: "MbzReleaseGroup_MbzArtist",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Release groups for " + a.name);
+                        },
+                    },
+                    explore_releases: {
+                        icon: icons.open_new_tab,
+                        title: "explore releases",
+                        onclick: async () => {
+                            let s = mbz.Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRelease_MbzArtist",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Releases for " + a.name);
+                        },
+                    },
+                    explore_recordings: {
+                        icon: icons.open_new_tab,
+                        title: "explore recordings",
+                        onclick: async () => {
+                            let s = mbz.Mbz.new({
+                                query_type: "linked",
+                                type: "MbzRecording_MbzArtsit",
+                                id: a.id,
+                            }, 30);
+                            stores.new_tab(s, "Recordings for " + a.name);
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Browser":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.explore_release_groups,
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.mbz_url,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.explore_release_groups,
+                                options.explore_releases,
+                                options.explore_recordings,
+                                options.mbz_url,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1545,6 +1837,10 @@ export class DbListItem extends ListItem {
                         throw exhausted(ctx);
                 }
             } break;
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "LocalState":
+                return common_options.empty_ops;
             default:
                 throw exhausted(this.data)
         }
@@ -1637,6 +1933,101 @@ export class DbListItem extends ListItem {
                             ...song.authors.map(a => ({
                                 heading: "Artist",
                                 content: a.name,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "MbzRecording": {
+                let song = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Title",
+                                content: song.title,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: song.id,
+                            },
+                            ...song.credit.map(a => ({
+                                heading: "Artist",
+                                content: a.name,
+                            })),
+                            ...song.releases.map(r => ({
+                                heading: "Release",
+                                content: r.title,
+                            })),
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            } break;
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Name",
+                                content: this.title(),
+                            }
+                        ],
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
+            case "MbzArtist": {
+                let a = this.data.t;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Name",
+                                content: a.name,
+                            },
+                            {
+                                heading: "MbzId",
+                                content: a.id,
+                            },
+                            ...a.aliases.map(a => ({
+                                heading: "Alias",
+                                content: a.name,
+                            })),
+                            ...maybe(a.disambiguation, s => ({
+                                heading: "Disambiguation",
+                                content: s,
+                            })),
+                            {
+                                heading: "Disambiguation",
+                                content: a.disambiguation,
+                            },
+                            ...maybe(a.area, t => ({
+                                heading: "Area",
+                                content: t.name,
+                            })),
+                            ...maybe(a.type, t => ({
+                                heading: "Type",
+                                content: t,
                             })),
                         ]
                     },
@@ -2013,6 +2404,21 @@ export class DbListItem extends ListItem {
                     default:
                         throw exhausted(source);
                 }
+            } break;
+            case "LocalState": {
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.data.typ,
+                            },
+                        ]
+                    },
+                    sections.options,
+                    sections.json,
+                ] as DetailSection[];
             } break;
             default:
                 throw exhausted(this.data);
