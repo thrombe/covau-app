@@ -697,11 +697,16 @@ export class AutoplayQueueManager extends QueueManager {
                         await this.add(item);
                         await this.play_queue_item(item);
                     } else {
-                        // queue.length > 1
-                        this.playing_index -= 1;
-                        this.items.splice(index, 1);
-                        if (this.state == "Playing") {
-                            await this.play(this.playing_index);
+                        if (this.items.length <= 1) {
+                            this.items = [];
+                            this.playing_index = null;
+                            this.detour();
+                        } else {
+                            this.playing_index -= 1;
+                            this.items.splice(index, 1);
+                            if (this.state == "Playing") {
+                                await this.play(this.playing_index);
+                            }
                         }
                     }
                 } else {

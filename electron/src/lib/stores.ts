@@ -386,8 +386,8 @@ export const syncops = {
             let items = await server.db.get_many_by_id("Song", dbq.t.queue.queue.songs);
             q.items = db.db.wrapped_items(items);
             q.playing_index = dbq.t.queue.current_index;
-            q.state = "Playing";
             if (q.playing_index != null) {
+                q.state = "Playing";
                 playing_item.set(q.items[q.playing_index]);
             }
 
