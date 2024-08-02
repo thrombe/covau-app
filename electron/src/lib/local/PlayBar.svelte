@@ -5,7 +5,7 @@
     import * as stores from "$lib/stores.ts";
     import { exhausted } from "$lib/utils.ts";
     import { CustomListItem } from "$lib/searcher/item";
-    import type { Writable } from "svelte/store";
+    import { get, type Writable } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import type { QueueManager } from "./queue.ts";
     import type { PlayerMessage } from "$types/server.ts";
@@ -19,6 +19,7 @@
     let player = stores.player;
     let queue = stores.queue as Writable<QueueManager>;
 
+    let has_started = false;
     let video_pos = 0;
     // let has_prev = $queue.has_prev();
     // let has_next = $queue.has_next();
@@ -45,6 +46,7 @@
                 break;
             case "Playing":
                 is_playing = true;
+                has_started = true;
                 break;
             case "ProgressPerc":
                 break;
@@ -110,8 +112,12 @@
         }
 
         if (event.key == " ") {
-            $player.toggle_pause();
-            //     $player.play(todo);
+            if (has_started) {
+                $player.toggle_pause();
+            } else {
+                $player.play_item(get(playing_item));
+                has_started = true;
+            }
         } else if (event.key == "ArrowLeft" || event.key == "h") {
             let pos = Math.max(0, video_pos - 10 / audio_duration);
             $player.seek_to_perc(pos);
@@ -169,8 +175,13 @@
             </button>
             <button
                 on:pointerup={async () => {
-                    $player.toggle_pause();
+                    if (has_started) {
+                        $player.toggle_pause();
+                    } else {
+                        $player.play_item($playing_item);
+                    }
                     is_playing = $player.is_playing();
+                    has_started = true;
                 }}
             >
                 <img
