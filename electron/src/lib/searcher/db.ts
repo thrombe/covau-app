@@ -1875,8 +1875,13 @@ export class DbListItem extends ListItem {
                         icon: icons.repeat,
                         title: "load",
                         onclick: async () => {
-                            stores.syncops.set.seen(bl);
-                            toast("song blacklist set");
+                            let sync = get(stores.syncer);
+                            if (sync.queue.t.seen == bl.id) {
+                                toast("song blacklist already loaded");
+                            } else {
+                                stores.syncops.set.seen(bl);
+                                toast("song blacklist set");
+                            }
                         },
                     },
                     rename: {
@@ -1959,8 +1964,13 @@ export class DbListItem extends ListItem {
                         icon: icons.repeat,
                         title: "load",
                         onclick: async () => {
-                            stores.syncops.set.blacklist(bl);
-                            toast("song blacklist set");
+                            let sync = get(stores.syncer);
+                            if (sync.queue.t.blacklist == bl.id) {
+                                toast("blacklist already loaded");
+                            } else {
+                                stores.syncops.set.blacklist(bl);
+                                toast("song blacklist set");
+                            }
                         },
                     },
                     rename: {
