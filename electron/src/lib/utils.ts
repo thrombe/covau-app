@@ -33,6 +33,7 @@ export function wrap_toast(callback: (...items: any[]) => (Promise<void> | void)
             await callback(...items);
         } catch (e: any) {
             toast(err_msg(e), "error");
+            console.error(e);
         }
     };
 }
