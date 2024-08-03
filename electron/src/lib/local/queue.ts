@@ -311,6 +311,20 @@ export class QueueManager implements Searcher {
                 },
             },
             {
+                title: "Explore queue",
+                icon: icons.open_new_tab,
+                onclick: async () => {
+                    let sync = get(stores.syncer);
+                    let q = sync.queue;
+                    if (q == null) {
+                        toast("no song blacklist set", "error");
+                        return;
+                    }
+                    let item = db.db.wrapped(q);
+                    await item.common_options().open_details.onclick();
+                },
+            },
+            {
                 title: "Explore autoplay items",
                 icon: icons.open_new_tab,
                 onclick: async () => {

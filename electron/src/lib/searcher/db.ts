@@ -1865,19 +1865,42 @@ export class DbListItem extends ListItem {
                             toast("song blacklist set");
                         },
                     },
+                    rename: {
+                        icon: icons.floppy_disk,
+                        title: "rename",
+                        onclick: async () => {
+                            let _name = await prompter.prompt("Enter name");
+                            if (!_name) {
+                                return;
+                            }
+                            let name = _name;
+                            bl.t.title = name;
+
+                            let q  = await server.db.txn(async db => {
+                                 return await db.update(bl);
+                            });
+                            bl = keyed([q])[0] as typeof bl;
+                            this.data = bl;
+
+                            toast("song blacklist renamed");
+                        },
+                    },
                 };
 
                 switch (ctx) {
                     case "Browser":
                         return {
                             ...common_options.empty_ops,
+                            top_right: options.open_songs,
                             bottom: [
                                 ops.options.like,
                                 ops.options.dislike,
+                                common_options.open_details,
                             ],
                             menu: [
                                 options.open_songs,
                                 options.load,
+                                options.rename,
                                 common_options.open_details,
                             ],
                         };
@@ -1887,6 +1910,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.open_songs,
                                 options.load,
+                                options.rename,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1925,6 +1949,26 @@ export class DbListItem extends ListItem {
                             toast("song blacklist set");
                         },
                     },
+                    rename: {
+                        icon: icons.floppy_disk,
+                        title: "rename",
+                        onclick: async () => {
+                            let _name = await prompter.prompt("Enter name");
+                            if (!_name) {
+                                return;
+                            }
+                            let name = _name;
+                            bl.t.title = name;
+
+                            let q  = await server.db.txn(async db => {
+                                 return await db.update(bl);
+                            });
+                            bl = keyed([q])[0] as typeof bl;
+                            this.data = bl;
+
+                            toast("blacklist renamed");
+                        },
+                    },
                 };
 
                 switch (ctx) {
@@ -1938,6 +1982,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 // options.open,
                                 options.load,
+                                options.rename,
                                 common_options.open_details,
                             ],
                         };
@@ -1947,6 +1992,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 // options.open,
                                 options.load,
+                                options.rename,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -2358,6 +2404,34 @@ export class DbListItem extends ListItem {
                             ids: queue.queue.queue.songs,
                         }, 10)),
                     },
+                    ...maybe(queue.seen, seen => ({
+                        type: "Searcher",
+                        title: "Song Blacklist",
+                        options: [],
+                        height: 1,
+                        searcher: writable(AsyncStaticSearcher(async () => {
+                            let bl = await server.db.get_by_id("SongBlacklist", seen);
+                            if (bl == null) {
+                                throw new Error("song blacklist does not exist");
+                            }
+                            let item = db.wrapped(bl);
+                            return [item];
+                        })),
+                    })),
+                    ...maybe(queue.blacklist, blacklist => ({
+                        type: "Searcher",
+                        title: "Blacklist",
+                        options: [],
+                        height: 1,
+                        searcher: writable(AsyncStaticSearcher(async () => {
+                            let bl = await server.db.get_by_id("ArtistBlacklist", blacklist);
+                            if (bl == null) {
+                                throw new Error("blacklist does not exist");
+                            }
+                            let item = db.wrapped(bl);
+                            return [item];
+                        })),
+                    })),
                     sections.json,
                 ] as DetailSection[];
             } break;
