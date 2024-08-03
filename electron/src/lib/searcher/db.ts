@@ -1270,6 +1270,7 @@ export class DbListItem extends ListItem {
                             bottom: [
                                 ops.options.like,
                                 ops.options.dislike,
+                                common_options.open_details,
                             ],
                             menu: [
                                 options.explore_release_groups,
@@ -1825,6 +1826,7 @@ export class DbListItem extends ListItem {
                             bottom: [
                                 ops.options.like,
                                 ops.options.dislike,
+                                common_options.open_details,
                             ],
                             menu: [
                                 ...options.explore_songs(),
@@ -2237,6 +2239,26 @@ export class DbListItem extends ListItem {
                         title: "Play Sources",
                         height: Math.min(3, playsource.items.length),
                         searcher: writable(playsource),
+                    },
+                    {
+                        type: "Searcher",
+                        title: "Artists",
+                        height: Math.min(5, song.t.artists.length),
+                        searcher: writable(AsyncStaticSearcher(async () => {
+                            let artists = await Promise.all(song.t.artists.map(async (t, i) => {
+                                if (t.source?.type == "YtId") {
+                                    let a = await st.cached.artist(t.source.content);
+                                    return db.wrapped(a);
+                                } else if (t.source?.type == "MbzId") {
+                                    let a = await mbz.mbz.cached.artist(t.source.content);
+                                    return db.wrapped(a);
+                                } else {
+                                    return new CustomListItem(t.name + i.toString(), t.name, "Custom");
+                                }
+                            }));
+                            return artists;
+                        })
+                        ),
                     },
                     {
                         type: "Rearrange",

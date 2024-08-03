@@ -4,7 +4,6 @@
     import ProgressBar from "$lib/components/ProgressBar.svelte";
     import * as stores from "$lib/stores.ts";
     import { exhausted } from "$lib/utils.ts";
-    import { CustomListItem } from "$lib/searcher/item";
     import { get, type Writable } from "svelte/store";
     import * as icons from "$lib/icons.ts";
     import type { QueueManager } from "./queue.ts";
