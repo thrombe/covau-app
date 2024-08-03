@@ -159,7 +159,9 @@ export class DbListItem extends ListItem {
                     .filter(id => !!id.channel_id)
                     .map(id => ({ type: "YtId", content: id.channel_id! }));
             case "Song": {
-                return [];
+                return this.data.t.artists
+                    .filter(a => a.source != null)
+                    .map(a => a.source as types.covau.InfoSource);
             } break;
             case "MbzRecording": {
                 return this.data.t.credit.map(a => ({ type: "MbzId", content: a.id }));
@@ -781,6 +783,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -795,6 +798,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -810,6 +814,7 @@ export class DbListItem extends ListItem {
                                 ops.options.unlike,
                                 ops.options.undislike,
                                 options.copy_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -845,6 +850,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -860,6 +866,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -876,6 +883,7 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -913,6 +921,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -930,6 +939,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -948,6 +958,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1034,6 +1045,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...options.save_song(),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1049,6 +1061,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...options.save_song(),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1065,6 +1078,7 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...options.save_song(),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1392,8 +1406,8 @@ export class DbListItem extends ListItem {
                             let name = _name;
                             queue.t.queue.queue.title = name;
 
-                            let q  = await server.db.txn(async db => {
-                                 return await db.update(queue);
+                            let q = await server.db.txn(async db => {
+                                return await db.update(queue);
                             });
                             queue = keyed([q])[0] as typeof queue;
                             this.data = queue;
@@ -1492,8 +1506,8 @@ export class DbListItem extends ListItem {
                             let name = _name;
                             playlist.t.title = name;
 
-                            let q  = await server.db.txn(async db => {
-                                 return await db.update(playlist);
+                            let q = await server.db.txn(async db => {
+                                return await db.update(playlist);
                             });
                             playlist = keyed([q])[0] as typeof playlist;
                             this.data = playlist;
@@ -1876,8 +1890,8 @@ export class DbListItem extends ListItem {
                             let name = _name;
                             bl.t.title = name;
 
-                            let q  = await server.db.txn(async db => {
-                                 return await db.update(bl);
+                            let q = await server.db.txn(async db => {
+                                return await db.update(bl);
                             });
                             bl = keyed([q])[0] as typeof bl;
                             this.data = bl;
@@ -1960,8 +1974,8 @@ export class DbListItem extends ListItem {
                             let name = _name;
                             bl.t.title = name;
 
-                            let q  = await server.db.txn(async db => {
-                                 return await db.update(bl);
+                            let q = await server.db.txn(async db => {
+                                return await db.update(bl);
                             });
                             bl = keyed([q])[0] as typeof bl;
                             this.data = bl;
@@ -2800,7 +2814,7 @@ export const db = {
     artists(authors: yt.Author[]) {
         return authors.map(a => ({
             name: a.name,
-            source: a.channel_id ? {type: "YtId", content: a.channel_id } : null,
+            source: a.channel_id ? { type: "YtId", content: a.channel_id } : null,
         } as types.covau.Artist));
     },
 };

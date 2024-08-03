@@ -683,7 +683,12 @@ export const queue_ops = {
     async play_item(item: ListItem) {
         await get(queue).play_queue_item(item);
         queue.update(q => q);
-    }
+    },
+
+    async blacklist_artists(item: ListItem) {
+        await get(queue).add_artists_to_blacklist(item);
+        queue.update(q => q);
+    },
 };
 
 

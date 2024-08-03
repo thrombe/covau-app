@@ -262,6 +262,7 @@ export class StListItem extends ListItem {
                             top_right: common_options.queue_remove_while_in_queue,
                             menu: [
                                 options.copy_url,
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -274,6 +275,7 @@ export class StListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -286,6 +288,7 @@ export class StListItem extends ListItem {
                                 common_options.queue_add,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
+                                common_options.blacklist_artists,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],

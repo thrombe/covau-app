@@ -143,6 +143,14 @@ export abstract class ListItem implements Keyed {
                     stores.new_detail_tab(this, title);
                 },
             },
+            blacklist_artists: {
+                icon: icons.remove,
+                title: "blacklist artists",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.blacklist_artists(this);
+                },
+            },
             open_album: (a: types.yt.SmolAlbum | null) => {
                 if (!a) {
                     return [];
