@@ -276,40 +276,24 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                title: "save queue",
-                icon: icons.floppy_disk,
+                title: "new queue",
+                icon: icons.repeat,
                 onclick: async () => {
-                    let _name = await prompter.prompt("Enter queue name");
-                    if (!_name) {
-                        return;
-                    }
-                    let name = _name;
-
-                    await server.db.txn(async (db) => {
-                        let items = await Promise.all(this.items.map(async (item) => {
-                            let song = await item.saved_covau_song(db);
-                            if (!song) {
-                                let msg = `item: ${item.title()} can't be saved in db`;
-                                toast(msg, "error");
-                                throw new Error(msg);
-                            }
-                            return song
-                        }));
-                        let queue: covau.Queue = {
-                            blacklist: null,
-                            seen: null,
-                            seed: null,
-                            queue: {
-                                current_index: this.playing_index,
-                                queue: {
-                                    title: name,
-                                    songs: items.map(t => t.id),
-                                },
-                            }
-                        };
-                        await db.insert_or_get({ typ: "Queue", t: queue });
-                    });
-                    toast(`queue ${name} saved`, "info")
+                    await stores.syncops.new.queue();
+                },
+            },
+            {
+                title: "new song blacklist",
+                icon: icons.repeat,
+                onclick: async () => {
+                    await stores.syncops.new.seen();
+                },
+            },
+            {
+                title: "new blacklist",
+                icon: icons.repeat,
+                onclick: async () => {
+                    await stores.syncops.new.blacklist();
                 },
             },
             {
