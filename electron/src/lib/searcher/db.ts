@@ -2222,9 +2222,9 @@ export class DbListItem extends ListItem {
                             },
                             ...song.t.artists.map(a => ({
                                 heading: "Artist",
-                                content: a,
+                                content: a.name,
                             })),
-                        ]
+                        ],
                     },
                     {
                         type: "Rearrange",
