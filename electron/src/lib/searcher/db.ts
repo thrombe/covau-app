@@ -1842,8 +1842,126 @@ export class DbListItem extends ListItem {
                         throw exhausted(ctx);
                 }
             } break;
-            case "ArtistBlacklist":
-            case "SongBlacklist":
+            case "SongBlacklist": {
+                let bl = this.data;
+                let options = {
+                    open_songs: {
+                        icon: icons.open_new_tab,
+                        title: "open songs",
+                        onclick: async () => {
+                            let s = Db.new({
+                                query_type: "refids",
+                                type: "Song",
+                                ids: bl.t.songs.map(s => s.content),
+                            }, 10);
+                            stores.new_tab(s, bl.t.title ?? "song blacklist");
+                        },
+                    },
+                    load: {
+                        icon: icons.repeat,
+                        title: "load",
+                        onclick: async () => {
+                            stores.syncops.set.seen(bl);
+                            toast("song blacklist set");
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Browser":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                options.open_songs,
+                                options.load,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                options.open_songs,
+                                options.load,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return common_options.empty_ops;
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
+            case "ArtistBlacklist": {
+                let bl = this.data;
+                let options = {
+                    // open: {
+                    //     icon: icons.open_new_tab,
+                    //     title: "open songs",
+                    //     onclick: async () => {
+                    //         let s = Db.new({
+                    //             query_type: "refids",
+                    //             type: "Song",
+                    //             ids: bl.t.artists.map(s => s.content),
+                    //         }, 50);
+                    //         stores.new_tab(s, bl.t.title ?? "song blacklist");
+                    //     },
+                    // },
+                    load: {
+                        icon: icons.repeat,
+                        title: "load",
+                        onclick: async () => {
+                            stores.syncops.set.blacklist(bl);
+                            toast("song blacklist set");
+                        },
+                    },
+                };
+
+                switch (ctx) {
+                    case "Browser":
+                        return {
+                            ...common_options.empty_ops,
+                            bottom: [
+                                ops.options.like,
+                                ops.options.dislike,
+                            ],
+                            menu: [
+                                // options.open,
+                                options.load,
+                                common_options.open_details,
+                            ],
+                        };
+                    case "DetailSection":
+                        return {
+                            ...common_options.empty_ops,
+                            menu: [
+                                // options.open,
+                                options.load,
+                                ops.options.like,
+                                ops.options.dislike,
+                                ops.options.unlike,
+                                ops.options.undislike,
+                                common_options.refresh_details,
+                            ],
+                        };
+                    case "Queue":
+                    case "Playbar":
+                    case "Prompt":
+                        return common_options.empty_ops;
+                    default:
+                        throw exhausted(ctx);
+                }
+            } break;
             case "LocalState":
                 return common_options.empty_ops;
             default:
@@ -2122,8 +2240,8 @@ export class DbListItem extends ListItem {
                     sections.json,
                 ] as DetailSection[];
             } break;
-            case "ArtistBlacklist":
-            case "SongBlacklist":
+            case "ArtistBlacklist": {
+                let bl = this.data;
                 return [
                     {
                         type: "Info",
@@ -2141,6 +2259,38 @@ export class DbListItem extends ListItem {
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
+            } break;
+            case "SongBlacklist": {
+                let bl = this.data;
+                return [
+                    {
+                        type: "Info",
+                        info: [
+                            {
+                                heading: "Type",
+                                content: this.typ(),
+                            },
+                            {
+                                heading: "Name",
+                                content: this.title(),
+                            }
+                        ],
+                    },
+                    sections.options,
+                    {
+                        type: "Searcher",
+                        title: "Songs",
+                        options: [],
+                        height: Math.min(5, bl.t.songs.length),
+                        searcher: writable(Db.new({
+                            query_type: "refids",
+                            type: "Song",
+                            ids: bl.t.songs.map(s => s.content),
+                        }, 10)),
+                    },
+                    sections.json,
+                ] as DetailSection[];
+            } break;
             case "MbzArtist": {
                 let a = this.data.t;
                 return [
