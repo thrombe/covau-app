@@ -381,46 +381,7 @@ export class MbzListItem extends ListItem {
             } break;
             case "MbzRecordingWithInfo": {
                 let rec = this.data.data;
-                let options = {
-                    mbz_url: {
-                        icon: icons.copy,
-                        title: "copy musicbrainz url",
-                        onclick: async () => {
-                            let url = mbz.urls.recording.mbz(rec.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    lbz_url: {
-                        icon: icons.copy,
-                        title: "copy listenbrainz url",
-                        onclick: async () => {
-                            let url = mbz.urls.recording.lbz(rec.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    search_song: {
-                        icon: icons.floppy_disk,
-                        title: "search YtSong play source",
-                        onclick: async () => {
-                            let query = await ops.get_query(rec);
-                            if (query) {
-                                await ops.search_and_get(query, "song", true);
-                            }
-                        },
-                    },
-                    search_video: {
-                        icon: icons.floppy_disk,
-                        title: "search YtVideo play source",
-                        onclick: async () => {
-                            let query = await ops.get_query(rec);
-                            if (query) {
-                                await ops.search_and_get(query, "video", true);
-                            }
-                        },
-                    },
-                };
+                let options = mbz.recording_ops(rec, this);
 
                 switch (ctx) {
                     case "Queue":
@@ -758,53 +719,7 @@ export class MbzListItem extends ListItem {
             } break;
             case "MbzArtist": {
                 let a = this.data.data;
-                let options = {
-                    mbz_url: {
-                        icon: icons.copy,
-                        title: "copy musicbrainz url",
-                        onclick: async () => {
-                            let url = mbz.urls.release_group.mbz(a.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    explore_release_groups: {
-                        icon: icons.open_new_tab,
-                        title: "explore release groups",
-                        onclick: async () => {
-                            let s = Mbz.new({
-                                query_type: "linked",
-                                type: "MbzReleaseGroup_MbzArtist",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Release groups for " + a.name);
-                        },
-                    },
-                    explore_releases: {
-                        icon: icons.open_new_tab,
-                        title: "explore releases",
-                        onclick: async () => {
-                            let s = Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRelease_MbzArtist",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Releases for " + a.name);
-                        },
-                    },
-                    explore_recordings: {
-                        icon: icons.open_new_tab,
-                        title: "explore recordings",
-                        onclick: async () => {
-                            let s = Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRecording_MbzArtsit",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Recordings for " + a.name);
-                        },
-                    },
-                };
+                let options = mbz.artist_ops(a);
 
                 switch (ctx) {
                     case "Browser":
@@ -906,31 +821,7 @@ export class MbzListItem extends ListItem {
             case "MbzRecordingWithInfo": {
                 let song = this.data.data;
                 return [
-                    {
-                        type: "Info",
-                        info: [
-                            {
-                                heading: "Type",
-                                content: this.typ(),
-                            },
-                            {
-                                heading: "Title",
-                                content: song.title,
-                            },
-                            {
-                                heading: "MbzId",
-                                content: song.id,
-                            },
-                            ...song.credit.map(a => ({
-                                heading: "Artist",
-                                content: a.name,
-                            })),
-                            ...song.releases.map(r => ({
-                                heading: "Release",
-                                content: r.title,
-                            })),
-                        ]
-                    },
+                    mbz.recording_ops(song),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
@@ -1074,43 +965,7 @@ export class MbzListItem extends ListItem {
             case "MbzArtist": {
                 let a = this.data.data;
                 return [
-                    {
-                        type: "Info",
-                        info: [
-                            {
-                                heading: "Type",
-                                content: this.typ(),
-                            },
-                            {
-                                heading: "Name",
-                                content: a.name,
-                            },
-                            {
-                                heading: "MbzId",
-                                content: a.id,
-                            },
-                            ...a.aliases.map(a => ({
-                                heading: "Alias",
-                                content: a.name,
-                            })),
-                            ...maybe(a.disambiguation, s => ({
-                                heading: "Disambiguation",
-                                content: s,
-                            })),
-                            {
-                                heading: "Disambiguation",
-                                content: a.disambiguation,
-                            },
-                            ...maybe(a.area, t => ({
-                                heading: "Area",
-                                content: t.name,
-                            })),
-                            ...maybe(a.type, t => ({
-                                heading: "Type",
-                                content: t,
-                            })),
-                        ]
-                    },
+                    mbz.artist_info_section(a, this),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
@@ -1362,6 +1217,166 @@ export const mbz = {
         };
         let s: server.AlmostDbItem<types.covau.Song> = { typ: "Song", t };
         return s;
+    },
+    recording_ops(rec: RecordingWithInfo, item: DbListItem | MbzListItem) {
+        let ops = mbz.ops(item);
+        return {
+            mbz_url: {
+                icon: icons.copy,
+                title: "copy musicbrainz url",
+                onclick: async () => {
+                    let url = mbz.urls.recording.mbz(rec.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+            lbz_url: {
+                icon: icons.copy,
+                title: "copy listenbrainz url",
+                onclick: async () => {
+                    let url = mbz.urls.recording.lbz(rec.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+            search_song: {
+                icon: icons.floppy_disk,
+                title: "search YtSong play source",
+                onclick: async () => {
+                    let query = await ops.get_query(rec);
+                    if (query) {
+                        await ops.search_and_get(query, "song", true);
+                    }
+                },
+            },
+            search_video: {
+                icon: icons.floppy_disk,
+                title: "search YtVideo play source",
+                onclick: async () => {
+                    let query = await ops.get_query(rec);
+                    if (query) {
+                        await ops.search_and_get(query, "video", true);
+                    }
+                },
+            },
+        };
+    },
+    artist_ops(a: Artist) {
+        return {
+            mbz_url: {
+                icon: icons.copy,
+                title: "copy musicbrainz url",
+                onclick: async () => {
+                    let url = mbz.urls.release_group.mbz(a.id);
+                    await navigator.clipboard.writeText(url);
+                    toast("url copied", "info");
+                },
+            },
+            explore_release_groups: {
+                icon: icons.open_new_tab,
+                title: "explore release groups",
+                onclick: async () => {
+                    let s = Mbz.new({
+                        query_type: "linked",
+                        type: "MbzReleaseGroup_MbzArtist",
+                        id: a.id,
+                    }, 30);
+                    stores.new_tab(s, "Release groups for " + a.name);
+                },
+            },
+            explore_releases: {
+                icon: icons.open_new_tab,
+                title: "explore releases",
+                onclick: async () => {
+                    let s = Mbz.new({
+                        query_type: "linked",
+                        type: "MbzRelease_MbzArtist",
+                        id: a.id,
+                    }, 30);
+                    stores.new_tab(s, "Releases for " + a.name);
+                },
+            },
+            explore_recordings: {
+                icon: icons.open_new_tab,
+                title: "explore recordings",
+                onclick: async () => {
+                    let s = Mbz.new({
+                        query_type: "linked",
+                        type: "MbzRecording_MbzArtsit",
+                        id: a.id,
+                    }, 30);
+                    stores.new_tab(s, "Recordings for " + a.name);
+                },
+            },
+        };
+    },
+    recording_info_section(rec: RecordingWithInfo) {
+        return {
+            type: "Info",
+            info: [
+                {
+                    heading: "Type",
+                    content: "MbzRecordingWithInfo",
+                },
+                {
+                    heading: "Title",
+                    content: rec.title,
+                },
+                {
+                    heading: "MbzId",
+                    content: rec.id,
+                },
+                ...rec.credit.map(a => ({
+                    heading: "Artist",
+                    content: a.name,
+                })),
+                ...rec.releases.map(r => ({
+                    heading: "Release",
+                    content: r.title,
+                })),
+            ]
+        };
+    },
+    artist_info_section(a: Artist, item: ListItem) {
+        let sections = item.common_sections(a);
+        let maybe = sections.ops.maybe;
+        return {
+            type: "Info",
+            info: [
+                {
+                    heading: "Type",
+                    content: "MbzArtist",
+                },
+                {
+                    heading: "Name",
+                    content: a.name,
+                },
+                {
+                    heading: "MbzId",
+                    content: a.id,
+                },
+                ...a.aliases.map(a => ({
+                    heading: "Alias",
+                    content: a.name,
+                })),
+                ...maybe(a.disambiguation, s => ({
+                    heading: "Disambiguation",
+                    content: s,
+                })),
+                {
+                    heading: "Disambiguation",
+                    content: a.disambiguation,
+                },
+                ...maybe(a.area, t => ({
+                    heading: "Area",
+                    content: t.name,
+                })),
+                ...maybe(a.type, t => ({
+                    heading: "Type",
+                    content: t,
+                })),
+            ]
+        };
     },
     ops(self: MbzListItem | DbListItem) {
         let wrapper = MapWrapper(async (item) => {

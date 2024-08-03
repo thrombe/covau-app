@@ -893,48 +893,8 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MbzRecording": {
-                let mbz_ops = mbz.mbz.ops(this);
                 let rec = this.data.t;
-                let options = {
-                    mbz_url: {
-                        icon: icons.copy,
-                        title: "copy musicbrainz url",
-                        onclick: async () => {
-                            let url = mbz.mbz.urls.recording.mbz(rec.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    lbz_url: {
-                        icon: icons.copy,
-                        title: "copy listenbrainz url",
-                        onclick: async () => {
-                            let url = mbz.mbz.urls.recording.lbz(rec.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    search_song: {
-                        icon: icons.floppy_disk,
-                        title: "search YtSong play source",
-                        onclick: async () => {
-                            let query = await mbz_ops.get_query(rec);
-                            if (query) {
-                                await mbz_ops.search_and_get(query, "song", true);
-                            }
-                        },
-                    },
-                    search_video: {
-                        icon: icons.floppy_disk,
-                        title: "search YtVideo play source",
-                        onclick: async () => {
-                            let query = await mbz_ops.get_query(rec);
-                            if (query) {
-                                await mbz_ops.search_and_get(query, "video", true);
-                            }
-                        },
-                    },
-                };
+                let options = mbz.mbz.recording_ops(rec, this);
 
                 switch (ctx) {
                     case "Queue":
@@ -1278,54 +1238,7 @@ export class DbListItem extends ListItem {
             } break;
             case "MbzArtist": {
                 let a = this.data.t;
-                let mbz_ops = mbz.mbz.ops(this);
-                let options = {
-                    mbz_url: {
-                        icon: icons.copy,
-                        title: "copy musicbrainz url",
-                        onclick: async () => {
-                            let url = mbz.mbz.urls.release_group.mbz(a.id);
-                            await navigator.clipboard.writeText(url);
-                            toast("url copied", "info");
-                        },
-                    },
-                    explore_release_groups: {
-                        icon: icons.open_new_tab,
-                        title: "explore release groups",
-                        onclick: async () => {
-                            let s = mbz.Mbz.new({
-                                query_type: "linked",
-                                type: "MbzReleaseGroup_MbzArtist",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Release groups for " + a.name);
-                        },
-                    },
-                    explore_releases: {
-                        icon: icons.open_new_tab,
-                        title: "explore releases",
-                        onclick: async () => {
-                            let s = mbz.Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRelease_MbzArtist",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Releases for " + a.name);
-                        },
-                    },
-                    explore_recordings: {
-                        icon: icons.open_new_tab,
-                        title: "explore recordings",
-                        onclick: async () => {
-                            let s = mbz.Mbz.new({
-                                query_type: "linked",
-                                type: "MbzRecording_MbzArtsit",
-                                id: a.id,
-                            }, 30);
-                            stores.new_tab(s, "Recordings for " + a.name);
-                        },
-                    },
-                };
+                let options = mbz.mbz.artist_ops(a);
 
                 switch (ctx) {
                     case "Browser":
@@ -1988,31 +1901,7 @@ export class DbListItem extends ListItem {
             case "MbzRecording": {
                 let song = this.data.t;
                 return [
-                    {
-                        type: "Info",
-                        info: [
-                            {
-                                heading: "Type",
-                                content: this.typ(),
-                            },
-                            {
-                                heading: "Title",
-                                content: song.title,
-                            },
-                            {
-                                heading: "MbzId",
-                                content: song.id,
-                            },
-                            ...song.credit.map(a => ({
-                                heading: "Artist",
-                                content: a.name,
-                            })),
-                            ...song.releases.map(r => ({
-                                heading: "Release",
-                                content: r.title,
-                            })),
-                        ]
-                    },
+                    mbz.mbz.recording_info_section(song),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
@@ -2039,43 +1928,7 @@ export class DbListItem extends ListItem {
             case "MbzArtist": {
                 let a = this.data.t;
                 return [
-                    {
-                        type: "Info",
-                        info: [
-                            {
-                                heading: "Type",
-                                content: this.typ(),
-                            },
-                            {
-                                heading: "Name",
-                                content: a.name,
-                            },
-                            {
-                                heading: "MbzId",
-                                content: a.id,
-                            },
-                            ...a.aliases.map(a => ({
-                                heading: "Alias",
-                                content: a.name,
-                            })),
-                            ...maybe(a.disambiguation, s => ({
-                                heading: "Disambiguation",
-                                content: s,
-                            })),
-                            {
-                                heading: "Disambiguation",
-                                content: a.disambiguation,
-                            },
-                            ...maybe(a.area, t => ({
-                                heading: "Area",
-                                content: t.name,
-                            })),
-                            ...maybe(a.type, t => ({
-                                heading: "Type",
-                                content: t,
-                            })),
-                        ]
-                    },
+                    mbz.mbz.artist_info_section(a, this),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
