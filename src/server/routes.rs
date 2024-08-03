@@ -182,6 +182,10 @@ pub enum FeRequest {
     Play,
     ToggleMute,
     TogglePlay,
+    BlacklistArtists,
+    RemoveAndNext,
+    SeekFwd,
+    SeekBkwd,
     Notify(String),
     NotifyError(String),
 }

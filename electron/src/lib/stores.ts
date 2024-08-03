@@ -272,6 +272,7 @@ export interface Player {
     destroy(): Promise<void>;
     set_volume(v: number): void;
     seek_to_perc(t: number): (Promise<void> | void);
+    seek_by(t: number): (Promise<void> | void);
     toggle_pause(): void;
     toggle_mute(): void;
     is_playing(): boolean;
@@ -284,6 +285,7 @@ export let dummy_player: Player = {
     async destroy() { },
     set_volume() { },
     seek_to_perc() { },
+    seek_by() { },
     toggle_pause() { },
     toggle_mute() { },
     is_playing() { return false; },
@@ -676,6 +678,16 @@ export const queue_ops = {
     async remove_item(item: ListItem) {
         await get(queue).remove_queue_item(item);
         queue.update(q => q);
+    },
+
+    get_current_item() {
+        let q = get(queue);
+        if (q.playing_index == null) {
+            toast("nothing is playing", "error");
+            throw new Error("nothing is playing");
+        }
+        let item = q.items[q.playing_index];
+        return item;
     },
 
     async play_item(item: ListItem) {

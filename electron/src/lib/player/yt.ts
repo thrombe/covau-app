@@ -218,6 +218,13 @@ export class YtPlayer {
         this.player.seekTo(duration * perc, true);
     }
 
+    async seek_by(t: number) {
+        let duration = this.player.getDuration();
+        let position = this.get_player_pos();
+        let pos = Math.min(1, position + t / duration);
+        this.seek_to_perc(Math.max(0, pos));
+    }
+
     toggle_pause() {
         console.log(this.synced_data)
         if (this.synced_data === 'Playing') {

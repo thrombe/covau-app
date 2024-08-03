@@ -249,6 +249,28 @@ class FeServer extends Server<FeRequest> {
                 stores.player.update(t => t);
                 return null;
             } break;
+            case 'BlacklistArtists': {
+                let item = stores.queue_ops.get_current_item();
+                await stores.queue_ops.blacklist_artists(item);
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'RemoveAndNext': {
+                let item = stores.queue_ops.get_current_item();
+                stores.queue_ops.remove_item(item);
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'SeekFwd': {
+                get(stores.player).seek_by(10);
+                stores.player.update(t => t);
+                return null;
+            } break;
+            case 'SeekBkwd': {
+                get(stores.player).seek_by(-10);
+                stores.player.update(t => t);
+                return null;
+            } break;
             default:
                 throw exhausted(req);
         }

@@ -252,6 +252,10 @@ pub mod cli {
         Play,
         ToggleMute,
         TogglePlay,
+        BlacklistArtists,
+        RemoveAndNext,
+        SeekFwd,
+        SeekBkwd,
         Message {
             #[arg(long, short)]
             message: String,
@@ -579,6 +583,10 @@ async fn main() -> Result<()> {
                 cli::FeCommand::Play => FeRequest::Play,
                 cli::FeCommand::ToggleMute => FeRequest::ToggleMute,
                 cli::FeCommand::TogglePlay => FeRequest::TogglePlay,
+                cli::FeCommand::BlacklistArtists => FeRequest::BlacklistArtists,
+                cli::FeCommand::RemoveAndNext => FeRequest::RemoveAndNext,
+                cli::FeCommand::SeekFwd => FeRequest::SeekFwd,
+                cli::FeCommand::SeekBkwd => FeRequest::SeekBkwd,
                 cli::FeCommand::Message { message, error } => {
                     if error {
                         FeRequest::NotifyError(message)

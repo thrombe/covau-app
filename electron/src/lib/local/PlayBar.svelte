@@ -119,11 +119,9 @@
                 has_started = true;
             }
         } else if (event.key == "ArrowLeft" || event.key == "h") {
-            let pos = Math.max(0, video_pos - 10 / audio_duration);
-            $player.seek_to_perc(pos);
+            await $player.seek_by(-10);
         } else if (event.key == "ArrowRight" || event.key == "l") {
-            let pos = Math.min(1, video_pos + 10 / audio_duration);
-            $player.seek_to_perc(pos);
+            await $player.seek_by(10);
         } else if (event.key == "ArrowDown" || event.key == "j") {
             await $queue.play_next();
             queue.update((q) => q);
