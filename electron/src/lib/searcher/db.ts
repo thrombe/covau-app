@@ -515,7 +515,7 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = this.data.t;
 
-                let vid = await st.cached.video(song.key);
+                let vid = await st.cached.video(song.key, db);
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let t: covau.Song = {

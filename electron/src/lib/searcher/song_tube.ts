@@ -628,25 +628,33 @@ export const st = {
     },
 
     cached: {
-        async video(id: string) {
+        async video(id: string, dbops: DbOps | null = null) {
             let v = await server.db.get_by_refid<yt.Song>("StSong", id);
             if (v == null) {
                 let item = await st.fetch.video(id);
-                let dbitem = await server.db.txn(async db => {
-                    return await db.insert_or_get({ typ: "StSong", t: item });
-                });
+                if (dbops == null) {
+                    await server.db.txn(async db => {
+                        let dbitem = await db.insert_or_get({ typ: "StSong", t: item });
+                    });
+                } else {
+                    let dbitem = await dbops.insert_or_get({ typ: "StSong", t: item });
+                }
                 return item;
             } else {
                 return v.t;
             }
         },
-        async artist(id: string) {
+        async artist(id: string, dbops: DbOps | null = null) {
             let v = await server.db.get_by_refid<yt.Artist>("StArtist", id);
             if (v == null) {
                 let item = await st.fetch.artist(id);
-                let dbitem = await server.db.txn(async db => {
-                    return await db.insert_or_get({ typ: "StArtist", t: item });
-                });
+                if (dbops == null) {
+                    await server.db.txn(async db => {
+                        let dbitem = await db.insert_or_get({ typ: "StArtist", t: item });
+                    });
+                } else {
+                    let dbitem = await dbops.insert_or_get({ typ: "StArtist", t: item });
+                }
                 return item;
             } else {
                 return v.t;
