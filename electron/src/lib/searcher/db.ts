@@ -516,17 +516,17 @@ export class DbListItem extends ListItem {
                 let song = this.data.t;
 
                 let vid = await st.cached.video(song.key, dbops);
-                let id: covau.PlaySource = { type: "YtId", content: vid.id };
+                let id: covau.PlaySource = { type: "YtId", content: vid.t.id };
                 let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let t: covau.Song = {
-                    title: vid.title ?? vid.id,
-                    artists: vid.authors.map(a => a.name),
-                    thumbnails: [...db.thumbnails(vid.thumbnails), st.url.song_thumbnail(vid.id)],
+                    title: vid.t.title ?? vid.t.id,
+                    artists: vid.t.authors.map(a => a.name),
+                    thumbnails: [...db.thumbnails(vid.t.thumbnails), st.url.song_thumbnail(vid.t.id)],
                     play_sources: [...path, id],
                     info_sources: [id],
                 };
 
-                let s1: server.AlmostDbItem<yt.Song> = { typ: "StSong", t: vid };
+                let s1: server.AlmostDbItem<yt.Song> = { typ: "StSong", t: vid.t };
                 let s2: server.AlmostDbItem<covau.Song> = { typ: "Song", t };
 
                 await dbops.insert_or_get(s1);
@@ -737,7 +737,7 @@ export class DbListItem extends ListItem {
                         .map(k => {
                             return st
                                 .cached.artist(k)
-                                .then(a => st.parse.wrap_item(a, "Artist"))
+                                .then(a => st.parse.wrap_item(a.t, "Artist"))
                                 .catch(err => {
                                     let item = new CustomListItem(k, k, "Custom", utils.err_msg(err));
                                     return item;
@@ -1809,6 +1809,31 @@ export class DbListItem extends ListItem {
                                 // TODO: delete file if source if file
                             },
                         }),
+                        play: {
+                            icon: icons.play,
+                            title: "detour",
+                            onclick: async () => {
+                                let item = new CustomListItem(this.get_key() as string, this.title(), this.typ(), this.title_sub());
+                                item._thumbnail = this.thumbnail();
+                                item._is_playable = true;
+                                if (s.type == "YtId") {
+                                    item._yt_id = s.content;
+                                    item._audio_uri = async () => {
+                                        let uri = await st.fetch.uri(s.content);
+                                        if (uri) {
+                                            return uri.uri;
+                                        } else {
+                                            return null;
+                                        }
+                                    };
+                                } else {
+                                    item._audio_uri = async () => {
+                                        return "file://" + await server.api.to_path(s.content);
+                                    };
+                                }
+                                stores.queue_ops.detour(item);
+                            },
+                        },
                     };
 
                     if (s.type == "YtId") {
@@ -1816,7 +1841,20 @@ export class DbListItem extends ListItem {
                         let yt = new CustomListItem(id, s.type, "Custom", s.content);
                         yt._options = {
                             ...common_options.empty_ops,
+                            icon_top: ops.play,
                             top_right: ops.remove(yt),
+                            bottom: [
+                                {
+                                    icon: icons.open_new_tab,
+                                    title: "open",
+                                    onclick: async () => {
+                                        let vid = await st.cached.video(s.content);
+                                        let item = db.wrapped(vid);
+                                        let ops = item.common_options();
+                                        await ops.open_details.onclick();
+                                    },
+                                },
+                            ],
                         };
                         return yt;
                     } else {
@@ -1824,6 +1862,7 @@ export class DbListItem extends ListItem {
                         let file = new CustomListItem(id, s.type, "Custom", `${s.content.typ} ${s.content.path}`);
                         file._options = {
                             ...common_options.empty_ops,
+                            icon_top: ops.play,
                             top_right: ops.remove(file),
                         };
                         return file;
@@ -1854,6 +1893,18 @@ export class DbListItem extends ListItem {
                     item._options = {
                         ...common_options.empty_ops,
                         top_right: ops.remove(item),
+                        bottom: [
+                            {
+                                icon: icons.open_new_tab,
+                                title: "open",
+                                onclick: async () => {
+                                    let vid = await st.cached.video(s.content);
+                                    let item = db.wrapped(vid);
+                                    let ops = item.common_options();
+                                    await ops.open_details.onclick();
+                                },
+                            },
+                        ],
                     };
                     return item;
                 }, async items => {

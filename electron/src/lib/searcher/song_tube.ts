@@ -634,15 +634,16 @@ export const st = {
             if (v == null) {
                 let item = await st.fetch.video(id);
                 if (dbops == null) {
-                    await server.db.txn(async db => {
+                    return await server.db.txn(async db => {
                         let dbitem = await db.insert_or_get({ typ: "StSong", t: item });
+                        return dbitem.content;
                     });
                 } else {
                     let dbitem = await dbops.insert_or_get({ typ: "StSong", t: item });
+                    return dbitem.content;
                 }
-                return item;
             } else {
-                return v.t;
+                return v;
             }
         },
         async artist(id: string, dbops: DbOps | null = null) {
@@ -650,15 +651,16 @@ export const st = {
             if (v == null) {
                 let item = await st.fetch.artist(id);
                 if (dbops == null) {
-                    await server.db.txn(async db => {
+                    return await server.db.txn(async db => {
                         let dbitem = await db.insert_or_get({ typ: "StArtist", t: item });
+                        return dbitem.content;
                     });
                 } else {
                     let dbitem = await dbops.insert_or_get({ typ: "StArtist", t: item });
+                    return dbitem.content;
                 }
-                return item;
             } else {
-                return v.t;
+                return v;
             }
         },
     },
@@ -954,7 +956,7 @@ export class SongTube extends Unpaged<MusicListItem> {
         let promises = batch.map(id => {
             return st.cached.video(id).then(s => ({
                 type: 'Song',
-                content: s,
+                content: s.t,
             } as MusicListItem)).catch(reason => ({
                 type: 'Song',
                 content: {

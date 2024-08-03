@@ -271,6 +271,8 @@ export class CustomListItem extends ListItem {
     _sections: DetailSection[] = [];
     _typ: Typ;
     _yt_id: string | null = null;
+    _is_playable: boolean = false;
+    _audio_uri: (() => Promise<string | null>) | null = null;
 
     constructor(key: string, title: string, typ: Typ, title_sub: string | null = null) {
         super();
@@ -279,6 +281,18 @@ export class CustomListItem extends ListItem {
         this._typ = typ;
         this._title_sub = title_sub;
         this._options = this.common_options().empty_ops;
+    }
+
+    is_playable(): boolean {
+        return this._is_playable;
+    }
+
+    async audio_uri() {
+        if (this._audio_uri) {
+            return await this._audio_uri();
+        } else {
+            return null;
+        }
     }
 
     async yt_id(): Promise<string | null> {
@@ -327,10 +341,6 @@ export class CustomListItem extends ListItem {
 
     async dislike(): Promise<boolean> {
         return false;
-    }
-
-    async audio_uri() {
-        return null;
     }
 
     impl_options(_ctx: RenderContext) {
