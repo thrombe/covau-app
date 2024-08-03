@@ -6,6 +6,7 @@ import { exhausted } from './utils.ts';
 import * as types from "$types/types.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from 'svelte/store';
+import { err_msg } from './utils.ts';
 
 export const utils = {
     base_url: `http://localhost:${import.meta.env.SERVER_PORT}/`,
@@ -345,6 +346,7 @@ class Client<Req> {
 
 export type AlmostDbItem<T> = Omit<Omit<types.db.DbItem<T>, "id">, "metadata">;
 export type DbOps = ReturnType<DbClient["db_cud"]>;
+export type DbUpdateCallback<T> = (item: types.db.DbItem<T>) => Promise<void>;
 
 class DbClient extends Client<types.server.DbRequest> {
     protected constructor() {
@@ -355,6 +357,48 @@ class DbClient extends Client<types.server.DbRequest> {
         let self = new DbClient();
         await self.wait;
         return self;
+    }
+
+    listeners: Map<number, { enabled: boolean, callback: DbUpdateCallback<unknown> }[]> = new Map();
+    set_update_listener<T>(id: number, callback: DbUpdateCallback<T>) {
+        let handlers = this.listeners.get(id);
+
+        let handler = {
+            enabled: true,
+            callback,
+        };
+
+        // TODO: remove these from handlers instead of just disabling
+        let disable = () => {
+            handler.enabled = false;
+        };
+
+        if (handlers) {
+            for (let h of handlers) {
+                if (h.callback == callback) {
+                    return disable;
+                }
+            }
+            // @ts-ignore
+            handlers.push(handler);
+        } else {
+            // @ts-ignore
+            this.listeners.set(id, [handler]);
+        }
+
+        return disable;
+    }
+    async call_listeners(item: types.db.DbItem<unknown>) {
+        let listeners = this.listeners.get(item.id) ?? [];
+        for (let listener of listeners) {
+            if (listener.enabled) {
+                let _promise = listener.callback(item).catch(e => {
+                    let msg = err_msg(e);
+                    toast(msg, "error");
+                    console.error(e);
+                });
+            }
+        }
     }
 
     db_cud(id: number) {
@@ -387,6 +431,9 @@ class DbClient extends Client<types.server.DbRequest> {
                     },
                 };
                 let dbitem: types.db.DbItem<T> = await self.execute(req);
+
+                await self.call_listeners(dbitem);
+
                 return dbitem;
             },
 
@@ -401,6 +448,9 @@ class DbClient extends Client<types.server.DbRequest> {
                     },
                 };
                 let dbitem: types.db.DbMetadata = await self.execute(req);
+
+                await self.call_listeners({ ...item, metadata: dbitem });
+
                 return dbitem;
             },
 
@@ -419,6 +469,9 @@ class DbClient extends Client<types.server.DbRequest> {
 }
 
 export const db = {
+    set_update_listener<T>(id: number, callback: DbUpdateCallback<T>) {
+        return dbclient.set_update_listener(id, callback);
+    },
     async txn<Ret>(fn: (db_ops: DbOps) => Promise<Ret>) {
         let id: number = await dbclient.execute({ type: "Begin" });
         try {
