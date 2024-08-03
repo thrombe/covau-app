@@ -1,4 +1,3 @@
-import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as Musi from "$types/musimanager.ts";
 import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
@@ -16,6 +15,7 @@ import * as types from "$types/types.ts";
 import { writable } from "svelte/store";
 import * as utils from "$lib/utils.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
+import * as mixins from "$lib/searcher/mixins.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null, types.covau.SourcePath>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -2327,7 +2327,7 @@ export class DbListItem extends ListItem {
 interface IClassTypeWrapper {
     next_page(): Promise<DbListItem[]>;
 };
-function ClassTypeWrapper<S extends Constructor<{
+function ClassTypeWrapper<S extends mixins.Constructor<{
     next_page(): Promise<MusicListItem[]>;
 }>>(s: S) {
     return class ClassTypeWrapper extends s implements IClassTypeWrapper {
@@ -2336,7 +2336,7 @@ function ClassTypeWrapper<S extends Constructor<{
             let res = await super.next_page();
             return res.map(m => new DbListItem(m));
         }
-    } as Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
+    } as mixins.Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
 }
 
 export const db = {
@@ -2349,7 +2349,7 @@ export const db = {
         return new DbListItem(k as MusicListItem);
     },
 };
-export class Db extends Unpaged<MusicListItem> {
+export class Db extends mixins.Unpaged<MusicListItem> {
     query: BrowseQuery;
     page_size: number;
 
@@ -2370,10 +2370,10 @@ export class Db extends Unpaged<MusicListItem> {
 
     static new<W extends SearcherConstructorMapper>(query: BrowseQuery, page_size: number, wrapper: W | null = null, drop_handle: ListItem | null = null) {
         const CW = ClassTypeWrapper(Db);
-        const US = UniqueSearch<DbListItem, typeof CW>(CW);
-        const SS = SavedSearch<DbListItem, typeof US>(US);
-        const AW = DebounceWrapper<DbListItem, typeof SS>(SS);
-        const DW = DropWrapper<typeof AW>(AW, drop_handle);
+        const US = mixins.UniqueSearch<DbListItem, typeof CW>(CW);
+        const SS = mixins.SavedSearch<DbListItem, typeof US>(US);
+        const AW = mixins.DebounceWrapper<DbListItem, typeof SS>(SS);
+        const DW = mixins.DropWrapper<typeof AW>(AW, drop_handle);
         const W = DW;
         if (wrapper) {
             const WR = wrapper(W) as typeof W;
@@ -2384,9 +2384,9 @@ export class Db extends Unpaged<MusicListItem> {
     }
 
     static unwrapped(query: BrowseQuery, page_size: number) {
-        const US = UniqueSearch<MusicListItem, typeof Db>(Db);
-        const SS = SavedSearch<MusicListItem, typeof US>(US);
-        const AW = DebounceWrapper<MusicListItem, typeof SS>(SS);
+        const US = mixins.UniqueSearch<MusicListItem, typeof Db>(Db);
+        const SS = mixins.SavedSearch<MusicListItem, typeof US>(US);
+        const AW = mixins.DebounceWrapper<MusicListItem, typeof SS>(SS);
         return new AW(query, page_size);
     }
 
