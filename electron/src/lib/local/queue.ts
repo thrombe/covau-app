@@ -330,20 +330,6 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                title: "Explore song blacklist",
-                icon: icons.open_new_tab,
-                onclick: async () => {
-                    let sync = get(stores.syncer);
-                    let bl = sync.seen;
-                    if (bl == null) {
-                        toast("no song blacklist set", "error");
-                        return;
-                    }
-                    let item = db.db.wrapped(bl);
-                    await item.common_options().open_details.onclick();
-                },
-            },
-            {
                 title: "searcher prompt test",
                 icon: icons.covau_icon,
                 onclick: async () => {
