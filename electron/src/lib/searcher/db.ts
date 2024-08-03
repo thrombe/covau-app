@@ -49,7 +49,8 @@ export type Typ = DB.Typ;
 export type BrowseQuery =
     { query_type: 'search', type: Typ, query: string } |
     { query_type: 'refids', type: Typ, ids: string[] } |
-    { query_type: 'ids', type: Typ, ids: number[] };
+    { query_type: 'dynamic-refids', query: { refid: string, typ: Typ }[] } |
+    { query_type: 'ids', type: Typ | null, ids: number[] };
 
 export class DbListItem extends ListItem {
     data: MusicListItem;
@@ -2876,6 +2877,10 @@ export class Db extends mixins.Unpaged<MusicListItem> {
     }
 
     async fetch(query: string): Promise<MusicListItem[]> {
+        if (this.query.query_type != "search") {
+            throw new Error("wrong query type");
+        }
+
         let q: DB.SearchQuery = {
             type: "Query",
             content: {
@@ -2957,10 +2962,38 @@ export class Db extends mixins.Unpaged<MusicListItem> {
                 this.has_next_page = false;
             }
 
-            let matches: DB.DbItem<unknown>[] = await server.db.get_many_by_id(
-                this.query.type,
-                ids,
+            if (this.query.type == null) {
+                let matches: DB.DbItem<unknown>[] = await server.db.get_many_untyped_by_id(
+                    ids,
+                );
+                return keyed(matches) as MusicListItem[];
+            } else {
+                let matches: DB.DbItem<unknown>[] = await server.db.get_many_by_id(
+                    this.query.type,
+                    ids,
+                );
+                return keyed(matches) as MusicListItem[];
+            }
+        } else if (this.query.query_type === "dynamic-refids") {
+            let ids = this.query.query.slice(
+                this.page_end_index,
+                Math.min(
+                    this.page_end_index + this.page_size,
+                    this.query.query.length,
+                ),
             );
+            this.page_end_index += ids.length;
+            if (this.page_end_index >= this.query.query.length) {
+                this.has_next_page = false;
+            }
+
+            let matches: DB.DbItem<unknown>[] = await Promise.all(ids.map(async id => {
+                let item = await server.db.get_by_refid(id.typ, id.refid);
+                if (item == null) {
+                    throw new Error(`item with type ${id.typ} and refid ${id.refid} not found`);
+                }
+                return item;
+            }));
             return keyed(matches) as MusicListItem[];
         } else {
             throw exhausted(this.query);

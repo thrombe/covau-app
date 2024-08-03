@@ -125,6 +125,12 @@ pub mod db_server {
             typ: Typ,
             ids: Vec<DbId>,
         },
+        GetUntypedById {
+            id: DbId,
+        },
+        GetManyUntypedById {
+            ids: Vec<DbId>,
+        },
     }
 
     type LocalState = crate::covau_types::LocalState;
@@ -256,6 +262,24 @@ pub mod db_server {
             ) -> anyhow::Result<MessageResult<String>> {
                 let res = db
                     .search_many_by_id::<T>(ids)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_untyped_by_id(
+                db: Db,
+                id: DbId,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_untyped_by_id(id)
+                    .await?;
+                Ok(MessageResult::Ok(res).json())
+            }
+            async fn get_many_untyped_by_id(
+                db: Db,
+                ids: Vec<DbId>,
+            ) -> anyhow::Result<MessageResult<String>> {
+                let res = db
+                    .search_many_untyped_by_id(ids)
                     .await?;
                 Ok(MessageResult::Ok(res).json())
             }
@@ -641,6 +665,12 @@ pub mod db_server {
                         Typ::MbzRecording => get_many_by_id::<MbzRecording>(db, ids).await?,
                         Typ::MbzArtist => get_many_by_id::<MbzArtist>(db, ids).await?,
                     }
+                },
+                DbRequest::GetUntypedById { id } => {
+                    get_untyped_by_id(db, id).await?
+                },
+                DbRequest::GetManyUntypedById { ids } => {
+                    get_many_untyped_by_id(db, ids).await?
                 },
             };
             Ok(res)

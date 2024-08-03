@@ -464,6 +464,26 @@ export const db = {
         });
         return res;
     },
+
+    async get_untyped_by_id(id: number) {
+        let res: types.db.DbItem<unknown> | null = await dbclient.execute({
+            type: "GetUntypedById",
+            content: {
+                id,
+            },
+        });
+        return res;
+    },
+
+    async get_many_untyped_by_id(ids: number[]) {
+        let res: types.db.DbItem<unknown>[] = await dbclient.execute({
+            type: "GetManyUntypedById",
+            content: {
+                ids,
+            },
+        });
+        return res;
+    },
 };
 
 const app_ops = {
