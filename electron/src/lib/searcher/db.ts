@@ -1010,6 +1010,7 @@ export class DbListItem extends ListItem {
                                     this.data = await server.db.txn(async db => {
                                         return await db.update(s);
                                     }) as MusicListItem;
+                                    toast("song saved");
                                 },
                             }];
                         } else {
@@ -1852,6 +1853,25 @@ export class DbListItem extends ListItem {
                                         let item = db.wrapped(vid);
                                         let ops = item.common_options();
                                         await ops.open_details.onclick();
+                                    },
+                                },
+                            ],
+                            menu: [
+                                {
+                                    icon: icons.floppy_disk,
+                                    title: "save source",
+                                    onclick: async () => {
+                                        if ((song.t.play_sources.find(id => id.type == "File" && id.content.path.includes(s.content)) ?? null) != null) {
+                                            toast("song is already saved", "error");
+                                            return;
+                                        }
+                                        let path = await server.api.save_song(s.content);
+                                        song.t.play_sources = [{ type: "File", content: path }, ...song.t.play_sources];
+
+                                        this.data = await server.db.txn(async db => {
+                                            return await db.update(song);
+                                        }) as MusicListItem;
+                                        toast("source saved");
                                     },
                                 },
                             ],
