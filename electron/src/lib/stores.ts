@@ -354,7 +354,7 @@ export let queue: Writable<LocalSyncQueue> = writable();
 
 type Syncer = {
     state: types.db.DbItem<types.covau.LocalState>,
-    queue: types.db.DbItem<types.covau.Queue> | null,
+    queue: types.db.DbItem<types.covau.Queue>,
     blacklist: types.db.DbItem<types.covau.ArtistBlacklist> | null,
     seen: types.db.DbItem<types.covau.SongBlacklist> | null,
     seed: types.db.DbItem<types.covau.Song> | null,
@@ -375,6 +375,7 @@ export const syncops = {
         }
         let sync: Syncer = {
             state,
+            // @ts-ignore
             queue: null,
             blacklist: null,
             seed: null,
@@ -456,7 +457,7 @@ export const syncops = {
             let sync = get(syncer);
 
             await server.db.txn(async db => {
-                sync.queue = await db.update(sync.queue!);
+                sync.queue = await db.update(sync.queue);
             });
 
             syncer.update(t => t);
@@ -548,7 +549,7 @@ export const syncops = {
             let q = get(queue);
             
             sync.blacklist = bl;
-            sync.queue!.t.blacklist = bl.id;
+            sync.queue.t.blacklist = bl.id;
             sync.queue = await server.db.txn(async db => {
                 return await db.update(sync.queue!);
             });
@@ -564,9 +565,9 @@ export const syncops = {
             let q = get(queue);
             
             sync.seen = bl;
-            sync.queue!.t.seen = bl.id;
+            sync.queue.t.seen = bl.id;
             sync.queue = await server.db.txn(async db => {
-                return await db.update(sync.queue!);
+                return await db.update(sync.queue);
             });
             q.blacklist_ids = [...bl.t.songs];
             q.bl_ids = new Set(bl.t.songs.map(id => id.content));
@@ -613,9 +614,6 @@ export const syncops = {
             let server = await import("$lib/server.ts");
             let q = get(queue);
             let sync = get(syncer);
-            if (sync.queue == null) {
-                throw new Error("no queue set");
-            }
 
             let bl = await server.db.txn(async db => {
                 let bl = await db.insert_or_get<types.covau.ArtistBlacklist>({

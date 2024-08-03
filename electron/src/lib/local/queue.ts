@@ -315,12 +315,7 @@ export class QueueManager implements Searcher {
                 icon: icons.open_new_tab,
                 onclick: async () => {
                     let sync = get(stores.syncer);
-                    let q = sync.queue;
-                    if (q == null) {
-                        toast("no song blacklist set", "error");
-                        return;
-                    }
-                    let item = db.db.wrapped(q);
+                    let item = db.db.wrapped(sync.queue);
                     await item.common_options().open_details.onclick();
                 },
             },
