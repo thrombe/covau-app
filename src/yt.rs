@@ -1,8 +1,7 @@
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use tokio::io::AsyncWriteExt;
 
 use crate::server::routes::FrontendClient;
 
@@ -281,9 +280,9 @@ impl InnerSongTube {
 
 #[derive(Clone)]
 pub struct SongTubeFac {
-    fe: FrontendClient<YtiRequest>,
-    client: reqwest::Client,
-    config: Arc<crate::cli::DerivedConfig>,
+    pub fe: FrontendClient<YtiRequest>,
+    pub client: reqwest::Client,
+    pub config: Arc<crate::cli::DerivedConfig>,
 }
 
 impl SongTubeFac {
@@ -295,7 +294,7 @@ impl SongTubeFac {
         Self { fe, client, config }
     }
 
-    pub async fn get_song(&self, id: String) -> anyhow::Result<PathBuf> {
+    pub async fn get_song(&self, id: String) -> anyhow::Result<Vec<u8>> {
         let info: SongUriInfo = self
             .fe
             .execute(YtiRequest::GetSongUri { id: id.clone() })
@@ -337,11 +336,7 @@ impl SongTubeFac {
                 vec
             });
 
-        let dest = self.config.music_path.join(format!("{}.webm", &id));
-        let mut file = tokio::fs::File::create_new(&dest).await?;
-        file.write_all(&bytes).await?;
-
-        Ok(dest)
+        Ok(bytes)
     }
 
     pub async fn with_search_query<T: song_tube::TMusicListItem>(

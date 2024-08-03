@@ -1005,13 +1005,13 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Song": {
-                let s = this.data.t;
+                let s = this.data;
                 let options = {
                     copy_url: {
                         icon: icons.copy,
                         title: "copy source url",
                         onclick: async () => {
-                            for (let source of s.play_sources) {
+                            for (let source of s.t.play_sources) {
                                 switch (source.type) {
                                     case "File": {
                                         continue;
@@ -1029,6 +1029,29 @@ export class DbListItem extends ListItem {
                             toast("url not found", "info");
                         },
                     },
+                    save_song: () => {
+                        let yt_id = s.t.play_sources
+                            .filter(id => id.type == "YtId")
+                            .map(id => id.content as string).at(0) ?? null;
+
+                        if (yt_id && (s.t.play_sources.find(id => id.type == "File") ?? null) == null) {
+                            let id = yt_id;
+                            return [{
+                                icon: icons.floppy_disk,
+                                title: "save song",
+                                onclick: async () => {
+                                    let path = await server.api.save_song(id);
+                                    s.t.play_sources = [{ type: "File", content: path }, ...s.t.play_sources];
+
+                                    this.data = await server.db.txn(async db => {
+                                        return await db.update(s);
+                                    }) as MusicListItem;
+                                },
+                            }];
+                        } else {
+                            return [];
+                        }
+                    },
                 };
 
                 switch (ctx) {
@@ -1042,6 +1065,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                ...options.save_song(),
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1056,6 +1080,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
+                                ...options.save_song(),
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1071,6 +1096,7 @@ export class DbListItem extends ListItem {
                                 ops.options.unlike,
                                 ops.options.undislike,
                                 options.copy_url,
+                                ...options.save_song(),
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1872,6 +1898,24 @@ export class DbListItem extends ListItem {
                                 content: a,
                             })),
                         ]
+                    },
+                    {
+                        type: "Rearrange",
+                        title: "Info Sources",
+                        items: song.info_sources.map((s, i) => new CustomListItem(i.toString(), s.type, "Custom", s.content)),
+                    },
+                    {
+                        type: "Rearrange",
+                        title: "Play Sources",
+                        items: song.play_sources.map((s, i) => {
+                            if (s.type == "YtId") {
+                                let yt = new CustomListItem(i.toString(), s.type, "Custom", s.content);
+                                return yt;
+                            } else {
+                                let file = new CustomListItem(i.toString(), s.type, "Custom", `${s.content.typ} ${s.content.path}`);
+                                return file;
+                            }
+                        }),
                     },
                     sections.options,
                     sections.json,

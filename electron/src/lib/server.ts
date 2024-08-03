@@ -53,6 +53,16 @@ export const utils = {
         }
     },
 };
+export const api = {
+    async to_path(path: types.covau.SourcePath) {
+        let p: string = await utils.api_request(utils.base_url + "to_path", path);
+        return p;
+    },
+    async save_song(id: string) {
+        let path: types.covau.SourcePath = await utils.api_request(utils.base_url + "save_song", id);
+        return path;
+    },
+};
 
 abstract class Server<Req> {
     ws: WebSocket;
