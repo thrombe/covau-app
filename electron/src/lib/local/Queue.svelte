@@ -15,6 +15,7 @@
     import * as icons from "$lib/icons.ts";
     import { toast } from "$lib/toast/toast.ts";
     import { StaticSearcher } from "$lib/searcher/searcher.ts";
+    import * as utils from "$lib/utils.ts";
 
     // prettier-ignore
     type QueueItem = {
@@ -344,7 +345,7 @@
                 >
                     <div
                         class="p-2 h-full flex justify-center place-items-center"
-                        on:pointerup={item.onclick}
+                        on:pointerup={utils.wrap_toast(item.onclick)}
                     >
                         <label class="inline-flex items-center cursor-pointer">
                             <input

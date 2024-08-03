@@ -2,6 +2,7 @@
     import type { ListItem, RenderContext } from "$lib/searcher/item";
     import ThreeDotMenu from "./ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
+    import * as utils from "$lib/utils.ts";
 
     export let item: ListItem;
     export let ctx: RenderContext;
@@ -72,7 +73,7 @@
     {#if options.top_right != null}
         <button
             class="absolute pop-button top-0 right-0 p-1 m-2"
-            on:pointerup={options.top_right.onclick}
+            on:pointerup={utils.wrap_toast(options.top_right.onclick)}
         >
             <img
                 alt="remove"
@@ -87,7 +88,7 @@
             <button
                 class="queue-button"
                 class:play-button={true}
-                on:pointerup={options.icon_top.onclick}
+                on:pointerup={utils.wrap_toast(options.icon_top.onclick)}
             >
                 <img
                     alt="play"
@@ -101,7 +102,7 @@
 
     <div class="absolute bottom-0 right-0 flex flex-row gap-1 max-w-[80%] m-2">
         {#each options.bottom as option}
-            <button class="pop-button p-1" on:pointerup={option.onclick}>
+            <button class="pop-button p-1" on:pointerup={utils.wrap_toast(option.onclick)}>
                 <img
                     alt={option.title}
                     draggable={false}

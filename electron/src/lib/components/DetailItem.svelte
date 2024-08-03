@@ -4,6 +4,7 @@
     import AudioListItem from "./AudioListItem.svelte";
     import Explorer from "./Explorer.svelte";
     import * as stores from "$lib/stores.ts";
+    import * as utils from "$lib/utils.ts";
 
     export let item: Readable<ListItem>;
     export let updater: Readable<number>;
@@ -77,7 +78,7 @@
                         </div>
                         <div class="flex flex-row flex-wrap gap-2">
                             {#each section.options as option}
-                                <button on:pointerup={option.onclick}>
+                                <button on:pointerup={utils.wrap_toast(option.onclick)}>
                                     <div
                                         class="flex flex-row rounded-md p-2 pr-4 place-items-center bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
                                     >

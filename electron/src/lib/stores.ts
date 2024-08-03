@@ -12,6 +12,7 @@ import { OptionsWrapper } from "./searcher/mixins.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { tick } from "svelte";
+import * as utils from "$lib/utils.ts";
 
 export type DetailTab = {
     type: "detail",
@@ -80,7 +81,7 @@ export const drag_ops = {
     async drop() {
         let ds = get(drag_source);
         if (ds) {
-            await ds.drop_callback();
+            await utils.wrap_toast(ds.drop_callback)();
             await ds.drop_cleanup();
         }
         drag_source.set(ds);

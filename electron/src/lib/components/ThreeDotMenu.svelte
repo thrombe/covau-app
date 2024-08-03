@@ -1,5 +1,6 @@
 <script lang="ts">
     import { type Option } from "$lib/searcher/item.ts";
+    import * as utils from "$lib/utils.ts";
 
     export let options: Option[];
     export let classes: string = "";
@@ -28,7 +29,7 @@
 >
     {#each options as option}
         <button
-            on:pointerup={option.onclick}
+            on:pointerup={utils.wrap_toast(option.onclick)}
             class="flex flex-row rounded-md p-2 hover:bg-gray-100 hover:bg-opacity-15 min-w-max place-items-center"
         >
             <img alt={option.title} class="h-6 w-6 p-1" src={option.icon} />
