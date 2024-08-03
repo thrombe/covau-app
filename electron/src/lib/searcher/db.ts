@@ -331,7 +331,7 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = this.data.t;
                 if (song.last_known_path) {
-                    return "file://" + song.last_known_path;
+                    return "file://" + await server.api.to_path(song.last_known_path);
                 } else {
                     let data = await st.fetch.uri(song.key);
                     if (!data) {
@@ -371,7 +371,7 @@ export class DbListItem extends ListItem {
                 for (let source of song.play_sources) {
                     switch (source.type) {
                         case "File":
-                            return "file://" + source.content;
+                            return "file://" + await server.api.to_path(source.content);
                         case "YtId": {
                             let data = await st.fetch.uri(source.content);
                             if (!data) {
