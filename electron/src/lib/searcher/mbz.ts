@@ -1160,6 +1160,26 @@ export const mbz = {
         return k;
     },
 
+    cached: {
+        async artist(id: string, dbops: server.DbOps | null = null) {
+            let a = await server.db.get_by_refid<Artist>("MbzArtist", id);
+            if (a == null) {
+                let item = await mbz.id_fetch<Artist>(id, "MbzArtist");
+                if (dbops == null) {
+                    return await server.db.txn(async db => {
+                        let dbitem = await db.insert_or_get({ typ: "StArtist", t: item });
+                        return dbitem.content;
+                    });
+                } else {
+                    let dbitem = await dbops.insert_or_get({ typ: "StArtist", t: item });
+                    return dbitem.content;
+                }
+            } else {
+                return a;
+            }
+        }
+    },
+
     async recordings_from_releases(releases: Release[]) {
         let recordings_es = await Promise.all(
             releases

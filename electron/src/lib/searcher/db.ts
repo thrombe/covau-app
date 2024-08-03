@@ -1949,18 +1949,25 @@ export class DbListItem extends ListItem {
             case "ArtistBlacklist": {
                 let bl = this.data;
                 let options = {
-                    // open: {
-                    //     icon: icons.open_new_tab,
-                    //     title: "open songs",
-                    //     onclick: async () => {
-                    //         let s = Db.new({
-                    //             query_type: "refids",
-                    //             type: "Song",
-                    //             ids: bl.t.artists.map(s => s.content),
-                    //         }, 50);
-                    //         stores.new_tab(s, bl.t.title ?? "song blacklist");
-                    //     },
-                    // },
+                    explore: {
+                        icon: icons.open_new_tab,
+                        title: "explore",
+                        onclick: async () => {
+                            let s = AsyncStaticSearcher(async () => {
+                                let artists = await Promise.all(bl.t.artists.map(async id => {
+                                    if (id.type == "YtId") {
+                                        let a = await st.cached.artist(id.content);
+                                        return db.wrapped(a);
+                                    } else {
+                                        let a = await mbz.mbz.cached.artist(id.content);
+                                        return db.wrapped(a);
+                                    }
+                                }));
+                                return artists;
+                            });
+                            stores.new_tab(s, bl.t.title ?? "song blacklist");
+                        },
+                    },
                     load: {
                         icon: icons.repeat,
                         title: "load",
@@ -2000,12 +2007,14 @@ export class DbListItem extends ListItem {
                     case "Browser":
                         return {
                             ...common_options.empty_ops,
+                            top_right: options.explore,
                             bottom: [
                                 ops.options.like,
                                 ops.options.dislike,
+                                common_options.open_details,
                             ],
                             menu: [
-                                // options.open,
+                                options.explore,
                                 options.load,
                                 options.rename,
                                 common_options.open_details,
@@ -2015,7 +2024,7 @@ export class DbListItem extends ListItem {
                         return {
                             ...common_options.empty_ops,
                             menu: [
-                                // options.open,
+                                options.explore,
                                 options.load,
                                 options.rename,
                                 ops.options.like,
