@@ -414,6 +414,10 @@ export const syncops = {
 
         syncer.set(sync);
         queue.set(q);
+
+        if (sync.state.t.queue == null) {
+            await syncops.new.queue();
+        }
     },
 
     // push state to db
