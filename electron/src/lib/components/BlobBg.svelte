@@ -43,16 +43,13 @@
     export const get_seed = () => {
         return _seed;
     };
+    export const gen_time_seed = (seed: string) => {
+        return seed + Date.now().toString();
+    };
 </script>
 
 <script lang='ts'>
-    export let count = 30;
-    export let colors = ['#AB62C4', '#E35A84', '#FFACAC'];
-    export let bg_color = '#4E2A69';
-    export let size = 250;
-    export let seed: string | undefined = undefined;
-
-    let final_seed = seed ?? (_seed ?? Date.now().toString());
+    let default_theme = ['#AB62C4', '#E35A84', '#FFACAC'];
 
     // - [catppuccin](https://github.com/catppuccin/catppuccin#-palette)
     let catpuccin_macchiato = [
@@ -124,6 +121,17 @@
         "#29295B",
     ];
 
+    // export let colors = catpuccin_macchiato.slice(0, -5);
+    // export let colors = default_theme;
+    export let colors = macos;
+
+    export let count = 10;
+    export let bg_color = '#191B23';
+    export let size = 40;
+    export let seed: string | undefined = undefined;
+
+    let final_seed = seed ?? (_seed ?? Date.now().toString());
+
     // colors = macos;
     // bg_color = '#51468F';
     
@@ -145,7 +153,7 @@
         // ctx.filter = "blur(12px)";
 
         function draw_blob() {
-            const radius = Math.max(rand(), 0.5) * size * 2.9 * Math.min((width / 1920), (height / 1080));
+            const radius = Math.max(rand(), 0.5) * size * 2.9 * Math.max((width / 1920), (height / 1080));
             const x = rand() * canvas.width;
             const y = rand() * canvas.height;
 
