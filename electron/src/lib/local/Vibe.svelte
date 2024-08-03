@@ -1,3 +1,7 @@
+<script lang="ts" context="module">
+    let bg_blob_seed2 = gen_time_seed("blob2");
+</script>
+
 <script lang="ts">
     import PlayBar from "./PlayBar.svelte";
     import Queue from "./Queue.svelte";
@@ -5,7 +9,7 @@
     import { onDestroy } from "svelte";
     import Toasts from "$lib/toast/Toasts.svelte";
     import { toast } from "$lib/toast/toast.ts";
-    import BlobBg from "$lib/components/BlobBg.svelte";
+    import BlobBg, { gen_time_seed } from "$lib/components/BlobBg.svelte";
     import * as stores from "$lib/stores.ts";
     import Prompt from "$lib/prompt/Prompt.svelte";
     import { derived, get } from "svelte/store";
@@ -268,6 +272,9 @@
                                     "#16183E",
                                     "#925FD6",
                                 ]}
+                                bg_color={"#191B23"}
+                                size={30}
+                                seed={bg_blob_seed2}
                             />
                         </div>
                         <img
