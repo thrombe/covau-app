@@ -2,7 +2,9 @@ import type { ReleaseGroupWithInfo, ReleaseWithInfo, Recording } from '$types/mb
 import type { VideoId, AlbumId } from '$types/yt.ts';
 
 export type LocalState = { queue: number | null };
-export type PlaySource = { type: "File"; content: string } | { type: "YtId"; content: string };
+export type SourcePath = { typ: SourcePathType; path: string };
+export type SourcePathType = "MusimanagerMusic" | "MusimanagerTemp" | "CovauMusic" | "Absolute";
+export type PlaySource = { type: "File"; content: SourcePath } | { type: "YtId"; content: string };
 export type InfoSource = { type: "YtId"; content: string } | { type: "MbzId"; content: string };
 export type Song = { title: string; artists: string[]; thumbnails: string[]; info_sources: InfoSource[]; play_sources: PlaySource[] };
 export type Playlist = { title: string; songs: number[] };

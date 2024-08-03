@@ -445,7 +445,7 @@ pub mod db {
                 for id in self.play_sources.iter() {
                     match id {
                         PlaySource::File(id) => {
-                            hs.push(id.to_owned());
+                            hs.push(id.path.to_owned());
                         }
                         PlaySource::YtId(id) => {
                             hs.push(id.to_owned());
@@ -789,10 +789,11 @@ pub mod db {
     mod musimanager {
         use super::{AutoDbAble, Link, Linked, Typ};
         use crate::musimanager::*;
+        use crate::covau_types::SourcePath;
 
         // impl Linked<Album<VideoId>> for Song<Option<SongInfo>> {}
-        impl Linked<Artist<VideoId, AlbumId>> for Song<Option<SongInfo>> {}
-        impl AutoDbAble for Song<Option<SongInfo>> {
+        impl Linked<Artist<VideoId, AlbumId>> for Song<Option<SongInfo>, SourcePath> {}
+        impl AutoDbAble for Song<Option<SongInfo>, SourcePath> {
             fn typ() -> Typ {
                 Typ::MmSong
             }
@@ -1175,13 +1176,14 @@ pub mod db {
         pub async fn init_musimanager_data(
             &self,
             musimanager_db_path: impl AsRef<std::path::Path>,
+            config: Arc<crate::cli::DerivedConfig>,
         ) -> anyhow::Result<()> {
             let path = musimanager_db_path.as_ref();
 
             let data = std::fs::read_to_string(path)?;
             let txn = self.db.begin().await?;
 
-            let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean();
+            let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean(config)?;
             for s in tracker.songs.iter() {
                 s.insert(&txn).await?;
             }
@@ -1614,7 +1616,7 @@ pub mod db {
 
     pub async fn db_test() -> anyhow::Result<()> {
         // let db = Db { db: sea_orm::Database::connect("sqlite::memory:").await? };
-        let db = Db::new("sqlite:./test.db?mode=rwc").await?;
+        // let db = Db::new("sqlite:./test.db?mode=rwc").await?;
 
         // let path = "/home/issac/0Git/musimanager/db/musitracker.json";
 
@@ -1625,27 +1627,27 @@ pub mod db {
         //     db.insert(s).await?;
         // }
 
-        let matches = db
-            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
-                SearchQuery::Query {
-                    page_size: 10,
-                    query: "arjit".into(),
-                },
-            )
-            .await?;
-        dbg!(&matches);
-        let matches = db
-            .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
-                SearchQuery::Continuation(matches.continuation.unwrap()),
-            )
-            .await?;
-        dbg!(&matches);
-        let m = db
-            .search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
-                matches.items[0].t.key.clone(),
-            )
-            .await?;
-        dbg!(m);
+        // let matches = db
+        //     .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+        //         SearchQuery::Query {
+        //             page_size: 10,
+        //             query: "arjit".into(),
+        //         },
+        //     )
+        //     .await?;
+        // dbg!(&matches);
+        // let matches = db
+        //     .search::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+        //         SearchQuery::Continuation(matches.continuation.unwrap()),
+        //     )
+        //     .await?;
+        // dbg!(&matches);
+        // let m = db
+        //     .search_by_ref_id::<crate::musimanager::Song<Option<crate::musimanager::SongInfo>>>(
+        //         matches.items[0].t.key.clone(),
+        //     )
+        //     .await?;
+        // dbg!(m);
 
         Ok(())
     }

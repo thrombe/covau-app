@@ -17,7 +17,7 @@ import { writable } from "svelte/store";
 import * as utils from "$lib/utils.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 
-export type MmSong = Musi.Song<Musi.SongInfo | null>;
+export type MmSong = Musi.Song<Musi.SongInfo | null, types.covau.SourcePath>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
 export type MmArtist = Musi.Artist<yt.VideoId, yt.AlbumId>;
 export type MmPlaylist = Musi.Playlist<yt.VideoId>;
@@ -517,11 +517,12 @@ export class DbListItem extends ListItem {
 
                 let vid = await st.cached.video(song.key);
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
+                let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: vid.authors.map(a => a.name),
                     thumbnails: [...vid.thumbnails.map(t => t.url), st.url.song_thumbnail(vid.id)],
-                    play_sources: [id],
+                    play_sources: [...path, id],
                     info_sources: [id],
                 };
 
@@ -1900,7 +1901,7 @@ export class DbListItem extends ListItem {
                             },
                             ...maybe(song.last_known_path, p => ({
                                 heading: "File",
-                                content: p,
+                                content: `${p.typ} ${p.path}`,
                             })),
                         ]
                     },

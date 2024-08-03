@@ -137,7 +137,7 @@ pub mod db_server {
     type StAlbum = crate::yt::song_tube::Album;
     type StPlaylist = crate::yt::song_tube::Playlist;
     type StArtist = crate::yt::song_tube::Artist;
-    type MmSong = crate::musimanager::Song<Option<crate::musimanager::SongInfo>>;
+    type MmSong = crate::musimanager::Song<Option<crate::musimanager::SongInfo>, crate::covau_types::SourcePath>;
     type MmAlbum = crate::musimanager::Album<crate::yt::VideoId>;
     type MmPlaylist = crate::musimanager::Playlist<crate::yt::VideoId>;
     type MmQueue = crate::musimanager::Queue<crate::yt::VideoId>;
@@ -818,7 +818,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         db.init_state().await.expect("could not init state");
 
         if let Some(path) = config.musimanager_db_path.as_ref() {
-            db.init_musimanager_data(path)
+            db.init_musimanager_data(path, config.clone())
                 .await
                 .expect("could not init musimanager data");
         }

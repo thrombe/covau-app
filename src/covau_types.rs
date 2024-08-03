@@ -22,9 +22,22 @@ pub struct LocalState {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub enum SourcePathType {
+    MusimanagerMusic,
+    MusimanagerTemp,
+    CovauMusic,
+    Absolute,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct SourcePath {
+    pub typ: SourcePathType,
+    pub path: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum PlaySource {
-    File(String),
+    File(SourcePath),
     YtId(String),
 }
 
@@ -375,6 +388,10 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += "import type { VideoId, AlbumId } from '$types/yt.ts';\n";
     types += "\n";
     types += &specta::ts::export::<LocalState>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<SourcePath>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<SourcePathType>(config)?;
     types += ";\n";
     types += &specta::ts::export::<PlaySource>(config)?;
     types += ";\n";

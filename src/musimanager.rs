@@ -1,11 +1,12 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
 pub use crate::yt::{AlbumId, VideoId};
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Tracker<S = Song, A = Album<Song>> {
+pub struct Tracker<S = Song<SongInfo, String>, A = Album<Song<SongInfo, String>>> {
     pub artists: Vec<Artist<S, A>>,
     pub auto_search_artists: Vec<Artist<S, A>>,
     pub playlists: Vec<SongProvider<S>>,
@@ -23,8 +24,8 @@ impl<S, A> Default for Tracker<S, A> {
     }
 }
 
-impl Tracker<Song> {
-    pub fn clean(&self) -> EntityTracker {
+impl Tracker {
+    pub fn clean(&self, config: Arc<crate::cli::DerivedConfig>) -> anyhow::Result<EntityTracker> {
         let mut et = EntityTracker::default();
 
         fn unique(a: &[String], b: &[String]) -> Vec<String> {
@@ -34,7 +35,7 @@ impl Tracker<Song> {
             s.into_iter().map(ToString::to_string).collect()
         }
 
-        fn take_from(so: &mut Song, s: &Song) {
+        fn take_from(so: &mut Song<SongInfo, String>, s: &Song<SongInfo, String>) {
             so.artist_name = so
                 .artist_name
                 .as_ref()
@@ -83,7 +84,7 @@ impl Tracker<Song> {
             playlists,
             queues,
         } = self;
-        let mut songs = HashMap::<String, Song>::new();
+        let mut songs = HashMap::<String, Song<SongInfo, String>>::new();
         for a in artists {
             for s in &a.songs {
                 if let Some(so) = songs.get_mut(&s.key) {
@@ -195,7 +196,19 @@ impl Tracker<Song> {
                 key: s.key,
                 artist_name: s.artist_name,
                 info: Some(s.info).filter(|i| !i.video_id.is_empty()),
-                last_known_path: s.last_known_path,
+                last_known_path: s.last_known_path.map(|p| {
+                    config
+                        .source_path(
+                            crate::covau_types::SourcePathType::MusimanagerMusic,
+                            p.clone(),
+                        )
+                        .ok()
+                        .or(config
+                            .clone()
+                            .source_path(crate::covau_types::SourcePathType::MusimanagerTemp, p)
+                            .ok())
+                        .context("could not convert path")
+                }),
             });
         }
 
@@ -371,13 +384,13 @@ impl Tracker<Song> {
             }));
         }
 
-        et
+        Ok(et)
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
 pub struct EntityTracker {
-    pub songs: Vec<Song<Option<SongInfo>>>,
+    pub songs: Vec<Song<Option<SongInfo>, crate::covau_types::SourcePath>>,
     pub albums: Vec<Album<VideoId>>,
 
     pub artists: Vec<Artist<VideoId, AlbumId>>,
@@ -428,12 +441,12 @@ pub struct Artist<S, A> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-pub struct Song<I = SongInfo> {
+pub struct Song<I, P> {
     pub title: String, // NOTE: technically optional from python
     pub key: String,   // NOTE: technically optional from python
     pub artist_name: Option<String>,
     pub info: I,
-    pub last_known_path: Option<String>,
+    pub last_known_path: Option<P>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, specta::Type)]
@@ -452,10 +465,11 @@ pub struct SongInfo {
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += "import type { VideoId, AlbumId } from '$types/yt.ts';\n";
+    types += "import type { SourcePath } from '$types/covau.ts';\n";
     types += "\n";
     types += &specta::ts::export::<SongInfo>(config)?;
     types += ";\n";
-    types += &specta::ts::export::<Song>(config)?;
+    types += &specta::ts::export::<Song<(), ()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Artist<(), ()>>(config)?;
     types += ";\n";
@@ -476,11 +490,11 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
 }
 
 async fn parse_test() -> anyhow::Result<()> {
-    let path = "/home/issac/0Git/musimanager/db/musitracker.json";
+    // let path = "/home/issac/0Git/musimanager/db/musitracker.json";
 
-    let data = std::fs::read_to_string(path)?;
+    // let data = std::fs::read_to_string(path)?;
 
-    let parsed = serde_json::from_str::<Tracker>(&data)?;
+    // let parsed = serde_json::from_str::<Tracker>(&data)?;
 
     // for a in parsed.artists.iter() {
     //     for s in a
@@ -490,8 +504,8 @@ async fn parse_test() -> anyhow::Result<()> {
     //     {}
     // }
 
-    let dis = parsed.clean();
-    dbg!(dis);
+    // let dis = parsed.clean();
+    // dbg!(dis);
     // dbg!(parsed
     //     .artists
     //     .iter()
