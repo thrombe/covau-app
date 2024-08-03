@@ -178,7 +178,7 @@ export class YtPlayer {
         if (id) {
             this.play(id);
         } else {
-            throw new Error("Musiplayer can't play this item");
+            throw new Error("Yt player can't play this item");
         }
     }
 
