@@ -12,10 +12,11 @@ import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
 import { type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import * as utils from "$lib/utils.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import * as mixins from "$lib/searcher/mixins.ts";
+import { prompter } from "$lib/prompt/prompt.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null, types.covau.SourcePath>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -313,9 +314,11 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return `item number ${this.data.id}`;
             case "Playlist":
-            case "Queue":
+                return `${this.data.t.songs.length} items`;
             case "Updater":
                 return null;
+            case "Queue":
+                return `${this.data.t.queue.queue.songs.length} items`;
             case "ArtistBlacklist":
                 return `${this.data.t.artists.length} Artists`;
             case "SongBlacklist":
@@ -1351,7 +1354,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Queue": {
-                let queue = this.data.t;
+                let queue = this.data;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1360,9 +1363,9 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: queue.queue.queue.songs,
+                                ids: queue.t.queue.queue.songs,
                             }, 30, null, this);
-                            stores.new_tab(s, queue.queue.queue.title);
+                            stores.new_tab(s, queue.t.queue.queue.title);
                         },
                     },
                     add_all_to_queue: {
@@ -1372,10 +1375,41 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: queue.queue.queue.songs,
-                            }, queue.queue.queue.songs.length);
+                                ids: queue.t.queue.queue.songs,
+                            }, queue.t.queue.queue.songs.length);
                             let items = await s.next_page();
                             await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                    rename: {
+                        icon: icons.floppy_disk,
+                        title: "rename",
+                        onclick: async () => {
+                            let _name = await prompter.prompt("Enter queue name");
+                            if (!_name) {
+                                return;
+                            }
+                            let name = _name;
+                            queue.t.queue.queue.title = name;
+
+                            let q  = await server.db.txn(async db => {
+                                 return await db.update(queue);
+                            });
+                            queue = keyed([q])[0] as typeof queue;
+                            this.data = queue;
+
+                            toast("queue renamed");
+                        },
+                    },
+                    continue: {
+                        icon: icons.play,
+                        title: "continue queue",
+                        onclick: async () => {
+                            let pl = get(stores.player);
+                            pl.pause();
+                            stores.player.update(t => t);
+
+                            await stores.syncops.set.queue(queue);
                         },
                     },
                 };
@@ -1384,6 +1418,7 @@ export class DbListItem extends ListItem {
                     case "Browser":
                         return {
                             ...common_options.empty_ops,
+                            icon_top: options.continue,
                             bottom: [
                                 ops.options.like,
                                 ops.options.dislike,
@@ -1391,6 +1426,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.open,
                                 options.add_all_to_queue,
+                                options.rename,
                                 common_options.open_details,
                             ],
                         };
@@ -1398,8 +1434,10 @@ export class DbListItem extends ListItem {
                         return {
                             ...common_options.empty_ops,
                             menu: [
+                                options.continue,
                                 options.open,
                                 options.add_all_to_queue,
+                                options.rename,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1416,7 +1454,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Playlist": {
-                let playlist = this.data.t;
+                let playlist = this.data;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1425,9 +1463,9 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: playlist.songs,
+                                ids: playlist.t.songs,
                             }, 30, null, this);
-                            stores.new_tab(s, playlist.title);
+                            stores.new_tab(s, playlist.t.title);
                         },
                     },
                     add_all_to_queue: {
@@ -1437,10 +1475,30 @@ export class DbListItem extends ListItem {
                             let s = Db.new({
                                 query_type: "ids",
                                 type: "Song",
-                                ids: playlist.songs,
-                            }, playlist.songs.length);
+                                ids: playlist.t.songs,
+                            }, playlist.t.songs.length);
                             let items = await s.next_page();
                             await stores.queue_ops.add_item(...items);
+                        },
+                    },
+                    rename: {
+                        icon: icons.floppy_disk,
+                        title: "rename",
+                        onclick: async () => {
+                            let _name = await prompter.prompt("Enter playlist name");
+                            if (!_name) {
+                                return;
+                            }
+                            let name = _name;
+                            playlist.t.title = name;
+
+                            let q  = await server.db.txn(async db => {
+                                 return await db.update(playlist);
+                            });
+                            playlist = keyed([q])[0] as typeof playlist;
+                            this.data = playlist;
+
+                            toast("playlist renamed");
                         },
                     },
                 };
@@ -1456,6 +1514,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.open,
                                 options.add_all_to_queue,
+                                options.rename,
                                 common_options.open_details,
                             ],
                         };
@@ -1465,6 +1524,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.open,
                                 options.add_all_to_queue,
+                                options.rename,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,

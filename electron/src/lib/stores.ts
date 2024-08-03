@@ -492,6 +492,89 @@ export const syncops = {
             syncer.update(t => t);
         },
     },
+    set: {
+        async queue(q_: types.db.DbItem<types.covau.Queue>) {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+            let q = get(queue);
+            q.reset();
+
+            sync.state.t.queue = q_.id;
+            sync.queue = q_;
+            sync.seed = null;
+            sync.blacklist = null;
+            sync.seen = null;
+
+            sync.state = await server.db.txn(async db => {
+                let dbitem = await db.update(sync.state);
+                return dbitem;
+            });
+
+            if (sync.state.t.queue != null) {
+                let items = await server.db.get_many_by_id("Song", sync.queue.t.queue.queue.songs);
+                q.items = db.db.wrapped_items(items);
+                q.playing_index = sync.queue.t.queue.current_index;
+                if (q.playing_index != null) {
+                    q.state = "Playing";
+                    playing_item.set(q.items[q.playing_index]);
+                }
+
+                if (sync.queue.t.blacklist != null) {
+                     let bl = (await server.db.get_by_id<types.covau.ArtistBlacklist>("ArtistBlacklist", sync.queue.t.blacklist))!;
+                    sync.blacklist = bl;
+                    q.blacklist_artist_ids = [...bl.t.artists];
+                    q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
+                }
+                if (sync.queue.t.seen != null) {
+                     let bl = (await server.db.get_by_id<types.covau.SongBlacklist>("SongBlacklist", sync.queue.t.seen))!;
+                    sync.seen = bl;
+                    q.blacklist_ids = [...bl.t.songs];
+                    q.bl_ids = new Set(bl.t.songs.map(id => id.content));
+                }
+                if (sync.queue.t.seed != null) {
+                     let s = (await server.db.get_by_id<types.covau.Song>("Song", sync.queue.t.seed))!;
+                     let w = db.db.wrapped(s);
+                     sync.seed = s;
+                     q.set_seed(w);
+                }
+            }
+            
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+        async blacklist(bl: types.db.DbItem<types.covau.ArtistBlacklist>) {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+            let q = get(queue);
+            
+            sync.blacklist = bl;
+            sync.queue!.t.blacklist = bl.id;
+            sync.queue = await server.db.txn(async db => {
+                return await db.update(sync.queue!);
+            });
+            q.blacklist_artist_ids = [...bl.t.artists];
+            q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
+
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+        async seen(bl: types.db.DbItem<types.covau.SongBlacklist>) {
+            let server = await import("$lib/server.ts");
+            let sync = get(syncer);
+            let q = get(queue);
+            
+            sync.seen = bl;
+            sync.queue!.t.seen = bl.id;
+            sync.queue = await server.db.txn(async db => {
+                return await db.update(sync.queue!);
+            });
+            q.blacklist_ids = [...bl.t.songs];
+            q.bl_ids = new Set(bl.t.songs.map(id => id.content));
+
+            syncer.update(t => t);
+            queue.update(t => t);
+        },
+    },
     new: {
         async queue() {
             let server = await import("$lib/server.ts");
