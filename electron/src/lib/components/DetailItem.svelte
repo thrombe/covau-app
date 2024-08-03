@@ -106,11 +106,55 @@
                         <div class="w-full heading">
                             {section.title}
                         </div>
-                        {#each section.items as item (item.get_key())}
-                            <div class="h-20">
-                                <AudioListItem ctx={"Browser"} {item} />
-                            </div>
-                        {/each}
+                        <div
+                            class="w-full flex flex-row flex-grow-0 px-2"
+                            style={`height: ${80 * section.height}px;`}
+                        >
+                            <Explorer
+                                searcher={section.searcher}
+                                {updater}
+                                source_key={stores.new_key()}
+                                columns={1}
+                                item_height={80}
+                                keyboard_control={false}
+                                let:item
+                                let:selected
+                                let:index
+                                let:hovering
+                                let:dragging_index
+                                let:dragstart
+                                let:dragenter
+                            >
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <list-item
+                                    class="w-full h-full rounded-xl"
+                                    class:selected
+                                >
+                                    <div
+                                        class="item w-full h-full rounded-xl"
+                                        draggable={true}
+                                        on:dragstart={() =>
+                                            dragstart(index, item)}
+                                        on:drop|preventDefault={stores.drag_ops
+                                            .drop}
+                                        on:dragend={stores.drag_ops.dragend}
+                                        ondragover="return false"
+                                        on:dragenter={() => dragenter(index)}
+                                        class:selected
+                                        class:is-active={hovering === index}
+                                        class:is-dragging={dragging_index ===
+                                            index}
+                                        class:is-selected={selected}
+                                    >
+                                        <AudioListItem
+                                            {item}
+                                            ctx="Browser"
+                                            show_buttons={selected}
+                                        />
+                                    </div>
+                                </list-item>
+                            </Explorer>
+                        </div>
                     </div>
                 {:else if section.type == "Searcher"}
                     <div class="flex flex-col">

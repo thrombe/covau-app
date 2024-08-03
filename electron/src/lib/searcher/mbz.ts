@@ -822,7 +822,7 @@ export class MbzListItem extends ListItem {
             case "MbzRecordingWithInfo": {
                 let song = this.data.data;
                 return [
-                    mbz.recording_ops(song),
+                    mbz.recording_ops(song, this),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];

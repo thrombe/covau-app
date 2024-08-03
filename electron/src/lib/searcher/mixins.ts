@@ -1,6 +1,8 @@
 import { type Keyed } from "$lib/utils.ts";
+import type { Writable } from "svelte/store";
 import type { ListItem, Option } from "./item.ts";
 import type { Searcher } from "./searcher.ts";
+import * as stores from "$lib/stores.ts";
 
 export type Constructor<T> = new (...args: any[]) => T;
 
@@ -25,6 +27,79 @@ export const sleep = (ms: number) => {
     )
 };
 
+export function RearrangeWrapper<T>(
+    items: T[],
+    mapper: (t: T, index: number) => ListItem,
+    on_update: (items: T[]) => Promise<void>,
+) {
+    let self = {
+        items: items.map(mapper),
+        has_next_page: true,
+        options() {
+            return [] as Option[];
+        },
+        get_item_index(item: ListItem) {
+            for (let i = 0; i < this.items.length; i++) {
+                if (this.items[i].get_key() == item.get_key()) {
+                    return i;
+                }
+            }
+            return null;
+        },
+        move(from: number, to: number) {
+            if (from < to) {
+                items.splice(to + 1, 0, items[from]);
+                items.splice(from, 1);
+            } else {
+                items.splice(to, 0, items[from]);
+                items.splice(from + 1, 1);
+            }
+        },
+        async remove_item(item: ListItem) {
+            let index = this.get_item_index(item);
+            if (index) {
+                let item = items[index];
+                items.splice(index, 1);
+                await on_update(items);
+                stores.update_current_tab();
+                return item;
+            }
+            return null;
+        },
+        async move_item(item: ListItem, to: number) {
+            let index = this.get_item_index(item);
+            if (index != null) {
+                this.move(index, to);
+                if (index != to) {
+                    await on_update(items);
+                    stores.update_current_tab();
+                }
+            } else {
+                throw new Error(`item "${item.title()}" not in list`);
+            }
+        },
+        async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
+            if (is_outsider) {
+                if (target == null) {
+                    target = this.items.length;
+                }
+            } else {
+                if (target == null) {
+                    target = this.items.length - 1;
+                }
+                await this.move_item(item, target);
+            }
+
+            return true;
+        },
+        async next_page() {
+            this.has_next_page = false;
+            this.items = items.map(mapper);
+            return this.items;
+        },
+    };
+    return self as typeof self & Searcher;
+}
 
 export interface ISlow<T, Q> {
     search_query(q: Q): Promise<T | null>;

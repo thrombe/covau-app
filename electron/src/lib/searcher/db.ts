@@ -1790,10 +1790,91 @@ export class DbListItem extends ListItem {
         let sections = this.common_sections(this.data);
         let maybe = sections.ops.maybe;
         let ops = this.ops();
+        let common_options = this.common_options();
 
         switch (this.data.typ) {
             case "Song": {
-                let song = this.data.t;
+                let song = this.data;
+                let playsource = mixins.RearrangeWrapper(song.t.play_sources, s => {
+                    let ops = {
+                        remove: (item: ListItem) => ({
+                            icon: icons.remove,
+                            title: "remove",
+                            onclick: async () => {
+                                let s = await playsource.remove_item(item);
+                                // TODO: delete file if source if file
+                            },
+                        }),
+                    };
+
+                    if (s.type == "YtId") {
+                        let id = `${s.type} ${s.content}`;
+                        let yt = new CustomListItem(id, s.type, "Custom", s.content);
+                        yt._options = {
+                            ...common_options.empty_ops,
+                            top_right: ops.remove(yt),
+                        };
+                        return yt;
+                    } else {
+                        let id = `${s.type} ${s.content.typ} ${s.content.path}`;
+                        let file = new CustomListItem(id, s.type, "Custom", `${s.content.typ} ${s.content.path}`);
+                        file._options = {
+                            ...common_options.empty_ops,
+                            top_right: ops.remove(file),
+                        };
+                        return file;
+                    }
+                }, async items => {
+                    song.t.play_sources = items;
+                    await server.db.txn(async dbops => {
+                        let s = await dbops.update(song);
+                        song = keyed([s])[0] as typeof song;
+                        this.data = song;
+                    });
+                });
+
+                let infosource = mixins.RearrangeWrapper(song.t.info_sources, s => {
+                    let ops = {
+                        remove: (item: ListItem) => ({
+                            icon: icons.remove,
+                            title: "remove",
+                            onclick: async () => {
+                                let s = await playsource.remove_item(item);
+                                // TODO: delete file if source if file
+                            },
+                        }),
+                    };
+
+                    let id = `${s.type} ${s.content}`;
+                    let item = new CustomListItem(id, s.type, "Custom", s.content);
+                    item._options = {
+                        ...common_options.empty_ops,
+                        top_right: ops.remove(item),
+                    };
+                    return item;
+                }, async items => {
+                    song.t.info_sources = items;
+                    await server.db.txn(async dbops => {
+                        let s = await dbops.update(song);
+                        song = keyed([s])[0] as typeof song;
+                        this.data = song;
+                    });
+                });
+
+                let thumbs = mixins.RearrangeWrapper(song.t.thumbnails, (s, i) => {
+                    let id = i.toString();
+                    let item = new CustomListItem(id, s.url, "Custom", s.size ? `${s.size.width}x${s.size.height}` : null);
+                    item._thumbnail = s.url;
+                    return item;
+                }, async items => {
+                    song.t.thumbnails = items;
+                    await server.db.txn(async dbops => {
+                        let s = await dbops.update(song);
+                        song = keyed([s])[0] as typeof song;
+                        this.data = song;
+                    });
+                });
+
                 return [
                     {
                         type: "Info",
@@ -1804,9 +1885,9 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Title",
-                                content: song.title,
+                                content: song.t.title,
                             },
-                            ...song.artists.map(a => ({
+                            ...song.t.artists.map(a => ({
                                 heading: "Artist",
                                 content: a,
                             })),
@@ -1815,20 +1896,20 @@ export class DbListItem extends ListItem {
                     {
                         type: "Rearrange",
                         title: "Info Sources",
-                        items: song.info_sources.map((s, i) => new CustomListItem(i.toString(), s.type, "Custom", s.content)),
+                        height: Math.min(5, infosource.items.length),
+                        searcher: writable(infosource),
                     },
                     {
                         type: "Rearrange",
                         title: "Play Sources",
-                        items: song.play_sources.map((s, i) => {
-                            if (s.type == "YtId") {
-                                let yt = new CustomListItem(i.toString(), s.type, "Custom", s.content);
-                                return yt;
-                            } else {
-                                let file = new CustomListItem(i.toString(), s.type, "Custom", `${s.content.typ} ${s.content.path}`);
-                                return file;
-                            }
-                        }),
+                        height: Math.min(3, playsource.items.length),
+                        searcher: writable(playsource),
+                    },
+                    {
+                        type: "Rearrange",
+                        title: "Thumbnails",
+                        height: Math.min(3, thumbs.items.length),
+                        searcher: writable(thumbs),
                     },
                     sections.options,
                     sections.json,

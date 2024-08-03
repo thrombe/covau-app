@@ -46,7 +46,8 @@ export type DetailSection = ({
 } | {
     type: "Rearrange",
     title: string,
-    items: ListItem[],
+    searcher: Writable<Searcher>,
+    height: number,
 } | {
     type: "PrettyJson",
     title: string,
