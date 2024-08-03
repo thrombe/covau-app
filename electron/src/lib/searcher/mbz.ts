@@ -14,6 +14,7 @@ import * as types from "$types/types.ts";
 import * as icons from "$lib/icons.ts";
 import * as utils from "$lib/utils.ts";
 import type { DbListItem } from "./db.ts";
+import { db } from "./db.ts";
 
 export type ReleaseWithInfo = MBZ.ReleaseWithInfo;
 export type ReleaseGroupWithInfo = MBZ.ReleaseGroupWithInfo;
@@ -1199,13 +1200,13 @@ export const mbz = {
         let info_source: types.covau.InfoSource[] = [{ type: "MbzId", content: rec.id }];
 
         let playsource: types.covau.PlaySource[] = [];
-        let thumbnails: string[] = [];
+        let thumbnails: types.covau.Thumbnail[] = [];
         if (yt_song) {
             playsource.push({
                 type: "YtId",
                 content: yt_song.id,
             })
-            thumbnails = yt_song.thumbnails.map(t => t.url);
+            thumbnails = db.thumbnails(yt_song.thumbnails);
         }
 
         let t: types.covau.Song = {

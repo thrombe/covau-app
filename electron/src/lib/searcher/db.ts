@@ -229,7 +229,7 @@ export class DbListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.typ) {
             case "MmSong":
-                return this.data.t.info?.thumbnail_url ?? st.url.song_thumbnail(this.data.t.key);
+                return this.data.t.info?.thumbnail_url ?? st.url.song_thumbnail(this.data.t.key).url;
             case "MmAlbum":
                 return null;
             case "MmArtist":
@@ -239,7 +239,7 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.t.id);
+                return this.data.t.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.t.id).url;
             case "StAlbum":
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "StPlaylist":
@@ -248,7 +248,7 @@ export class DbListItem extends ListItem {
                 return this.data.t.thumbnails.at(0)?.url ?? null;
             case "Song": {
                 let song = this.data.t;
-                return song.thumbnails.at(0) ?? null;
+                return song.thumbnails.at(0)?.url ?? null;
             } break;
             case "MbzArtist":
                 return null;
@@ -507,7 +507,7 @@ export class DbListItem extends ListItem {
         }
     }
 
-    async saved_covau_song(db: server.DbOps) {
+    async saved_covau_song(dbops: server.DbOps) {
         switch (this.data.typ) {
             case "Song": {
                 return this.data;
@@ -515,13 +515,13 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = this.data.t;
 
-                let vid = await st.cached.video(song.key, db);
+                let vid = await st.cached.video(song.key, dbops);
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: vid.authors.map(a => a.name),
-                    thumbnails: [...vid.thumbnails.map(t => t.url), st.url.song_thumbnail(vid.id)],
+                    thumbnails: [...db.thumbnails(vid.thumbnails), st.url.song_thumbnail(vid.id)],
                     play_sources: [...path, id],
                     info_sources: [id],
                 };
@@ -529,8 +529,8 @@ export class DbListItem extends ListItem {
                 let s1: server.AlmostDbItem<yt.Song> = { typ: "StSong", t: vid };
                 let s2: server.AlmostDbItem<covau.Song> = { typ: "Song", t };
 
-                await db.insert_or_get(s1);
-                let res = await db.insert_or_get(s2);
+                await dbops.insert_or_get(s1);
+                let res = await dbops.insert_or_get(s2);
                 return res.content;
             } break;
             case "StSong": {
@@ -540,18 +540,18 @@ export class DbListItem extends ListItem {
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: vid.authors.map(a => a.name),
-                    thumbnails: [...vid.thumbnails.map(t => t.url), st.url.song_thumbnail(vid.id)],
+                    thumbnails: [...db.thumbnails(vid.thumbnails), st.url.song_thumbnail(vid.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
                 let s: server.AlmostDbItem<covau.Song> = { typ: "Song", t };
 
-                let res = await db.insert_or_get(s);
+                let res = await dbops.insert_or_get(s);
                 return res.content;
             } break;
             case "MbzRecording": {
                 let t = mbz.mbz.recording_almostdbitem(this.data.t, null);
-                let res = await db.insert_or_get(t);
+                let res = await dbops.insert_or_get(t);
                 return res.content;
             } break;
             case "MmAlbum":
@@ -2347,6 +2347,15 @@ export const db = {
     wrapped<T>(item: types.db.DbItem<T>): DbListItem {
         let k = keyed([item])[0];
         return new DbListItem(k as MusicListItem);
+    },
+    thumbnails<T extends { url: string, width: number, height: number }>(thumbs: T[]) {
+        return thumbs.map(t => ({
+            url: t.url,
+            size: {
+                width: t.width,
+                height: t.height,
+            },
+        }) as types.covau.Thumbnail)
     },
 };
 export class Db extends mixins.Unpaged<MusicListItem> {

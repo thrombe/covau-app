@@ -105,7 +105,7 @@ export class StListItem extends ListItem {
     thumbnail(): string | null {
         switch (this.data.type) {
             case "Song":
-                return this.data.content.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.content.id);
+                return this.data.content.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.content.id).url;
             case "Album":
             case "Playlist":
             case "Artist":
@@ -213,10 +213,11 @@ export class StListItem extends ListItem {
         }
     }
 
-    async saved_covau_song(db: DbOps) {
+    async saved_covau_song(dbops: DbOps) {
         function not_null<T>(a: (T | null)[]): T[] {
             return a.filter(t => !!t) as T[];
         }
+        let db = await import("$lib/searcher/db.ts");
         switch (this.data.type) {
             case "Song": {
                 let song = this.data.content;
@@ -224,7 +225,7 @@ export class StListItem extends ListItem {
                 let t: covau.Song = {
                     title: song.title ?? song.id,
                     artists: song.authors.map(a => a.name),
-                    thumbnails: [...song.thumbnails.map(t => t.url), st.url.song_thumbnail(song.id)],
+                    thumbnails: [...db.db.thumbnails(song.thumbnails), st.url.song_thumbnail(song.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
@@ -232,8 +233,8 @@ export class StListItem extends ListItem {
                 let s1: AlmostDbItem<unknown> = {typ: "StSong", t: song };
                 let s2: AlmostDbItem<covau.Song> = { typ: "Song", t };
 
-                await db.insert_or_get(s1);
-                let res =  await db.insert_or_get(s2);
+                await dbops.insert_or_get(s1);
+                let res =  await dbops.insert_or_get(s2);
                 return res.content;
             } break;
             case "Album":
@@ -664,7 +665,7 @@ export const st = {
 
     url: {
         song_thumbnail(id: string) {
-            return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+            return { url: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, size: null };
         },
 
         video(id: string) {

@@ -80,11 +80,24 @@ pub struct SongBlacklist {
     pub songs: Vec<InfoSource>,
 }
 
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Size {
+    width: u32,
+    height: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Thumbnail {
+    url: String,
+    size: Option<Size>,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Song {
     pub title: String,
     pub artists: Vec<String>,
-    pub thumbnails: Vec<String>,
+    pub thumbnails: Vec<Thumbnail>,
     pub info_sources: Vec<InfoSource>,
     pub play_sources: Vec<PlaySource>,
 }
@@ -388,6 +401,10 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += "import type { VideoId, AlbumId } from '$types/yt.ts';\n";
     types += "\n";
     types += &specta::ts::export::<LocalState>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Size>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Thumbnail>(config)?;
     types += ";\n";
     types += &specta::ts::export::<SourcePath>(config)?;
     types += ";\n";
