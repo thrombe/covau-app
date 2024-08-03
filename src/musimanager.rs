@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 pub use crate::yt::{AlbumId, VideoId};
@@ -196,19 +197,22 @@ impl Tracker {
                 key: s.key,
                 artist_name: s.artist_name,
                 info: Some(s.info).filter(|i| !i.video_id.is_empty()),
-                last_known_path: s.last_known_path.map(|p| {
-                    config
-                        .source_path(
-                            crate::covau_types::SourcePathType::MusimanagerMusic,
-                            p.clone(),
-                        )
-                        .ok()
-                        .or(config
-                            .clone()
-                            .source_path(crate::covau_types::SourcePathType::MusimanagerTemp, p)
-                            .ok())
-                        .context("could not convert path")
-                }),
+                last_known_path: s
+                    .last_known_path
+                    .map(|p| {
+                        config
+                            .source_path(
+                                crate::covau_types::SourcePathType::MusimanagerMusic,
+                                p.clone(),
+                            )
+                            .ok()
+                            .or(config
+                                .clone()
+                                .source_path(crate::covau_types::SourcePathType::MusimanagerTemp, p)
+                                .ok())
+                            .context("could not convert path")
+                    })
+                    .transpose()?,
             });
         }
 
