@@ -306,7 +306,7 @@ export class DbListItem extends ListItem {
             case "StArtist":
                 return this.data.t.subscribers ?? null;
             case "Song":
-                return authors(this.data.t.artists);
+                return authors(this.data.t.artists.map(a => a.name));
             case "MbzArtist":
                 return this.data.t.disambiguation ?? authors(this.data.t.aliases.map(a => a.name))
             case "MbzRecording":
@@ -462,7 +462,7 @@ export class DbListItem extends ListItem {
                         return {
                             type: typ,
                             title: this.data.t.title,
-                            artists: this.data.t.artists,
+                            artists: this.data.t.artists.map(a => a.name),
                         };
                     case "StRelated": {
                         let song = this.data.t;
@@ -523,7 +523,7 @@ export class DbListItem extends ListItem {
                 let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let t: covau.Song = {
                     title: vid.t.title ?? vid.t.id,
-                    artists: vid.t.authors.map(a => a.name),
+                    artists: db.artists(vid.t.authors),
                     thumbnails: [...db.thumbnails(vid.t.thumbnails), st.url.song_thumbnail(vid.t.id)],
                     play_sources: [...path, id],
                     info_sources: [id],
@@ -542,7 +542,7 @@ export class DbListItem extends ListItem {
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let t: covau.Song = {
                     title: vid.title ?? vid.id,
-                    artists: vid.authors.map(a => a.name),
+                    artists: db.artists(vid.authors),
                     thumbnails: [...db.thumbnails(vid.thumbnails), st.url.song_thumbnail(vid.id)],
                     play_sources: [id],
                     info_sources: [id],
@@ -2796,6 +2796,12 @@ export const db = {
                 height: t.height,
             },
         }) as types.covau.Thumbnail)
+    },
+    artists(authors: yt.Author[]) {
+        return authors.map(a => ({
+            name: a.name,
+            source: a.channel_id ? {type: "YtId", content: a.channel_id } : null,
+        } as types.covau.Artist));
     },
 };
 export class Db extends mixins.Unpaged<MusicListItem> {

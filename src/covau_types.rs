@@ -94,9 +94,15 @@ pub struct Thumbnail {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct Artist {
+    pub name: String,
+    pub source: Option<InfoSource>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Song {
     pub title: String,
-    pub artists: Vec<String>,
+    pub artists: Vec<Artist>,
     pub thumbnails: Vec<Thumbnail>,
     pub info_sources: Vec<InfoSource>,
     pub play_sources: Vec<PlaySource>,
@@ -413,6 +419,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<PlaySource>(config)?;
     types += ";\n";
     types += &specta::ts::export::<InfoSource>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<Artist>(config)?;
     types += ";\n";
     types += &specta::ts::export::<Song>(config)?;
     types += ";\n";

@@ -1211,7 +1211,13 @@ export const mbz = {
 
         let t: types.covau.Song = {
             title: rec.title,
-            artists: rec.credit.map(a => a.name),
+            artists: rec.credit.map(a => ({
+                name: a.name,
+                source: {
+                    type: "MbzId",
+                    content: a.id,
+                },
+            })),
             thumbnails: thumbnails,
             play_sources: playsource,
             info_sources: info_source,

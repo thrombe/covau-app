@@ -424,7 +424,7 @@ pub mod db {
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = String> {
-                let mut h = self.artists.iter().map(String::from).collect::<Vec<_>>();
+                let mut h = self.artists.iter().map(|a| &a.name).map(String::from).collect::<Vec<_>>();
                 h.push(self.title.clone());
                 h
             }

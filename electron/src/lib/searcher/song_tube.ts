@@ -224,7 +224,7 @@ export class StListItem extends ListItem {
                 let id: covau.PlaySource = { type: "YtId", content: song.id };
                 let t: covau.Song = {
                     title: song.title ?? song.id,
-                    artists: song.authors.map(a => a.name),
+                    artists: db.db.artists(song.authors),
                     thumbnails: [...db.db.thumbnails(song.thumbnails), st.url.song_thumbnail(song.id)],
                     play_sources: [id],
                     info_sources: [id],
