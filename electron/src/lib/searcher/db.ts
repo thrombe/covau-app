@@ -1000,6 +1000,10 @@ export class DbListItem extends ListItem {
                                 icon: icons.floppy_disk,
                                 title: "save song",
                                 onclick: async () => {
+                                    if ((s.t.play_sources.find(id => id.type == "File") ?? null) != null) {
+                                        toast("song is already saved", "error");
+                                        return;
+                                    }
                                     let path = await server.api.save_song(id);
                                     s.t.play_sources = [{ type: "File", content: path }, ...s.t.play_sources];
 
