@@ -3,6 +3,7 @@
     import ThreeDotMenu from "./ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import * as utils from "$lib/utils.ts";
+    import Tooltip from "$lib/tooltip/Tooltip.svelte";
 
     export let item: ListItem;
     export let ctx: RenderContext;
@@ -71,45 +72,72 @@
     </div>
 
     {#if options.top_right != null}
-        <button
-            class="absolute pop-button top-0 right-0 p-1 m-2"
-            on:pointerup={utils.wrap_toast(options.top_right.onclick)}
+        <Tooltip
+            tooltip={options.top_right.title}
+            let:on_enter
+            let:on_leave
         >
-            <img
-                alt="remove"
-                draggable={false}
-                class="h-3 opacity-50"
-                src={options.top_right.icon}
-            />
-        </button>
+            <button
+                class="absolute pop-button top-0 right-0 p-1 m-2"
+                on:pointerup={utils.wrap_toast(options.top_right.onclick)}
+                on:pointerenter={on_enter}
+                on:pointerleave={on_leave}
+            >
+                <img
+                    alt="remove"
+                    draggable={false}
+                    class="h-3 opacity-50"
+                    src={options.top_right.icon}
+                />
+            </button>
+        </Tooltip>
     {/if}
     {#if options.icon_top != null}
         <div class="absolute h-full flex flex-col justify-center left-0 top-0">
-            <button
-                class="queue-button"
-                class:play-button={true}
-                on:pointerup={utils.wrap_toast(options.icon_top.onclick)}
+            <Tooltip
+                tooltip={options.icon_top.title}
+                let:on_enter
+                let:on_leave
             >
-                <img
-                    alt="play"
-                    draggable={false}
-                    class="scale-[50%]"
-                    src={options.icon_top.icon}
-                />
-            </button>
+                <button
+                    class="queue-button"
+                    class:play-button={true}
+                    on:pointerup={utils.wrap_toast(options.icon_top.onclick)}
+                    on:pointerenter={on_enter}
+                    on:pointerleave={on_leave}
+                >
+                    <img
+                        alt="play"
+                        draggable={false}
+                        class="scale-[50%]"
+                        src={options.icon_top.icon}
+                    />
+                </button>
+            </Tooltip>
         </div>
     {/if}
 
     <div class="absolute bottom-0 right-0 flex flex-row gap-1 max-w-[80%] m-2">
         {#each options.bottom as option}
-            <button class="pop-button p-1" on:pointerup={utils.wrap_toast(option.onclick)}>
-                <img
-                    alt={option.title}
-                    draggable={false}
-                    class="h-3 w-3 opacity-50"
-                    src={option.icon}
-                />
-            </button>
+            <Tooltip
+                tooltip={option.title}
+                let:on_enter
+                let:on_leave
+            >
+                <button
+                    class="pop-button p-1"
+                    on:pointerup={utils.wrap_toast(option.onclick)}
+                    on:pointerenter={on_enter}
+                    on:pointerleave={on_leave}
+                >
+                    <img
+                        alt={option.title}
+                        draggable={false}
+                        class="h-3 w-3 opacity-50"
+                        src={option.icon}
+                    />
+                </button>
+            </Tooltip>
         {/each}
 
         {#if options.menu.length > 0}
@@ -122,17 +150,25 @@
                     let:show_menu
                     let:on_menu_click
                 >
-                    <button
-                        class="pop-button bottom-0 right-0 p-1"
-                        on:pointerup={on_menu_click}
-                        class:menu-open={show_menu}
+                    <Tooltip
+                        tooltip={"Options"}
+                        let:on_enter
+                        let:on_leave
                     >
-                        <img
-                            alt="three dot menu icon"
-                            class="h-3 w-3"
-                            src={icons.three_dot_menu}
-                        />
-                    </button>
+                        <button
+                            class="pop-button bottom-0 right-0 p-1"
+                            on:pointerup={on_menu_click}
+                            class:menu-open={show_menu}
+                            on:pointerenter={on_enter}
+                            on:pointerleave={on_leave}
+                        >
+                            <img
+                                alt="three dot menu icon"
+                                class="h-3 w-3"
+                                src={icons.three_dot_menu}
+                            />
+                        </button>
+                    </Tooltip>
                 </ThreeDotMenu>
             </div>
         {/if}
