@@ -416,13 +416,13 @@ export const syncops = {
         syncer.set(sync);
         queue.set(q);
 
-        await syncops.listeners.reset.queue();
-        await syncops.listeners.reset.blacklist();
-        await syncops.listeners.reset.seen();
-
         if (sync.state.t.queue == null) {
             await syncops.new.queue();
         }
+
+        await syncops.listeners.reset.queue();
+        await syncops.listeners.reset.blacklist();
+        await syncops.listeners.reset.seen();
     },
 
     listeners: {
