@@ -2539,6 +2539,20 @@ export class DbListItem extends ListItem {
                             return [item];
                         })),
                     })),
+                    ...maybe(queue.seed, seed => ({
+                        type: "Searcher",
+                        title: "Autoplay Seed",
+                        options: [],
+                        height: 1,
+                        searcher: writable(AsyncStaticSearcher(async () => {
+                            let song = await server.db.get_by_id("Song", seed);
+                            if (song == null) {
+                                throw new Error("seed does not exist");
+                            }
+                            let item = db.wrapped(song);
+                            return [item];
+                        })),
+                    })),
                     sections.json,
                 ] as DetailSection[];
             } break;
