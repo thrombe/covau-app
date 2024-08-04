@@ -149,6 +149,7 @@ export abstract class ListItem implements Keyed {
                 onclick: async () => {
                     let stores = await stores_ts;
                     await stores.queue_ops.blacklist_artists(this);
+                    toast("artists added to blacklist");
                 },
             },
             open_album: (a: types.yt.SmolAlbum | null) => {
