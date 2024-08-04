@@ -406,6 +406,19 @@ class DbClient extends Client<types.server.DbRequest> {
         return {
             id: id,
 
+            async insert<T>(t: AlmostDbItem<T>): Promise<types.db.DbItem<T>> {
+                let req: types.server.DbRequest = {
+                    type: "Insert",
+                    content: {
+                        transaction_id: this.id,
+                        typ: t.typ,
+                        item: JSON.stringify(t.t),
+                    },
+                };
+                let dbitem: types.db.DbItem<T> = await self.execute(req);
+                return dbitem;
+            },
+
             async insert_or_get<T>(t: AlmostDbItem<T>): Promise<types.server.InsertResponse<types.db.DbItem<T>>> {
                 let req: types.server.DbRequest = {
                     type: "InsertOrGet",

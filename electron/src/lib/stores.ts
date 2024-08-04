@@ -669,7 +669,7 @@ export const syncops = {
             let sync = get(syncer);
 
             await server.db.txn(async db => {
-                let dbq = await db.insert_or_get<types.covau.Queue>({
+                let dbq = await db.insert<types.covau.Queue>({
                     typ: "Queue",
                     t: {
                         queue: {
@@ -684,8 +684,8 @@ export const syncops = {
                         seed: null,
                     },
                 });
-                sync.state.t.queue = dbq.content.id;
-                sync.queue = dbq.content;
+                sync.state.t.queue = dbq.id;
+                sync.queue = dbq;
                 sync.blacklist = null;
                 sync.seen = null;
                 sync.seed = null;
@@ -703,17 +703,17 @@ export const syncops = {
             let sync = get(syncer);
 
             let bl = await server.db.txn(async db => {
-                let bl = await db.insert_or_get<types.covau.ArtistBlacklist>({
+                let bl = await db.insert<types.covau.ArtistBlacklist>({
                     typ: "ArtistBlacklist",
                     t: {
                         title: null,
                         artists: [],
                     },
                 });
-                sync.queue!.t.blacklist = bl.content.id;
+                sync.queue!.t.blacklist = bl.id;
                 sync.queue = await db.update(sync.queue!);
-                sync.blacklist = bl.content;
-                return bl.content;
+                sync.blacklist = bl;
+                return bl;
             });
             q.blacklist_artist_ids = [...bl.t.artists];
             q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
@@ -728,17 +728,17 @@ export const syncops = {
             let sync = get(syncer);
 
             let bl = await server.db.txn(async db => {
-                let bl = await db.insert_or_get<types.covau.SongBlacklist>({
+                let bl = await db.insert<types.covau.SongBlacklist>({
                     typ: "SongBlacklist",
                     t: {
                         title: null,
                         songs: [],
                     },
                 });
-                sync.queue!.t.seen = bl.content.id;
+                sync.queue!.t.seen = bl.id;
                 sync.queue = await db.update(sync.queue!);
-                sync.seen = bl.content;
-                return bl.content;
+                sync.seen = bl;
+                return bl;
             });
             q.blacklist_ids = [...bl.t.songs];
             q.bl_ids = new Set(bl.t.songs.map(id => id.content));
