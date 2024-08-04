@@ -7,6 +7,15 @@ use serde::{Deserialize, Serialize};
 use crate::covau_types::{SourcePath, SourcePathType};
 
 #[derive(Deserialize, Debug, Clone, Default)]
+#[serde(deny_unknown_fields)]
+pub struct MusimanagerConfig<P> {
+    pub enable: bool,
+    pub db_path: P,
+    pub music_path: P,
+    pub temp_music_path: P,
+}
+
+#[derive(Deserialize, Debug, Clone, Default)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     /// where to store music data
@@ -20,9 +29,7 @@ pub struct Config {
     /// ~/.cache/covau
     pub cache_path: Option<String>,
 
-    pub musimanager_db_path: Option<String>,
-    pub musimanager_music_path: Option<String>,
-    pub musimanager_temp_music_path: Option<String>,
+    pub musimanager: Option<MusimanagerConfig<String>>,
 
     pub run_in_background: bool,
     // TODO:
@@ -71,42 +78,44 @@ impl Config {
             .unwrap_or(cache_path.join("covau"));
         let _ = std::fs::create_dir(&cache_path);
 
-        let musimanager_db_path = self
-            .musimanager_db_path
-            .as_ref()
-            .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
-            .map(|s| s.to_string())
-            .map(PathBuf::from)
-            .map(|p| {
-                p.exists()
-                    .then_some(p)
-                    .context("provided musimanager_db_path does not exist")
+        let musimanager = if let Some(m) = &self.musimanager {
+            let db_path = m.db_path.as_str();
+            let db_path =
+                shellexpand::tilde_with_context(db_path, || Some(home_dir.to_string_lossy()));
+            let db_path = PathBuf::from(db_path.to_string());
+            let _ = db_path
+                .exists()
+                .then_some(())
+                .context("provided musimanager db_path does not exist")?;
+
+            let music_path = m.music_path.as_str();
+            let music_path =
+                shellexpand::tilde_with_context(music_path, || Some(home_dir.to_string_lossy()));
+            let music_path = PathBuf::from(music_path.to_string());
+            let _ = music_path
+                .exists()
+                .then_some(())
+                .context("provided musimanager music_path does not exist")?;
+
+            let temp_music_path = m.temp_music_path.as_str();
+            let temp_music_path = shellexpand::tilde_with_context(temp_music_path, || {
+                Some(home_dir.to_string_lossy())
+            });
+            let temp_music_path = PathBuf::from(temp_music_path.to_string());
+            let _ = temp_music_path
+                .exists()
+                .then_some(())
+                .context("provided musimanager temp_music_path does not exist")?;
+
+            Some(MusimanagerConfig {
+                enable: m.enable,
+                db_path,
+                music_path,
+                temp_music_path,
             })
-            .transpose()?;
-        let musimanager_music_path = self
-            .musimanager_music_path
-            .as_ref()
-            .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
-            .map(|s| s.to_string())
-            .map(PathBuf::from)
-            .map(|p| {
-                p.exists()
-                    .then_some(p)
-                    .context("provided musimanager_music_path does not exist")
-            })
-            .transpose()?;
-        let musimanager_temp_music_path = self
-            .musimanager_temp_music_path
-            .as_ref()
-            .map(|p| shellexpand::tilde_with_context(p, || Some(home_dir.to_string_lossy())))
-            .map(|s| s.to_string())
-            .map(PathBuf::from)
-            .map(|p| {
-                p.exists()
-                    .then_some(p)
-                    .context("provided musimanager_temp_music_path does not exist")
-            })
-            .transpose()?;
+        } else {
+            None
+        };
 
         let music_path = self
             .music_path
@@ -128,9 +137,7 @@ impl Config {
             db_path,
             log_path,
             music_path,
-            musimanager_db_path,
-            musimanager_music_path,
-            musimanager_temp_music_path,
+            musimanager,
             data_path,
             cache_path,
             config: self,
@@ -147,9 +154,9 @@ pub struct DerivedConfig {
     pub db_path: PathBuf,
     pub log_path: PathBuf,
     pub music_path: PathBuf,
-    pub musimanager_db_path: Option<PathBuf>,
-    pub musimanager_music_path: Option<PathBuf>,
-    pub musimanager_temp_music_path: Option<PathBuf>,
+
+    pub musimanager: Option<MusimanagerConfig<PathBuf>>,
+
     pub run_in_background: bool,
 }
 
@@ -160,9 +167,10 @@ impl DerivedConfig {
                 typ: SourcePathType::MusimanagerMusic,
                 path: path
                     .strip_prefix(
-                        self.musimanager_music_path
+                        self.musimanager
                             .as_ref()
-                            .context("musimanager music path not in config")?
+                            .context("musimanager not set in config")?
+                            .music_path
                             .to_string_lossy()
                             .as_ref(),
                     )
@@ -173,9 +181,10 @@ impl DerivedConfig {
                 typ: SourcePathType::MusimanagerMusic,
                 path: path
                     .strip_prefix(
-                        self.musimanager_temp_music_path
+                        self.musimanager
                             .as_ref()
-                            .context("musimanager temp music path not in config")?
+                            .context("musimanager not set in config")?
+                            .temp_music_path
                             .to_string_lossy()
                             .as_ref(),
                     )
@@ -199,14 +208,16 @@ impl DerivedConfig {
     pub fn to_path(&self, path: SourcePath) -> anyhow::Result<PathBuf> {
         let path = match path.typ {
             SourcePathType::MusimanagerMusic => self
-                .musimanager_music_path
+                .musimanager
                 .as_ref()
                 .context("musimanager music path not in config")?
+                .music_path
                 .join(path.path),
             SourcePathType::MusimanagerTemp => self
-                .musimanager_temp_music_path
+                .musimanager
                 .as_ref()
                 .context("musimanager temp music path not in config")?
+                .temp_music_path
                 .join(path.path),
             SourcePathType::CovauMusic => self.music_path.join(path.path),
             SourcePathType::Absolute => path.path.into(),

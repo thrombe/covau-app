@@ -83,8 +83,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         db.init_tables().await.expect("could not init database");
         db.init_state().await.expect("could not init state");
 
-        if let Some(path) = config.musimanager_db_path.as_ref() {
-            db.init_musimanager_data(path, config.clone())
+        if let Some(mm) = config.musimanager.as_ref() {
+            db.init_musimanager_data(mm.db_path.as_path(), config.clone())
                 .await
                 .expect("could not init musimanager data");
         }
