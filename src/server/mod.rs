@@ -1,12 +1,19 @@
 use serde::{Deserialize, Serialize};
 use std::net::Ipv4Addr;
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
 use warp::Filter;
 
 use crate::covau_types;
 use crate::db::Db;
-use crate::server::routes::{webui_js_route, AppState, Asset, FeRequest, FrontendClient};
+use crate::server::{
+    db::DbRequest,
+    mbz::mbz_routes,
+    player::player_route,
+    routes::{
+        save_song_route, source_path_route, webui_js_route, AppState, Asset, FeRequest,
+        FrontendClient, ProxyRequest,
+    },
+};
 use crate::yt::YtiRequest;
 
 pub mod db;
@@ -65,54 +72,6 @@ pub struct Message<T> {
     pub data: MessageResult<T>,
 }
 
-fn source_path_route(
-    path: &'static str,
-    config: Arc<crate::cli::DerivedConfig>,
-) -> warp::filters::BoxedFilter<(impl warp::reply::Reply,)> {
-    let route = warp::path(path)
-        .and(warp::path::end())
-        .and(warp::any().map(move || config.clone()))
-        .and(warp::body::json())
-        .and_then(|config: Arc<crate::cli::DerivedConfig>, path: crate::covau_types::SourcePath| async move {
-            let path = config.to_path(path).map_err(custom_reject)?;
-            Ok::<_, warp::Rejection>(warp::reply::json(&path))
-        });
-
-    let route = route.with(warp::cors().allow_any_origin());
-    route.boxed()
-}
-
-fn save_song_route(
-    path: &'static str,
-    ytf: crate::yt::SongTubeFac,
-) -> warp::filters::BoxedFilter<(impl warp::reply::Reply,)> {
-    let route = warp::path(path)
-        .and(warp::path::end())
-        .and(warp::any().map(move || ytf.clone()))
-        .and(warp::body::json())
-        .and_then(|ytf: crate::yt::SongTubeFac, id: String| async move {
-            let name = format!("{}.webm", &id);
-
-            let bytes = ytf.get_song(id).await.map_err(custom_reject)?;
-
-            let dest = ytf.config.music_path.join(&name);
-            let mut file = tokio::fs::File::create_new(&dest)
-                .await
-                .map_err(custom_reject)?;
-            file.write_all(&bytes).await.map_err(custom_reject)?;
-
-            let path = crate::covau_types::SourcePath {
-                typ: crate::covau_types::SourcePathType::CovauMusic,
-                path: name,
-            };
-
-            Ok::<_, warp::Rejection>(warp::reply::json(&path))
-        });
-
-    let route = route.with(warp::cors().allow_any_origin());
-    route.boxed()
-}
-
 pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
     let client = reqwest::Client::new();
     let db_path = config.db_path.join("music.db");
@@ -150,12 +109,10 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(FrontendClient::client_ws_route(fe.clone(), "fec"))
         .or(FeRequest::cli_command_route(fe.clone(), "cli"))
         .or(AppState::app_state_handler_route(state.clone(), "app"))
-        .or(crate::server::db::DbRequest::routes(db.clone(), "db"))
-        .or(crate::server::player::player_route())
-        .or(crate::server::routes::ProxyRequest::cors_proxy_route(
-            client.clone(),
-        ))
-        .or(crate::server::mbz::mbz_routes(client.clone()))
+        .or(DbRequest::routes(db.clone(), "db"))
+        .or(player_route())
+        .or(ProxyRequest::cors_proxy_route(client.clone()))
+        .or(mbz_routes(client.clone()))
         .or(webui_js_route(client.clone()))
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))

@@ -1,10 +1,12 @@
+use std::ops::Deref;
+use std::sync::atomic;
+use std::{collections::HashMap, sync::Arc};
+
 use anyhow::Context;
 use futures::FutureExt;
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
-use std::sync::atomic;
-use std::{collections::HashMap, sync::Arc};
+use tokio::io::AsyncWriteExt;
 use tokio::sync::{mpsc, oneshot, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 use warp::filters::BoxedFilter;
@@ -421,6 +423,54 @@ pub fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
             },
         );
     redirect.boxed()
+}
+
+pub fn source_path_route(
+    path: &'static str,
+    config: Arc<crate::cli::DerivedConfig>,
+) -> warp::filters::BoxedFilter<(impl warp::reply::Reply,)> {
+    let route = warp::path(path)
+        .and(warp::path::end())
+        .and(warp::any().map(move || config.clone()))
+        .and(warp::body::json())
+        .and_then(|config: Arc<crate::cli::DerivedConfig>, path: crate::covau_types::SourcePath| async move {
+            let path = config.to_path(path).map_err(custom_reject)?;
+            Ok::<_, warp::Rejection>(warp::reply::json(&path))
+        });
+
+    let route = route.with(warp::cors().allow_any_origin());
+    route.boxed()
+}
+
+pub fn save_song_route(
+    path: &'static str,
+    ytf: crate::yt::SongTubeFac,
+) -> warp::filters::BoxedFilter<(impl warp::reply::Reply,)> {
+    let route = warp::path(path)
+        .and(warp::path::end())
+        .and(warp::any().map(move || ytf.clone()))
+        .and(warp::body::json())
+        .and_then(|ytf: crate::yt::SongTubeFac, id: String| async move {
+            let name = format!("{}.webm", &id);
+
+            let bytes = ytf.get_song(id).await.map_err(custom_reject)?;
+
+            let dest = ytf.config.music_path.join(&name);
+            let mut file = tokio::fs::File::create_new(&dest)
+                .await
+                .map_err(custom_reject)?;
+            file.write_all(&bytes).await.map_err(custom_reject)?;
+
+            let path = crate::covau_types::SourcePath {
+                typ: crate::covau_types::SourcePathType::CovauMusic,
+                path: name,
+            };
+
+            Ok::<_, warp::Rejection>(warp::reply::json(&path))
+        });
+
+    let route = route.with(warp::cors().allow_any_origin());
+    route.boxed()
 }
 
 pub fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
