@@ -34,7 +34,7 @@ async function bundle(server: ViteDevServer) {
   let appUrl;
   if (process.env.BUILD_MODE === "DEV") {
     appUrl = `http://${host}:${address.port}`
-  } else if (process.env.BUILD_MODE === "PRODUCTION") {
+  } else if (process.env.BUILD_MODE === "PROD") {
     appUrl = `http://${host}:${process.env.SERVER_PORT}`
     
   } else {

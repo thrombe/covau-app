@@ -46,7 +46,7 @@ mod qweb {
 async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     #[cfg(build_mode = "DEV")]
     let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
-    #[cfg(build_mode = "PRODUCTION")]
+    #[cfg(build_mode = "PROD")]
     let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
 
     let mut url = format!("http://localhost:{}/", port);
@@ -125,7 +125,7 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 
     #[cfg(build_mode = "DEV")]
     let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
-    #[cfg(build_mode = "PRODUCTION")]
+    #[cfg(build_mode = "PROD")]
     let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
 
     let mut url = format!("http://localhost:{}/", port);

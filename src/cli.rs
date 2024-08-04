@@ -284,7 +284,7 @@ pub struct Cli {
 
 impl Cli {
     pub fn config(&self) -> anyhow::Result<Config> {
-        #[cfg(build_mode = "PRODUCTION")]
+        #[cfg(build_mode = "PROD")]
         let filename = "config.toml";
 
         #[cfg(build_mode = "DEV")]

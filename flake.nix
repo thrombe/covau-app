@@ -157,7 +157,7 @@
           # export UI_BACKEND="TAURI"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
-          export BUILD_MODE="PRODUCTION"
+          export BUILD_MODE="PROD"
 
           export SERVER_PORT=6173
           export WEBUI_PORT=6174
@@ -194,7 +194,7 @@
           # export UI_BACKEND="TAURI"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
-          export BUILD_MODE="PRODUCTION"
+          export BUILD_MODE="PROD"
 
           export SERVER_PORT=6173
           export WEBUI_PORT=6174
@@ -353,7 +353,7 @@
         '')
         (pkgs.writeShellScriptBin "build-prod" ''
           #!/usr/bin/env bash
-          export BUILD_MODE="PRODUCTION"
+          export BUILD_MODE="PROD"
 
           export UI_BACKEND="QWEB"
           export SERVER_PORT=6176
@@ -481,7 +481,7 @@
             # export UI_BACKEND="QWEB"
             export UI_BACKEND="NONE"
             export BUILD_MODE="DEV"
-            # export BUILD_MODE="PRODUCTION"
+            # export BUILD_MODE="PROD"
 
             export SERVER_PORT=6173
             export WEBUI_PORT=6174
