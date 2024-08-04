@@ -116,7 +116,9 @@
             <div class="relative">
                 <ThreeDotMenu
                     options={options.menu}
-                    classes="-top-8 right-8"
+                    pos_style={(r1, r2) => {
+                        return `top: calc(${r1.bottom}px + 0.5rem); left: calc(${r1.left}px - ${r2.width}px + 0.7rem);`;
+                    }}
                     let:show_menu
                     let:on_menu_click
                 >

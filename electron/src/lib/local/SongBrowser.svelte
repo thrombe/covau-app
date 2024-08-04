@@ -79,7 +79,7 @@
                 </div>
             {/if}
 
-            <ThreeDotMenu {options} classes="top-8 right-8" let:on_menu_click>
+            <ThreeDotMenu {options} let:on_menu_click>
                 <div class="relative h-full" class:hidden={options.length == 0}>
                     <button
                         class="absolute right-0 h-full aspect-square flex flex-col items-center"

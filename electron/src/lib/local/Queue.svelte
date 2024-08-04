@@ -287,9 +287,11 @@
             >
                 <ThreeDotMenu
                     {options}
-                    classes="top-8 right-8"
                     let:on_menu_click
                     let:show_menu
+                    pos_style={(r1, r2) => {
+                        return `top: calc(${r1.bottom}px + 0.7rem); left: calc(${r1.left}px - ${r2.width}px + 0.7rem);`;
+                    }}
                 >
                     <button
                         class="w-full h-full"

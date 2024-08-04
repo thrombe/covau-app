@@ -199,8 +199,7 @@
                     {#each $menubar_menu as options, i}
                         <ThreeDotMenu
                             options={options.options}
-                            classes={`top-12 max-h-72`}
-                            styles={`left: ${i * 4 + 1}rem;`}
+                            classes={`max-h-72`}
                             let:on_menu_click
                         >
                             <button
