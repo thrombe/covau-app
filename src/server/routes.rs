@@ -220,10 +220,12 @@ impl Asset {
     ) -> BoxedFilter<(impl Reply,)> {
         let mut env = HashMap::new();
         env.insert("%SERVER_PORT%".to_string(), config.server_port.to_string());
+        #[cfg(build_mode = "DEV")]
         env.insert(
             "%DEV_VITE_PORT%".to_string(),
             config.dev_vite_port.to_string(),
         );
+        #[cfg(feature = "webui")]
         env.insert("%WEBUI_PORT%".to_string(), config.webui_port.to_string());
         let env = Arc::new(env);
 
@@ -508,7 +510,7 @@ pub fn webui_js_route(
     c: reqwest::Client,
     config: Arc<crate::cli::DerivedConfig>,
 ) -> BoxedFilter<(impl Reply,)> {
-    // #[cfg(ui_backend = "WEBUI")]
+    #[cfg(feature = "webui")]
     let webui = warp::path("webui.js")
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
@@ -532,14 +534,17 @@ pub fn webui_js_route(
             },
         );
 
-    // #[cfg(not(ui_backend = "WEBUI"))]
-    // let webui = warp::path("webui.js")
-    //     .and(warp::path::end())
-    //     .and(warp::any().map(move || c.clone()))
-    //     .and_then(|_: reqwest::Client| async move {
-    //         let mut wres = warp::http::Response::builder();
-    //         wres.body("").map_err(custom_reject)
-    //     });
+    #[cfg(not(feature = "webui"))]
+    let webui = warp::path("webui.js")
+        .and(warp::path::end())
+        .and(warp::any().map(move || c.clone()))
+        .and(warp::any().map(move || config.clone()))
+        .and_then(
+            |_: reqwest::Client, _: Arc<crate::cli::DerivedConfig>| async move {
+                let wres = warp::http::Response::builder();
+                wres.body("").map_err(custom_reject)
+            },
+        );
 
     let webui = webui.with(warp::cors().allow_any_origin());
     webui.boxed()
