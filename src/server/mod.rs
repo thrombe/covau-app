@@ -113,12 +113,12 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(player_route())
         .or(ProxyRequest::cors_proxy_route(client.clone()))
         .or(mbz_routes(client.clone()))
-        .or(webui_js_route(client.clone()))
+        .or(webui_js_route(client.clone(), config.clone()))
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))
         .or(options_route.boxed());
-    // let all = all.or(redirect_route(client.clone()));
-    let all = all.or(Asset::embedded_asset_route());
+    // let all = all.or(routes::redirect_route(client.clone(), config.clone()));
+    let all = all.or(Asset::embedded_asset_route(config.clone()));
     let all = all.recover(|rej: warp::reject::Rejection| async move {
         let msg = if let Some(CustomReject(err)) = rej.find() {
             match err.downcast_ref() {

@@ -45,9 +45,9 @@ mod qweb {
 #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
 async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     #[cfg(build_mode = "DEV")]
-    let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
+    let port = config.dev_vite_port;
     #[cfg(build_mode = "PROD")]
-    let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
+    let port = config.server_port;
 
     let mut url = format!("http://localhost:{}/", port);
 
@@ -124,9 +124,9 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     let app = webui::App::new();
 
     #[cfg(build_mode = "DEV")]
-    let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
+    let port = config.dev_vite_port;
     #[cfg(build_mode = "PROD")]
-    let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
+    let port = config.server_port;
 
     let mut url = format!("http://localhost:{}/", port);
 
@@ -135,7 +135,7 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     // url += "#/play";
 
     let mut server_fut = std::pin::pin!(server_start(config));
-    let mut app_fut = std::pin::pin!(app.open_window(url));
+    let mut app_fut = std::pin::pin!(app.open_window(url, config.webui_port));
 
     tokio::select! {
         server = &mut server_fut => {
@@ -157,12 +157,7 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::start(
-        "127.0.0.1".parse()?,
-        core::env!("SERVER_PORT").parse().unwrap(),
-        config,
-    )
-    .await;
+    server::start("127.0.0.1".parse()?, config.server_port, config).await;
     Ok(())
 }
 
@@ -236,7 +231,7 @@ async fn main() -> Result<()> {
             };
 
             let client = reqwest::Client::new();
-            let port: u16 = core::env!("SERVER_PORT").parse().unwrap();
+            let port = config.server_port;
             let req = client
                 .post(format!("http://localhost:{}/cli", port))
                 .body(serde_json::to_string(&fereq)?)

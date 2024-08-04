@@ -215,12 +215,31 @@ impl FeRequest {
 pub struct Asset;
 
 impl Asset {
-    pub fn embedded_asset_route() -> BoxedFilter<(impl Reply,)> {
-        async fn serve_impl(path: &str) -> Result<impl Reply, warp::Rejection> {
+    pub fn embedded_asset_route(
+        config: Arc<crate::cli::DerivedConfig>,
+    ) -> BoxedFilter<(impl Reply,)> {
+        let mut env = HashMap::new();
+        env.insert("%SERVER_PORT%".to_string(), config.server_port.to_string());
+        env.insert(
+            "%DEV_VITE_PORT%".to_string(),
+            config.dev_vite_port.to_string(),
+        );
+        env.insert("%WEBUI_PORT%".to_string(), config.webui_port.to_string());
+        let env = Arc::new(env);
+
+        async fn serve_impl(
+            path: &str,
+            env: Arc<HashMap<String, String>>,
+        ) -> Result<impl Reply, warp::Rejection> {
             let asset = Asset::get(path).ok_or_else(warp::reject::not_found)?;
             let mime = mime_guess::from_path(path).first_or_octet_stream();
 
-            let mut res = warp::reply::Response::new(asset.data.into());
+            let mut data = String::from_utf8_lossy(asset.data.as_ref()).into_owned();
+            for (k, v) in env.iter() {
+                data = data.replace(k, v);
+            }
+
+            let mut res = warp::reply::Response::new(data.into());
             res.headers_mut().insert(
                 "content-type",
                 warp::http::HeaderValue::from_str(mime.as_ref()).unwrap(),
@@ -228,17 +247,24 @@ impl Asset {
             Ok::<_, warp::Rejection>(res)
         }
 
-        let index_route = warp::any().and(warp::path::end()).and_then(|| async move {
-            let path = "index.html";
-            serve_impl(path).await
-        });
+        let _env = env.clone();
+        let index_route = warp::any()
+            .and(warp::path::end())
+            .and(warp::any().map(move || _env.clone()))
+            .and_then(|env: Arc<HashMap<String, String>>| async move {
+                let path = "index.html";
+                serve_impl(path, env).await
+            });
 
-        let route = warp::any().and(warp::path::tail()).and_then(
-            |t: warp::filters::path::Tail| async move {
-                let path = t.as_str();
-                serve_impl(path).await
-            },
-        );
+        let route = warp::any()
+            .and(warp::path::tail())
+            .and(warp::any().map(move || env.clone()))
+            .and_then(
+                |t: warp::filters::path::Tail, env: Arc<HashMap<String, String>>| async move {
+                    let path = t.as_str();
+                    serve_impl(path, env).await
+                },
+            );
 
         index_route.or(route).boxed()
     }
@@ -387,20 +413,25 @@ impl AppState {
     }
 }
 
-pub fn redirect_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
+pub fn redirect_route(
+    c: reqwest::Client,
+    config: Arc<crate::cli::DerivedConfig>,
+) -> BoxedFilter<(impl Reply,)> {
     let redirect = warp::any()
         .and(warp::any().map(move || c.clone()))
         .and(warp::method())
         .and(warp::path::tail())
         .and(warp::header::headers_cloned())
         .and(warp::body::bytes())
+        .and(warp::any().map(move || config.clone()))
         .and_then(
             |c: reqwest::Client,
              m: warp::http::Method,
              p: warp::path::Tail,
              h: warp::http::HeaderMap,
-             b: bytes::Bytes| async move {
-                let port: u16 = core::env!("DEV_VITE_PORT").parse().unwrap();
+             b: bytes::Bytes,
+             config: Arc<crate::cli::DerivedConfig>| async move {
+                let port = config.dev_vite_port;
                 let url = format!("http://localhost:{}/", port) + p.as_str();
                 dbg!(&url);
                 let mut req = c.request(m, url);
@@ -473,27 +504,33 @@ pub fn save_song_route(
     route.boxed()
 }
 
-pub fn webui_js_route(c: reqwest::Client) -> BoxedFilter<(impl Reply,)> {
+pub fn webui_js_route(
+    c: reqwest::Client,
+    config: Arc<crate::cli::DerivedConfig>,
+) -> BoxedFilter<(impl Reply,)> {
     // #[cfg(ui_backend = "WEBUI")]
     let webui = warp::path("webui.js")
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
-        .and_then(|c: reqwest::Client| async move {
-            let port: u16 = core::env!("WEBUI_PORT").parse().unwrap();
-            let req = c.get(&format!("http://localhost:{}/webui.js", port));
-            let res = c
-                .execute(req.build().map_err(custom_reject)?)
-                .await
-                .map_err(custom_reject)?;
+        .and(warp::any().map(move || config.clone()))
+        .and_then(
+            |c: reqwest::Client, config: Arc<crate::cli::DerivedConfig>| async move {
+                let port = config.webui_port;
+                let req = c.get(&format!("http://localhost:{}/webui.js", port));
+                let res = c
+                    .execute(req.build().map_err(custom_reject)?)
+                    .await
+                    .map_err(custom_reject)?;
 
-            let mut wres = warp::http::Response::builder();
-            for (k, v) in res.headers().iter() {
-                wres = wres.header(k, v);
-            }
-            let status = res.status();
-            let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
-            wres.status(status).body(body).map_err(custom_reject)
-        });
+                let mut wres = warp::http::Response::builder();
+                for (k, v) in res.headers().iter() {
+                    wres = wres.header(k, v);
+                }
+                let status = res.status();
+                let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+                wres.status(status).body(body).map_err(custom_reject)
+            },
+        );
 
     // #[cfg(not(ui_backend = "WEBUI"))]
     // let webui = warp::path("webui.js")

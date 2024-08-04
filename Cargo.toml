@@ -29,7 +29,7 @@ intrusive-collections = { version ="0.9.6", optional = true }
 sea-orm = { version = "0.12.15", features = ["sqlx-sqlite", "runtime-tokio", "macros", "runtime-tokio-native-tls"], optional = true }
 sublime_fuzzy = { version = "0.7.0", optional = true }
 rust-embed = { version = "8.4.0", features = [
-  "debug-embed",
+  # "debug-embed",
   # "compression",
 ], optional = true }
 mime_guess = { version = "2.0.4", optional = true }

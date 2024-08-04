@@ -32,9 +32,9 @@ pub struct Config {
     pub musimanager: Option<MusimanagerConfig<String>>,
 
     pub run_in_background: bool,
-    // TODO:
-    // pub webui_port: Option<u16>,
-    // pub server_port: Option<u16>,
+    pub webui_port: Option<u16>,
+    pub server_port: Option<u16>,
+    pub dev_vite_port: Option<u16>,
 }
 impl Config {
     pub fn derived(self) -> anyhow::Result<DerivedConfig> {
@@ -140,6 +140,15 @@ impl Config {
             musimanager,
             data_path,
             cache_path,
+            server_port: self
+                .server_port
+                .unwrap_or(core::env!("SERVER_PORT").parse().unwrap()),
+            webui_port: self
+                .webui_port
+                .unwrap_or(core::env!("WEBUI_PORT").parse().unwrap()),
+            dev_vite_port: self
+                .dev_vite_port
+                .unwrap_or(core::env!("DEV_VITE_PORT").parse().unwrap()),
             config: self,
         };
         Ok(config)
@@ -158,6 +167,9 @@ pub struct DerivedConfig {
     pub musimanager: Option<MusimanagerConfig<PathBuf>>,
 
     pub run_in_background: bool,
+    pub webui_port: u16,
+    pub server_port: u16,
+    pub dev_vite_port: u16,
 }
 
 impl DerivedConfig {
