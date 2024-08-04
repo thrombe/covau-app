@@ -36,8 +36,6 @@ pub struct Config {
 
     #[cfg(feature = "webui")]
     pub webui_port: Option<u16>,
-    #[cfg(build_mode = "DEV")]
-    pub dev_vite_port: Option<u16>,
 }
 impl Config {
     pub fn derived(self) -> anyhow::Result<DerivedConfig> {
@@ -151,9 +149,9 @@ impl Config {
                 .webui_port
                 .unwrap_or(core::env!("WEBUI_PORT").parse().unwrap()),
             #[cfg(build_mode = "DEV")]
-            dev_vite_port: self
-                .dev_vite_port
-                .unwrap_or(core::env!("DEV_VITE_PORT").parse().unwrap()),
+            dev_vite_port: std::env::var("DEV_VITE_PORT")?
+                .parse()
+                .context("could not parse dev port")?,
             config: self,
         };
         Ok(config)

@@ -220,13 +220,6 @@ impl Asset {
     ) -> BoxedFilter<(impl Reply,)> {
         let mut env = HashMap::new();
         env.insert("%SERVER_PORT%".to_string(), config.server_port.to_string());
-        #[cfg(build_mode = "DEV")]
-        env.insert(
-            "%DEV_VITE_PORT%".to_string(),
-            config.dev_vite_port.to_string(),
-        );
-        #[cfg(feature = "webui")]
-        env.insert("%WEBUI_PORT%".to_string(), config.webui_port.to_string());
         let env = Arc::new(env);
 
         async fn serve_impl(

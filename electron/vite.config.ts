@@ -110,10 +110,6 @@ async function bundle(server: ViteDevServer) {
 export default defineConfig((env) => {
     let define = {
         "import.meta.env.SERVER_PORT": process.env.SERVER_PORT,
-        // "import.meta.env.WEBUI_PORT": process.env.WEBUI_PORT,
-        // "import.meta.env.DEV_VITE_PORT": process.env.DEV_VITE_PORT,
-        // "import.meta.env.UI_BACKEND": `"${process.env.UI_BACKEND}"`,
-        // "import.meta.env.BUILD_MODE": `"${process.env.BUILD_MODE}"`,
     };
 
     if (process.env.BUILD_MODE == "PROD") {
