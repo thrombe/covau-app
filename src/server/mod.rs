@@ -117,6 +117,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))
         .or(options_route.boxed());
+    // #[cfg(build_mode = "DEV")]
     // let all = all.or(routes::redirect_route(client.clone(), config.clone()));
     let all = all.or(Asset::embedded_asset_route(config.clone()));
     let all = all.recover(|rej: warp::reject::Rejection| async move {

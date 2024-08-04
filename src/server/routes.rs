@@ -415,6 +415,7 @@ impl AppState {
     }
 }
 
+#[cfg(build_mode = "DEV")]
 pub fn redirect_route(
     c: reqwest::Client,
     config: Arc<crate::cli::DerivedConfig>,
