@@ -1428,6 +1428,27 @@ export class DbListItem extends ListItem {
                             await stores.syncops.set.queue(queue);
                         },
                     },
+                    save_as_playlist: {
+                        icon: icons.floppy_disk,
+                        title: "save as playlist",
+                        onclick: async () => {
+                            let name = await prompter.prompt("Enter name");
+                            if (name == null) {
+                                return;
+                            }
+
+                            let pl: types.covau.Playlist = {
+                                title: name,
+                                songs: queue.t.queue.queue.songs,
+                            };
+
+                            await server.db.txn(async db => {
+                                return await db.insert({ typ: "Playlist", t: pl });
+                            });
+
+                            toast(`playlist '${name}' saved`);
+                        },
+                    },
                 };
 
                 switch (ctx) {
@@ -1441,6 +1462,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.open,
+                                options.save_as_playlist,
                                 options.add_all_to_queue,
                                 options.rename,
                                 common_options.open_details,
@@ -1452,6 +1474,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.continue,
                                 options.open,
+                                options.save_as_playlist,
                                 options.add_all_to_queue,
                                 options.rename,
                                 ops.options.like,
@@ -1482,6 +1505,32 @@ export class DbListItem extends ListItem {
                                 ids: playlist.t.songs,
                             }, 30, null, this);
                             stores.new_tab(s, playlist.t.title);
+                        },
+                    },
+                    play: {
+                        icon: icons.play,
+                        title: "play",
+                        onclick: async () => {
+                            let q: types.covau.Queue = {
+                                queue: {
+                                    current_index: null,
+                                    queue: {
+                                        title: `Playlist '${playlist.t.title}'`,
+                                        songs: [...playlist.t.songs],
+                                    },
+                                },
+                                blacklist: null,
+                                seed: null,
+                                seen: null,
+                            };
+                            let queue = await server.db.txn(async db => {
+                                return await db.insert({ typ: "Queue", t: q });
+                            });
+
+                            await stores.syncops.set.queue(queue);
+                            await stores.queue_ops.play_next();
+
+                            toast(`playing ${playlist.t.title}`);
                         },
                     },
                     add_all_to_queue: {
@@ -1529,6 +1578,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.open,
+                                options.play,
                                 options.add_all_to_queue,
                                 options.rename,
                                 common_options.open_details,
@@ -1539,6 +1589,7 @@ export class DbListItem extends ListItem {
                             ...common_options.empty_ops,
                             menu: [
                                 options.open,
+                                options.play,
                                 options.add_all_to_queue,
                                 options.rename,
                                 ops.options.like,

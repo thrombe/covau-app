@@ -751,6 +751,11 @@ export const syncops = {
 };
 
 export const queue_ops = {
+    async play_next() {
+        await get(queue).play_next();
+        queue.update(q => q);
+    },
+
     async detour(item: ListItem) {
         await get(queue).play_item(item);
         get(queue).detour();

@@ -80,7 +80,6 @@ pub struct SongBlacklist {
     pub songs: Vec<InfoSource>,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct Size {
     width: u32,

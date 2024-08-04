@@ -311,7 +311,7 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                title: "Explore queue",
+                title: "open details",
                 icon: icons.open_new_tab,
                 onclick: async () => {
                     let sync = get(stores.syncer);
