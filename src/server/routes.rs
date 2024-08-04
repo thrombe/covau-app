@@ -11,7 +11,7 @@ use warp::filters::BoxedFilter;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
-use crate::server::server::{custom_reject, Message, MessageResult};
+use crate::server::{custom_reject, Message, MessageResult};
 
 pub struct FrontendClient<R>(Arc<RequestTracker<R>>);
 impl<R> Clone for FrontendClient<R> {

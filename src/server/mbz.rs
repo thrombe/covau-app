@@ -2,7 +2,7 @@ use serde::Serialize;
 use warp::{filters::BoxedFilter, reply::Reply, Filter};
 
 use crate::mbz::{self, IdSearch, PagedSearch};
-use crate::server::server::custom_reject;
+use crate::server::custom_reject;
 
 pub fn linked_search<T, A>(
     path: &'static str,

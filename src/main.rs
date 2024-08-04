@@ -12,12 +12,7 @@ pub mod db;
 pub mod mbz;
 pub mod musimanager;
 mod musiplayer;
-pub mod server {
-    pub mod mbz;
-    pub mod player;
-    pub mod routes;
-    pub mod server;
-}
+pub mod server;
 pub mod yt;
 
 #[cfg(feature = "webui")]
@@ -392,10 +387,7 @@ fn dump_types() -> Result<()> {
         types_dir.join("covau.ts"),
         covau_types::dump_types(&tsconfig)?,
     )?;
-    std::fs::write(
-        types_dir.join("server.ts"),
-        server::server::dump_types(&tsconfig)?,
-    )?;
+    std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
     std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
@@ -518,7 +510,7 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::server::start(
+    server::start(
         "127.0.0.1".parse()?,
         core::env!("SERVER_PORT").parse().unwrap(),
         config,
@@ -572,7 +564,7 @@ async fn main() -> Result<()> {
         }
         cli::Command::FeCommand { command } => {
             use crate::server::routes::FeRequest;
-            use crate::server::server::ErrorMessage;
+            use crate::server::ErrorMessage;
 
             let fereq = match command {
                 cli::FeCommand::Like => FeRequest::Like,
