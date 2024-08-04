@@ -10,12 +10,14 @@
     import VirtualScrollable from "$lib/components/VirtualScrollable.svelte";
     import * as stores from "$lib/stores.ts";
     import { AutoplayQueueManager } from "./queue.ts";
-    import { get, readable, type Readable, type Writable } from "svelte/store";
+    import { get, readable, type Readable } from "svelte/store";
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import { toast } from "$lib/toast/toast.ts";
     import { StaticSearcher } from "$lib/searcher/searcher.ts";
     import * as utils from "$lib/utils.ts";
+    import * as st from "$lib/searcher/song_tube.ts";
+    import * as db from "$lib/searcher/db.ts";
 
     // prettier-ignore
     type QueueItem = {
@@ -85,6 +87,24 @@
                 hovering = null;
             },
         });
+    };
+
+    const ondrop = async (e: DragEvent) => {
+        if (get(stores.drag_item) != null) {
+            await stores.drag_ops.drop();
+            return;
+        }
+
+        if (e.dataTransfer?.getData('text/plain')) {
+            let maybe_url = e.dataTransfer.getData('text/plain');
+
+            let song = await st.st.cached.video_from_id_or_url(maybe_url);
+            if (song) {
+                let item = db.db.wrapped(song);
+                await stores.queue_ops.add_item(item);
+                toast(`item '${item.title()}' added to queue`);
+            }
+        }
     };
 
     let playing: number | null = null;
@@ -302,7 +322,7 @@
                     class="item w-full h-full block relative rounded-xl"
                     draggable={true}
                     on:dragstart={() => dragstart(index, item.item)}
-                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:drop|preventDefault={ondrop}
                     on:dragend={stores.drag_ops.dragend}
                     ondragover="return false"
                     on:dragenter={() => dragenter(index)}
@@ -322,7 +342,7 @@
                 <div
                     class="item w-full h-full block relative rounded-xl opacity-70"
                     draggable={false}
-                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:drop|preventDefault={ondrop}
                     on:dragend={stores.drag_ops.dragend}
                     ondragover="return false"
                     on:dragenter={() => dragenter(index)}
@@ -342,7 +362,7 @@
                 <div
                     class="w-full h-full block relative rounded-xl"
                     draggable={false}
-                    on:drop|preventDefault={stores.drag_ops.drop}
+                    on:drop|preventDefault={ondrop}
                     on:dragenter={() => dragenter(index)}
                     ondragover="return false"
                     class:is-active={hovering === index}
