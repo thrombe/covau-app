@@ -280,13 +280,4 @@
     .is-selected.is-active {
         @apply bg-green-400 bg-opacity-20;
     }
-
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-    /* For IE, Edge and Firefox */
-    .scrollbar-hide {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
 </style>

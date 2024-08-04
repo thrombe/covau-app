@@ -41,15 +41,3 @@
         </button>
     {/each}
 </div>
-
-<style lang="postcss">
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* For IE, Edge and Firefox */
-    .scrollbar-hide {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
-</style>

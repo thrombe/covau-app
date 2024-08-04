@@ -42,6 +42,15 @@
     .grainy-bg {
         @apply absolute w-full h-full left-0 top-0;
     }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    /* For IE, Edge and Firefox */
+    .scrollbar-hide {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
   </style>
 
   <style>

@@ -272,15 +272,3 @@
 </sbp>
 
 <svelte:window on:keydown={_on_keydown} />
-
-<style>
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* For IE, Edge and Firefox */
-    .scrollbar-hide {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
-</style>

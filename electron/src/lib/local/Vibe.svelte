@@ -377,14 +377,4 @@ z index notes
     play-bar {
         height: var(--play-bar-height);
     }
-
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* For IE, Edge and Firefox */
-    .scrollbar-hide {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
 </style>
