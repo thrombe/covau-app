@@ -688,7 +688,7 @@ export class AutoplayQueueManager extends QueueManager {
                         this.items.splice(index, 1);
                         await this.autoplay_consume();
                         await this.add(item);
-                        await this.play_queue_item(item);
+                        await this.play(this.playing_index);
                     } else {
                         if (this.items.length <= 1) {
                             this.items = [];
