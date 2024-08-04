@@ -585,7 +585,6 @@ export const st = {
             }
         },
 
-        // TODO: fetch info from cache first. sqlite db cache on app, browser storage on web
         async video(id: string): Promise<yt.Song> {
             let s = await get(stores.tube).getBasicInfo(id);
             return st.parse.st_song(s);
@@ -664,6 +663,42 @@ export const st = {
                 }
             } else {
                 return v;
+            }
+        },
+        async video_from_id_or_url(id_or_url: string) {
+            let short_yt = "https://youtu.be/";
+            let https = "https://";
+
+            let tube = get(stores.tube);
+
+            if (id_or_url.startsWith(short_yt)) {
+                let id = id_or_url.split(short_yt).at(1) ?? null;
+                if (id == null) {
+                    return null;
+                }
+                try {
+                    let song = await st.cached.video(id);
+                    return song;
+                } catch {
+                    return null;
+                }
+            } else if (id_or_url.startsWith(https)) {
+                let url = await tube.resolveURL(id_or_url);
+                if (!url.payload.videoId && url.payload.url) {
+                    url = await tube.resolveURL(id_or_url);
+                }
+                if (!url.payload.videoId) {
+                    return null;
+                }
+                let id = url.payload.videoId;
+                return await st.cached.video(id);
+            } else {
+                try {
+                    let song = await st.cached.video(id_or_url);
+                    return song;
+                } catch {
+                    return null;
+                }
             }
         },
     },
