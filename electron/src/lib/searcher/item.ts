@@ -265,6 +265,8 @@ export abstract class ListItem implements Keyed {
     abstract title_sub(): string | null;
     abstract impl_options(ctx: RenderContext): ItemOptions;
     abstract sections(): DetailSection[];
+
+    abstract drag_url(): string | null;
 }
 
 export class CustomListItem extends ListItem {
@@ -282,6 +284,7 @@ export class CustomListItem extends ListItem {
     _yt_id: string | null = null;
     _is_playable: boolean = false;
     _audio_uri: (() => Promise<string | null>) | null = null;
+    _drag_url: string | null = null;
 
     constructor(key: string, title: string, typ: Typ, title_sub: string | null = null) {
         super();
@@ -294,6 +297,10 @@ export class CustomListItem extends ListItem {
 
     is_playable(): boolean {
         return this._is_playable;
+    }
+
+    drag_url() {
+        return this._drag_url;
     }
 
     async audio_uri() {

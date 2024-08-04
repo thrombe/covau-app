@@ -58,6 +58,27 @@ export class StListItem extends ListItem {
         return false;
     }
 
+    drag_url() {
+        switch (this.data.type) {
+            case "Song": {
+                return st.url.video(this.data.content.id);
+            } break;
+            case "Artist": {
+                if (this.data.content.typ == "Artist") {
+                    return st.url.artist(this.data.content.id);
+                } else {
+                    return st.url.channel(this.data.content.id);
+                }
+            } break;
+            case "Album":
+            case "Playlist":
+                return null;
+                break;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     song_ids(): types.covau.InfoSource[] {
         switch (this.data.type) {
             case "Song": {

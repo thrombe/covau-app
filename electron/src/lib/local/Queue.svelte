@@ -46,12 +46,19 @@
     let hovering: number | null = null;
     let dragging_index: number | null = null;
     let drag_source_key = stores.new_key();
-    const dragstart = (index: number, t: ListItem) => {
+    const dragstart = async (event: DragEvent, index: number, t: ListItem) => {
         dragging_index = index;
         stores.drag_item.set({
             source_key: drag_source_key,
             item: t,
         });
+
+        let url = t.drag_url();
+        if (url != null) {
+            event.dataTransfer!.effectAllowed = 'move';
+            event.dataTransfer!.dropEffect = 'move';
+            event.dataTransfer!.setData('text/plain', url);
+        }
     };
     const dragenter = async (index: number) => {
         if (get(stores.drag_item) == null) {
@@ -321,7 +328,7 @@
                 <div
                     class="item w-full h-full block relative rounded-xl"
                     draggable={true}
-                    on:dragstart={() => dragstart(index, item.item)}
+                    on:dragstart={(e) => dragstart(e, index, item.item)}
                     on:drop|preventDefault={ondrop}
                     on:dragend={stores.drag_ops.dragend}
                     ondragover="return false"

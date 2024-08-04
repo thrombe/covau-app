@@ -71,6 +71,61 @@ export class DbListItem extends ListItem {
         return this.data.typ;
     }
 
+    drag_url() {
+        switch (this.data.typ) {
+            case "MmSong": {
+                return st.url.video(this.data.t.key);
+            } break;
+            case "StSong": {
+                return st.url.video(this.data.t.id);
+            } break;
+            case "Song": {
+                let song = this.data.t;
+                for (let source of song.info_sources) {
+                    switch (source.type) {
+                        case "MbzId": {
+                            return mbz.mbz.urls.recording.mbz(source.content);
+                        } break;
+                        case "YtId": {
+                            return st.url.video(source.content);
+                        } break;
+                        default:
+                            throw exhausted(source);
+                    }
+                }
+                return null;
+            } break;
+            case "MbzRecording": {
+                return mbz.mbz.urls.recording.mbz(this.data.t.id);
+            } break;
+            case "StArtist": {
+                if (this.data.t.typ == "Artist") {
+                    return st.url.artist(this.data.t.id);
+                } else {
+                    return st.url.channel(this.data.t.id);
+                }
+            } break;
+            case "MbzArtist": {
+                return mbz.mbz.urls.artist.mbz(this.data.t.id);
+            } break;
+            case "MmArtist":
+            case "MmAlbum":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StAlbum":
+            case "StPlaylist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "LocalState":
+                return null;
+            default:
+                throw exhausted(this.data)
+        }
+    }
+
     async yt_id(): Promise<string | null> {
         switch (this.data.typ) {
             case "MmSong":
@@ -2130,6 +2185,7 @@ export class DbListItem extends ListItem {
                                 item._is_playable = true;
                                 if (s.type == "YtId") {
                                     item._yt_id = s.content;
+                                    item._drag_url = st.url.video(s.content);
                                     item._audio_uri = async () => {
                                         let uri = await st.fetch.uri(s.content);
                                         if (uri) {
@@ -2151,6 +2207,7 @@ export class DbListItem extends ListItem {
                     if (s.type == "YtId") {
                         let id = `${s.type} ${s.content}`;
                         let yt = new CustomListItem(id, s.type, "Custom", s.content);
+                        yt._drag_url = st.url.video(s.content);
                         yt._options = {
                             ...common_options.empty_ops,
                             icon_top: ops.play,
@@ -2221,6 +2278,11 @@ export class DbListItem extends ListItem {
 
                     let id = `${s.type} ${s.content}`;
                     let item = new CustomListItem(id, s.type, "Custom", s.content);
+                    if (s.type == "YtId") {
+                        item._drag_url = st.url.video(s.content);
+                    } else {
+                        item._drag_url = mbz.mbz.urls.recording.mbz(s.content);
+                    }
                     item._options = {
                         ...common_options.empty_ops,
                         top_right: ops.remove(item),
@@ -2251,6 +2313,7 @@ export class DbListItem extends ListItem {
                     let id = i.toString();
                     let item = new CustomListItem(id, s.url, "Custom", s.size ? `${s.size.width}x${s.size.height}` : null);
                     item._thumbnail = s.url;
+                    item._drag_url = s.url;
                     return item;
                 }, async items => {
                     song.t.thumbnails = items;

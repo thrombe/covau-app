@@ -171,7 +171,7 @@
                         <div
                             class="item w-full h-full rounded-xl"
                             draggable={true}
-                            on:dragstart={() => dragstart(index, item)}
+                            on:dragstart={(e) => dragstart(e, index, item)}
                             on:drop|preventDefault={stores.drag_ops.drop}
                             on:dragend={stores.drag_ops.dragend}
                             ondragover="return false"

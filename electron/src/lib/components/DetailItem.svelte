@@ -14,7 +14,7 @@
     let sections = $item?.sections() ?? [];
     let thumbnail = $item.thumbnail() ?? null;
 
-    let unsub = updater.subscribe(_ => {
+    let unsub = updater.subscribe((_) => {
         img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
         sections = $item?.sections() ?? [];
         thumbnail = $item.thumbnail() ?? null;
@@ -86,7 +86,11 @@
                         </div>
                         <div class="flex flex-row flex-wrap gap-2">
                             {#each section.options as option}
-                                <button on:pointerup={utils.wrap_toast(option.onclick)}>
+                                <button
+                                    on:pointerup={utils.wrap_toast(
+                                        option.onclick
+                                    )}
+                                >
                                     <div
                                         class="flex flex-row rounded-md p-2 pr-4 place-items-center bg-gray-100 bg-opacity-10 hover:bg-gray-100 hover:bg-opacity-15"
                                     >
@@ -142,8 +146,8 @@
                                     <div
                                         class="item w-full h-full rounded-xl"
                                         draggable={true}
-                                        on:dragstart={() =>
-                                            dragstart(index, item)}
+                                        on:dragstart={(e) =>
+                                            dragstart(e, index, item)}
                                         on:drop|preventDefault={stores.drag_ops
                                             .drop}
                                         on:dragend={stores.drag_ops.dragend}
@@ -197,8 +201,8 @@
                                     <div
                                         class="item w-full h-full rounded-xl"
                                         draggable={true}
-                                        on:dragstart={() =>
-                                            dragstart(index, item)}
+                                        on:dragstart={(e) =>
+                                            dragstart(e, index, item)}
                                         on:drop|preventDefault={stores.drag_ops
                                             .drop}
                                         on:dragend={stores.drag_ops.dragend}

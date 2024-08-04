@@ -35,7 +35,7 @@
             info_width: number;
             hovering: number | null;
             dragging_index: number | null;
-            dragstart: (index: number, t: ListItem) => void;
+            dragstart: (e: DragEvent, index: number, t: ListItem) => void;
             dragenter: (index: number) => Promise<void>;
         };
         infobox: {};
@@ -48,12 +48,19 @@
 
     let hovering: number | null = null;
     let dragging_index: number | null = null;
-    const dragstart = (index: number, t: ListItem) => {
+    const dragstart = (event: DragEvent, index: number, t: ListItem) => {
         dragging_index = index;
         stores.drag_item.set({
             source_key: source_key,
             item: t,
         });
+
+        let url = t.drag_url();
+        if (url != null) {
+            event.dataTransfer!.effectAllowed = 'move';
+            event.dataTransfer!.dropEffect = 'move';
+            event.dataTransfer!.setData('text/plain', url);
+        }
     };
     const dragenter = async (index: number) => {
         if (get(stores.drag_item) == null) {
