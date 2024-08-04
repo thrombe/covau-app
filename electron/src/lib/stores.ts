@@ -13,6 +13,7 @@ import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { tick } from "svelte";
 import * as utils from "$lib/utils.ts";
+import { prompter } from "./prompt/prompt.ts";
 
 export type DetailTab = {
     type: "detail",
@@ -417,7 +418,7 @@ export const syncops = {
         queue.set(q);
 
         if (sync.state.t.queue == null) {
-            await syncops.new.queue();
+            await syncops.new.queue("Queue");
         }
 
         await syncops.listeners.reset.queue();
@@ -663,7 +664,18 @@ export const syncops = {
         },
     },
     new: {
-        async queue() {
+        async queue(title: string | null = null) {
+            let name: string;
+            if (title == null) {
+                let _name = await prompter.prompt("Enter name");
+                if (_name == null) {
+                    return;
+                }
+                name = _name;
+            } else {
+                name = title;
+            }
+
             let server = await import("$lib/server.ts");
             let q = get(queue);
             let sync = get(syncer);
@@ -674,7 +686,7 @@ export const syncops = {
                     t: {
                         queue: {
                             queue: {
-                                title: "Queue",
+                                title: name,
                                 songs: [],
                             },
                             current_index: null,

@@ -280,6 +280,7 @@ export class QueueManager implements Searcher {
                 icon: icons.repeat,
                 onclick: async () => {
                     await stores.syncops.new.queue();
+                    toast("new queue set");
                 },
             },
             {

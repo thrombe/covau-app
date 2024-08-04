@@ -35,6 +35,11 @@
     export let mobile = false;
 
     let queue = stores.queue;
+    let title = "Queue";
+    let unsub = stores.syncer.subscribe(sync => {
+        title = sync.queue.t.queue.queue.title;
+    });
+    onDestroy(unsub);
 
     let hovering: number | null = null;
     let dragging_index: number | null = null;
@@ -85,7 +90,7 @@
     let playing: number | null = null;
     let options = $queue.options();
 
-    let unsub = queue.subscribe(async (q) => {
+    unsub = queue.subscribe(async (q) => {
         // TODO: moving items in queue triggers this
         if (q.playing_index != null && playing != null) {
             if (is_in_view(playing)) {
@@ -238,9 +243,9 @@
         >
             <div class="h-full pl-2 pr-2 flex-grow">
                 <div
-                    class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-xl font-bold select-none"
+                    class="h-full w-full text-center flex flex-col justify-center text-gray-200 text-lg font-bold select-none"
                 >
-                    Queue
+                    {title}
                 </div>
                 <!-- <InputBar
                     placeholder={"Queue"}
