@@ -5,13 +5,21 @@
     import Explorer from "./Explorer.svelte";
     import * as stores from "$lib/stores.ts";
     import * as utils from "$lib/utils.ts";
+    import { onDestroy } from "svelte";
 
     export let item: Readable<ListItem>;
     export let updater: Readable<number>;
 
-    $: img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
-    $: sections = $item?.sections() ?? [];
-    $: thumbnail = $item.thumbnail() ?? null;
+    let img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
+    let sections = $item?.sections() ?? [];
+    let thumbnail = $item.thumbnail() ?? null;
+
+    let unsub = updater.subscribe(_ => {
+        img_src = $item?.thumbnail() ?? $item?.default_thumbnail() ?? "";
+        sections = $item?.sections() ?? [];
+        thumbnail = $item.thumbnail() ?? null;
+    });
+    onDestroy(unsub);
 
     let hide_border = true;
     const on_err = async () => {
