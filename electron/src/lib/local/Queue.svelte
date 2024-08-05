@@ -110,6 +110,8 @@
                 let item = db.db.wrapped(song);
                 await stores.queue_ops.add_item(item);
                 toast(`item '${item.title()}' added to queue`);
+            } else {
+                toast(`input '${maybe_url.substring(0, 50)}...' unrecognised`, "error");
             }
         }
     };
