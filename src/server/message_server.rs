@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
-use futures::{SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt, TryFutureExt};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{self, Sender};
 use tokio_stream::wrappers::ReceiverStream;
@@ -72,8 +72,11 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                     match msg.id {
                         Some(id) => match msg.data {
                             MessageResult::Ok(data) => {
-                                let req: R = serde_json::from_str(&data)?;
-                                match req.handle(ctx).await {
+                                let req = async { serde_json::from_str(&data) }
+                                    .map_err(|e| anyhow::anyhow!(e))
+                                    .and_then(move |r: R| r.handle(ctx))
+                                    .await;
+                                match req {
                                     Ok(res) => {
                                         sender
                                             .send(Message {
