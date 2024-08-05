@@ -10,6 +10,7 @@
     import ThreeDotMenu from "$lib/components/ThreeDotMenu.svelte";
     import { exhausted } from "$lib/utils.ts";
     import DetailItem from "$lib/components/DetailItem.svelte";
+    import Tooltip from "$lib/tooltip/Tooltip.svelte";
 
     export let columns: number;
     export let item_height: number;
@@ -112,15 +113,23 @@
                                     : "border-gray-600"
                             }`}
                 >
-                    <button
-                        class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
-                        style="max-width: 12rem;"
-                        on:pointerup={async () => {
-                            stores.curr_tab_index.set(i);
-                        }}
+                    <Tooltip
+                        tooltip={tab.name}
+                        let:on_enter
+                        let:on_leave
                     >
-                        {tab.name}
-                    </button>
+                        <button
+                            class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
+                            style="max-width: 12rem;"
+                            on:pointerup={async () => {
+                                stores.curr_tab_index.set(i);
+                            }}
+                            on:pointerenter={on_enter}
+                            on:pointerleave={on_leave}
+                        >
+                            {tab.name}
+                        </button>
+                    </Tooltip>
                     <div class="h-5 w-5" class:hidden={i === 0}>
                         <button
                             class="h-full w-full flex items-center"
