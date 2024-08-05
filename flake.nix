@@ -106,6 +106,7 @@
 
         env = {
           CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+          DEV_SHELL = "WIN";
         };
       };
 
@@ -399,6 +400,7 @@
             unstable.rustfmt
             unstable.clippy
             # unstable.rustup
+            unstable.gdb
 
             unstable.electron_29
             # unstable.yarn
@@ -452,6 +454,7 @@
         shellHook = ''
           # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
           export QTWEBENGINE_REMOTE_DEBUGGING=6178
+          export DEV_SHELL="QT"
 
           bashdir=$(mktemp -d)
           makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
