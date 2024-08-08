@@ -55,7 +55,7 @@
 
 <slot {on_enter} {on_leave}/>
 <div
-    class="tooltip transition-opacity delay-500 duration-150"
+    class={`tooltip ${show ? "transition-opacity delay-500 duration-150" : ""}`}
     class:hidden={!show}
     style={`${pos_styles};`}
     use:use_tooltip
@@ -66,9 +66,5 @@
 <style lang="postcss">
     .tooltip {
         @apply absolute inline-block max-w-full overflow-hidden text-nowrap p-3 rounded-xl bg-gray-200 bg-opacity-20 backdrop-blur-lg text-gray-200 font-medium text-sm;
-    }
-
-    button:hover .tooltip {
-        @apply z-20 group-hover:visible delay-500 duration-100;
     }
 </style>
