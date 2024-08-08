@@ -321,6 +321,10 @@ impl SongTubeFac {
 
                 let req = req.build()?;
                 let res = client.execute(req).await?;
+                let status = res.status();
+                if !status.is_success() {
+                    return Err(anyhow::anyhow!(format!("status code: {}", status)));
+                }
                 let bytes = res.bytes().await?;
                 Ok::<_, anyhow::Error>(bytes)
             })
