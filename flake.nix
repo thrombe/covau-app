@@ -410,8 +410,9 @@
             tailwindcss-language-server
 
             unstable.wasm-pack
-            lld
+            unstable.lld
             # unstable.cargo-binutils
+            # unstable.llvmPackages.bintools
             # unstable.cargo-llvm-cov
             # unstable.rustc.llvmPackages.llvm
 
