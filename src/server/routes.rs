@@ -340,17 +340,26 @@ impl Asset {
             let asset = Asset::get(path).ok_or_else(warp::reject::not_found)?;
             let mime = mime_guess::from_path(path).first_or_octet_stream();
 
-            let mut data = String::from_utf8_lossy(asset.data.as_ref()).into_owned();
-            for (k, v) in env.iter() {
-                data = data.replace(k, v);
-            }
+            if path.ends_with(".wasm") {
+                let mut res = warp::reply::Response::new(asset.data.into());
+                res.headers_mut().insert(
+                    "content-type",
+                    warp::http::HeaderValue::from_str(mime.as_ref()).unwrap(),
+                );
+                Ok::<_, warp::Rejection>(res)
+            } else {
+                let mut data = String::from_utf8_lossy(asset.data.as_ref()).into_owned();
+                for (k, v) in env.iter() {
+                    data = data.replace(k, v);
+                }
 
-            let mut res = warp::reply::Response::new(data.into());
-            res.headers_mut().insert(
-                "content-type",
-                warp::http::HeaderValue::from_str(mime.as_ref()).unwrap(),
-            );
-            Ok::<_, warp::Rejection>(res)
+                let mut res = warp::reply::Response::new(data.into());
+                res.headers_mut().insert(
+                    "content-type",
+                    warp::http::HeaderValue::from_str(mime.as_ref()).unwrap(),
+                );
+                Ok::<_, warp::Rejection>(res)
+            }
         }
 
         let _env = env.clone();
