@@ -317,7 +317,7 @@
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          wasm-pack build --target web --features wasmdeps
+          wasm-pack build --dev --target web --features wasmdeps
           rm -r ./electron/src/wasm
           mv ./pkg ./electron/src/wasm
         '')
@@ -364,6 +364,11 @@
           cd ./build
           cmake -CMAKE_BUILD_TYPE=Release ..
           make
+
+          cd $PROJECT_ROOT
+          wasm-pack build --release --target web --features wasmdeps
+          rm -r ./electron/src/wasm
+          mv ./pkg ./electron/src/wasm
 
           cd $PROJECT_ROOT/electron
           bun run build
