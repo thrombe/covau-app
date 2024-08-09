@@ -1,4 +1,5 @@
 import { toast } from "./toast/toast.ts";
+import * as wasm from "$wasm/covau_app_wasm";
 
 export type Keyed = { get_key(): unknown };
 
@@ -46,3 +47,36 @@ export function debounce(callback: () => Promise<void>, ms: number) {
     };
 }
 
+export function buffer_concat(...arrays: Uint8Array[]) {
+    let size = arrays.reduce((a, b) => a + b.byteLength, 0);
+    let result = new Uint8Array(size);
+
+    let offset = 0;
+    for (let arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.byteLength;
+    }
+
+    return result;
+}
+
+export async function stream_to_buffer(stream: ReadableStream<Uint8Array>) {
+    let reader = stream.getReader();
+    let data: Uint8Array[] = [];
+    while (true) {
+        let bytes = await reader.read();
+        data.push((bytes.value ?? new Uint8Array()));
+        if (bytes.done) {
+            break;
+        }
+    }
+    let bytes = buffer_concat(...data);
+    return bytes;
+}
+
+export function buffer_to_base64(buf: Uint8Array): string {
+    // get base64 stuff from rust compiled to wasm. this is incorrect for some reason.
+    // return btoa(String.fromCharCode(...buf));
+
+    return wasm.base64_encode(buf);
+}

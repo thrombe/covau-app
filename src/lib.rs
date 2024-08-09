@@ -1,17 +1,19 @@
 #![cfg(feature = "wasmdeps")]
 #![allow(non_snake_case)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 use serde::{Deserialize, Serialize};
-use log::{info, debug};
 use log::Level;
 use tsify_next::JsValueSerdeExt;
+use log::{info, debug};
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen::{JsError, JsValue, prelude::wasm_bindgen};
 
 use crate::bad_error::BadError;
 
-pub mod musimanager;
-pub mod mbz;
+// pub mod musimanager;
+// pub mod mbz;
 // pub mod db;
 
 // This is like the `main` function, except for JavaScript.
@@ -25,6 +27,23 @@ pub fn main_js() -> Result<(), JsValue> {
     Ok(())
 }
 
+pub mod utils {
+    use wasm_bindgen::{JsError, prelude::wasm_bindgen};
+    use base64::Engine;
+
+    use crate::bad_error::BadError;
+
+    
+    #[wasm_bindgen]
+    pub fn base64_encode(data: Vec<u8>) -> String {
+        base64::prelude::BASE64_STANDARD.encode(data)
+    }
+
+    #[wasm_bindgen]
+    pub fn base64_decode(b64: String) -> Result<Vec<u8>, JsError> {
+        base64::prelude::BASE64_STANDARD.decode(b64).bad_err()
+    }
+}
 
 pub mod searcher {
     use super::*;

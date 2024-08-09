@@ -12,7 +12,7 @@
         let itube = await new_innertube_instance();
         stores.tube.set(itube);
 
-        // let _info = await wasm.default();
+        let _info = await wasm.default();
 
         await server.serve();
         await stores.syncops.load();
