@@ -237,7 +237,7 @@ impl Drop for InnerSongTube {
             let id = self.id.clone();
             let client = self.client.clone();
             tokio::task::spawn(async move {
-                match client.execute(YtiRequest::DestroySongTube { id }).await {
+                match client.get_one(YtiRequest::DestroySongTube { id }).await {
                     Ok(()) => (),
                     Err(e) => {
                         eprintln!("Error while destroying InnerSongTube {}", e);
@@ -258,7 +258,7 @@ impl InnerSongTube {
     pub async fn next_page(&self) -> anyhow::Result<SearchResults<song_tube::MusicListItem>> {
         let items = self
             .client
-            .execute(YtiRequest::NextPageSongTube {
+            .get_one(YtiRequest::NextPageSongTube {
                 id: self.id.clone(),
             })
             .await?;
@@ -268,7 +268,7 @@ impl InnerSongTube {
     pub async fn destroy(&self) -> anyhow::Result<()> {
         let _: () = self
             .client
-            .execute(YtiRequest::DestroySongTube {
+            .get_one(YtiRequest::DestroySongTube {
                 id: self.id.clone(),
             })
             .await?;
@@ -297,7 +297,7 @@ impl SongTubeFac {
     pub async fn get_song(&self, id: String) -> anyhow::Result<Vec<u8>> {
         let info: SongUriInfo = self
             .fe
-            .execute(YtiRequest::GetSongUri { id: id.clone() })
+            .get_one(YtiRequest::GetSongUri { id: id.clone() })
             .await?;
         let bufsize = 500_000; // 500k
 
@@ -363,7 +363,7 @@ impl SongTubeFac {
         let id = ulid::Ulid::new().to_string();
         let _: () = self
             .fe
-            .execute(YtiRequest::CreateSongTube {
+            .get_one(YtiRequest::CreateSongTube {
                 query,
                 id: id.clone(),
             })

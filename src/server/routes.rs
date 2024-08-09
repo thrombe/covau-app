@@ -3,7 +3,7 @@ use std::sync::atomic;
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Context;
-use futures::FutureExt;
+use futures::{FutureExt, Stream};
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
@@ -13,7 +13,7 @@ use warp::filters::BoxedFilter;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
-use crate::server::{custom_reject, Message, MessageResult};
+use crate::server::{custom_reject, ErrorMessage, Message, MessageResult};
 
 pub struct FrontendClient<R>(Arc<RequestTracker<R>>);
 impl<R> Clone for FrontendClient<R> {
@@ -33,7 +33,8 @@ pub struct RequestTracker<R> {
     id_count: std::sync::atomic::AtomicU32,
     request_sender: mpsc::Sender<Message<R>>,
     request_receiver: Mutex<ReceiverStream<Message<R>>>,
-    requests: Mutex<HashMap<u32, oneshot::Sender<MessageResult<String>>>>,
+    ok_one: Mutex<HashMap<u32, oneshot::Sender<MessageResult<String>>>>,
+    ok_many: Mutex<HashMap<u32, mpsc::Sender<MessageResult<String>>>>,
 }
 
 impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
@@ -43,7 +44,8 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             id_count: Default::default(),
             request_sender: tx,
             request_receiver: Mutex::new(ReceiverStream::new(rx)),
-            requests: Mutex::new(HashMap::new()),
+            ok_one: Mutex::new(HashMap::new()),
+            ok_many: Mutex::new(HashMap::new()),
         }))
     }
 
@@ -60,7 +62,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
     /// NOTE: there is no timeout on these. (so infinite timeout ig)
     ///       you will wait forever if no no response is sent
     // MAYBE: implement timeout?
-    pub async fn execute<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
+    pub async fn get_one<T: for<'de> Deserialize<'de>>(&self, req: R) -> anyhow::Result<T> {
         let id = self
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -68,11 +70,11 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
         self.request_sender
             .send(Message {
                 id: Some(id),
-                data: MessageResult::Ok(req),
+                data: MessageResult::Request(req),
             })
             .await?;
 
-        let mut map = self.requests.lock().await;
+        let mut map = self.ok_one.lock().await;
         let (tx, rx) = oneshot::channel::<MessageResult<String>>();
         map.insert(id, tx)
             .is_none()
@@ -82,12 +84,61 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
 
         let resp = rx.await?;
         match resp {
-            MessageResult::Ok(resp) => {
+            MessageResult::OkOne(resp) => {
                 let resp = serde_json::from_str(&resp)?;
                 Ok(resp)
             }
+            MessageResult::OkMany { data, .. } => Err(anyhow::anyhow!(format!(
+                "got 'OkMany' where 'OkOne' was expected: {}",
+                data
+            ))),
+            MessageResult::Request(data) => Err(anyhow::anyhow!(format!(
+                "got 'Request' where 'OkOne' was expected: {}",
+                data
+            ))),
             MessageResult::Err(e) => Err(e.into()),
         }
+    }
+
+    pub async fn get_many<T: for<'de> Deserialize<'de>>(
+        &self,
+        req: R,
+    ) -> anyhow::Result<impl Stream<Item = anyhow::Result<T>>> {
+        let id = self
+            .id_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+        self.request_sender
+            .send(Message {
+                id: Some(id),
+                data: MessageResult::Request(req),
+            })
+            .await?;
+
+        let mut map = self.ok_many.lock().await;
+        let (tx, rx) = mpsc::channel::<MessageResult<String>>(20);
+        map.insert(id, tx)
+            .is_none()
+            .then(|| Some(()))
+            .expect("request with this id already exists");
+        drop(map);
+
+        let resp = ReceiverStream::new(rx).map(|m| match m {
+            MessageResult::OkOne(resp) => Err(anyhow::anyhow!(format!(
+                "got 'OkOne' where 'OkMany' was expected: {}",
+                resp
+            ))),
+            MessageResult::Request(req) => Err(anyhow::anyhow!(format!(
+                "got 'Request' where 'OkMany' was expected: {}",
+                req
+            ))),
+            MessageResult::OkMany { data, .. } => {
+                let data = serde_json::from_str::<T>(&data)?;
+                Ok(data)
+            }
+            MessageResult::Err(e) => Err(e.into()),
+        });
+        Ok(resp)
     }
 
     pub fn client_ws_route(fe: Self, path: &'static str) -> BoxedFilter<(impl Reply,)> {
@@ -128,15 +179,75 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                         };
                         let msg = serde_json::from_str::<Message<String>>(msg)?;
                         match msg.id {
-                            Some(id) => {
-                                let mut map = fe.requests.lock().await;
-                                let tx = map.remove(&id).context("sender already taken")?;
-                                tx.send(msg.data)
-                                    .ok()
-                                    .context("could not send over channel")?;
-                            }
+                            Some(id) => match msg.data {
+                                MessageResult::OkMany { data, done, index } => {
+                                    let mut map = fe.ok_many.lock().await;
+                                    let tx = map.remove(&id).context("sender already taken")?;
+                                    tx.send(MessageResult::OkMany { data, done, index })
+                                        .await
+                                        .ok()
+                                        .context("could not send over channel")?;
+                                    if !done {
+                                        map.insert(id, tx);
+                                    }
+                                }
+                                MessageResult::OkOne(msg) => {
+                                    let mut map = fe.ok_one.lock().await;
+                                    let tx = map.remove(&id).context("sender already taken")?;
+                                    tx.send(MessageResult::OkOne(msg))
+                                        .ok()
+                                        .context("could not send over channel")?;
+                                }
+                                MessageResult::Err(err) => {
+                                    let mut onemap = fe.ok_one.lock().await;
+                                    let mut manymap = fe.ok_many.lock().await;
+                                    if let Some(tx) = onemap.remove(&id) {
+                                        tx.send(MessageResult::Err(err))
+                                            .ok()
+                                            .context("could not send over channel")?;
+                                    } else {
+                                        let tx =
+                                            manymap.remove(&id).context("sender already taken")?;
+                                        tx.send(MessageResult::Err(err))
+                                            .await
+                                            .ok()
+                                            .context("could not send over channel")?;
+                                    }
+                                }
+                                MessageResult::Request(msg) => {
+                                    let mut onemap = fe.ok_one.lock().await;
+                                    let mut manymap = fe.ok_many.lock().await;
+                                    if let Some(tx) = onemap.remove(&id) {
+                                        let mesg = format!(
+                                            "this WS does not support requests from frontend: {}",
+                                            msg
+                                        );
+                                        tx.send(MessageResult::Err(ErrorMessage {
+                                            message: mesg.clone(),
+                                            stack_trace: mesg,
+                                        }))
+                                        .ok()
+                                        .context("could not send over channel")?;
+                                    } else {
+                                        let tx =
+                                            manymap.remove(&id).context("sender already taken")?;
+                                        let mesg = format!(
+                                            "this WS does not support requests from frontend: {}",
+                                            msg
+                                        );
+                                        tx.send(MessageResult::Err(ErrorMessage {
+                                            message: mesg.clone(),
+                                            stack_trace: mesg,
+                                        })).await
+                                        .ok()
+                                        .context("could not send over channel")?;
+                                    }
+                                }
+                            },
                             None => match msg.data {
-                                MessageResult::Ok(msg) => {
+                                MessageResult::OkOne(msg)
+                                | MessageResult::OkMany { data: msg, .. }
+                                | MessageResult::Request(msg) => {
                                     return Err(anyhow::anyhow!(
                                         "frontend sent a message without id :/ : {:?}",
                                         msg
@@ -202,7 +313,7 @@ impl FeRequest {
             .and(warp::any().map(move || fe.clone()))
             .and(warp::body::json())
             .and_then(|fe: FrontendClient<_>, req: FeRequest| async move {
-                fe.execute::<()>(req).await.map_err(custom_reject)?;
+                fe.get_one::<()>(req).await.map_err(custom_reject)?;
                 Ok::<_, warp::Rejection>(warp::reply())
             });
         let route = route.with(warp::cors().allow_any_origin());

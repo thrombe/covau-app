@@ -215,14 +215,14 @@ impl UpdateManager {
 
     async fn notify_error(&self, message: String) -> anyhow::Result<()> {
         self.fe
-            .send(MessageResult::Ok(FeRequest::NotifyError(message)))
+            .get_one::<()>(MessageResult::OkOne(FeRequest::NotifyError(message)))
             .await?;
         Ok(())
     }
 
     async fn notify(&self, message: String) -> anyhow::Result<()> {
         self.fe
-            .send(MessageResult::Ok(FeRequest::Notify(message)))
+            .get_one::<()>(MessageResult::OkOne(FeRequest::Notify(message)))
             .await?;
         Ok(())
     }

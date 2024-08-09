@@ -54,14 +54,28 @@ pub(crate) fn custom_reject(error: impl Into<anyhow::Error>) -> warp::Rejection 
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum MessageResult<T> {
-    Ok(T),
+    Request(T),
+    OkOne(T),
+    OkMany { data: T, done: bool, index: u32 },
     Err(ErrorMessage),
 }
 impl<T: Serialize> MessageResult<T> {
     pub fn json(self) -> MessageResult<String> {
         match self {
-            MessageResult::Ok(t) => MessageResult::Ok(serde_json::to_string(&t).unwrap()),
+            MessageResult::OkMany { data, done, index } => MessageResult::OkMany {
+                data: serde_json::to_string(&data).unwrap(),
+                done,
+                index,
+            },
+            MessageResult::OkOne(t) => MessageResult::OkOne(serde_json::to_string(&t).unwrap()),
+            MessageResult::Request(t) => MessageResult::Request(serde_json::to_string(&t).unwrap()),
             MessageResult::Err(e) => MessageResult::Err(e),
+        }
+    }
+    pub fn is_done(&self) -> bool {
+        match self {
+            MessageResult::OkMany { done, .. } => *done,
+            MessageResult::OkOne(_) | MessageResult::Err(_) | MessageResult::Request(_) => true,
         }
     }
 }

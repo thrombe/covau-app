@@ -110,7 +110,7 @@ impl MessageServerRequest for DbRequest {
                 typ: T::typ(),
                 t: item,
             };
-            Ok(MessageResult::Ok(dbitem).json())
+            Ok(MessageResult::OkOne(dbitem).json())
         }
         async fn insert_or_get<T: DbAble>(
             txn: &impl ConnectionTrait,
@@ -131,7 +131,7 @@ impl MessageServerRequest for DbRequest {
                     InsertResponse::New(dbitem)
                 }
             };
-            Ok(MessageResult::Ok(dbitem).json())
+            Ok(MessageResult::OkOne(dbitem).json())
         }
         async fn update<T: DbAble>(
             txn: &impl ConnectionTrait,
@@ -145,7 +145,7 @@ impl MessageServerRequest for DbRequest {
                 typ: T::typ(),
                 t: item.t,
             };
-            Ok(MessageResult::Ok(dbitem).json())
+            Ok(MessageResult::OkOne(dbitem).json())
         }
         async fn update_metadata<T: DbAble>(
             txn: &impl ConnectionTrait,
@@ -153,7 +153,7 @@ impl MessageServerRequest for DbRequest {
             mdata: DbMetadata,
         ) -> anyhow::Result<MessageResult<String>> {
             let mdata = T::update_mdata(txn, id, mdata).await?;
-            Ok(MessageResult::Ok(mdata).json())
+            Ok(MessageResult::OkOne(mdata).json())
         }
         async fn delete<T: DbAble>(
             txn: &impl ConnectionTrait,
@@ -161,64 +161,64 @@ impl MessageServerRequest for DbRequest {
         ) -> anyhow::Result<MessageResult<String>> {
             let item: DbItem<T> = data.parsed()?;
             item.delete(txn).await?;
-            Ok(MessageResult::Ok(()).json())
+            Ok(MessageResult::OkOne(()).json())
         }
         async fn search<T: DbAble>(
             db: Db,
             query: SearchQuery,
         ) -> anyhow::Result<MessageResult<String>> {
             let res = db.search::<T>(query).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_by_refid<T: DbAble>(
             db: Db,
             refid: String,
         ) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_by_ref_id::<T>(refid).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_many_by_refid<T: DbAble>(
             db: Db,
             refids: Vec<String>,
         ) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_many_by_ref_id::<T>(refids).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_by_id<T: DbAble>(db: Db, id: DbId) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_by_id::<T>(id).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_many_by_id<T: DbAble>(
             db: Db,
             ids: Vec<DbId>,
         ) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_many_by_id::<T>(ids).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_untyped_by_id(db: Db, id: DbId) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_untyped_by_id(id).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
         async fn get_many_untyped_by_id(
             db: Db,
             ids: Vec<DbId>,
         ) -> anyhow::Result<MessageResult<String>> {
             let res = db.search_many_untyped_by_id(ids).await?;
-            Ok(MessageResult::Ok(res).json())
+            Ok(MessageResult::OkOne(res).json())
         }
 
         let res = match self {
             DbRequest::Begin => {
                 let id = db.begin().await?;
-                MessageResult::Ok(id).json()
+                MessageResult::OkOne(id).json()
             }
             DbRequest::Commit(id) => {
                 db.commit(id).await?;
-                MessageResult::Ok(()).json()
+                MessageResult::OkOne(()).json()
             }
             DbRequest::Rollback(id) => {
                 db.rollback(id).await?;
-                MessageResult::Ok(()).json()
+                MessageResult::OkOne(()).json()
             }
             DbRequest::Insert {
                 transaction_id,

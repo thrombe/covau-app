@@ -6,7 +6,7 @@ import { exhausted } from './utils.ts';
 import * as types from "$types/types.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from 'svelte/store';
-import { err_msg } from './utils.ts';
+import { err_msg, buffer_to_base64 } from './utils.ts';
 
 export const utils = {
     base_url: `http://localhost:${import.meta.env.SERVER_PORT}/`,
@@ -65,6 +65,15 @@ export const api = {
     },
 };
 
+
+type Resolved = { readonly _tag: "RESOLVED" };
+type ResolveOps = {
+    none: () => Resolved,
+    unit: () => Resolved,
+    one: (r: Object | null) => Resolved,
+    many: (r: Object | null) => void,
+    many_done: (r: Object | null) => Resolved,
+};
 abstract class Server<Req> {
     ws: WebSocket;
 
@@ -81,10 +90,69 @@ abstract class Server<Req> {
                 console.error(mesg.content.stack_trace);
                 return;
             }
+            if (mesg.type != "Request") {
+                let err = JSON.stringify(mesg);
+                toast(err, "error");
+                console.error(err);
+                return;
+            }
 
-            let resp;
+            let self = this;
+            const resolved: Resolved = { _tag: "RESOLVED" };
+            let index = 0;
+            let resolve: ResolveOps = {
+                none() {
+                    return resolved;
+                },
+                unit() {
+                    let resp_mesg: Message<string> = {
+                        type: "OkOne",
+                        id: mesg.id,
+                        content: JSON.stringify(null),
+                    };
+                    
+                    console.log(resp_mesg);
+                    self.ws.send(JSON.stringify(resp_mesg));
+                    return resolved;
+                },
+                one(resp: Object | null) {
+                    let resp_mesg: Message<string> = {
+                        type: "OkOne",
+                        id: mesg.id,
+                        content: JSON.stringify(resp),
+                    };
+
+                    console.log(resp_mesg);
+                    self.ws.send(JSON.stringify(resp_mesg));
+                    return resolved;
+                },
+                many(resp: Object | null) {
+                    let resp_mesg: Message<string> = {
+                        type: "OkMany",
+                        id: mesg.id,
+                        content: { data: JSON.stringify(resp), index, done: false },
+                    };
+                    index += 1;
+
+                    console.log(resp_mesg);
+                    self.ws.send(JSON.stringify(resp_mesg));
+                },
+                many_done(resp: Object | null) {
+                    let resp_mesg: Message<string> = {
+                        type: "OkMany",
+                        id: mesg.id,
+                        content: { data: JSON.stringify(resp), index, done: true },
+                    };
+                    index += 1;
+
+                    console.log(resp_mesg);
+                    self.ws.send(JSON.stringify(resp_mesg));
+                    return resolved;
+                },
+            };
+
             try {
-                resp = await this.handle_req(mesg.content);
+                let _ = await this.handle_req(mesg.content, resolve);
             } catch (e: any) {
                 console.error(e);
                 let err: string;
@@ -108,19 +176,6 @@ abstract class Server<Req> {
                 console.log(resp_mesg);
                 this.ws.send(JSON.stringify(resp_mesg));
             }
-
-            if (typeof resp === "undefined") {
-                return;
-            }
-
-            let resp_mesg: Message<string> = {
-                type: "Ok",
-                id: mesg.id,
-                content: JSON.stringify(resp),
-            };
-
-            console.log(resp_mesg);
-            this.ws.send(JSON.stringify(resp_mesg));
         });
 
         let resolve: () => {};
@@ -137,7 +192,7 @@ abstract class Server<Req> {
     // else some { object: () }
     // NOTE: server will wait forever if it expects a response and one is not sent.
     //       maybe just make a "null" response as a precaution??
-    abstract handle_req(req: Req): Promise<Object | null | undefined>;
+    abstract handle_req(req: Req, resolve: ResolveOps): Promise<Resolved>;
 }
 
 class YtiServer extends Server<yt.YtiRequest> {
@@ -152,16 +207,16 @@ class YtiServer extends Server<yt.YtiRequest> {
     }
 
     tubes: Map<string, st.SongTube> = new Map();
-    async handle_req(req: yt.YtiRequest): Promise<Object | null | undefined> {
+    async handle_req(req: yt.YtiRequest, resolve: ResolveOps): Promise<Resolved> {
         switch (req.type) {
             case 'CreateSongTube': {
                 let tube = new st.SongTube(req.content.query);
                 this.tubes.set(req.content.id, tube);
-                return null;
+                return resolve.unit();
             } break;
             case 'DestroySongTube': {
                 this.tubes.delete(req.content.id);
-                return null;
+                return resolve.unit();
             } break;
             case 'NextPageSongTube': {
                 let tube = this.tubes.get(req.content.id)!;
@@ -170,10 +225,11 @@ class YtiServer extends Server<yt.YtiRequest> {
                     items: page,
                     has_next_page: tube.has_next_page,
                 };
-                return res;
+                return resolve.one(res);
             } break;
             case 'GetSongUri': {
-                return await st.st.fetch.try_uri(req.content.id);
+                let uri = await st.st.fetch.try_uri(req.content.id);
+                return resolve.one(uri);
             } break;
             default:
                 throw exhausted(req);
@@ -192,15 +248,15 @@ class FeServer extends Server<FeRequest> {
         return self;
     }
 
-    async handle_req(req: FeRequest): Promise<Object | null | undefined> {
+    async handle_req(req: FeRequest, resolve: ResolveOps): Promise<Resolved> {
         switch (req.type) {
             case 'Notify': {
                 toast(req.content, "info");
-                return null;
+                return resolve.unit();
             } break;
             case 'NotifyError': {
                 toast(req.content, "error");
-                return null;
+                return resolve.unit();
             } break;
             case 'Like': {
                 let item = get(stores.playing_item);
@@ -209,7 +265,7 @@ class FeServer extends Server<FeRequest> {
                 if (!res) {
                     toast(`could not like "${item.title()}"`, "error")
                 }
-                return null;
+                return resolve.unit();
             } break;
             case 'Dislike': {
                 let item = get(stores.playing_item);
@@ -218,59 +274,59 @@ class FeServer extends Server<FeRequest> {
                 if (!res) {
                     toast(`could not dislike "${item.title()}"`, "error")
                 }
-                return null;
+                return resolve.unit();
             } break;
             case 'Next': {
                 await get(stores.queue).play_next();
                 stores.queue.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'Prev': {
                 await get(stores.queue).play_prev();
                 stores.queue.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'Pause': {
                 get(stores.player).pause();
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'Play': {
                 get(stores.player).unpause();
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'ToggleMute': {
                 get(stores.player).toggle_mute();
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'TogglePlay': {
                 get(stores.player).toggle_pause();
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'BlacklistArtists': {
                 let item = stores.queue_ops.get_current_item();
                 await stores.queue_ops.blacklist_artists(item);
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'RemoveAndNext': {
                 let item = stores.queue_ops.get_current_item();
                 stores.queue_ops.remove_item(item);
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'SeekFwd': {
                 get(stores.player).seek_by(10);
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             case 'SeekBkwd': {
                 get(stores.player).seek_by(-10);
                 stores.player.update(t => t);
-                return null;
+                return resolve.unit();
             } break;
             default:
                 throw exhausted(req);
@@ -329,7 +385,7 @@ class Client<Req> {
 
         let msg: Message<string> = {
             id: id,
-            type: "Ok",
+            type: "OkOne",
             content: JSON.stringify(req),
         };
         this.ws.send(JSON.stringify(msg));
@@ -338,6 +394,12 @@ class Client<Req> {
         if (resp.type == "Err") {
             console.error(resp.content.stack_trace);
             throw new Error(resp.content.message);
+        }
+        if (resp.type != "OkOne") {
+            let data = JSON.stringify(resp.content);
+            let msg = `expected 'OkOne' found '${resp.type}': ${data}`;
+            console.error(msg);
+            throw new Error(msg);
         }
 
         return JSON.parse(resp.content);

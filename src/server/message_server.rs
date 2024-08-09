@@ -71,7 +71,7 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                     let msg = serde_json::from_str::<Message<String>>(msg)?;
                     match msg.id {
                         Some(id) => match msg.data {
-                            MessageResult::Ok(data) => {
+                            MessageResult::OkOne(data) => {
                                 let req = async { serde_json::from_str(&data) }
                                     .map_err(|e| anyhow::anyhow!(e))
                                     .and_then(move |r: R| r.handle(ctx))
@@ -98,12 +98,26 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                                     }
                                 }
                             }
+                            MessageResult::OkMany { data, .. } => {
+                                return Err(anyhow::anyhow!(
+                                    "frontend sent 'OkMany' where 'OkOne' was expected :/ : {:?}",
+                                    data
+                                ));
+                            }
+                            MessageResult::Request(req) => {
+                                return Err(anyhow::anyhow!(
+                                    "frontend sent 'Request' where 'OkOne' was expected :/ : {:?}",
+                                    req
+                                ));
+                            }
                             MessageResult::Err(err) => {
                                 println!("frontend sent an error: {}", err);
                             }
                         },
                         None => match msg.data {
-                            MessageResult::Ok(msg) => {
+                            MessageResult::OkOne(msg)
+                            | MessageResult::OkMany { data: msg, .. }
+                            | MessageResult::Request(msg) => {
                                 return Err(anyhow::anyhow!(
                                     "frontend sent a message without id :/ : {:?}",
                                     msg
