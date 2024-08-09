@@ -591,7 +591,7 @@ pub fn save_song_route(
         .and_then(|ytf: crate::yt::SongTubeFac, id: String| async move {
             let name = format!("{}.webm", &id);
 
-            let bytes = ytf.get_song(id).await.map_err(custom_reject)?;
+            let bytes = ytf.get_song2(id).await.map_err(custom_reject)?;
 
             let dest = ytf.config.music_path.join(&name);
             let mut file = tokio::fs::File::create_new(&dest)

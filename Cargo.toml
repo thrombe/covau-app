@@ -80,6 +80,7 @@ wasmdeps = [
 bindeps = [
   "player-mpv",
   "bytes",
+  "base64",
   "musicbrainz_rs",
   "tokio",
   "tokio-stream",

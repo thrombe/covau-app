@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use base64::Engine;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
@@ -191,6 +192,9 @@ pub enum YtiRequest {
     GetSongUri {
         id: String,
     },
+    GetSongBytes {
+        id: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -294,6 +298,7 @@ impl SongTubeFac {
         Self { fe, client, config }
     }
 
+    /// OOF: broken. yt servers return 403
     pub async fn get_song(&self, id: String) -> anyhow::Result<Vec<u8>> {
         let info: SongUriInfo = self
             .fe
@@ -340,6 +345,20 @@ impl SongTubeFac {
                 vec
             });
 
+        Ok(bytes)
+    }
+
+    pub async fn get_song2(&self, id: String) -> anyhow::Result<Vec<u8>> {
+        let mut bytes_stream = self
+            .fe
+            .get_many::<String>(YtiRequest::GetSongBytes { id: id.clone() })
+            .await?;
+
+        let mut bytes = Vec::new();
+        while let Some(b64) = bytes_stream.next().await {
+            let b64 = b64?;
+            bytes.extend(base64::prelude::BASE64_STANDARD.decode(&b64)?);
+        }
         Ok(bytes)
     }
 

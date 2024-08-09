@@ -231,6 +231,29 @@ class YtiServer extends Server<yt.YtiRequest> {
                 let uri = await st.st.fetch.try_uri(req.content.id);
                 return resolve.one(uri);
             } break;
+            case 'GetSongBytes': {
+                let tube = get(stores.tube);
+                let resp = await tube.download(req.content.id, {
+                    quality: "best",
+                    type: "audio",
+                    client: "YTMUSIC_ANDROID",
+                });
+                let reader = resp.getReader();
+                while (true) {
+                    let read = await reader.read();
+                    if (read.done) {
+                        if (read.value) {
+                            let base64 = buffer_to_base64(read.value);
+                            return resolve.many_done(base64);
+                        } else {
+                            return resolve.many_done("");
+                        }
+                    } else {
+                        let base64 = buffer_to_base64(read.value);
+                        resolve.many(base64);
+                    }
+                }
+            } break;
             default:
                 throw exhausted(req);
         }
