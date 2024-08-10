@@ -286,6 +286,7 @@ export class StListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 common_options.blacklist_artist,
+                                common_options.unblacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -299,6 +300,7 @@ export class StListItem extends ListItem {
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
                                 common_options.blacklist_artist,
+                                common_options.unblacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -312,6 +314,7 @@ export class StListItem extends ListItem {
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
                                 common_options.blacklist_artist,
+                                common_options.unblacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -403,6 +406,7 @@ export class StListItem extends ListItem {
                                 options.copy_channel_url,
                                 options.copy_artist_url,
                                 common_options.blacklist_artist,
+                                common_options.unblacklist_artist,
                                 common_options.open_details,
                             ],
                         };
@@ -415,6 +419,7 @@ export class StListItem extends ListItem {
                                 options.copy_channel_url,
                                 options.copy_artist_url,
                                 common_options.blacklist_artist,
+                                common_options.unblacklist_artist,
                                 common_options.refresh_details,
                             ],
                         };

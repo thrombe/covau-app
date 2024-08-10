@@ -579,6 +579,13 @@ export class AutoplayQueueManager extends QueueManager {
         }
     }
 
+    async remove_artists_from_blacklist(item: ListItem) {
+        let ids = item.artist_ids();
+        for (let id of ids) {
+            await this.remove_artist_from_blacklist(id);
+        }
+    }
+
     protected async add_artist_to_blacklist(id: types.covau.InfoSource) {
         if (!this.blacklist_artist_ids) {
             return;
@@ -586,6 +593,16 @@ export class AutoplayQueueManager extends QueueManager {
         if (!this.bl_artist_ids.has(id.content)) {
             this.blacklist_artist_ids.push(id);
             this.bl_artist_ids.add(id.content);
+        }
+    }
+
+    protected async remove_artist_from_blacklist(id: types.covau.InfoSource) {
+        if (!this.blacklist_artist_ids) {
+            return;
+        }
+        if (this.bl_artist_ids.has(id.content)) {
+            this.blacklist_artist_ids = this.blacklist_artist_ids.filter(a => a.content != id.content);
+            this.bl_artist_ids.delete(id.content);
         }
     }
 
@@ -794,8 +811,32 @@ export class LocalSyncQueue extends AutoplayQueueManager {
         sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
         stores.syncops.save.debounced.blacklist();
     }
+    async remove_artists_from_blacklist(item: ListItem): Promise<void> {
+        for (let id of item.artist_ids()) {
+            await super.remove_artist_from_blacklist(id);
+        }
+
+        if (!this.blacklist_artist_ids) {
+            return;
+        }
+
+        let sync = get(stores.syncer)
+        sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
+        stores.syncops.save.debounced.blacklist();
+    }
     async add_artist_to_blacklist(id: types.covau.InfoSource) {
         await super.add_artist_to_blacklist(id);
+
+        if (!this.blacklist_artist_ids) {
+            return;
+        }
+
+        let sync = get(stores.syncer)
+        sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
+        stores.syncops.save.debounced.blacklist();
+    }
+    async remove_artist_from_blacklist(id: types.covau.InfoSource) {
+        await super.remove_artist_from_blacklist(id);
 
         if (!this.blacklist_artist_ids) {
             return;

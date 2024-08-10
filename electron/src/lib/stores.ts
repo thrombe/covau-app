@@ -803,6 +803,11 @@ export const queue_ops = {
         await get(queue).add_artists_to_blacklist(item);
         queue.update(q => q);
     },
+
+    async unblacklist_artists(item: ListItem) {
+        await get(queue).remove_artists_from_blacklist(item);
+        queue.update(q => q);
+    },
 };
 
 

@@ -152,6 +152,15 @@ export abstract class ListItem implements Keyed {
                     toast("artist(s) added to blacklist");
                 },
             },
+            unblacklist_artist: {
+                icon: icons.remove,
+                title: "unblacklist artist(s)",
+                onclick: async () => {
+                    let stores = await stores_ts;
+                    await stores.queue_ops.unblacklist_artists(this);
+                    toast("artist(s) removed from blacklist");
+                },
+            },
             open_album: (a: types.yt.SmolAlbum | null) => {
                 if (!a) {
                     return [];
