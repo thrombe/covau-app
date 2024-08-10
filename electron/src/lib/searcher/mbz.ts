@@ -136,13 +136,14 @@ export class MbzListItem extends ListItem {
         switch (this.data.typ) {
             case "MbzRecordingWithInfo":
                 return this.data.data.credit.map(a => ({ type: "MbzId", content: a.id }));
+            case "MbzArtist":
+                return [{ type: "MbzId", content: this.data.data.id }];
             case "MbzRecording":
             case "MbzRadioSong":
             case "MbzReleaseWithInfo":
             case "MbzReleaseGroupWithInfo":
             case "MbzRelease":
             case "MbzReleaseGroup":
-            case "MbzArtist":
                 return [];
             default:
                 throw exhausted(this.data);
@@ -433,7 +434,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -448,7 +449,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -463,7 +464,7 @@ export class MbzListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -772,6 +773,7 @@ export class MbzListItem extends ListItem {
                                 options.explore_releases,
                                 options.explore_recordings,
                                 options.mbz_url,
+                                common_options.blacklist_artist,
                                 common_options.open_details,
                             ],
                         };
@@ -783,6 +785,7 @@ export class MbzListItem extends ListItem {
                                 options.explore_releases,
                                 options.explore_recordings,
                                 options.mbz_url,
+                                common_options.blacklist_artist,
                                 common_options.refresh_details,
                             ],
                         };

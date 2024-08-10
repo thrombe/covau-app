@@ -101,9 +101,11 @@ export class StListItem extends ListItem {
                     .filter(id => !!id.channel_id)
                     .map(id => ({ type: "YtId", content: id.channel_id! }));
             } break;
+            case "Artist": {
+                return [{ type: "YtId", content: this.data.content.id }];
+            } break;
             case "Album":
             case "Playlist":
-            case "Artist":
                 return [];
             default:
                 throw exhausted(this.data)
@@ -283,7 +285,7 @@ export class StListItem extends ListItem {
                             top_right: common_options.queue_remove_while_in_queue,
                             menu: [
                                 options.copy_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -296,7 +298,7 @@ export class StListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -309,7 +311,7 @@ export class StListItem extends ListItem {
                                 common_options.queue_add,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -400,6 +402,7 @@ export class StListItem extends ListItem {
                                 ...options.explore_releases(),
                                 options.copy_channel_url,
                                 options.copy_artist_url,
+                                common_options.blacklist_artist,
                                 common_options.open_details,
                             ],
                         };
@@ -411,6 +414,7 @@ export class StListItem extends ListItem {
                                 ...options.explore_releases(),
                                 options.copy_channel_url,
                                 options.copy_artist_url,
+                                common_options.blacklist_artist,
                                 common_options.refresh_details,
                             ],
                         };

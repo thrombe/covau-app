@@ -222,8 +222,12 @@ export class DbListItem extends ListItem {
             case "MbzRecording": {
                 return this.data.t.credit.map(a => ({ type: "MbzId", content: a.id }));
             } break;
-            case "MbzArtist":
-            case "StArtist":
+            case "MbzArtist": {
+                return [{ type: "MbzId", content: this.data.t.id }];
+            } break;
+            case "StArtist": {
+                return [{ type: "YtId", content: this.data.t.id }];
+            } break;
             case "MmArtist":
             case "MmAlbum":
             case "MmPlaylist":
@@ -839,7 +843,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -854,7 +858,7 @@ export class DbListItem extends ListItem {
                             ],
                             menu: [
                                 options.copy_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -870,7 +874,7 @@ export class DbListItem extends ListItem {
                                 ops.options.unlike,
                                 ops.options.undislike,
                                 options.copy_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -906,7 +910,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -922,7 +926,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -939,7 +943,7 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -977,7 +981,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -995,7 +999,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1014,7 +1018,7 @@ export class DbListItem extends ListItem {
                                 options.search_video,
                                 options.mbz_url,
                                 options.lbz_url,
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1101,7 +1105,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...options.save_song(),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1117,7 +1121,7 @@ export class DbListItem extends ListItem {
                             menu: [
                                 options.copy_url,
                                 ...options.save_song(),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.open_details,
                             ],
@@ -1134,7 +1138,7 @@ export class DbListItem extends ListItem {
                                 ops.options.undislike,
                                 options.copy_url,
                                 ...options.save_song(),
-                                common_options.blacklist_artists,
+                                common_options.blacklist_artist,
                                 common_options.set_as_seed,
                                 common_options.refresh_details,
                             ],
@@ -1288,6 +1292,7 @@ export class DbListItem extends ListItem {
                                 options.open_unexplored,
                                 options.add_saved_to_queue,
                                 options.add_all_unexplored_to_queue,
+                                common_options.blacklist_artist,
                                 common_options.open_details,
                             ],
                         };
@@ -1299,6 +1304,7 @@ export class DbListItem extends ListItem {
                                 options.open_unexplored,
                                 options.add_saved_to_queue,
                                 options.add_all_unexplored_to_queue,
+                                common_options.blacklist_artist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1332,6 +1338,7 @@ export class DbListItem extends ListItem {
                                 options.explore_releases,
                                 options.explore_recordings,
                                 options.mbz_url,
+                                common_options.blacklist_artist,
                                 common_options.open_details,
                             ],
                         };
@@ -1343,6 +1350,7 @@ export class DbListItem extends ListItem {
                                 options.explore_releases,
                                 options.explore_recordings,
                                 options.mbz_url,
+                                common_options.blacklist_artist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
