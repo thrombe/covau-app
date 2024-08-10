@@ -293,6 +293,37 @@
           qt6.wrapQtAppsHook
         ];
       };
+      qt-shell = pkgs.mkShell.override {
+        inherit stdenv;
+      } {
+        nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+        inputsFrom = [
+          covau-app
+          qweb
+        ];
+
+        buildInputs = with pkgs; [
+          qtcreator
+          qweb
+
+          # this is for the shellhook portion
+          qt6.wrapQtAppsHook
+          makeWrapper
+          bashInteractive
+        ];
+
+        # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
+        # set the environment variables that Qt apps expect
+        shellHook = ''
+          # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
+          export QTWEBENGINE_REMOTE_DEBUGGING=6178
+          export DEV_SHELL="QT"
+
+          bashdir=$(mktemp -d)
+          makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
+          exec "$bashdir/bash"
+        '';
+      };
 
       fhs = pkgs.buildFHSEnv {
         name = "fhs-shell";
@@ -406,6 +437,7 @@
             unstable.clippy
             # unstable.rustup
             unstable.gdb
+            pkg-config
 
             unstable.electron_29
             # unstable.yarn
@@ -435,75 +467,48 @@
         inherit covau-app;
       };
 
-      devShells.windows = windows-shell;
-      devShells.qt = pkgs.mkShell.override {
-        inherit stdenv;
-      } {
-        nativeBuildInputs = (env-packages pkgs) ++ [fhs];
-        inputsFrom = [
-          covau-app
-          qweb
-        ];
+      devShells = {
+        windows = windows-shell;
+        qt = qt-shell;
 
-        buildInputs = with pkgs; [
-          qtcreator
-          qweb
+        default =
+          pkgs.mkShell.override {
+            inherit stdenv;
+          } {
+            nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+            inputsFrom = [
+              covau-app
+              qweb
+            ];
+            shellHook = ''
+              export PROJECT_ROOT="$(pwd)"
 
-          # this is for the shellhook portion
-          qt6.wrapQtAppsHook
-          makeWrapper
-          bashInteractive
-        ];
+              export RUST_BACKTRACE="1"
 
-        # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
-        # set the environment variables that Qt apps expect
-        shellHook = ''
-          # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
-          export QTWEBENGINE_REMOTE_DEBUGGING=6178
-          export DEV_SHELL="QT"
+              # $(pwd) always resolves to project root :)
+              export CLANGD_FLAGS="--compile-commands-dir=$(pwd)/plugin --query-driver=$(which $CXX)"
 
-          bashdir=$(mktemp -d)
-          makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
-          exec "$bashdir/bash"
-        '';
+              # export UI_BACKEND="ELECTRON"
+              # export UI_BACKEND="WEBUI"
+              # export UI_BACKEND="TAURI"
+              # export UI_BACKEND="QWEB"
+              export UI_BACKEND="NONE"
+              export BUILD_MODE="DEV"
+              # export BUILD_MODE="PROD"
+
+              export SERVER_PORT=6173
+              export WEBUI_PORT=6174
+              export DEV_VITE_PORT=6175
+
+              export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"
+
+              export PATH=$PROJECT_ROOT/qweb/build:$PATH
+              export QTWEBENGINE_REMOTE_DEBUGGING=6178
+
+              export QT_SCALE_FACTOR_ROUNDING_POLICY=RoundPreferFloor
+              export QT_WAYLAND_DISABLE_WINDOWDECORATION=0
+            '';
+          };
       };
-      devShells.default =
-        pkgs.mkShell.override {
-          inherit stdenv;
-        } {
-          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
-          inputsFrom = [
-            covau-app
-            qweb
-          ];
-          shellHook = ''
-            export PROJECT_ROOT="$(pwd)"
-
-            export RUST_BACKTRACE="1"
-
-            # $(pwd) always resolves to project root :)
-            export CLANGD_FLAGS="--compile-commands-dir=$(pwd)/plugin --query-driver=$(which $CXX)"
-
-            # export UI_BACKEND="ELECTRON"
-            # export UI_BACKEND="WEBUI"
-            # export UI_BACKEND="TAURI"
-            # export UI_BACKEND="QWEB"
-            export UI_BACKEND="NONE"
-            export BUILD_MODE="DEV"
-            # export BUILD_MODE="PROD"
-
-            export SERVER_PORT=6173
-            export WEBUI_PORT=6174
-            export DEV_VITE_PORT=6175
-
-            export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"
-
-            export PATH=$PROJECT_ROOT/qweb/build:$PATH
-            export QTWEBENGINE_REMOTE_DEBUGGING=6178
-
-            export QT_SCALE_FACTOR_ROUNDING_POLICY=RoundPreferFloor
-            export QT_WAYLAND_DISABLE_WINDOWDECORATION=0
-          '';
-        };
     });
 }
