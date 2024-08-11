@@ -486,6 +486,7 @@ class DbClient extends Client<types.server.DbRequest> {
                     toast(msg, "error");
                     console.error(e);
                 });
+                await _promise;
             }
         }
     }
