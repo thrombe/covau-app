@@ -605,15 +605,36 @@ pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply
         .and(warp::header::headers_cloned())
         .and(warp::any().map(move || st.clone()))
         .and_then(
-            |query: YtStreamQuery, _headers: warp::http::HeaderMap, st: SongTubeFac| async move {
+            |query: YtStreamQuery, headers: warp::http::HeaderMap, st: SongTubeFac| async move {
                 let stream = st
                     .get_song_bytes_chunked(query.id)
                     .await
                     .map_err(custom_reject)?;
 
-                let body = warp::hyper::Body::wrap_stream(stream);
+                let (s, e) = headers
+                    .get("range")
+                    .map(|h| h.to_str())
+                    .transpose()
+                    .map_err(custom_reject)?
+                    .map(|h| h.strip_prefix("bytes="))
+                    .flatten()
+                    .map(|h| h.split_once("-"))
+                    .flatten()
+                    .map(|(s, e)| {
+                        Ok::<_, anyhow::Error>((s.parse::<usize>()?, e.parse::<usize>().ok()))
+                    })
+                    .transpose()
+                    .map_err(custom_reject)?
+                    .map(|(s, e)| (s, e.unwrap_or(query.size as usize - 1)))
+                    .unwrap_or((0, query.size as usize - 1));
 
-                let wres = warp::http::Response::builder().header("content-type", "audio/webm");
+                let body = warp::hyper::Body::wrap_stream(stream.take(e + 1).skip(s));
+
+                let wres = warp::http::Response::builder()
+                    .header("content-type", "audio/webm")
+                    .header("content-range", format!("bytes={}-{}", s, e))
+                    .header("content-length", format!("{}", e - s + 1))
+                    .header("accept-ranges", "bytes");
                 wres.body(body).map_err(custom_reject)
             },
         );
@@ -630,19 +651,39 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
         .and(warp::any().map(move || config.clone()))
         .and_then(
             |src: SourcePath,
-             _headers: warp::http::HeaderMap,
+             headers: warp::http::HeaderMap,
              config: Arc<DerivedConfig>| async move {
                 let path = config.to_path(src).map_err(custom_reject)?;
 
                 let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
-                let body = warp::hyper::Body::from(bytes);
+
+                let (s, e) = headers
+                    .get("range")
+                    .map(|h| h.to_str())
+                    .transpose()
+                    .map_err(custom_reject)?
+                    .map(|h| h.strip_prefix("bytes="))
+                    .flatten()
+                    .map(|h| h.split_once("-"))
+                    .flatten()
+                    .map(|(s, e)| Ok::<_, anyhow::Error>((s.parse::<usize>()?, e.parse::<usize>().ok())))
+                    .transpose()
+                    .map_err(custom_reject)?
+                    .map(|(s, e)| (s, e.unwrap_or(bytes.len() - 1)))
+                    .unwrap_or((0, bytes.len() - 1));
+
+                let body = warp::hyper::Body::from(bytes.into_iter().take(e + 1).skip(s).collect::<Vec<_>>());
                 let mime = mime_guess::from_path(&path)
                     .first()
                     .map(|mime| mime.to_string())
                     .context("Could not figure out mime type of file")
                     .map_err(custom_reject)?;
 
-                let wres = warp::http::Response::builder().header("content-type", mime);
+                let wres = warp::http::Response::builder()
+                    .header("content-type", mime)
+                    .header("content-range", format!("bytes={}-{}", s, e))
+                    .header("content-length", format!("{}", e - s + 1))
+                    .header("accept-ranges", "bytes");
                 wres.body(body).map_err(custom_reject)
             },
         );
