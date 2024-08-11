@@ -68,7 +68,7 @@
     const on_window_resize = () => {
         browse_columns = Math.min(
             3,
-            Math.max(Math.floor(browse_width / item_min_width), 1)
+            Math.max(Math.floor(browse_width / item_min_width), 1),
         );
     };
     $: if (browse_width) {
@@ -116,7 +116,7 @@
                             }
                             stores.selected_menubar_option_index.set(i);
                         },
-                    } as Option)
+                    }) as Option,
             );
 
             let player_options = [
@@ -160,7 +160,7 @@
                     options: player_options,
                 },
             ];
-        }
+        },
     );
 
     let img_src = "";
@@ -204,7 +204,7 @@
                 <div
                     class="flex flex-row gap-2 py-2 h-full justify-start text-gray-200 overflow-x-auto scrollbar-hide"
                 >
-                    {#each $menubar_menu as options, i}
+                    {#each $menubar_menu as options}
                         <ThreeDotMenu
                             options={options.options}
                             classes={`max-h-72`}
@@ -244,10 +244,11 @@
                     >
                         {#if mobile}
                             <div
-                                class="flex flex-col w-full overflow-hidden {$menubar_option?.content_type ==
-                                'queue'
-                                    ? 'h-full'
-                                    : 'h-0'}"
+                                class={`flex flex-col w-full overflow-hidden ${
+                                    $menubar_option?.content_type == "queue"
+                                        ? "h-full"
+                                        : "h-0"
+                                }`}
                             >
                                 <div class="flex flex-col h-full">
                                     <Queue bind:item_height {mobile} />
@@ -256,10 +257,11 @@
                         {/if}
 
                         <div
-                            class="w-full {$menubar_option?.content_type ==
-                            'queue'
-                                ? 'h-0 overflow-hidden'
-                                : 'h-full'}"
+                            class={`w-full ${
+                                $menubar_option?.content_type == "queue"
+                                    ? "h-0 overflow-hidden"
+                                    : "h-full"
+                            }`}
                         >
                             <SongBrowser
                                 bind:item_height
