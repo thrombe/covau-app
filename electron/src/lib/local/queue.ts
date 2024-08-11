@@ -796,7 +796,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let sync = get(stores.syncer)
         sync.seen!.t.songs = [...this.blacklist_ids];
-        stores.syncops.save.debounced.seen();
+        await stores.syncops.save.seen();
     }
     async add_artists_to_blacklist(item: ListItem): Promise<void> {
         for (let id of item.artist_ids()) {
@@ -809,7 +809,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let sync = get(stores.syncer)
         sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
-        stores.syncops.save.debounced.blacklist();
+        await stores.syncops.save.blacklist();
     }
     async remove_artists_from_blacklist(item: ListItem): Promise<void> {
         for (let id of item.artist_ids()) {
@@ -822,7 +822,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let sync = get(stores.syncer)
         sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
-        stores.syncops.save.debounced.blacklist();
+        await stores.syncops.save.blacklist();
     }
     async add_artist_to_blacklist(id: types.covau.InfoSource) {
         await super.add_artist_to_blacklist(id);
@@ -833,7 +833,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let sync = get(stores.syncer)
         sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
-        stores.syncops.save.debounced.blacklist();
+        await stores.syncops.save.blacklist();
     }
     async remove_artist_from_blacklist(id: types.covau.InfoSource) {
         await super.remove_artist_from_blacklist(id);
@@ -844,7 +844,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let sync = get(stores.syncer)
         sync.blacklist!.t.artists = [...this.blacklist_artist_ids];
-        stores.syncops.save.debounced.blacklist();
+        await stores.syncops.save.blacklist();
     }
 
     protected async update_queue() {
@@ -857,7 +857,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         sync.queue.t.queue.current_index = this.playing_index;
         sync.queue.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.data.id);
-        stores.syncops.save.debounced.queue();
+        await stores.syncops.save.queue();
     }
     async add(...items: ListItem[]) {
         items = await server.db.txn(async dbops => {
