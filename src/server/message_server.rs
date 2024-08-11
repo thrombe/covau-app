@@ -71,12 +71,12 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                     let msg = serde_json::from_str::<Message<String>>(msg)?;
                     match msg.id {
                         Some(id) => match msg.data {
-                            MessageResult::OkOne(data) => {
-                                let req = async { serde_json::from_str(&data) }
+                            MessageResult::Request(data) => {
+                                let res = async { serde_json::from_str(&data) }
                                     .map_err(|e| anyhow::anyhow!(e))
-                                    .and_then(move |r: R| r.handle(ctx))
+                                    .and_then(move |req: R| req.handle(ctx, id_src))
                                     .await;
-                                match req {
+                                match res {
                                     Ok(res) => {
                                         sender
                                             .send(Message {
@@ -100,13 +100,13 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                             }
                             MessageResult::OkMany { data, .. } => {
                                 return Err(anyhow::anyhow!(
-                                    "frontend sent 'OkMany' where 'OkOne' was expected :/ : {:?}",
+                                    "frontend sent 'OkMany' where 'Request' was expected :/ : {:?}",
                                     data
                                 ));
                             }
-                            MessageResult::Request(req) => {
+                            MessageResult::OkOne(req) => {
                                 return Err(anyhow::anyhow!(
-                                    "frontend sent 'Request' where 'OkOne' was expected :/ : {:?}",
+                                    "frontend sent 'OkOne' where 'Request' was expected :/ : {:?}",
                                     req
                                 ));
                             }

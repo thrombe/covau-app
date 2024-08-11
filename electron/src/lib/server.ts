@@ -412,7 +412,7 @@ class Client<Req> {
 
         let msg: Message<string> = {
             id: id,
-            type: "OkOne",
+            type: "Request",
             content: JSON.stringify(req),
         };
         this.ws.send(JSON.stringify(msg));
