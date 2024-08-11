@@ -1,5 +1,4 @@
 import { type Keyed } from "$lib/utils.ts";
-import type { Writable } from "svelte/store";
 import type { ListItem, Option } from "./item.ts";
 import type { Searcher } from "./searcher.ts";
 import * as stores from "$lib/stores.ts";

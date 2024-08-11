@@ -122,7 +122,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -167,7 +167,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -200,7 +200,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return [];
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -242,7 +242,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return [];
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -285,7 +285,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return "Local State";
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -330,7 +330,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -386,7 +386,7 @@ export class DbListItem extends ListItem {
             case "SongBlacklist":
                 return `${this.data.t.songs.length} Songs`;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.data);
         }
     }
 
@@ -3058,7 +3058,8 @@ export class Db extends mixins.Unpaged<MusicListItem> {
     }
 
     static fused() {
-        let s = Db.new({ type: '' } as unknown as BrowseQuery, 1);
+        // @ts-ignore
+        let s = Db.new({ type: '' }, 1);
         s.has_next_page = false;
         return s;
     }

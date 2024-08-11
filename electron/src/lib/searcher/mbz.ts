@@ -1567,7 +1567,8 @@ export const mbz = {
                 let recording: RecordingWithInfo & Keyed = await mbz.id_fetch(rec.id, "MbzRecordingWithInfo");
                 if (self instanceof MbzListItem) {
                     self.data.data = recording;
-                    self.data.typ = "MbzRecordingWithInfo" as unknown as "MbzRecording"; // what a nice day it is :)
+                    // @ts-ignore
+                    self.data.typ = "MbzRecordingWithInfo";
                 }
                 return recording;
             }

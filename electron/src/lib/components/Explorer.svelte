@@ -15,7 +15,7 @@
     export let updater: Readable<number>;
     export let source_key: number;
     export let on_item_click: (
-        t: Unique<ListItem, unknown>
+        t: Unique<ListItem, unknown>,
     ) => Promise<void> = async (t) => {
         console.log(t);
     };
@@ -41,8 +41,8 @@
         infobox: {};
     }
 
-    export let selected_item: Unique<ListItem, unknown> =
-        undefined as unknown as Unique<ListItem, unknown>;
+    // @ts-ignore
+    export let selected_item: Unique<ListItem, unknown> = undefined;
     let selected_item_index: number;
     let items = new Array<Unique<ListItem, number>>();
 
@@ -57,9 +57,9 @@
 
         let url = t.drag_url();
         if (url != null) {
-            event.dataTransfer!.effectAllowed = 'move';
-            event.dataTransfer!.dropEffect = 'move';
-            event.dataTransfer!.setData('text/plain', url);
+            event.dataTransfer!.effectAllowed = "move";
+            event.dataTransfer!.dropEffect = "move";
+            event.dataTransfer!.setData("text/plain", url);
         }
     };
     const dragenter = async (index: number) => {
@@ -79,7 +79,7 @@
                     let handled = await get(searcher).handle_drop(
                         item.item,
                         index,
-                        item.source_key != source_key
+                        item.source_key != source_key,
                     );
                     if (!handled) {
                         toast("could not handle this drop", "error");

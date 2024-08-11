@@ -8,7 +8,6 @@ import * as server from "$lib/server.ts";
 import * as stores from "$lib/stores.ts";
 import * as types from "$types/types.ts";
 
-import * as covau from "$types/covau.ts";
 import { exhausted } from "$lib/utils.ts";
 import { SongTube } from "$lib/searcher/song_tube.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
@@ -61,12 +60,13 @@ export class QueueManager implements Searcher {
             toast(`item "${item.title()}" not in queue`, "error");
         }
     }
-    async remove_queue_item(item: ListItem) {
+    async remove(item: ListItem) {
         let index = this.get_item_index(item);
         if (index != null) {
-            await this.remove(index);
+            await this.remove_at(index);
+            return index;
         } else {
-            toast(`item "${item.title()}" not in queue`, "error");
+            return null;
         }
     }
     async move_queue_item(item: ListItem, to: number) {
@@ -131,7 +131,7 @@ export class QueueManager implements Searcher {
             await this.play(this.playing_index);
         }
     }
-    async remove(index: number) {
+    async remove_at(index: number) {
         if (this.playing_index != null) {
             if (this.playing_index > index) {
                 this.playing_index -= 1;
@@ -688,7 +688,7 @@ export class AutoplayQueueManager extends QueueManager {
         return item;
     }
 
-    async remove(index: number): Promise<void> {
+    async remove_at(index: number): Promise<void> {
         if (this.playing_index != null) {
             if (this.playing_index > index) {
                 this.playing_index -= 1;
@@ -852,16 +852,16 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let seed = this.get_seed();
         if (seed) {
-            sync.queue!.t.seed = (seed as db.DbListItem).data.id;
+            sync.queue.t.seed = (seed as db.DbListItem).data.id;
         }
 
-        sync.queue!.t.queue.current_index = this.playing_index;
-        sync.queue!.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.data.id);
+        sync.queue.t.queue.current_index = this.playing_index;
+        sync.queue.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.data.id);
         stores.syncops.save.debounced.queue();
     }
     async add(...items: ListItem[]) {
-        await server.db.txn(async dbops => {
-            items = await Promise.all(items.map(async item => {
+        items = await server.db.txn(async dbops => {
+            return await Promise.all(items.map(async item => {
                 let e = await item.saved_covau_song(dbops);
                 return db.db.wrapped(e!);
             }));
@@ -882,8 +882,8 @@ export class LocalSyncQueue extends AutoplayQueueManager {
         await super.move(from, to);
         await this.update_queue();
     }
-    async remove(index: number) {
-        await super.remove(index);
+    async remove_at(index: number) {
+        await super.remove_at(index);
         await this.update_queue();
     }
     async play(index: number): Promise<void> {

@@ -455,7 +455,8 @@ export const syncops = {
                             playing_item.set(q.items[q.playing_index]);
                         }
                         queue.update(t => t);
-                    });
+                    }
+                );
             },
             async blacklist() {
                 let server = await import("$lib/server.ts");
@@ -464,7 +465,7 @@ export const syncops = {
 
                 syncops.listeners.disable.blacklist();
                 if (sync.blacklist == null) {
-                    syncops.listeners.disable.blacklist = () => {};
+                    syncops.listeners.disable.blacklist = () => { };
                     return;
                 }
                 syncops.listeners.disable.blacklist = server.db.set_update_listener<types.covau.ArtistBlacklist>(
@@ -478,7 +479,8 @@ export const syncops = {
                         q.blacklist_artist_ids = [...bl.t.artists];
                         q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
                         queue.update(t => t);
-                    });
+                    }
+                );
             },
             async seen() {
                 let server = await import("$lib/server.ts");
@@ -487,7 +489,7 @@ export const syncops = {
 
                 syncops.listeners.disable.seen();
                 if (sync.seen == null) {
-                    syncops.listeners.disable.seen = () => {};
+                    syncops.listeners.disable.seen = () => { };
                     return;
                 }
                 syncops.listeners.disable.seen = server.db.set_update_listener<types.covau.SongBlacklist>(
@@ -501,7 +503,8 @@ export const syncops = {
                         q.blacklist_ids = [...bl.t.songs];
                         q.bl_ids = new Set(bl.t.songs.map(id => id.content));
                         queue.update(t => t);
-                    });
+                    }
+                );
             },
         },
     },
@@ -516,23 +519,19 @@ export const syncops = {
                 sync: 0,
             },
             queue() {
-                let tim = syncops.save.debounced._timeouts.queue;
-                clearTimeout(tim);
+                clearTimeout(syncops.save.debounced._timeouts.queue);
                 syncops.save.debounced._timeouts.queue = setTimeout(syncops.save.queue, 300) as unknown as number;
             },
             blacklist() {
-                let tim = syncops.save.debounced._timeouts.blacklist;
-                clearTimeout(tim);
+                clearTimeout(syncops.save.debounced._timeouts.blacklist);
                 syncops.save.debounced._timeouts.blacklist = setTimeout(syncops.save.blacklist, 300) as unknown as number;
             },
             seen() {
-                let tim = syncops.save.debounced._timeouts.seen;
-                clearTimeout(tim);
+                clearTimeout(syncops.save.debounced._timeouts.seen);
                 syncops.save.debounced._timeouts.seen = setTimeout(syncops.save.seen, 300) as unknown as number;
             },
             sync() {
-                let tim = syncops.save.debounced._timeouts.sync;
-                clearTimeout(tim);
+                clearTimeout(syncops.save.debounced._timeouts.sync);
                 syncops.save.debounced._timeouts.sync = setTimeout(syncops.save.sync, 300) as unknown as number;
             },
         },
@@ -540,8 +539,8 @@ export const syncops = {
             let server = await import("$lib/server.ts");
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
-                sync.queue = await db.update(sync.queue);
+            sync.queue = await server.db.txn(async db => {
+                return await db.update(sync.queue);
             });
 
             syncer.update(t => t);
@@ -550,8 +549,8 @@ export const syncops = {
             let server = await import("$lib/server.ts");
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
-                sync.blacklist = await db.update(sync.blacklist!);
+            sync.blacklist = await server.db.txn(async db => {
+                return await db.update(sync.blacklist!);
             });
 
             syncer.update(t => t);
@@ -560,8 +559,8 @@ export const syncops = {
             let server = await import("$lib/server.ts");
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
-                sync.seen = await db.update(sync.seen!);
+            sync.seen = await server.db.txn(async db => {
+                return await db.update(sync.seen!);
             });
 
             syncer.update(t => t);
@@ -570,8 +569,8 @@ export const syncops = {
             let server = await import("$lib/server.ts");
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
-                sync.state = await db.update(sync.state);
+            sync.state = await server.db.txn(async db => {
+                return await db.update(sync.state);
             });
 
             syncer.update(t => t);
@@ -638,7 +637,7 @@ export const syncops = {
             sync.blacklist = bl;
             sync.queue.t.blacklist = bl.id;
             sync.queue = await server.db.txn(async db => {
-                return await db.update(sync.queue!);
+                return await db.update(sync.queue);
             });
             q.blacklist_artist_ids = [...bl.t.artists];
             q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
@@ -680,7 +679,7 @@ export const syncops = {
             let q = get(queue);
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
+            sync.state = await server.db.txn(async db => {
                 let dbq = await db.insert<types.covau.Queue>({
                     typ: "Queue",
                     t: {
@@ -701,7 +700,7 @@ export const syncops = {
                 sync.blacklist = null;
                 sync.seen = null;
                 sync.seed = null;
-                sync.state = await db.update(sync.state);
+                return await db.update(sync.state);
             });
             await syncops.listeners.reset.queue();
             q.reset();
@@ -722,8 +721,8 @@ export const syncops = {
                         artists: [],
                     },
                 });
-                sync.queue!.t.blacklist = bl.id;
-                sync.queue = await db.update(sync.queue!);
+                sync.queue.t.blacklist = bl.id;
+                sync.queue = await db.update(sync.queue);
                 sync.blacklist = bl;
                 return bl;
             });
@@ -747,8 +746,8 @@ export const syncops = {
                         songs: [],
                     },
                 });
-                sync.queue!.t.seen = bl.id;
-                sync.queue = await db.update(sync.queue!);
+                sync.queue.t.seen = bl.id;
+                sync.queue = await db.update(sync.queue);
                 sync.seen = bl;
                 return bl;
             });
@@ -780,7 +779,10 @@ export const queue_ops = {
     },
 
     async remove_item(item: ListItem) {
-        await get(queue).remove_queue_item(item);
+        let index = await get(queue).remove(item);
+        if (index == null) {
+            toast(`item "${item.title()}" not in queue`, "error");
+        }
         queue.update(q => q);
     },
 

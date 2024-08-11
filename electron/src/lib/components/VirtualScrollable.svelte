@@ -20,8 +20,10 @@
     };
     export let end_is_visible = true;
     export let keyboard_control = true;
-    export let width: number = undefined as unknown as number;
-    export let height: number = undefined as unknown as number;
+    // @ts-ignore
+    export let width: number = undefined;
+    // @ts-ignore
+    export let height: number = undefined;
 
     type T = $$Generic;
     interface $$Slots {

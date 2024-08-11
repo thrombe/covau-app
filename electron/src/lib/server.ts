@@ -357,7 +357,7 @@ class FeServer extends Server<FeRequest> {
     }
 }
 
-type Resolver<T> = (res: any) => void;
+type Resolver<T> = (res: T) => void;
 class Client<Req> {
     ws: WebSocket;
     path: string;
@@ -368,7 +368,7 @@ class Client<Req> {
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
 
         this.ws.addEventListener('message', async (e) => {
-            let mesg: Message<unknown> = JSON.parse(e.data);
+            let mesg: Message<string> = JSON.parse(e.data);
 
             if (mesg.id == null) {
                 toast("backend sent some data without id", "error");
@@ -396,11 +396,12 @@ class Client<Req> {
         });
     }
 
-    resolves: Map<number, Resolver<string>> = new Map();
+    resolves: Map<number, Resolver<MessageResult<string>>> = new Map();
     async execute<T>(req: Req): Promise<T> {
         let id: number = await utils.api_request(this.path, null);
 
-        let resolve: Resolver<string> = undefined as unknown as Resolver<string>;
+        // @ts-ignore
+        let resolve: Resolver<MessageResult<string>> = undefined;
         let promise = new Promise<MessageResult<string>>(r => {
             resolve = r;
         });
