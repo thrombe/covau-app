@@ -80,3 +80,8 @@ export function buffer_to_base64(buf: Uint8Array): string {
 
     return wasm.base64_encode(buf);
 }
+
+export function rem() {
+    let rem = parseInt(getComputedStyle(document.documentElement).fontSize);
+    return rem;
+}

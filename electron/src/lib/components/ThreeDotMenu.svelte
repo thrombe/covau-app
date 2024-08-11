@@ -5,8 +5,23 @@
 
     export let options: Option[];
     export let classes: string = "";
-    export let pos_style: (r1: DOMRect, r2: DOMRect) => string = (r1, r2) => {
-        return `top: calc(${r1.bottom}px + 0.7rem); left: ${r1.left}px;`;
+    let pos_style: (r1: DOMRect, r2: DOMRect) => string = (r1, r2) => {
+        let pad = utils.rem() * 0.7;
+
+        let right_edge = r1.left + r1.width/2 + r2.width/2 + pad;
+        let left_edge = r1.left + r1.width/2 - r2.width/2 - pad;
+        let pad_left = Math.max(0, right_edge - window.innerWidth);
+        let pad_right = Math.max(0, -left_edge);
+
+        let bottom_edge = r1.bottom + r1.height/2 + r2.height/2 + pad;
+        let top_edge = r1.bottom + r1.height/2 - r2.height/2 - pad;
+        let pad_bottom = Math.max(0, bottom_edge - window.innerHeight);
+        let pad_top = Math.max(0, -top_edge);
+
+        return `
+            top: calc(${r1.bottom + r1.height / 2}px - ${r2.height / 2}px - ${pad_bottom - pad_top}px);
+            left: calc(${r1.left + r1.width / 2}px - ${r2.width / 2}px - ${pad_left - pad_right}px);
+        `;
     };
 
     let menu: HTMLElement | null = null;

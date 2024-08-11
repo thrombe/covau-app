@@ -1,12 +1,12 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
+    import * as utils from "$lib/utils.ts";
 
     export let tooltip: string;
 
     let hide_style = "position: absolute; top: 0; left: 0; z-index: -70; opacity: 0%;";
     let pos_style: (r1: DOMRect, r2: DOMRect) => string = (r1, r2) => {
-        let rem = parseInt(getComputedStyle(document.documentElement).fontSize);
-        let pad = rem * 0.7;
+        let pad = utils.rem() * 0.7;
         let right_edge = r1.left + r1.width/2 + r2.width/2 + pad;
         let left_edge = r1.left + r1.width/2 - r2.width/2 - pad;
         let pad_left = Math.max(0, right_edge - window.innerWidth);
