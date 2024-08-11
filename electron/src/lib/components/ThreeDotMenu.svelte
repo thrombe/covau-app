@@ -8,19 +8,23 @@
     let pos_style: (r1: DOMRect, r2: DOMRect) => string = (r1, r2) => {
         let pad = utils.rem() * 0.7;
 
-        let right_edge = r1.left + r1.width/2 + r2.width/2 + pad;
-        let left_edge = r1.left + r1.width/2 - r2.width/2 - pad;
-        let pad_left = Math.max(0, right_edge - window.innerWidth);
-        let pad_right = Math.max(0, -left_edge);
+        let x = r1.left + r1.width / 2 - r2.width;
+        if (x < 0) {
+            x += r2.width + pad;
+        } else {
+            x -= pad;
+        }
 
-        let bottom_edge = r1.bottom + r1.height/2 + r2.height/2 + pad;
-        let top_edge = r1.bottom + r1.height/2 - r2.height/2 - pad;
-        let pad_bottom = Math.max(0, bottom_edge - window.innerHeight);
-        let pad_top = Math.max(0, -top_edge);
+        let y = r1.top + r1.height / 2;
+        if (y + r2.height > window.innerHeight) {
+            y -= r2.height + pad;
+        } else {
+            y += pad;
+        }
 
         return `
-            top: calc(${r1.bottom + r1.height / 2}px - ${r2.height / 2}px - ${pad_bottom - pad_top}px);
-            left: calc(${r1.left + r1.width / 2}px - ${r2.width / 2}px - ${pad_left - pad_right}px);
+            top: calc(${y}px);
+            left: calc(${x}px);
         `;
     };
 
