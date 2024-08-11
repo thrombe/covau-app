@@ -56,16 +56,25 @@ export const utils = {
 
     url: {
         stream: {
-            file(obj: Object) {
+            file(query: types.covau.SourcePath) {
                 let url = new URL(utils.base_url + "stream/file");
-                Object.entries(obj).forEach(([k, v]) => {
+                Object.entries(query).forEach(([k, v]) => {
                     url.searchParams.append(k, v);
                 });
                 return url.toString();
             },
-            yt(obj: Object) {
+            yt(query: types.server.YtStreamQuery) {
                 let url = new URL(utils.base_url + "stream/yt");
-                Object.entries(obj).forEach(([k, v]) => {
+                Object.entries(query).forEach(([k, v]) => {
+                    url.searchParams.append(k, v.toString());
+                });
+                return url.toString();
+            },
+        },
+        fetch: {
+            image(query: types.server.ImageQuery) {
+                let url = new URL(utils.base_url + "image");
+                Object.entries(query).forEach(([k, v]) => {
                     url.searchParams.append(k, v);
                 });
                 return url.toString();

@@ -12,8 +12,8 @@ use crate::{
         mbz::mbz_routes,
         player::player_route,
         routes::{
-            save_song_route, source_path_route, stream_file, stream_yt, webui_js_route, AppState,
-            Asset, FeRequest, FrontendClient, ProxyRequest,
+            image_route, save_song_route, source_path_route, stream_file, stream_yt,
+            webui_js_route, AppState, Asset, FeRequest, FrontendClient, ProxyRequest,
         },
     },
     yt::YtiRequest,
@@ -135,6 +135,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) {
         .or(webui_js_route(client.clone(), config.clone()))
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))
+        .or(image_route("image", client.clone(), config.clone()))
         .or(stream_yt("yt", ytf.clone()))
         .or(stream_file("file", config.clone()))
         .or(options_route.boxed());
@@ -232,6 +233,8 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     types += &specta::ts::export::<InsertResponse<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<YtStreamQuery>(config)?;
+    types += ";\n";
+    types += &specta::ts::export::<ImageQuery>(config)?;
     types += ";\n";
     types += &specta::ts::export::<DbRequest>(config)?;
     types += ";\n";

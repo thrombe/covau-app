@@ -630,6 +630,7 @@ pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply
 
                 let body = warp::hyper::Body::wrap_stream(stream.take(e + 1).skip(s));
 
+                // - [can't seek html5 video or audio in chrome](https://stackoverflow.com/a/61229273)
                 let wres = warp::http::Response::builder()
                     .header("content-type", "audio/webm")
                     .header("content-range", format!("bytes={}-{}", s, e))
@@ -679,6 +680,7 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
                     .context("Could not figure out mime type of file")
                     .map_err(custom_reject)?;
 
+                // - [can't seek html5 video or audio in chrome](https://stackoverflow.com/a/61229273)
                 let wres = warp::http::Response::builder()
                     .header("content-type", mime)
                     .header("content-range", format!("bytes={}-{}", s, e))
@@ -721,6 +723,71 @@ pub fn save_song_route(
 
     let route = route.with(warp::cors().allow_any_origin());
     route.boxed()
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct ImageQuery {
+    src: String,
+}
+pub fn image_route(
+    path: &'static str,
+    c: reqwest::Client,
+    config: Arc<DerivedConfig>,
+) -> BoxedFilter<(impl Reply,)> {
+    let redirect = warp::path(path)
+        .and(warp::path::end())
+        .and(warp::query::<ImageQuery>())
+        .and(warp::header::headers_cloned())
+        .and(warp::any().map(move || c.clone()))
+        .and(warp::any().map(move || config.clone()))
+        .and_then(
+            |query: ImageQuery,
+             headers: warp::http::HeaderMap,
+             client: reqwest::Client,
+             _config: Arc<DerivedConfig>| async move {
+                let mut req = client.get(&query.src);
+                for k in [
+                    "accept",
+                    "accept-encoding",
+                    "accept-language",
+                    "connection",
+                    "DNT",
+                    "user-agent",
+                ] {
+                    if let Some(v) = headers.get(k) {
+                        req = req.header(k, v);
+                    }
+                }
+                let res = client
+                    .execute(req.build().map_err(custom_reject)?)
+                    .await
+                    .map_err(custom_reject)?;
+
+                let headers = res.headers();
+                let mut wres = warp::http::Response::builder();
+                for k in [
+                    "accept-ranges",
+                    "age",
+                    "cache-control",
+                    "alt-svc",
+                    "content-length",
+                    "content-type",
+                    "server",
+                ] {
+                    if let Some(v) = headers.get(k) {
+                        wres = wres.header(k, v);
+                    }
+                }
+                // for (k, v) in res.headers().iter() {
+                //     wres = wres.header(k, v);
+                // }
+                wres = wres.header("access-control-allow-origin", "*");
+                let status = res.status();
+                let body = warp::hyper::Body::wrap_stream(res.bytes().into_stream());
+                wres.status(status).body(body).map_err(custom_reject)
+            },
+        );
+    redirect.boxed()
 }
 
 pub fn webui_js_route(
