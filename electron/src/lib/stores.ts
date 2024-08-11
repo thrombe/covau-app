@@ -299,7 +299,7 @@ export let playing_item: Writable<ListItem> = writable(new CustomListItem(
 ));
 // TODO: also allow sync/player
 export let player: Writable<Player> = writable(dummy_player);
-export type PlayerType = "YtPlayer" | "YtVideoPlayer" | "MusiPlayer" | "None";
+export type PlayerType = "YtPlayer" | "YtVideoPlayer" | "AudioPlayer" | "MusiPlayer" | "None";
 export let player_type: Writable<PlayerType> = writable("None");
 export let set_player = async (p: Player) => {
     await get(player).destroy();
@@ -316,7 +316,7 @@ export let set_player_type = async (t: PlayerType) => {
             let pl = await musiplayer.Musiplayer.new();
 
             await tick();
-            player.set(pl);
+            await set_player(pl);
         } break;
         case "YtPlayer": {
             await get(player).destroy();
@@ -342,6 +342,18 @@ export let set_player_type = async (t: PlayerType) => {
             await tick();
             // NOTE: assuming that a div with 'video' id exsits
             let p = await yt.YtPlayer.new("video");
+            await set_player(p);
+        } break;
+        case "AudioPlayer": {
+            await get(player).destroy();
+            player.set(dummy_player);
+            player_type.set("AudioPlayer");
+
+            let audio = await import("$lib/player/audio.ts");
+
+            await tick();
+            // NOTE: assuming that a div with 'audio' id exsits
+            let p = await audio.Audioplayer.new("audio");
             await set_player(p);
         } break;
         case "None": {

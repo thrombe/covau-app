@@ -252,6 +252,9 @@ export abstract class ListItem implements Keyed {
     }
 
     // song methods
+    source_path(): types.covau.SourcePath | null {
+        return null;
+    }
     abstract song_ids(): types.covau.InfoSource[]; // id that might identify this song
     abstract artist_ids(): types.covau.InfoSource[];
     abstract yt_id(): Promise<string | null>; // get yt id for playing purposes
@@ -295,6 +298,7 @@ export class CustomListItem extends ListItem {
     _is_playable: boolean = false;
     _audio_uri: (() => Promise<string | null>) | null = null;
     _drag_url: string | null = null;
+    _source_path: covau.SourcePath | null = null;
 
     constructor(key: string, title: string, typ: Typ, title_sub: string | null = null) {
         super();
@@ -319,6 +323,10 @@ export class CustomListItem extends ListItem {
         } else {
             return null;
         }
+    }
+
+    source_path(): covau.SourcePath | null {
+        return this._source_path;
     }
 
     async yt_id(): Promise<string | null> {

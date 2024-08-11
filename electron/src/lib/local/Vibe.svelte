@@ -18,6 +18,7 @@
     import * as icons from "$lib/icons.ts";
     import type { Option } from "$lib/searcher/item.ts";
     import Video from "$lib/components/Video.svelte";
+    import Audio from "$lib/components/Audio.svelte";
 
     let player_type = stores.player_type;
 
@@ -124,6 +125,13 @@
                     title: "Musiplayer",
                     onclick: async () => {
                         await stores.set_player_type("MusiPlayer");
+                    },
+                },
+                {
+                    icon: icons.default_music_icon,
+                    title: "AudioPlayer",
+                    onclick: async () => {
+                        await stores.set_player_type("AudioPlayer");
                     },
                 },
                 {
@@ -338,6 +346,8 @@ z index notes
     <div class="absolute -z-[70] left-8 aspect-video bottom-28 w-80">
         <Video />
     </div>
+{:else if $player_type == "AudioPlayer"}
+    <Audio />
 {/if}
 <Prompt />
 <Toasts />

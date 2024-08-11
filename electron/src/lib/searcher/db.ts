@@ -474,6 +474,46 @@ export class DbListItem extends ListItem {
         }
     }
 
+    source_path(): covau.SourcePath | null {
+        switch (this.data.typ) {
+            case "Song": {
+                let song = this.data.t;
+                for (let source of song.play_sources) {
+                    switch (source.type) {
+                        case "File":
+                            return source.content;
+                        case "YtId": {
+                        } break;
+                        default:
+                            throw exhausted(source);
+                    }
+                }
+                return null;
+            } break;
+            case "MmSong":
+                return this.data.t.last_known_path;
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+            case "MbzArtist":
+            case "MbzRecording":
+                return null;
+            default:
+                throw exhausted(this.data);
+        }
+    }
+
     async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
         switch (this.data.typ) {
             case "MmSong": {
@@ -2223,6 +2263,7 @@ export class DbListItem extends ListItem {
                                         }
                                     };
                                 } else {
+                                    item._source_path = s.content;
                                     item._audio_uri = async () => {
                                         return "file://" + await server.api.to_path(s.content);
                                     };
