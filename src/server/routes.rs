@@ -589,6 +589,35 @@ pub fn source_path_route(
     route.boxed()
 }
 
+pub fn stream_file(path: &'static str, config: Arc<crate::cli::DerivedConfig>) -> BoxedFilter<(impl Reply,)> {
+    let route = warp::path("stream")
+        .and(warp::path(path))
+        .and(warp::query::<crate::covau_types::SourcePath>())
+        .and(warp::header::headers_cloned())
+        .and(warp::any().map(move || config.clone()))
+        .and_then(
+            |src: crate::covau_types::SourcePath,
+             _headers: warp::http::HeaderMap,
+             config: Arc<crate::cli::DerivedConfig>| async move {
+                let path = config.to_path(src).map_err(custom_reject)?;
+
+                let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
+                let body = warp::hyper::Body::from(bytes);
+                let mime = mime_guess::from_path(&path)
+                    .first()
+                    .map(|mime| mime.to_string())
+                    .context("Could not figure out mime type of file")
+                    .map_err(custom_reject)?;
+
+                let wres = warp::http::Response::builder().header("content-type", mime);
+                wres.body(body).map_err(custom_reject)
+            },
+        );
+
+    let route = route.with(warp::cors().allow_any_origin());
+    route.boxed()
+}
+
 pub fn save_song_route(
     path: &'static str,
     ytf: crate::yt::SongTubeFac,

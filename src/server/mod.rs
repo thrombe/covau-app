@@ -3,18 +3,21 @@ use std::net::Ipv4Addr;
 use std::sync::Arc;
 use warp::Filter;
 
-use crate::covau_types;
-use crate::db::Db;
-use crate::server::{
-    db::DbRequest,
-    mbz::mbz_routes,
-    player::player_route,
-    routes::{
-        save_song_route, source_path_route, webui_js_route, AppState, Asset, FeRequest,
-        FrontendClient, ProxyRequest,
+use crate::{
+    cli::DerivedConfig,
+    covau_types,
+    db::Db,
+    server::{
+        db::DbRequest,
+        mbz::mbz_routes,
+        player::player_route,
+        routes::{
+            save_song_route, source_path_route, stream_file, webui_js_route, AppState, Asset,
+            FeRequest, FrontendClient, ProxyRequest,
+        },
     },
+    yt::YtiRequest,
 };
-use crate::yt::YtiRequest;
 
 pub mod db;
 pub mod mbz;
@@ -86,7 +89,7 @@ pub struct Message<T> {
     pub data: MessageResult<T>,
 }
 
-pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::DerivedConfig>) {
+pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) {
     let client = reqwest::Client::new();
     let db_path = config.db_path.join("music.db");
     let db_exists = db_path.exists();
@@ -132,6 +135,7 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<crate::cli::Derived
         .or(webui_js_route(client.clone(), config.clone()))
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))
+        .or(stream_file("file", config.clone()))
         .or(options_route.boxed());
     // #[cfg(build_mode = "DEV")]
     // let all = all.or(routes::redirect_route(client.clone(), config.clone()));
