@@ -87,6 +87,7 @@ export abstract class ListItem implements Keyed {
                     if (q instanceof queues.AutoplayQueueManager) {
                         await q.init_with_seed(this);
                         stores.queue.update(t => t);
+                        toast(`'${this.title()}' set as autoplay seed`);
                     } else {
                         toast("autoplay is disabled", "error");
                     }

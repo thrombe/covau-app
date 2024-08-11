@@ -273,6 +273,7 @@ export class QueueManager implements Searcher {
                         q.detour();
                     }
                     queue.update(q => q);
+                    toast("queue emptied");
                 },
             },
             {
@@ -288,6 +289,7 @@ export class QueueManager implements Searcher {
                 icon: icons.repeat,
                 onclick: async () => {
                     await stores.syncops.new.seen();
+                    toast("new song blacklist set");
                 },
             },
             {
@@ -295,6 +297,7 @@ export class QueueManager implements Searcher {
                 icon: icons.repeat,
                 onclick: async () => {
                     await stores.syncops.new.blacklist();
+                    toast("new blacklist set");
                 },
             },
             {
@@ -309,6 +312,7 @@ export class QueueManager implements Searcher {
                     }
 
                     await q.init_with_seed(item);
+                    toast("new seed set");
                 },
             },
             {
