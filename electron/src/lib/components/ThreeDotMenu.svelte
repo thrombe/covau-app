@@ -9,23 +9,20 @@
         let pad = utils.rem() * 0.7;
 
         let x = r1.left + r1.width / 2 - r2.width;
-        if (x < 0) {
+        if (x - pad * 2 < 0) {
             x += r2.width + pad;
         } else {
             x -= pad;
         }
 
         let y = r1.top + r1.height / 2;
-        if (y + r2.height > window.innerHeight) {
+        if (y + r2.height + pad * 2 > window.innerHeight) {
             y -= r2.height + pad;
         } else {
             y += pad;
         }
 
-        return `
-            top: calc(${y}px);
-            left: calc(${x}px);
-        `;
+        return `top: calc(${y}px); left: calc(${x}px);`;
     };
 
     let menu: HTMLElement | null = null;
