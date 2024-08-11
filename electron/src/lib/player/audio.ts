@@ -28,13 +28,13 @@ export class Audioplayer implements Player {
             this.send_message({ type: "ProgressPerc", content: this.get_progress() });
         });
         this.audio.addEventListener("durationchange", () => {
-            this.send_message({ type: "Duration", content: this.audio.duration });
+            this.send_message({ type: "Duration", content: this.get_duration() });
         });
         this.audio.addEventListener("loadeddata", () => {
-            this.send_message({ type: "Duration", content: this.audio.duration });
+            this.send_message({ type: "Duration", content: this.get_duration() });
         });
         this.audio.addEventListener("playing", () => {
-            this.send_message({ type: "Duration", content: this.audio.duration });
+            this.send_message({ type: "Duration", content: this.get_duration() });
         });
         this.audio.addEventListener("ended", () => {
             this.send_message({ type: "Finished" });
@@ -89,6 +89,14 @@ export class Audioplayer implements Player {
         return this.audio.currentTime / this.audio.duration;
     }
 
+    protected get_duration() {
+        // triggers when duration is NaN
+        if (this.audio.duration !== this.audio.duration) {
+            return 0;
+        }
+        return this.audio.duration;
+    }
+
     async destroy() { }
 
     on_message(callback: MessageHandler) {
@@ -130,12 +138,13 @@ export class Audioplayer implements Player {
                     this.send_message({ type: "Unpaused" });
                 } break;
                 case "SeekBy": {
-                    this.audio.currentTime += message.content;
-                    // this.send_message({ type: "ProgressPerc", content:  });
+                    let progress = this.audio.currentTime + message.content;
+                    this.audio.currentTime = progress;
+                    this.send_message({ type: "ProgressPerc", content: progress / this.get_duration() });
                 } break;
                 case "SeekToPerc": {
-                    this.audio.currentTime = this.audio.duration * message.content;
-                    // this.send_message({ type: "ProgressPerc", content: message.content });
+                    this.audio.currentTime = this.get_duration() * message.content;
+                    this.send_message({ type: "ProgressPerc", content: message.content });
                 } break;
                 case "Mute": {
                     this.audio.muted = true;
@@ -156,7 +165,7 @@ export class Audioplayer implements Player {
                     this.send_message({ type: "Volume", content: message.content });
                 } break;
                 case "GetDuration": {
-                    this.send_message({ type: "Duration", content: this.audio.duration });
+                    this.send_message({ type: "Duration", content: this.get_duration() });
                 } break;
                 default:
                     throw exhausted(message);
