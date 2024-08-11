@@ -363,11 +363,11 @@ class FeServer extends Server<FeRequest> {
 type Resolver<T> = (res: T) => void;
 class Client<Req> {
     ws: WebSocket;
-    path: string;
+    new_id_path: string;
 
     protected wait: Promise<void>;
     protected constructor(path: string) {
-        this.path = utils.base_url + path + "/new_id";
+        this.new_id_path = utils.base_url + path + "/new_id";
         this.ws = new WebSocket(`ws://localhost:${import.meta.env.SERVER_PORT}/${path}`);
 
         this.ws.addEventListener('message', async (e) => {
@@ -402,7 +402,7 @@ class Client<Req> {
     resolves: Map<number, Resolver<MessageResult<string>>> = new Map();
     async execute<T>(req: Req, id: number | null = null, allow_many: boolean = false): Promise<T> {
         if (id == null) {
-            id = await utils.api_request(this.path, null) as number;
+            id = await utils.api_request(this.new_id_path, null) as number;
         }
 
         // @ts-ignore
@@ -450,7 +450,7 @@ class DbClient extends Client<types.server.DbRequest> {
     static async new() {
         let self = new DbClient();
         await self.wait;
-        self.def_id = await utils.api_request(self.path, null);
+        self.def_id = await utils.api_request(self.new_id_path, null);
         return self;
     }
 
