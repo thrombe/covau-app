@@ -13,7 +13,11 @@ use warp::filters::BoxedFilter;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
-use crate::server::{custom_reject, ErrorMessage, Message, MessageResult};
+use crate::{
+    cli::DerivedConfig,
+    covau_types::{SourcePath, SourcePathType},
+    server::{custom_reject, ErrorMessage, Message, MessageResult},
+};
 
 pub struct FrontendClient<R>(Arc<RequestTracker<R>>);
 impl<R> Clone for FrontendClient<R> {
@@ -238,7 +242,8 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                         tx.send(MessageResult::Err(ErrorMessage {
                                             message: mesg.clone(),
                                             stack_trace: mesg,
-                                        })).await
+                                        }))
+                                        .await
                                         .ok()
                                         .context("could not send over channel")?;
                                     }
@@ -326,9 +331,7 @@ impl FeRequest {
 pub struct Asset;
 
 impl Asset {
-    pub fn embedded_asset_route(
-        config: Arc<crate::cli::DerivedConfig>,
-    ) -> BoxedFilter<(impl Reply,)> {
+    pub fn embedded_asset_route(config: Arc<DerivedConfig>) -> BoxedFilter<(impl Reply,)> {
         let mut env = HashMap::new();
         env.insert("%SERVER_PORT%".to_string(), config.server_port.to_string());
         let env = Arc::new(env);
@@ -531,7 +534,7 @@ impl AppState {
 #[cfg(build_mode = "DEV")]
 pub fn redirect_route(
     c: reqwest::Client,
-    config: Arc<crate::cli::DerivedConfig>,
+    config: Arc<DerivedConfig>,
 ) -> BoxedFilter<(impl Reply,)> {
     let redirect = warp::any()
         .and(warp::any().map(move || c.clone()))
@@ -546,7 +549,7 @@ pub fn redirect_route(
              p: warp::path::Tail,
              h: warp::http::HeaderMap,
              b: bytes::Bytes,
-             config: Arc<crate::cli::DerivedConfig>| async move {
+             config: Arc<DerivedConfig>| async move {
                 let port = config.dev_vite_port;
                 let url = format!("http://localhost:{}/", port) + p.as_str();
                 dbg!(&url);
@@ -574,13 +577,13 @@ pub fn redirect_route(
 
 pub fn source_path_route(
     path: &'static str,
-    config: Arc<crate::cli::DerivedConfig>,
+    config: Arc<DerivedConfig>,
 ) -> warp::filters::BoxedFilter<(impl warp::reply::Reply,)> {
     let route = warp::path(path)
         .and(warp::path::end())
         .and(warp::any().map(move || config.clone()))
         .and(warp::body::json())
-        .and_then(|config: Arc<crate::cli::DerivedConfig>, path: crate::covau_types::SourcePath| async move {
+        .and_then(|config: Arc<DerivedConfig>, path: SourcePath| async move {
             let path = config.to_path(path).map_err(custom_reject)?;
             Ok::<_, warp::Rejection>(warp::reply::json(&path))
         });
@@ -589,16 +592,16 @@ pub fn source_path_route(
     route.boxed()
 }
 
-pub fn stream_file(path: &'static str, config: Arc<crate::cli::DerivedConfig>) -> BoxedFilter<(impl Reply,)> {
+pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilter<(impl Reply,)> {
     let route = warp::path("stream")
         .and(warp::path(path))
-        .and(warp::query::<crate::covau_types::SourcePath>())
+        .and(warp::query::<SourcePath>())
         .and(warp::header::headers_cloned())
         .and(warp::any().map(move || config.clone()))
         .and_then(
-            |src: crate::covau_types::SourcePath,
+            |src: SourcePath,
              _headers: warp::http::HeaderMap,
-             config: Arc<crate::cli::DerivedConfig>| async move {
+             config: Arc<DerivedConfig>| async move {
                 let path = config.to_path(src).map_err(custom_reject)?;
 
                 let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
@@ -637,8 +640,8 @@ pub fn save_song_route(
                 .map_err(custom_reject)?;
             file.write_all(&bytes).await.map_err(custom_reject)?;
 
-            let path = crate::covau_types::SourcePath {
-                typ: crate::covau_types::SourcePathType::CovauMusic,
+            let path = SourcePath {
+                typ: SourcePathType::CovauMusic,
                 path: name,
             };
 
@@ -651,7 +654,7 @@ pub fn save_song_route(
 
 pub fn webui_js_route(
     c: reqwest::Client,
-    config: Arc<crate::cli::DerivedConfig>,
+    config: Arc<DerivedConfig>,
 ) -> BoxedFilter<(impl Reply,)> {
     #[cfg(feature = "webui")]
     let webui = warp::path("webui.js")
@@ -659,7 +662,7 @@ pub fn webui_js_route(
         .and(warp::any().map(move || c.clone()))
         .and(warp::any().map(move || config.clone()))
         .and_then(
-            |c: reqwest::Client, config: Arc<crate::cli::DerivedConfig>| async move {
+            |c: reqwest::Client, config: Arc<DerivedConfig>| async move {
                 let port = config.webui_port;
                 let req = c.get(&format!("http://localhost:{}/webui.js", port));
                 let res = c
@@ -682,12 +685,10 @@ pub fn webui_js_route(
         .and(warp::path::end())
         .and(warp::any().map(move || c.clone()))
         .and(warp::any().map(move || config.clone()))
-        .and_then(
-            |_: reqwest::Client, _: Arc<crate::cli::DerivedConfig>| async move {
-                let wres = warp::http::Response::builder();
-                wres.body("").map_err(custom_reject)
-            },
-        );
+        .and_then(|_: reqwest::Client, _: Arc<DerivedConfig>| async move {
+            let wres = warp::http::Response::builder();
+            wres.body("").map_err(custom_reject)
+        });
 
     let webui = webui.with(warp::cors().allow_any_origin());
     webui.boxed()
