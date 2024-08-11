@@ -1,3 +1,8 @@
+use std::sync::{
+    atomic::{AtomicU32, Ordering},
+    Arc,
+};
+
 use sea_orm::ConnectionTrait;
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +23,8 @@ pub enum InsertResponse<T> {
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", content = "content")]
 pub enum DbRequest {
+    // fetch first id using /new_id and rest using this (to avoid console spam)
+    NewId,
     Begin,
     Commit(TransactionId),
     Rollback(TransactionId),
@@ -97,7 +104,11 @@ type MbzArtist = crate::mbz::Artist;
 impl MessageServerRequest for DbRequest {
     type Ctx = Db;
 
-    async fn handle(self, db: Self::Ctx) -> anyhow::Result<MessageResult<String>> {
+    async fn handle(
+        self,
+        db: Self::Ctx,
+        id_src: Arc<AtomicU32>,
+    ) -> anyhow::Result<MessageResult<String>> {
         async fn insert<T: DbAble>(
             txn: &impl ConnectionTrait,
             data: String,
@@ -208,6 +219,15 @@ impl MessageServerRequest for DbRequest {
         }
 
         let res = match self {
+            DbRequest::NewId => {
+                let id = id_src.fetch_add(1, Ordering::Relaxed);
+                MessageResult::OkMany {
+                    data: id,
+                    done: false,
+                    index: 0,
+                }
+                .json()
+            }
             DbRequest::Begin => {
                 let id = db.begin().await?;
                 MessageResult::OkOne(id).json()

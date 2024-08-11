@@ -400,8 +400,10 @@ class Client<Req> {
     }
 
     resolves: Map<number, Resolver<MessageResult<string>>> = new Map();
-    async execute<T>(req: Req): Promise<T> {
-        let id: number = await utils.api_request(this.path, null);
+    async execute<T>(req: Req, id: number | null = null, allow_many: boolean = false): Promise<T> {
+        if (id == null) {
+            id = await utils.api_request(this.path, null) as number;
+        }
 
         // @ts-ignore
         let resolve: Resolver<MessageResult<string>> = undefined;
@@ -421,8 +423,9 @@ class Client<Req> {
         if (resp.type == "Err") {
             console.error(resp.content.stack_trace);
             throw new Error(resp.content.message);
-        }
-        if (resp.type != "OkOne") {
+        } else if (resp.type == "OkMany" && allow_many) {
+            return JSON.parse(resp.content.data);
+        } else if (resp.type != "OkOne") {
             let data = JSON.stringify(resp.content);
             let msg = `expected 'OkOne' found '${resp.type}': ${data}`;
             console.error(msg);
@@ -438,6 +441,8 @@ export type DbOps = ReturnType<DbClient["db_cud"]>;
 export type DbUpdateCallback<T> = (item: types.db.DbItem<T>) => Promise<void>;
 
 class DbClient extends Client<types.server.DbRequest> {
+    def_id: number | null = null;
+
     protected constructor() {
         super("serve/db")
     }
@@ -445,7 +450,18 @@ class DbClient extends Client<types.server.DbRequest> {
     static async new() {
         let self = new DbClient();
         await self.wait;
+        self.def_id = await utils.api_request(self.path, null);
         return self;
+    }
+
+    async new_id() {
+        let id = await super.execute<number>({ type: "NewId" }, this.def_id, true);
+        return id;
+    }
+
+    override async execute<T>(req: types.server.DbRequest): Promise<T> {
+        let id = await this.new_id();
+        return await super.execute(req, id);
     }
 
     listeners: Map<number, { enabled: boolean, callback: DbUpdateCallback<unknown> }[]> = new Map();

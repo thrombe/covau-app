@@ -12,8 +12,7 @@ use warp::Reply;
 
 use crate::server::{ErrorMessage, Message, MessageResult};
 
-fn get_id_route(path: &'static str) -> BoxedFilter<(impl Reply,)> {
-    let id: Arc<AtomicU32> = Arc::new(0.into());
+fn get_id_route(path: &'static str, id: Arc<AtomicU32>) -> BoxedFilter<(impl Reply,)> {
     let route = warp::path("serve")
         .and(warp::path(path))
         .and(warp::path("new_id"))
@@ -31,13 +30,15 @@ fn get_id_route(path: &'static str) -> BoxedFilter<(impl Reply,)> {
 fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send + 'static>(
     path: &'static str,
     ctx: Ctx,
+    id: Arc<AtomicU32>,
 ) -> BoxedFilter<(impl Reply,)> {
     let ws_route = warp::path("serve")
         .and(warp::path(path))
         .and(warp::path::end())
         .and(warp::ws())
         .and(warp::any().map(move || ctx.clone()))
-        .then(|ws: warp::ws::Ws, ctx: Ctx| async move {
+        .and(warp::any().map(move || id.clone()))
+        .then(|ws: warp::ws::Ws, ctx: Ctx, id: Arc<AtomicU32>| async move {
             ws.on_upgrade(move |ws| async move {
                 let ctx = ctx.clone();
                 let (mut wstx, mut wsrx) = ws.split();
@@ -64,6 +65,7 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                     sender: Sender<Message<String>>,
                     msg: warp::ws::Message,
                     ctx: Ctx,
+                    id_src: Arc<AtomicU32>,
                 ) -> anyhow::Result<()> {
                     let Some(msg) = msg.to_str().ok() else {
                         return Ok(());
@@ -136,8 +138,9 @@ fn client_ws_route<R: MessageServerRequest<Ctx = Ctx>, Ctx: Clone + Sync + Send 
                         Ok(msg) => {
                             let tx = tx.clone();
                             let ctx = ctx.clone();
+                            let id = id.clone();
                             let _j = tokio::task::spawn(async move {
-                                match message_handler::<R, Ctx>(tx, msg, ctx).await {
+                                match message_handler::<R, Ctx>(tx, msg, ctx, id.clone()).await {
                                     Ok(_) => (),
                                     Err(e) => {
                                         eprintln!("Error: {}", &e);
@@ -166,11 +169,12 @@ where
 {
     type Ctx: Clone + Send + Sync + 'static;
 
-    async fn handle(self, ctx: Self::Ctx) -> anyhow::Result<MessageResult<String>>;
+    async fn handle(self, ctx: Self::Ctx, id: Arc<AtomicU32>) -> anyhow::Result<MessageResult<String>>;
 
     fn routes(ctx: Self::Ctx, path: &'static str) -> BoxedFilter<(impl Reply,)> {
-        client_ws_route::<Self, _>(path, ctx)
-            .or(get_id_route(path))
+        let id: Arc<AtomicU32> = Arc::new(0.into());
+        client_ws_route::<Self, _>(path, ctx, id.clone())
+            .or(get_id_route(path, id))
             .boxed()
     }
 }
