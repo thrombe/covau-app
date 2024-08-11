@@ -593,7 +593,9 @@ export const st = {
             });
             console.log(format);
             // let url = d.getStreamingInfo();
+            // - [YouTube.js FormatUtils.download](https://github.com/LuanRT/YouTube.js/blob/bb6e647b8c88753669acde43d0d648aaf11caba6/src/utils/FormatUtils.ts#L38)
             let uri = format.decipher(tube.session.player);
+            uri = `${uri}&cpn=${vinfo.cpn}`;
             console.log(uri);
 
             let info: yt.SongUriInfo = {
@@ -604,6 +606,77 @@ export const st = {
                 mime_type: format.mime_type,
             };
             return info;
+        },
+
+        async song_bytes(id: string, callback: (bytes: Uint8Array) => Promise<void>) {
+            let tube = get(stores.tube);
+
+            let resp = await tube.download(id, {
+                quality: "best",
+                type: "audio",
+                client: "YTMUSIC_ANDROID",
+            });
+            let reader = resp.getReader();
+            while (true) {
+                let read = await reader.read();
+                if (read.done) {
+                    if (read.value) {
+                        await callback(read.value);
+                        break;
+                    } else {
+                        break;
+                    }
+                } else {
+                    await callback(read.value);
+                }
+            }
+        },
+
+        async song_bytes_chunked(id: string, callback: (bytes: Uint8Array) => Promise<void>) {
+            // HTTP 400 for buf size 500_000 :/
+            let size = 1000_000;
+
+            let tube = get(stores.tube);
+            let info = await tube.getBasicInfo(id);
+            let format = info.chooseFormat({
+                type: "audio",
+                quality: "best",
+                client: "YTMUSIC_ANDROID",
+            });
+            console.log(format);
+
+            let start = 0;
+            while (true) {
+                if (format.content_length! < start) {
+                    break;
+                }
+                // OOF: info.download does less requests but fails (403)
+                // let resp = await info.download({
+                let resp = await tube.download(id, {
+                    quality: "best",
+                    type: "audio",
+                    client: "YTMUSIC_ANDROID",
+                    range: {
+                        start: start,
+                        end: Math.min(start + size - 1, format.content_length! - 1),
+                    },
+                });
+                start += size;
+                let reader = resp.getReader();
+                while (true) {
+                    let read = await reader.read();
+                    if (read.done) {
+                        if (read.value) {
+                            await callback(read.value);
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        await callback(read.value);
+                    }
+                }
+            }
         },
 
         async uri(id: string) {

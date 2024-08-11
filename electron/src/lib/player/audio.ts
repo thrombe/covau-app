@@ -166,10 +166,7 @@ export class Audioplayer implements Player {
     async play_item(item: ListItem) {
         let src = item.source_path();
         if (src) {
-            let url = new URL(server.utils.base_url + "stream/file");
-            url.searchParams.append("typ", src.typ);
-            url.searchParams.append("path", src.path);
-            this.audio.src = url.toString();
+            this.audio.src = server.utils.url.stream.file(src);
             await this.audio.play();
             this.send_command({ type: "Play", content: src.path });
         } else {

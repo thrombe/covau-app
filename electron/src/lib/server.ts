@@ -53,6 +53,25 @@ export const utils = {
             throw new Error(err.message);
         }
     },
+
+    url: {
+        stream: {
+            file(obj: Object) {
+                let url = new URL(utils.base_url + "stream/file");
+                Object.entries(obj).forEach(([k, v]) => {
+                    url.searchParams.append(k, v);
+                });
+                return url.toString();
+            },
+            yt(obj: Object) {
+                let url = new URL(utils.base_url + "stream/yt");
+                Object.entries(obj).forEach(([k, v]) => {
+                    url.searchParams.append(k, v);
+                });
+                return url.toString();
+            },
+        },
+    },
 };
 export const api = {
     async to_path(path: types.covau.SourcePath) {
@@ -232,27 +251,11 @@ class YtiServer extends Server<yt.YtiRequest> {
                 return resolve.one(uri);
             } break;
             case 'GetSongBytes': {
-                let tube = get(stores.tube);
-                let resp = await tube.download(req.content.id, {
-                    quality: "best",
-                    type: "audio",
-                    client: "YTMUSIC_ANDROID",
+                await st.st.fetch.song_bytes_chunked(req.content.id, async bytes => {
+                    let base64 = buffer_to_base64(bytes);
+                    resolve.many(base64);
                 });
-                let reader = resp.getReader();
-                while (true) {
-                    let read = await reader.read();
-                    if (read.done) {
-                        if (read.value) {
-                            let base64 = buffer_to_base64(read.value);
-                            return resolve.many_done(base64);
-                        } else {
-                            return resolve.many_done("");
-                        }
-                    } else {
-                        let base64 = buffer_to_base64(read.value);
-                        resolve.many(base64);
-                    }
-                }
+                return resolve.many_done("");
             } break;
             default:
                 throw exhausted(req);

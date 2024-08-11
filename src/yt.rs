@@ -299,7 +299,30 @@ impl SongTubeFac {
     }
 
     /// OOF: broken. yt servers return 403
-    pub async fn get_song(&self, id: String) -> anyhow::Result<Vec<u8>> {
+    pub async fn get_song0(&self, id: String) -> anyhow::Result<Vec<u8>> {
+        let info: SongUriInfo = self
+            .fe
+            .get_one(YtiRequest::GetSongUri { id: id.clone() })
+            .await?;
+
+        let req = self
+            .client
+            .get(info.uri)
+            .header("user-agent", "Mozilla/5.0")
+            .header("accept-language", "en-US,en");
+
+        let req = req.build()?;
+        let res = self.client.execute(req).await?;
+        let status = res.status();
+        if !status.is_success() {
+            return Err(anyhow::anyhow!(format!("status code: {}", status)));
+        }
+        let bytes = res.bytes().await?;
+        Ok(bytes.to_vec())
+    }
+
+    /// OOF: broken. yt servers return 403
+    pub async fn get_song1(&self, id: String) -> anyhow::Result<Vec<u8>> {
         let info: SongUriInfo = self
             .fe
             .get_one(YtiRequest::GetSongUri { id: id.clone() })
@@ -348,18 +371,36 @@ impl SongTubeFac {
         Ok(bytes)
     }
 
-    pub async fn get_song2(&self, id: String) -> anyhow::Result<Vec<u8>> {
-        let mut bytes_stream = self
+    pub async fn get_song_bytes(&self, id: String) -> anyhow::Result<Vec<u8>> {
+        let bytes = self
+            .get_song_bytes_chunked(id)
+            .await?
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .collect::<anyhow::Result<Vec<_>>>()?
+            .into_iter()
+            .map(|b| b.into_iter())
+            .flatten()
+            .collect::<Vec<_>>();
+        Ok(bytes)
+    }
+
+    pub async fn get_song_bytes_chunked(
+        &self,
+        id: String,
+    ) -> anyhow::Result<impl futures::Stream<Item = anyhow::Result<Vec<u8>>>> {
+        let bytes_stream = self
             .fe
             .get_many::<String>(YtiRequest::GetSongBytes { id: id.clone() })
             .await?;
 
-        let mut bytes = Vec::new();
-        while let Some(b64) = bytes_stream.next().await {
-            let b64 = b64?;
-            bytes.extend(base64::prelude::BASE64_STANDARD.decode(&b64)?);
-        }
-        Ok(bytes)
+        let stream = bytes_stream.map(|bytes| {
+            let b64 = bytes?;
+            let bytes = base64::prelude::BASE64_STANDARD.decode(&b64)?;
+            Ok(bytes)
+        });
+        Ok(stream)
     }
 
     pub async fn with_search_query<T: song_tube::TMusicListItem>(

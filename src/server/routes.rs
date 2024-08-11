@@ -13,6 +13,7 @@ use warp::filters::BoxedFilter;
 use warp::{reply::Reply, ws::Ws};
 use warp::{ws, Filter};
 
+use crate::yt::SongTubeFac;
 use crate::{
     cli::DerivedConfig,
     covau_types::{SourcePath, SourcePathType},
@@ -592,6 +593,35 @@ pub fn source_path_route(
     route.boxed()
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
+pub struct YtStreamQuery {
+    size: u32,
+    id: String,
+}
+pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply,)> {
+    let route = warp::path("stream")
+        .and(warp::path(path))
+        .and(warp::query::<YtStreamQuery>())
+        .and(warp::header::headers_cloned())
+        .and(warp::any().map(move || st.clone()))
+        .and_then(
+            |query: YtStreamQuery, _headers: warp::http::HeaderMap, st: SongTubeFac| async move {
+                let stream = st
+                    .get_song_bytes_chunked(query.id)
+                    .await
+                    .map_err(custom_reject)?;
+
+                let body = warp::hyper::Body::wrap_stream(stream);
+
+                let wres = warp::http::Response::builder().header("content-type", "audio/webm");
+                wres.body(body).map_err(custom_reject)
+            },
+        );
+
+    let route = route.with(warp::cors().allow_any_origin());
+    route.boxed()
+}
+
 pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilter<(impl Reply,)> {
     let route = warp::path("stream")
         .and(warp::path(path))
@@ -632,7 +662,7 @@ pub fn save_song_route(
         .and_then(|ytf: crate::yt::SongTubeFac, id: String| async move {
             let name = format!("{}.webm", &id);
 
-            let bytes = ytf.get_song2(id).await.map_err(custom_reject)?;
+            let bytes = ytf.get_song_bytes(id).await.map_err(custom_reject)?;
 
             let dest = ytf.config.music_path.join(&name);
             let mut file = tokio::fs::File::create_new(&dest)
