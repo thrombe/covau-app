@@ -3,6 +3,8 @@ import type { PlayerMessage, PlayerCommand } from "$types/server.ts";
 import type { MessageHandler, Player } from "$lib/stores.ts";
 import type { ListItem } from "$lib/searcher/item.ts";
 import * as server from "$lib/server.ts";
+import * as types from "$types/types.ts";
+import * as st from "$lib/searcher/song_tube.ts";
 
 export class Audioplayer implements Player {
     finished: boolean = false;
@@ -80,6 +82,10 @@ export class Audioplayer implements Player {
     }
 
     protected get_progress() {
+        // triggers when duration is NaN
+        if (this.audio.duration !== this.audio.duration) {
+            return 0;
+        }
         return this.audio.currentTime / this.audio.duration;
     }
 
@@ -90,7 +96,6 @@ export class Audioplayer implements Player {
     }
 
     send_message(message: PlayerMessage) {
-        console.log(message);
         let handlers = this.listeners.get(message.type);
         if (handlers) {
             for (let handler of handlers) {
@@ -169,9 +174,25 @@ export class Audioplayer implements Player {
             this.audio.src = server.utils.url.stream.file(src);
             await this.audio.play();
             this.send_command({ type: "Play", content: src.path });
-        } else {
-            throw new Error("Audioplayer can't play this item");
+            return;
         }
+
+        let id = await item.yt_id();
+        if (id) {
+            let info = await st.st.fetch.uri(id);
+            if (info != null) {
+                let src: types.server.YtStreamQuery = {
+                    id: id,
+                    size: info.content_length,
+                };
+                this.audio.src = server.utils.url.stream.yt(src);
+                await this.audio.play();
+                this.send_command({ type: "Play", content: id });
+                return;
+            }
+        }
+
+        throw new Error("Audioplayer can't play this item");
     }
 
     toggle_pause() {
