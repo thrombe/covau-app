@@ -111,27 +111,52 @@ export type NoDRo<T> =
     
     : T;
 
-export function deep_freeze<T>(source: T, freezeParent = true): DRo<T> {
-    if (freezeParent) {
-        Object.freeze(source);
-    }
+export function deep_freeze<T extends Object>(obj: T): DRo<T> {
+    Object.keys(obj).forEach((prop: string) => {
 
-    Object.getOwnPropertyNames(source).forEach(function(prop) {
-        if (
-            Object.prototype.hasOwnProperty.call(source as any, prop) &&
-            (source as any)[prop] !== null &&
-            (typeof (source as any)[prop] === 'object' || typeof (source as any)[prop] === 'function')
-        ) {
-            if (Object.isFrozen((source as any)[prop])) {
-                deep_freeze((source as any)[prop], false);
-            } else {
-                deep_freeze((source as any)[prop], true);
-            }
+        if (typeof obj[prop as keyof T] === "object"
+            && obj[prop as keyof T] !== null &&
+            !Object.isFrozen(obj[prop as keyof T])) {
+
+            // @ts-ignore
+            deep_freeze(obj[prop]);
         }
-    })
-
-    return source as DRo<T>
+    });
+    return Object.freeze(obj) as DRo<T>;
 }
+// export function deep_freeze<T extends object>(obj: T) {
+//   Object.keys(obj).forEach((prop) => {
+//     if (
+//       typeof obj[prop as keyof T] === 'object' &&
+//       !Object.isFrozen(obj[prop as keyof T])
+//     ) {
+//       deep_freeze(obj[prop as keyof T]);
+//     }
+//   });
+//   return Object.freeze(obj);
+// };
+// export function deep_freeze<T>(source: T, freezeParent = true): DRo<T> {
+//     console.log(JSON.stringify(source));
+//     if (freezeParent) {
+//         Object.freeze(source);
+//     }
+
+//     Object.getOwnPropertyNames(source).forEach(prop => {
+//         if (
+//             Object.prototype.hasOwnProperty.call(source as any, prop) &&
+//             (source as any)[prop] !== null &&
+//             (typeof (source as any)[prop] === 'object' || typeof (source as any)[prop] === 'function')
+//         ) {
+//             if (Object.isFrozen((source as any)[prop])) {
+//                 deep_freeze((source as any)[prop], false);
+//             } else {
+//                 deep_freeze((source as any)[prop], true);
+//             }
+//         }
+//     })
+
+//     return source as DRo<T>
+// }
 
 export function clone<T>(t: T): NoDRo<T> {
     return structuredClone(t) as NoDRo<T>;

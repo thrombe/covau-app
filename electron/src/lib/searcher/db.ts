@@ -2281,7 +2281,7 @@ export class DbListItem extends ListItem {
     }
 
     sections(): DetailSection[] {
-        let sections = this.common_sections(this.t);
+        let sections = this.common_sections(this.t.t);
         let maybe = sections.ops.maybe;
         let ops = this.ops();
         let common_options = this.common_options();
@@ -3075,25 +3075,28 @@ interface IClassTypeWrapper {
     next_page(): Promise<DbListItem[]>;
 };
 function ClassTypeWrapper<S extends mixins.Constructor<{
-    next_page(): Promise<MusicListItem[]>;
+    next_page(): Promise<KeyedMusicListItem[]>;
 }>>(s: S) {
     return class ClassTypeWrapper extends s implements IClassTypeWrapper {
         // @ts-ignore
         async next_page(): Promise<DbListItem[]> {
             let res = await super.next_page();
-            return res.map(m => new DbListItem(m));
+            return res.map(m => {
+                // delete get_key function so that structuredClone works on this :|
+                let t = m as MusicListItem & { get_key: unknown };
+                delete t.get_key;
+                return t;
+            }).map(m => new DbListItem(m));
         }
     } as mixins.Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
 }
 
 export const db = {
     wrapped_items<T>(items: types.db.DbItem<T>[]): DbListItem[] {
-        let k = keyed(items);
-        return k.map(e => new DbListItem(e as MusicListItem))
+        return items.map(e => new DbListItem(e as MusicListItem))
     },
     wrapped<T>(item: types.db.DbItem<T>): DbListItem {
-        let k = keyed([item])[0];
-        return new DbListItem(k as MusicListItem);
+        return new DbListItem(item as MusicListItem);
     },
     thumbnails<T extends { url: string, width: number, height: number }>(thumbs: T[]) {
         return thumbs.map(t => ({
