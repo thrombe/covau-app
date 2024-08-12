@@ -24,7 +24,7 @@ export type MmArtist = Musi.Artist<yt.VideoId, yt.AlbumId>;
 export type MmPlaylist = Musi.Playlist<yt.VideoId>;
 export type MmQueue = Musi.Queue<yt.VideoId>;
 
-export type MusicListItem = Keyed & { id: number, metadata: types.db.DbMetadata } & (
+export type MusicListItem = { id: number, metadata: types.db.DbMetadata } & (
     | { typ: "MmSong", t: MmSong }
     | { typ: "MmAlbum", t: MmAlbum }
     | { typ: "MmArtist", t: MmArtist }
@@ -44,6 +44,7 @@ export type MusicListItem = Keyed & { id: number, metadata: types.db.DbMetadata 
     | { typ: "MbzArtist", t: types.mbz.Artist }
     | { typ: "MbzRecording", t: types.mbz.RecordingWithInfo }
 );
+type KeyedMusicListItem = Keyed & MusicListItem;
 
 export type Typ = DB.Typ;
 export type BrowseQuery =
@@ -53,34 +54,42 @@ export type BrowseQuery =
     { query_type: 'ids', type: Typ | null, ids: number[] };
 
 export class DbListItem extends ListItem {
-    data: MusicListItem;
+    _t: server.Rc<MusicListItem>;
 
     // for mbz recording
     yt_song: types.yt.Song | null = null;
 
     constructor(data: MusicListItem) {
         super();
-        this.data = data;
+        this._t = server.rc.store.rc(data) as typeof this._t;
+    }
+
+    get t(): MusicListItem {
+        return this._t.t;
+    }
+
+    set t(t: MusicListItem | types.db.DbItem<unknown>) {
+        this._t.t = t as MusicListItem;
     }
 
     get_key(): unknown {
-        return this.data.id;
+        return this.t.id;
     }
 
     typ() {
-        return this.data.typ;
+        return this.t.typ;
     }
 
     drag_url() {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong": {
-                return st.url.video(this.data.t.key);
+                return st.url.video(this.t.t.key);
             } break;
             case "StSong": {
-                return st.url.video(this.data.t.id);
+                return st.url.video(this.t.t.id);
             } break;
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 for (let source of song.info_sources) {
                     switch (source.type) {
                         case "MbzId": {
@@ -96,17 +105,17 @@ export class DbListItem extends ListItem {
                 return null;
             } break;
             case "MbzRecording": {
-                return mbz.mbz.urls.recording.mbz(this.data.t.id);
+                return mbz.mbz.urls.recording.mbz(this.t.t.id);
             } break;
             case "StArtist": {
-                if (this.data.t.typ == "Artist") {
-                    return st.url.artist(this.data.t.id);
+                if (this.t.t.typ == "Artist") {
+                    return st.url.artist(this.t.t.id);
                 } else {
-                    return st.url.channel(this.data.t.id);
+                    return st.url.channel(this.t.t.id);
                 }
             } break;
             case "MbzArtist": {
-                return mbz.mbz.urls.artist.mbz(this.data.t.id);
+                return mbz.mbz.urls.artist.mbz(this.t.t.id);
             } break;
             case "MmArtist":
             case "MmAlbum":
@@ -122,18 +131,18 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     async yt_id(): Promise<string | null> {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return this.data.t.key;
+                return this.t.t.key;
             case "StSong":
-                return this.data.t.id;
+                return this.t.t.id;
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 for (let source of song.info_sources) {
                     switch (source.type) {
                         case "MbzId":
@@ -167,22 +176,22 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     song_ids(): types.covau.InfoSource[] {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return [{ type: "YtId", content: this.data.t.key }];
+                return [{ type: "YtId", content: this.t.t.key }];
             case "StSong":
-                return [{ type: "YtId", content: this.data.t.id }];
+                return [{ type: "YtId", content: this.t.t.id }];
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return song.info_sources;
             } break;
             case "MbzRecording": {
-                return [{ type: "MbzId", content: this.data.t.id }];
+                return [{ type: "MbzId", content: this.t.t.id }];
             } break;
             case "MmAlbum":
             case "MmArtist":
@@ -200,33 +209,33 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return [];
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     artist_ids(): types.covau.InfoSource[] {
-        let sections = this.common_sections(this.data);
+        let sections = this.common_sections(this.t);
         let maybe = sections.ops.maybe;
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return maybe(this.data.t.info?.channel_id ?? null, id => ({ type: "YtId", content: id }));
+                return maybe(this.t.t.info?.channel_id ?? null, id => ({ type: "YtId", content: id }));
             case "StSong":
-                return this.data.t.authors
+                return this.t.t.authors
                     .filter(id => !!id.channel_id)
                     .map(id => ({ type: "YtId", content: id.channel_id! }));
             case "Song": {
-                return this.data.t.artists
+                return this.t.t.artists
                     .filter(a => a.source != null)
                     .map(a => a.source as types.covau.InfoSource);
             } break;
             case "MbzRecording": {
-                return this.data.t.credit.map(a => ({ type: "MbzId", content: a.id }));
+                return this.t.t.credit.map(a => ({ type: "MbzId", content: a.id }));
             } break;
             case "MbzArtist": {
-                return [{ type: "MbzId", content: this.data.t.id }];
+                return [{ type: "MbzId", content: this.t.t.id }];
             } break;
             case "StArtist": {
-                return [{ type: "YtId", content: this.data.t.id }];
+                return [{ type: "YtId", content: this.t.t.id }];
             } break;
             case "MmArtist":
             case "MmAlbum":
@@ -242,57 +251,57 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return [];
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     title(): string {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return this.data.t.title;
+                return this.t.t.title;
             case "MmAlbum":
-                return this.data.t.name;
+                return this.t.t.name;
             case "MmArtist":
-                return this.data.t.name;
+                return this.t.t.name;
             case "MmPlaylist":
-                return this.data.t.name;
+                return this.t.t.name;
             case "MmQueue":
-                return this.data.t.name;
+                return this.t.t.name;
             case "StSong":
-                return this.data.t.title ?? this.data.t.id;
+                return this.t.t.title ?? this.t.t.id;
             case "StAlbum":
-                return this.data.t.title ?? this.data.t.id;
+                return this.t.t.title ?? this.t.t.id;
             case "StPlaylist":
-                return this.data.t.title ?? this.data.t.id;
+                return this.t.t.title ?? this.t.t.id;
             case "StArtist":
-                return this.data.t.name ?? this.data.t.id;
+                return this.t.t.name ?? this.t.t.id;
             case "Song":
-                return this.data.t.title;
+                return this.t.t.title;
             case "Playlist":
-                return this.data.t.title;
+                return this.t.t.title;
             case "Queue":
-                return this.data.t.queue.queue.title;
+                return this.t.t.queue.queue.title;
             case "Updater":
-                return this.data.t.title;
+                return this.t.t.title;
             case "ArtistBlacklist":
-                return this.data.t.title ?? `${this.data.t.artists.length} Artists`;
+                return this.t.t.title ?? `${this.t.t.artists.length} Artists`;
             case "SongBlacklist":
-                return this.data.t.title ?? `${this.data.t.songs.length} Songs`;
+                return this.t.t.title ?? `${this.t.t.songs.length} Songs`;
             case "MbzArtist":
-                return this.data.t.name;
+                return this.t.t.name;
             case "MbzRecording":
-                return this.data.t.title;
+                return this.t.t.title;
             case "LocalState":
                 return "Local State";
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     thumbnail(): string | null {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return this.data.t.info?.thumbnail_url ?? st.url.song_thumbnail(this.data.t.key).url;
+                return this.t.t.info?.thumbnail_url ?? st.url.song_thumbnail(this.t.t.key).url;
             case "MmAlbum":
                 return null;
             case "MmArtist":
@@ -302,21 +311,21 @@ export class DbListItem extends ListItem {
             case "MmQueue":
                 return null;
             case "StSong":
-                return this.data.t.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.t.id).url;
+                return this.t.t.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.t.t.id).url;
             case "StAlbum":
-                return this.data.t.thumbnails.at(0)?.url ?? null;
+                return this.t.t.thumbnails.at(0)?.url ?? null;
             case "StPlaylist":
-                return this.data.t.thumbnails.at(0)?.url ?? null;
+                return this.t.t.thumbnails.at(0)?.url ?? null;
             case "StArtist":
-                return this.data.t.thumbnails.at(0)?.url ?? null;
+                return this.t.t.thumbnails.at(0)?.url ?? null;
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return song.thumbnails.at(0)?.url ?? null;
             } break;
             case "MbzArtist":
                 return null;
             case "MbzRecording":
-                return this.data.t.cover_art;
+                return this.t.t.cover_art;
             case "Playlist":
                 return null;
             case "Queue":
@@ -330,7 +339,7 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
@@ -348,53 +357,53 @@ export class DbListItem extends ListItem {
             }
         }
 
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong":
-                return this.data.t.artist_name;
+                return this.t.t.artist_name;
             case "MmAlbum":
-                return this.data.t.artist_name;
+                return this.t.t.artist_name;
             case "MmArtist":
                 return null;
             case "MmPlaylist":
-                return this.data.t.data_list.length.toString() + " songs";
+                return this.t.t.data_list.length.toString() + " songs";
             case "MmQueue":
-                return this.data.t.data_list.length.toString() + " songs";
+                return this.t.t.data_list.length.toString() + " songs";
             case "StSong":
-                return authors(this.data.t.authors.map(a => a.name));
+                return authors(this.t.t.authors.map(a => a.name));
             case "StAlbum":
-                return this.data.t.author?.name ?? null;
+                return this.t.t.author?.name ?? null;
             case "StPlaylist":
-                return this.data.t.author?.name ?? null;
+                return this.t.t.author?.name ?? null;
             case "StArtist":
-                return this.data.t.subscribers ?? null;
+                return this.t.t.subscribers ?? null;
             case "Song":
-                return authors(this.data.t.artists.map(a => a.name));
+                return authors(this.t.t.artists.map(a => a.name));
             case "MbzArtist":
-                return this.data.t.disambiguation ?? authors(this.data.t.aliases.map(a => a.name))
+                return this.t.t.disambiguation ?? authors(this.t.t.aliases.map(a => a.name))
             case "MbzRecording":
-                return authors(this.data.t.credit.map(a => a.name));
+                return authors(this.t.t.credit.map(a => a.name));
             case "LocalState":
-                return `item number ${this.data.id}`;
+                return `item number ${this.t.id}`;
             case "Playlist":
-                return `${this.data.t.songs.length} items`;
+                return `${this.t.t.songs.length} items`;
             case "Updater":
                 return null;
             case "Queue":
-                return `${this.data.t.queue.queue.songs.length} items`;
+                return `${this.t.t.queue.queue.songs.length} items`;
             case "ArtistBlacklist":
-                return `${this.data.t.artists.length} Artists`;
+                return `${this.t.t.artists.length} Artists`;
             case "SongBlacklist":
-                return `${this.data.t.songs.length} Songs`;
+                return `${this.t.t.songs.length} Songs`;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     async audio_uri(): Promise<string | null> {
         let mbz_ops = mbz.mbz.ops(this);
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong": {
-                let song = this.data.t;
+                let song = this.t.t;
                 if (song.last_known_path) {
                     return "file://" + await server.api.to_path(song.last_known_path);
                 } else {
@@ -424,7 +433,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StSong": {
-                let song = this.data.t;
+                let song = this.t.t;
                 let data = await st.fetch.uri(song.id);
                 if (!data) {
                     return null;
@@ -432,7 +441,7 @@ export class DbListItem extends ListItem {
                 return data.uri;
             } break;
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 for (let source of song.play_sources) {
                     switch (source.type) {
                         case "File":
@@ -451,7 +460,7 @@ export class DbListItem extends ListItem {
                 return null;
             } break;
             case "MbzRecording": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return await mbz_ops.play_recording(song, "song");
             } break;
             case "MmAlbum":
@@ -470,14 +479,14 @@ export class DbListItem extends ListItem {
             case "MbzArtist":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     source_path(): covau.SourcePath | null {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "Song": {
-                let song = this.data.t;
+                let song = this.t.t;
                 for (let source of song.play_sources) {
                     switch (source.type) {
                         case "File":
@@ -491,7 +500,7 @@ export class DbListItem extends ListItem {
                 return null;
             } break;
             case "MmSong":
-                return this.data.t.last_known_path;
+                return this.t.t.last_known_path;
             case "MmAlbum":
             case "MmArtist":
             case "MmPlaylist":
@@ -510,14 +519,14 @@ export class DbListItem extends ListItem {
             case "MbzRecording":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     async autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null> {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong": {
-                let song = this.data.t;
+                let song = this.t.t;
                 switch (typ) {
                     case "MbzRadio":
                     case "StSearchRelated":
@@ -527,7 +536,7 @@ export class DbListItem extends ListItem {
                             artists: song.artist_name ? [song.artist_name] : [],
                         };
                     case "StRelated": {
-                        let song = this.data.t;
+                        let song = this.t.t;
                         return {
                             type: "StRelated",
                             id: song.key,
@@ -543,11 +552,11 @@ export class DbListItem extends ListItem {
                     case "StSearchRelated":
                         return {
                             type: typ,
-                            title: this.data.t.title ?? "",
-                            artists: this.data.t.authors.map(a => a.name),
+                            title: this.t.t.title ?? "",
+                            artists: this.t.t.authors.map(a => a.name),
                         };
                     case "StRelated": {
-                        let song = this.data.t;
+                        let song = this.t.t;
                         return {
                             type: "StRelated",
                             id: song.id,
@@ -563,11 +572,11 @@ export class DbListItem extends ListItem {
                     case "StSearchRelated":
                         return {
                             type: typ,
-                            title: this.data.t.title,
-                            artists: this.data.t.artists.map(a => a.name),
+                            title: this.t.t.title,
+                            artists: this.t.t.artists.map(a => a.name),
                         };
                     case "StRelated": {
-                        let song = this.data.t;
+                        let song = this.t.t;
                         for (let source of song.info_sources) {
                             switch (source.type) {
                                 case "MbzId":
@@ -590,7 +599,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MbzRecording": {
-                return mbz.mbz.recording_autoplay(this.data.t, typ);
+                return mbz.mbz.recording_autoplay(this.t.t, typ);
             } break;
             case "MmAlbum":
             case "MmArtist":
@@ -608,17 +617,17 @@ export class DbListItem extends ListItem {
             case "MbzArtist":
                 throw new Error("can't play this. so no autoplay.");
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
     async saved_covau_song(dbops: server.DbOps) {
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "Song": {
-                return this.data;
+                return this.t;
             } break;
             case "MmSong": {
-                let song = this.data.t;
+                let song = this.t.t;
 
                 let vid = await st.cached.video(song.key, dbops);
                 let id: covau.PlaySource = { type: "YtId", content: vid.t.id };
@@ -639,7 +648,7 @@ export class DbListItem extends ListItem {
                 return res.content;
             } break;
             case "StSong": {
-                let vid = this.data.t;;
+                let vid = this.t.t;;
 
                 let id: covau.PlaySource = { type: "YtId", content: vid.id };
                 let t: covau.Song = {
@@ -655,7 +664,7 @@ export class DbListItem extends ListItem {
                 return res.content;
             } break;
             case "MbzRecording": {
-                let t = mbz.mbz.recording_almostdbitem(this.data.t, null);
+                let t = mbz.mbz.recording_almostdbitem(this.t.t, null);
                 let res = await dbops.insert_or_get(t);
                 return res.content;
             } break;
@@ -675,7 +684,7 @@ export class DbListItem extends ListItem {
             case "MbzArtist":
                 return null;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
@@ -734,20 +743,19 @@ export class DbListItem extends ListItem {
                     }
                     list.move_item(song, target);
                 }
-                let dbitem = await db.update(this.data as DB.DbItem<unknown>);
-                this.data = keyed([dbitem])[0] as MusicListItem;
+                this.t = await db.update(this.t as DB.DbItem<unknown>);
             });
             return true;
         };
 
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "Playlist": {
-                let playlist = this.data.t;
+                let playlist = this.t.t;
                 let list = editable_list(playlist.songs);
                 return await save_in_list(list);
             } break;
             case "Queue": {
-                let queue = this.data.t;
+                let queue = this.t.t;
                 let list = editable_list(queue.queue.queue.songs);
                 return await save_in_list(list);
             } break;
@@ -769,7 +777,7 @@ export class DbListItem extends ListItem {
             case "MbzRecording":
                 return false;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 
@@ -791,10 +799,10 @@ export class DbListItem extends ListItem {
                     title: "like",
                     onclick: async () => {
                         await server.db.txn(async db => {
-                            let item = this.data as DB.DbItem<unknown>;
+                            let item = this.t as DB.DbItem<unknown>;
                             console.log(item);
                             item.metadata.likes += 1;
-                            this.data.metadata = await db.update_metadata(item);
+                            this.t.metadata = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" liked`, "info");
                     },
@@ -804,9 +812,9 @@ export class DbListItem extends ListItem {
                     title: "dislike",
                     onclick: async () => {
                         await server.db.txn(async db => {
-                            let item = this.data as DB.DbItem<unknown>;
+                            let item = this.t as DB.DbItem<unknown>;
                             item.metadata.dislikes += 1;
-                            this.data.metadata = await db.update_metadata(item);
+                            this.t.metadata = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" disliked`, "info");
                     },
@@ -816,9 +824,9 @@ export class DbListItem extends ListItem {
                     title: "un-like",
                     onclick: async () => {
                         await server.db.txn(async db => {
-                            let item = this.data as DB.DbItem<unknown>;
+                            let item = this.t as DB.DbItem<unknown>;
                             item.metadata.likes -= 1;
-                            this.data.metadata = await db.update_metadata(item);
+                            this.t.metadata = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" un-unliked`, "info");
                     },
@@ -828,9 +836,9 @@ export class DbListItem extends ListItem {
                     title: "un-dislike",
                     onclick: async () => {
                         await server.db.txn(async db => {
-                            let item = this.data as DB.DbItem<unknown>;
+                            let item = this.t as DB.DbItem<unknown>;
                             item.metadata.dislikes -= 1;
-                            this.data.metadata = await db.update_metadata(item);
+                            this.t.metadata = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" un-disliked`, "info");
                     },
@@ -857,9 +865,9 @@ export class DbListItem extends ListItem {
         let common_options = this.common_options();
         let ops = this.ops();
 
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "MmSong": {
-                let s = this.data.t;
+                let s = this.t.t;
                 let options = {
                     copy_url: {
                         icon: icons.copy,
@@ -938,7 +946,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StSong": {
-                let s = this.data.t;
+                let s = this.t.t;
                 let options = st.options.get_song_ops(s);
 
                 switch (ctx) {
@@ -1010,7 +1018,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MbzRecording": {
-                let rec = this.data.t;
+                let rec = this.t.t;
                 let options = mbz.mbz.recording_ops(rec, this);
 
                 switch (ctx) {
@@ -1088,7 +1096,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Song": {
-                let s = this.data;
+                let s = this.t;
                 let options = {
                     copy_url: {
                         icon: icons.copy,
@@ -1130,7 +1138,7 @@ export class DbListItem extends ListItem {
                                     let path = await server.api.save_song(id);
                                     s.t.play_sources = [{ type: "File", content: path }, ...s.t.play_sources];
 
-                                    this.data = await server.db.txn(async db => {
+                                    this.t = await server.db.txn(async db => {
                                         return await db.update(s);
                                     }) as MusicListItem;
                                     toast("song saved");
@@ -1211,7 +1219,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MmAlbum": {
-                let a = this.data.t;
+                let a = this.t.t;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1276,7 +1284,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MmArtist": {
-                let a = this.data.t;
+                let a = this.t.t;
                 let options = {
                     open_saved: {
                         icon: icons.open_new_tab,
@@ -1375,7 +1383,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MbzArtist": {
-                let a = this.data.t;
+                let a = this.t.t;
                 let options = mbz.mbz.artist_ops(a);
 
                 switch (ctx) {
@@ -1424,7 +1432,7 @@ export class DbListItem extends ListItem {
             } break;
             case "MmPlaylist":
             case "MmQueue": {
-                let list = this.data.t;
+                let list = this.t.t;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1489,7 +1497,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Queue": {
-                let queue = this.data;
+                let queue = this.t;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1531,7 +1539,7 @@ export class DbListItem extends ListItem {
                                 return await db.update(queue);
                             });
                             queue = keyed([q])[0] as typeof queue;
-                            this.data = queue;
+                            this.t = queue;
 
                             toast("queue renamed");
                         },
@@ -1612,7 +1620,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Playlist": {
-                let playlist = this.data;
+                let playlist = this.t;
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1680,7 +1688,7 @@ export class DbListItem extends ListItem {
                                 return await db.update(playlist);
                             });
                             playlist = keyed([q])[0] as typeof playlist;
-                            this.data = playlist;
+                            this.t = playlist;
 
                             toast("playlist renamed");
                         },
@@ -1910,7 +1918,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StAlbum": {
-                let a = this.data.t;
+                let a = this.t.t;
                 let options = st.options.get_album_ops(a);
 
                 switch (ctx) {
@@ -1949,7 +1957,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StPlaylist": {
-                let p = this.data.t;
+                let p = this.t.t;
                 let options = st.options.get_playlist_ops(p);
 
                 switch (ctx) {
@@ -1986,7 +1994,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "StArtist": {
-                let a = this.data.t;
+                let a = this.t.t;
                 let options = st.options.get_artist_ops(a);
 
                 switch (ctx) {
@@ -2034,7 +2042,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "SongBlacklist": {
-                let bl = this.data;
+                let bl = this.t;
                 let options = {
                     open_songs: {
                         icon: icons.open_new_tab,
@@ -2076,7 +2084,7 @@ export class DbListItem extends ListItem {
                                 return await db.update(bl);
                             });
                             bl = keyed([q])[0] as typeof bl;
-                            this.data = bl;
+                            this.t = bl;
 
                             toast("song blacklist renamed");
                         },
@@ -2123,7 +2131,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "ArtistBlacklist": {
-                let bl = this.data;
+                let bl = this.t;
                 let options = {
                     explore: {
                         icon: icons.open_new_tab,
@@ -2172,7 +2180,7 @@ export class DbListItem extends ListItem {
                                 return await db.update(bl);
                             });
                             bl = keyed([q])[0] as typeof bl;
-                            this.data = bl;
+                            this.t = bl;
 
                             toast("blacklist renamed");
                         },
@@ -2221,19 +2229,19 @@ export class DbListItem extends ListItem {
             case "LocalState":
                 return common_options.empty_ops;
             default:
-                throw exhausted(this.data)
+                throw exhausted(this.t)
         }
     }
 
     sections(): DetailSection[] {
-        let sections = this.common_sections(this.data);
+        let sections = this.common_sections(this.t);
         let maybe = sections.ops.maybe;
         let ops = this.ops();
         let common_options = this.common_options();
 
-        switch (this.data.typ) {
+        switch (this.t.typ) {
             case "Song": {
-                let song = this.data;
+                let song = this.t;
                 let playsource = mixins.RearrangeWrapper(song.t.play_sources, s => {
                     let ops = {
                         remove: (item: ListItem) => ({
@@ -2305,7 +2313,7 @@ export class DbListItem extends ListItem {
                                         let path = await server.api.save_song(s.content);
                                         song.t.play_sources = [{ type: "File", content: path }, ...song.t.play_sources];
 
-                                        this.data = await server.db.txn(async db => {
+                                        this.t = await server.db.txn(async db => {
                                             return await db.update(song);
                                         }) as MusicListItem;
                                         toast("source saved");
@@ -2329,7 +2337,7 @@ export class DbListItem extends ListItem {
                     await server.db.txn(async dbops => {
                         let s = await dbops.update(song);
                         song = keyed([s])[0] as typeof song;
-                        this.data = song;
+                        this.t = song;
                     });
                 });
 
@@ -2374,7 +2382,7 @@ export class DbListItem extends ListItem {
                     await server.db.txn(async dbops => {
                         let s = await dbops.update(song);
                         song = keyed([s])[0] as typeof song;
-                        this.data = song;
+                        this.t = song;
                     });
                 });
 
@@ -2389,7 +2397,7 @@ export class DbListItem extends ListItem {
                     await server.db.txn(async dbops => {
                         let s = await dbops.update(song);
                         song = keyed([s])[0] as typeof song;
-                        this.data = song;
+                        this.t = song;
                     });
                 });
 
@@ -2399,7 +2407,7 @@ export class DbListItem extends ListItem {
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2454,14 +2462,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmSong": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2486,14 +2494,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StSong": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2518,7 +2526,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MbzRecording": {
-                let song = this.data.t;
+                let song = this.t.t;
                 return [
                     mbz.mbz.recording_info_section(song),
                     sections.options,
@@ -2526,7 +2534,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "ArtistBlacklist": {
-                let bl = this.data;
+                let bl = this.t;
                 return [
                     {
                         type: "Info",
@@ -2546,7 +2554,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "SongBlacklist": {
-                let bl = this.data;
+                let bl = this.t;
                 return [
                     {
                         type: "Info",
@@ -2577,7 +2585,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MbzArtist": {
-                let a = this.data.t;
+                let a = this.t.t;
                 return [
                     mbz.mbz.artist_info_section(a, this),
                     sections.options,
@@ -2585,14 +2593,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "Playlist": {
-                let playlist = this.data.t;
+                let playlist = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2616,14 +2624,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "Queue": {
-                let queue = this.data.t;
+                let queue = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2689,14 +2697,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmAlbum": {
-                let album = this.data.t;
+                let album = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2728,14 +2736,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmArtist": {
-                let artist = this.data.t;
+                let artist = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2778,14 +2786,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmPlaylist": {
-                let playlist = this.data.t;
+                let playlist = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2809,14 +2817,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmQueue": {
-                let queue = this.data.t;
+                let queue = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2840,14 +2848,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StAlbum": {
-                let album = this.data.t;
+                let album = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2868,14 +2876,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StPlaylist": {
-                let playlist = this.data.t;
+                let playlist = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2896,14 +2904,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StArtist": {
-                let artist = this.data.t;
+                let artist = this.t.t;
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                             {
                                 heading: "Name",
@@ -2924,7 +2932,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "Updater": {
-                let updater = this.data.t;
+                let updater = this.t.t;
                 let source = updater.source;
                 switch (source.type) {
                     case "MusimanagerSearch":
@@ -2937,7 +2945,7 @@ export class DbListItem extends ListItem {
                                 info: [
                                     {
                                         heading: "Type",
-                                        content: this.data.typ,
+                                        content: this.t.typ,
                                     },
                                     {
                                         heading: "Name",
@@ -3003,7 +3011,7 @@ export class DbListItem extends ListItem {
                         info: [
                             {
                                 heading: "Type",
-                                content: this.data.typ,
+                                content: this.t.typ,
                             },
                         ]
                     },
@@ -3012,7 +3020,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             default:
-                throw exhausted(this.data);
+                throw exhausted(this.t);
         }
     }
 }
@@ -3092,7 +3100,7 @@ export class Db extends mixins.Unpaged<MusicListItem> {
     }
 
     static unwrapped(query: BrowseQuery, page_size: number) {
-        const US = mixins.UniqueSearch<MusicListItem, typeof Db>(Db);
+        const US = mixins.UniqueSearch<KeyedMusicListItem, typeof Db>(Db);
         const SS = mixins.SavedSearch<MusicListItem, typeof US>(US);
         const AW = mixins.DebounceWrapper<MusicListItem, typeof SS>(SS);
         return new AW(query, page_size);
@@ -3134,7 +3142,7 @@ export class Db extends mixins.Unpaged<MusicListItem> {
 
     cont: DB.SearchContinuation | null = null;
     page_end_index: number = 0;
-    async next_page(): Promise<MusicListItem[]> {
+    async next_page(): Promise<KeyedMusicListItem[]> {
         if (!this.has_next_page) {
             return [];
         }
@@ -3159,7 +3167,7 @@ export class Db extends mixins.Unpaged<MusicListItem> {
                 items = await this.fetch(this.query.query);
             }
 
-            return keyed(items) as MusicListItem[];
+            return keyed(items) as KeyedMusicListItem[];
         } else if (this.query.query_type === 'refids') {
             let ids = this.query.ids.slice(
                 this.page_end_index,
@@ -3177,7 +3185,7 @@ export class Db extends mixins.Unpaged<MusicListItem> {
                 this.query.type,
                 ids,
             );
-            return keyed(matches) as MusicListItem[];
+            return keyed(matches) as KeyedMusicListItem[];
         } else if (this.query.query_type === "ids") {
             let ids = this.query.ids.slice(
                 this.page_end_index,
@@ -3195,13 +3203,13 @@ export class Db extends mixins.Unpaged<MusicListItem> {
                 let matches: DB.DbItem<unknown>[] = await server.db.get_many_untyped_by_id(
                     ids,
                 );
-                return keyed(matches) as MusicListItem[];
+                return keyed(matches) as KeyedMusicListItem[];
             } else {
                 let matches: DB.DbItem<unknown>[] = await server.db.get_many_by_id(
                     this.query.type,
                     ids,
                 );
-                return keyed(matches) as MusicListItem[];
+                return keyed(matches) as KeyedMusicListItem[];
             }
         } else if (this.query.query_type === "dynamic-refids") {
             let ids = this.query.query.slice(
@@ -3223,7 +3231,7 @@ export class Db extends mixins.Unpaged<MusicListItem> {
                 }
                 return item;
             }));
-            return keyed(matches) as MusicListItem[];
+            return keyed(matches) as KeyedMusicListItem[];
         } else {
             throw exhausted(this.query);
         }

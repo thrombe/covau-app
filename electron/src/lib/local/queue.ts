@@ -856,11 +856,11 @@ export class LocalSyncQueue extends AutoplayQueueManager {
 
         let seed = this.get_seed();
         if (seed) {
-            sync.queue.t.seed = (seed as db.DbListItem).data.id;
+            sync.queue.t.seed = (seed as db.DbListItem).t.id;
         }
 
         sync.queue.t.queue.current_index = this.playing_index;
-        sync.queue.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.data.id);
+        sync.queue.t.queue.queue.songs = this.items.map(item => item as db.DbListItem).map(item => item.t.id);
         await stores.syncops.save.queue();
     }
     async add(...items: ListItem[]) {
