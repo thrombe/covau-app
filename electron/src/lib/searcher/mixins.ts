@@ -2,6 +2,7 @@ import { type Keyed } from "$lib/utils.ts";
 import type { ListItem, Option } from "./item.ts";
 import type { Searcher } from "./searcher.ts";
 import * as stores from "$lib/stores.ts";
+import { Mutex } from 'async-mutex';
 
 export type Constructor<T> = new (...args: any[]) => T;
 
@@ -262,22 +263,19 @@ export function SavedSearch<T, S extends Constructor<{
 }>>(s: S) {
     return class SavedSearch extends s implements ISaved<T> {
         items: Array<(T & Keyed)>;
-
-        // this essentially acts as an async semaphore
-        last_op: Promise<(T & Keyed)[]>;
+        saved_search_mutex = new Mutex();
 
         constructor(...args: any[]) {
             super(...args);
             this.items = new Array();
-            this.last_op = Promise.resolve([]);
         }
 
         override async next_page() {
-            await this.last_op;
-            this.last_op = super.next_page();
-            let r = await this.last_op;
-            this.items.push(...r);
-            return this.items;
+            return await this.saved_search_mutex.runExclusive(async () => {
+                let items = await super.next_page();
+                this.items.push(...items);
+                return this.items;
+            });
         }
     } as S & Constructor<ISaved<T>>
 }
