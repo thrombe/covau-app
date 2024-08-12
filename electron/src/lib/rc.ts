@@ -102,7 +102,7 @@ export class Rc<T extends types.db.DbItem<unknown>> {
 
     cloned(): T {
         let t = this.t;
-        return utils.clone(t);
+        return utils.clone(t) as T;
     }
 
     async txn(fn: (t: T) => Promise<T>, dbops: server.DbOps | null = null) {
@@ -118,6 +118,8 @@ export class Rc<T extends types.db.DbItem<unknown>> {
         this.t = t;
     }
 }
+
+export type DbRc<T> = Rc<types.db.DbItem<T>>;
 
 export const rc = {
     store,
