@@ -85,3 +85,18 @@ export function rem() {
     let rem = parseInt(getComputedStyle(document.documentElement).fontSize);
     return rem;
 }
+
+export function deep_freeze<T extends Object>(obj: T) {
+    Object.keys(obj).forEach((property: string) => {
+        let prop = property as keyof typeof obj;
+
+        if (typeof obj[prop] === "object"
+            && obj[prop] !== null &&
+            !Object.isFrozen(obj[prop])) {
+
+            // @ts-ignore
+            deep_freeze(obj[prop]);
+        }
+    });
+    return Object.freeze(obj);
+}
