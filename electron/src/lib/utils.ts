@@ -87,13 +87,29 @@ export function rem() {
 }
 
 // - [object deep freeze typescript](https://stackoverflow.com/a/59338545)
-export type DRo<T> = T extends (infer R)[] ? DRoArr<R> : T extends Function ? T : T extends object ? DRoObj<T> : T;
+export type DRo<T> =
+    T extends (infer R)[]
+    ? ReadonlyArray<DRo<R>>
+    
+    : T extends Function
+    ? T
+    
+    : T extends object
+    ? { readonly [P in keyof T]: DRo<T[P]>; }
+    
+    : T;
 
-interface DRoArr<T> extends ReadonlyArray<DRo<T>> { };
-
-type DRoObj<T> = {
-    readonly [P in keyof T]: DRo<T[P]>;
-};
+export type NoDRo<T> =
+    T extends (infer R)[]
+    ? NoDRo<R>[]
+    
+    : T extends Function
+    ? T
+    
+    : T extends Object
+    ? { -readonly [P in keyof T]: NoDRo<T[P]>; }
+    
+    : T;
 
 export function deep_freeze<T>(source: T, freezeParent = true): DRo<T> {
     if (freezeParent) {
@@ -117,6 +133,6 @@ export function deep_freeze<T>(source: T, freezeParent = true): DRo<T> {
     return source as DRo<T>
 }
 
-export function clone<T>(t: T | DRo<T> | DRoObj<T> | DRoArr<T>): T {
-    return structuredClone(t) as T;
+export function clone<T>(t: T): NoDRo<T> {
+    return structuredClone(t) as NoDRo<T>;
 }
