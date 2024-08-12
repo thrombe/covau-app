@@ -65,8 +65,12 @@ export class DbListItem extends ListItem {
         this._t = rc.rc.store.rc(data) as typeof this._t;
     }
 
-    rc<T>() {
+    dbrc<T extends MusicListItem["t"]>() {
         return this._t as rc.DbRc<T>;
+    }
+
+    rc<T extends types.db.DbItem<unknown>>() {
+        return this._t as rc.Rc<T>;
     }
 
     get t(): rc.Rc<MusicListItem> {
@@ -405,7 +409,7 @@ export class DbListItem extends ListItem {
         let t = this.t.t;
         switch (t.typ) {
             case "MmSong": {
-                let s = this.rc<MmSong>();
+                let s = this.dbrc<MmSong>();
                 if (s.t.t.last_known_path) {
                     return "file://" + await server.api.to_path(s.t.t.last_known_path);
                 } else {
@@ -872,7 +876,7 @@ export class DbListItem extends ListItem {
         let t = this.t;
         switch (t.t.typ) {
             case "MmSong": {
-                let s = this.rc<MmSong>();
+                let s = this.rc<typeof t.t>();
                 let options = {
                     copy_url: {
                         icon: icons.copy,
@@ -1102,7 +1106,7 @@ export class DbListItem extends ListItem {
             } break;
             case "Song": {
                 let s = t.t;
-                let song = this.rc<covau.Song>();
+                let song = this.rc<typeof t.t>();
                 let options = {
                     copy_url: {
                         icon: icons.copy,
@@ -1226,7 +1230,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MmAlbum": {
-                let a = this.rc<MmAlbum>();
+                let a = this.rc<typeof t.t>();
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1291,7 +1295,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "MmArtist": {
-                let a = this.rc<MmArtist>();
+                let a = this.rc<typeof t.t>();
                 let options = {
                     open_saved: {
                         icon: icons.open_new_tab,
@@ -1440,7 +1444,7 @@ export class DbListItem extends ListItem {
             } break;
             case "MmPlaylist":
             case "MmQueue": {
-                let list = this.rc<MmPlaylist | MmQueue>();
+                let list = this.rc<typeof t.t>();
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1507,7 +1511,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Queue": {
-                let queue = this.rc<covau.Queue>();
+                let queue = this.rc<typeof t.t>();
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1632,7 +1636,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Playlist": {
-                let playlist = this.rc<covau.Playlist>();
+                let playlist = this.rc<typeof t.t>();
                 let options = {
                     open: {
                         icon: icons.open_new_tab,
@@ -1748,7 +1752,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "Updater": {
-                let u = this.rc<covau.Updater>();
+                let u = this.rc<typeof t.t>();
                 switch (u.t.t.source.type) {
                     case "MusimanagerSearch": {
                         let options = {
@@ -2085,7 +2089,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "SongBlacklist": {
-                let bl = this.rc<covau.SongBlacklist>();
+                let bl = this.rc<typeof t.t>();
                 let options = {
                     open_songs: {
                         icon: icons.open_new_tab,
@@ -2174,7 +2178,7 @@ export class DbListItem extends ListItem {
                 }
             } break;
             case "ArtistBlacklist": {
-                let bl = this.rc<covau.ArtistBlacklist>();
+                let bl = this.rc<typeof t.t>();
                 let options = {
                     explore: {
                         icon: icons.open_new_tab,
@@ -2285,8 +2289,8 @@ export class DbListItem extends ListItem {
         let t = this.t;
         switch (t.t.typ) {
             case "Song": {
-                let song = this.t;
-                let playsource = mixins.RearrangeWrapper(song.t.play_sources, s => {
+                let song = this.rc<typeof t.t>();
+                let playsource = mixins.RearrangeWrapper(utils.clone(song.t.t.play_sources), s => {
                     let ops = {
                         remove: (item: ListItem) => ({
                             icon: icons.remove,
@@ -2350,15 +2354,16 @@ export class DbListItem extends ListItem {
                                     icon: icons.floppy_disk,
                                     title: "save source",
                                     onclick: async () => {
-                                        if ((song.t.play_sources.find(id => id.type == "File" && id.content.path.includes(s.content)) ?? null) != null) {
+                                        let t = utils.clone(song.t);
+                                        if ((t.t.play_sources.find(id => id.type == "File" && id.content.path.includes(s.content)) ?? null) != null) {
                                             toast("song is already saved", "error");
                                             return;
                                         }
                                         let path = await server.api.save_song(s.content);
-                                        song.t.play_sources = [{ type: "File", content: path }, ...song.t.play_sources];
+                                        t.t.play_sources = [{ type: "File", content: path }, ...t.t.play_sources];
 
                                         this.t = await server.db.txn(async db => {
-                                            return await db.update(song);
+                                            return await db.update(t);
                                         }) as MusicListItem;
                                         toast("source saved");
                                     },
@@ -2377,15 +2382,14 @@ export class DbListItem extends ListItem {
                         return file;
                     }
                 }, async items => {
-                    song.t.play_sources = items;
+                    let t = utils.clone(song.t);
+                    t.t.play_sources = items;
                     await server.db.txn(async dbops => {
-                        let s = await dbops.update(song);
-                        song = keyed([s])[0] as typeof song;
-                        this.t = song;
+                        this.t = await dbops.update(t);
                     });
                 });
 
-                let infosource = mixins.RearrangeWrapper(song.t.info_sources, s => {
+                let infosource = mixins.RearrangeWrapper(utils.clone(song.t.t.info_sources), s => {
                     let ops = {
                         remove: (item: ListItem) => ({
                             icon: icons.remove,
@@ -2422,26 +2426,24 @@ export class DbListItem extends ListItem {
                     };
                     return item;
                 }, async items => {
-                    song.t.info_sources = items;
+                    let t = utils.clone(song.t);
+                    t.t.info_sources = items;
                     await server.db.txn(async dbops => {
-                        let s = await dbops.update(song);
-                        song = keyed([s])[0] as typeof song;
-                        this.t = song;
+                        this.t = await dbops.update(t);
                     });
                 });
 
-                let thumbs = mixins.RearrangeWrapper(song.t.thumbnails, (s, i) => {
+                let thumbs = mixins.RearrangeWrapper(utils.clone(song.t.t.thumbnails), (s, i) => {
                     let id = i.toString();
                     let item = new CustomListItem(id, s.url, "Custom", s.size ? `${s.size.width}x${s.size.height}` : null);
                     item._thumbnail = s.url;
                     item._drag_url = s.url;
                     return item;
                 }, async items => {
-                    song.t.thumbnails = items;
+                    let t = utils.clone(song.t);
+                    t.t.thumbnails = items;
                     await server.db.txn(async dbops => {
-                        let s = await dbops.update(song);
-                        song = keyed([s])[0] as typeof song;
-                        this.t = song;
+                        this.t = await dbops.update(t);
                     });
                 });
 
@@ -2451,13 +2453,13 @@ export class DbListItem extends ListItem {
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
-                                content: song.t.title,
+                                content: song.t.t.title,
                             },
-                            ...song.t.artists.map(a => ({
+                            ...song.t.t.artists.map(a => ({
                                 heading: "Artist",
                                 content: a.name,
                             })),
@@ -2478,9 +2480,9 @@ export class DbListItem extends ListItem {
                     {
                         type: "Searcher",
                         title: "Artists",
-                        height: Math.min(5, song.t.artists.length),
+                        height: Math.min(5, song.t.t.artists.length),
                         searcher: writable(AsyncStaticSearcher(async () => {
-                            let artists = await Promise.all(song.t.artists.map(async (t, i) => {
+                            let artists = await Promise.all(song.t.t.artists.map(async (t, i) => {
                                 if (t.source?.type == "YtId") {
                                     let a = await st.cached.artist(t.source.content);
                                     return db.wrapped(a);
@@ -2506,14 +2508,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmSong": {
-                let song = this.t.t;
+                let song = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2521,13 +2523,13 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Artist",
-                                content: song.artist_name,
+                                content: song.t.t.artist_name,
                             },
                             {
                                 heading: "Key",
-                                content: song.key,
+                                content: song.t.t.key,
                             },
-                            ...maybe(song.last_known_path, p => ({
+                            ...maybe(song.t.t.last_known_path, p => ({
                                 heading: "File",
                                 content: `${p.typ} ${p.path}`,
                             })),
@@ -2538,14 +2540,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StSong": {
-                let song = this.t.t;
+                let song = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2553,13 +2555,13 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Key",
-                                content: song.id,
+                                content: song.t.id,
                             },
-                            ...maybe(song.album?.name ?? null, n => ({
+                            ...maybe(song.t.t.album?.name ?? null, n => ({
                                 heading: "Album",
                                 content: n,
                             })),
-                            ...song.authors.map(a => ({
+                            ...song.t.t.authors.map(a => ({
                                 heading: "Artist",
                                 content: a.name,
                             })),
@@ -2570,9 +2572,9 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MbzRecording": {
-                let song = this.t.t;
+                let song = this.rc<typeof t.t>();
                 return [
-                    mbz.mbz.recording_info_section(song),
+                    mbz.mbz.recording_info_section(utils.clone(song.t.t)),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
@@ -2598,7 +2600,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "SongBlacklist": {
-                let bl = this.t;
+                let bl = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
@@ -2618,37 +2620,37 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, bl.t.songs.length),
+                        height: Math.min(5, bl.t.t.songs.length),
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "Song",
-                            ids: bl.t.songs.map(s => s.content),
+                            ids: bl.t.t.songs.map(s => s.content),
                         }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "MbzArtist": {
-                let a = this.t.t;
+                let a = this.rc<typeof t.t>();
                 return [
-                    mbz.mbz.artist_info_section(a, this),
+                    mbz.mbz.artist_info_section(utils.clone(a.t.t), this),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "Playlist": {
-                let playlist = this.t.t;
+                let playlist = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
-                                content: playlist.title,
+                                content: playlist.t.t.title,
                             },
                         ]
                     },
@@ -2657,29 +2659,29 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, playlist.songs.length),
+                        height: Math.min(5, playlist.t.t.songs.length),
                         searcher: writable(Db.new({
                             query_type: "ids",
                             type: "Song",
-                            ids: playlist.songs,
+                            ids: utils.clone(playlist.t.t.songs),
                         }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "Queue": {
-                let queue = this.t.t;
+                let queue = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
-                                content: queue.queue.queue.title,
+                                content: queue.t.t.queue.queue.title,
                             },
                         ]
                     },
@@ -2688,14 +2690,14 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, queue.queue.queue.songs.length),
+                        height: Math.min(5, queue.t.t.queue.queue.songs.length),
                         searcher: writable(Db.new({
                             query_type: "ids",
                             type: "Song",
-                            ids: queue.queue.queue.songs,
+                            ids: utils.clone(queue.t.t.queue.queue.songs),
                         }, 10)),
                     },
-                    ...maybe(queue.seen, seen => ({
+                    ...maybe(queue.t.t.seen, seen => ({
                         type: "Searcher",
                         title: "Song Blacklist",
                         options: [],
@@ -2709,7 +2711,7 @@ export class DbListItem extends ListItem {
                             return [item];
                         })),
                     })),
-                    ...maybe(queue.blacklist, blacklist => ({
+                    ...maybe(queue.t.t.blacklist, blacklist => ({
                         type: "Searcher",
                         title: "Blacklist",
                         options: [],
@@ -2723,7 +2725,7 @@ export class DbListItem extends ListItem {
                             return [item];
                         })),
                     })),
-                    ...maybe(queue.seed, seed => ({
+                    ...maybe(queue.t.t.seed, seed => ({
                         type: "Searcher",
                         title: "Autoplay Seed",
                         options: [],
@@ -2741,14 +2743,14 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "MmAlbum": {
-                let album = this.t.t;
+                let album = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Title",
@@ -2756,11 +2758,11 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Artist",
-                                content: album.artist_name,
+                                content: album.t.t.artist_name,
                             },
                             {
                                 heading: "Album Id",
-                                content: album.browse_id,
+                                content: album.t.t.browse_id,
                             },
                         ]
                     },
@@ -2769,35 +2771,35 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, album.songs.length),
+                        height: Math.min(5, album.t.t.songs.length),
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "MmSong",
-                            ids: album.songs,
+                            ids: utils.clone(album.t.t.songs),
                         }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "MmArtist": {
-                let artist = this.t.t;
+                let artist = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: artist.name,
+                                content: artist.t.t.name,
                             },
-                            ...artist.keys.map(k => ({
+                            ...artist.t.t.keys.map(k => ({
                                 heading: "Key",
                                 content: k,
                             })),
-                            ...artist.search_keywords.map(k => ({
+                            ...artist.t.t.search_keywords.map(k => ({
                                 heading: "Keywords",
                                 content: k,
                             })),
@@ -2808,14 +2810,14 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, artist.songs.length),
+                        height: Math.min(5, artist.t.t.songs.length),
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "MmSong",
-                            ids: artist.songs,
+                            ids: utils.clone(artist.t.t.songs),
                         }, 10)),
                     },
-                    ...maybe(artist.unexplored_songs ?? null, songs => ({
+                    ...maybe(utils.clone(artist.t.t.unexplored_songs) ?? null, songs => ({
                         type: "Searcher",
                         title: "Unexplored Songs",
                         options: [],
@@ -2823,25 +2825,25 @@ export class DbListItem extends ListItem {
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "MmSong",
-                            ids: artist.songs,
+                            ids: songs,
                         }, 10)),
                     })),
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "MmPlaylist": {
-                let playlist = this.t.t;
+                let playlist = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: playlist.name,
+                                content: playlist.t.t.name,
                             },
                         ]
                     },
@@ -2850,29 +2852,29 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, playlist.data_list.length),
+                        height: Math.min(5, playlist.t.t.data_list.length),
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "MmSong",
-                            ids: playlist.data_list,
+                            ids: utils.clone(playlist.t.t.data_list),
                         }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "MmQueue": {
-                let queue = this.t.t;
+                let queue = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: queue.name,
+                                content: queue.t.t.name,
                             },
                         ]
                     },
@@ -2881,35 +2883,35 @@ export class DbListItem extends ListItem {
                         type: "Searcher",
                         title: "Songs",
                         options: [],
-                        height: Math.min(5, queue.data_list.length),
+                        height: Math.min(5, queue.t.t.data_list.length),
                         searcher: writable(Db.new({
                             query_type: "refids",
                             type: "MmSong",
-                            ids: queue.data_list,
+                            ids: utils.clone(queue.t.t.data_list),
                         }, 10)),
                     },
                     sections.json,
                 ] as DetailSection[];
             } break;
             case "StAlbum": {
-                let album = this.t.t;
+                let album = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: album.title,
+                                content: album.t.t.title,
                             },
                             {
                                 heading: "Album Id",
-                                content: album.id,
+                                content: album.t.t.id,
                             },
-                            ...maybe(album.author?.name ?? null, a => ({
+                            ...maybe(album.t.t.author?.name ?? null, a => ({
                                 heading: "Artist",
                                 content: a,
                             })),
@@ -2920,24 +2922,24 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StPlaylist": {
-                let playlist = this.t.t;
+                let playlist = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: playlist.title,
+                                content: playlist.t.t.title,
                             },
                             {
                                 heading: "Playlist Id",
-                                content: playlist.id,
+                                content: playlist.t.t.id,
                             },
-                            ...maybe(playlist.author?.name ?? null, a => ({
+                            ...maybe(playlist.t.t.author?.name ?? null, a => ({
                                 heading: "Artist",
                                 content: a,
                             })),
@@ -2948,24 +2950,24 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "StArtist": {
-                let artist = this.t.t;
+                let artist = this.rc<typeof t.t>();
                 return [
                     {
                         type: "Info",
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                             {
                                 heading: "Name",
-                                content: artist.name,
+                                content: artist.t.t.name,
                             },
                             {
                                 heading: "Artist Id",
-                                content: artist.id,
+                                content: artist.t.t.id,
                             },
-                            ...maybe(artist.subscribers, a => ({
+                            ...maybe(artist.t.t.subscribers, a => ({
                                 heading: "Subscribers",
                                 content: a,
                             })),
@@ -2976,8 +2978,8 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             case "Updater": {
-                let updater = this.t.t;
-                let source = updater.source;
+                let updater = this.rc<typeof t.t>();
+                let source = updater.t.t.source;
                 switch (source.type) {
                     case "MusimanagerSearch":
                     case "SongTubeSearch": {
@@ -2989,15 +2991,15 @@ export class DbListItem extends ListItem {
                                 info: [
                                     {
                                         heading: "Type",
-                                        content: this.t.typ,
+                                        content: this.t.t.typ,
                                     },
                                     {
                                         heading: "Name",
-                                        content: updater.title,
+                                        content: updater.t.t.title,
                                     },
                                     {
                                         heading: "Enabled",
-                                        content: updater.enabled.toString(),
+                                        content: updater.t.t.enabled.toString(),
                                     },
                                     {
                                         heading: "Updater Type",
@@ -3055,7 +3057,7 @@ export class DbListItem extends ListItem {
                         info: [
                             {
                                 heading: "Type",
-                                content: this.t.typ,
+                                content: this.t.t.typ,
                             },
                         ]
                     },
@@ -3064,7 +3066,7 @@ export class DbListItem extends ListItem {
                 ] as DetailSection[];
             } break;
             default:
-                throw exhausted(this.t);
+                throw exhausted(t.t);
         }
     }
 }
