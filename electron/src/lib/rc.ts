@@ -33,21 +33,19 @@ let store = new RefStore();
 
 // refrence store
 class RcItem<T extends types.db.DbItem<unknown>> {
-    _t: Readonly<T>;
+    _t: utils.DRo<T>;
     count: number;
     constructor(t: T) {
-        t = utils.deep_freeze(t);
-        this._t = t;
+        this._t = utils.deep_freeze(t);
         this.count = 0;
     }
 
-    get t() {
+    get t(): utils.DRo<T> {
         return this._t;
     }
 
     set t(t: T) {
-        t = utils.deep_freeze(t);
-        this._t = t;
+        this._t = utils.deep_freeze(t);
     }
 
     free() {
@@ -80,12 +78,12 @@ export class Rc<T extends types.db.DbItem<unknown>> {
         this.id = id;
     }
 
-    get t(): Readonly<T> {
+    get t(): utils.DRo<T> {
         let item = store.store.get(this.id) ?? null;
         if (item == null) {
             throw new Error(`item with id ${this.id} is not in store`);
         }
-        return item.t as T;
+        return item.t as utils.DRo<T>;
     }
 
     set t(t: T) {
@@ -102,9 +100,9 @@ export class Rc<T extends types.db.DbItem<unknown>> {
         item.t = t;
     }
 
-    cloned() {
+    cloned(): T {
         let t = this.t;
-        return structuredClone(t);
+        return utils.clone(t);
     }
 
     async txn(fn: (t: T) => Promise<T>, dbops: server.DbOps | null = null) {

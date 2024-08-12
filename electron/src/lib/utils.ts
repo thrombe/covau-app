@@ -86,17 +86,37 @@ export function rem() {
     return rem;
 }
 
-export function deep_freeze<T extends Object>(obj: T) {
-    Object.keys(obj).forEach((property: string) => {
-        let prop = property as keyof typeof obj;
+// - [object deep freeze typescript](https://stackoverflow.com/a/59338545)
+export type DRo<T> = T extends (infer R)[] ? DRoArr<R> : T extends Function ? T : T extends object ? DRoObj<T> : T;
 
-        if (typeof obj[prop] === "object"
-            && obj[prop] !== null &&
-            !Object.isFrozen(obj[prop])) {
+interface DRoArr<T> extends ReadonlyArray<DRo<T>> { };
 
-            // @ts-ignore
-            deep_freeze(obj[prop]);
+type DRoObj<T> = {
+    readonly [P in keyof T]: DRo<T[P]>;
+};
+
+export function deep_freeze<T>(source: T, freezeParent = true): DRo<T> {
+    if (freezeParent) {
+        Object.freeze(source);
+    }
+
+    Object.getOwnPropertyNames(source).forEach(function(prop) {
+        if (
+            Object.prototype.hasOwnProperty.call(source as any, prop) &&
+            (source as any)[prop] !== null &&
+            (typeof (source as any)[prop] === 'object' || typeof (source as any)[prop] === 'function')
+        ) {
+            if (Object.isFrozen((source as any)[prop])) {
+                deep_freeze((source as any)[prop], false);
+            } else {
+                deep_freeze((source as any)[prop], true);
+            }
         }
-    });
-    return Object.freeze(obj);
+    })
+
+    return source as DRo<T>
+}
+
+export function clone<T>(t: T | DRo<T> | DRoObj<T> | DRoArr<T>): T {
+    return structuredClone(t) as T;
 }
