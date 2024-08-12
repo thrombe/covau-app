@@ -1,4 +1,5 @@
 import type { ErrorMessage, Message, FeRequest, MessageResult } from '$types/server.ts';
+import { Mutex } from 'async-mutex';
 import { toast } from './toast/toast.ts';
 import * as st from "$lib/searcher/song_tube.ts";
 import * as yt from "$types/yt.ts";
@@ -409,6 +410,7 @@ class Client<Req> {
     }
 
     resolves: Map<number, Resolver<MessageResult<string>>> = new Map();
+    // NOTE: allow_many does not handle race conditions
     async execute<T>(req: Req, id: number | null = null, allow_many: boolean = false): Promise<T> {
         if (id == null) {
             id = await utils.api_request(this.new_id_path, null) as number;
@@ -463,9 +465,11 @@ class DbClient extends Client<types.server.DbRequest> {
         return self;
     }
 
-    async new_id() {
-        let id = await super.execute<number>({ type: "NewId" }, this.def_id, true);
-        return id;
+    mutex: Mutex = new Mutex();
+    async new_id(): Promise<number> {
+        return await this.mutex.runExclusive(async () => {
+            return await super.execute<number>({ type: "NewId" }, this.def_id, true);
+        });
     }
 
     override async execute<T>(req: types.server.DbRequest): Promise<T> {
