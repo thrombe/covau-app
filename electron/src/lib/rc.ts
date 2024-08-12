@@ -2,8 +2,8 @@ import * as types from "$types/types.ts";
 import * as utils from './utils.ts';
 import * as server from './server.ts';
 
-class RefStore<T extends types.db.DbItem<unknown>> {
-    store = new Map<number, RcItem<T>>();
+class RefStore {
+    store = new Map<number, RcItem<types.db.DbItem<unknown>>>();
     registry = new FinalizationRegistry((id: number) => {
         let rs = this.store.get(id) ?? null;
         if (rs == null) {
@@ -13,14 +13,14 @@ class RefStore<T extends types.db.DbItem<unknown>> {
         rs.free();
     });
 
-    rc(t: T) {
+    rc<T extends types.db.DbItem<unknown>>(t: T): Rc<T> {
         let k = this.store.get(t.id) ?? null;
         if (k != null) {
             if (k.t.metadata.update_counter >= t.metadata.update_counter) {
-                return k.rc();
+                return k.rc() as Rc<T>;
             } else {
                 k.t = t;
-                return k.rc();
+                return k.rc() as Rc<T>;
             }
         }
 
