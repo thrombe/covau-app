@@ -17,6 +17,7 @@ import * as utils from "$lib/utils.ts";
 import * as mbz from "$lib/searcher/mbz.ts";
 import * as mixins from "$lib/searcher/mixins.ts";
 import { prompter } from "$lib/prompt/prompt.ts";
+import * as rc from "$lib/rc.ts";
 
 export type MmSong = Musi.Song<Musi.SongInfo | null, types.covau.SourcePath>;
 export type MmAlbum = Musi.Album<yt.VideoId>;
@@ -54,14 +55,14 @@ export type BrowseQuery =
     { query_type: 'ids', type: Typ | null, ids: number[] };
 
 export class DbListItem extends ListItem {
-    _t: server.Rc<MusicListItem>;
+    _t: rc.Rc<MusicListItem>;
 
     // for mbz recording
     yt_song: types.yt.Song | null = null;
 
     constructor(data: MusicListItem) {
         super();
-        this._t = server.rc.store.rc(data) as typeof this._t;
+        this._t = rc.rc.store.rc(data) as typeof this._t;
     }
 
     get t(): MusicListItem {
