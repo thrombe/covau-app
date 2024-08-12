@@ -575,11 +575,12 @@ class DbClient extends Client<types.server.DbRequest> {
                         metadata: item.metadata,
                     },
                 };
-                let dbitem: types.db.DbMetadata = await self.execute(req);
+                let mdata: types.db.DbMetadata = await self.execute(req);
 
-                await self.call_listeners({ ...item, metadata: dbitem });
+                let new_item = { ...item, metadata: mdata };
+                await self.call_listeners(new_item);
 
-                return dbitem;
+                return new_item;
             },
 
             async delete<T>(item: types.db.DbItem<T>) {
@@ -600,6 +601,7 @@ export const db = {
     set_update_listener<T>(id: number, callback: DbUpdateCallback<T>) {
         return dbclient.set_update_listener(id, callback);
     },
+
     async txn<Ret>(fn: (db_ops: DbOps) => Promise<Ret>) {
         let id: number = await dbclient.execute({ type: "Begin" });
         try {

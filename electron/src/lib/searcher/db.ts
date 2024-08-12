@@ -802,7 +802,7 @@ export class DbListItem extends ListItem {
                             let item = this.t as DB.DbItem<unknown>;
                             console.log(item);
                             item.metadata.likes += 1;
-                            this.t.metadata = await db.update_metadata(item);
+                            this.t = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" liked`, "info");
                     },
@@ -814,7 +814,7 @@ export class DbListItem extends ListItem {
                         await server.db.txn(async db => {
                             let item = this.t as DB.DbItem<unknown>;
                             item.metadata.dislikes += 1;
-                            this.t.metadata = await db.update_metadata(item);
+                            this.t = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" disliked`, "info");
                     },
@@ -826,7 +826,7 @@ export class DbListItem extends ListItem {
                         await server.db.txn(async db => {
                             let item = this.t as DB.DbItem<unknown>;
                             item.metadata.likes -= 1;
-                            this.t.metadata = await db.update_metadata(item);
+                            this.t = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" un-unliked`, "info");
                     },
@@ -838,7 +838,7 @@ export class DbListItem extends ListItem {
                         await server.db.txn(async db => {
                             let item = this.t as DB.DbItem<unknown>;
                             item.metadata.dislikes -= 1;
-                            this.t.metadata = await db.update_metadata(item);
+                            this.t = await db.update_metadata(item);
                         });
                         toast(`"${this.title()}" un-disliked`, "info");
                     },
