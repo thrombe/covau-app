@@ -58,7 +58,7 @@ export class DbListItem extends ListItem {
     _t: rc.Rc<MusicListItem>;
 
     // for mbz recording
-    yt_song: rc.DbRc<types.yt.Song> | null = null;
+    yt_song: types.yt.Song | null = null;
 
     constructor(data: MusicListItem) {
         super();
