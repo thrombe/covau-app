@@ -309,7 +309,7 @@ export class DbListItem extends ListItem {
         }
     }
 
-    thumbnail(): string | null {
+    _thumbnail(): string | null {
         let t = this.t.t;
         switch (t.typ) {
             case "MmSong":
@@ -348,6 +348,14 @@ export class DbListItem extends ListItem {
             default:
                 throw exhausted(t);
         }
+    }
+
+    thumbnail(): string | null {
+        let thumb = this._thumbnail();
+        if (thumb == null) {
+            return null;
+        }
+        return server.utils.url.fetch.image({ src: thumb });
     }
 
     default_thumbnail(): string {

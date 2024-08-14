@@ -125,7 +125,7 @@ export class StListItem extends ListItem {
         }
     }
 
-    thumbnail(): string | null {
+    _thumbnail(): string | null {
         switch (this.data.type) {
             case "Song":
                 return this.data.content.thumbnails.at(0)?.url ?? st.url.song_thumbnail(this.data.content.id).url;
@@ -136,6 +136,14 @@ export class StListItem extends ListItem {
             default:
                 throw exhausted(this.data)
         }
+    }
+
+    thumbnail(): string | null {
+        let thumb = this._thumbnail();
+        if (thumb == null) {
+            return null;
+        }
+        return server.utils.url.fetch.image({ src: thumb });
     }
 
     default_thumbnail(): string {

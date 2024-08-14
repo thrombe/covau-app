@@ -172,7 +172,8 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
-    thumbnail(): string | null {
+
+    _thumbnail(): string | null {
         switch (this.data.typ) {
             case "MbzRecordingWithInfo":
                 return this.data.data.cover_art ?? this.yt_song?.thumbnails.at(0)?.url ?? null;
@@ -189,9 +190,19 @@ export class MbzListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+
+    thumbnail(): string | null {
+        let thumb = this._thumbnail();
+        if (thumb == null) {
+            return null;
+        }
+        return server.utils.url.fetch.image({ src: thumb });
+    }
+
     default_thumbnail(): string {
         return icons.default_music_icon;
     }
+
     title_sub(): string | null {
         function names<T extends { name: string }>(a: T[]) {
             if (a.length == 0) {
