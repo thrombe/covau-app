@@ -39,7 +39,7 @@
     let queue = stores.queue;
     let title = "Queue";
     let unsub = stores.syncer.subscribe(sync => {
-        title = sync.queue.t.queue.queue.title;
+        title = sync.queue.t.t.queue.queue.title;
     });
     onDestroy(unsub);
 
