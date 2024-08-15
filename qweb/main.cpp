@@ -14,6 +14,8 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     QWebEngineView view;
+    view.settings()->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, true);
+
     QQmlApplicationEngine engine;
 
     printf("args: %d\n", argc);
