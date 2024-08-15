@@ -99,7 +99,7 @@
             on:pointerup={end_prompt}
             class="absolute w-full h-full -z-10 bg-gray-900 bg-opacity-20 backdrop-blur-[2px] transition-opacity"
             style="transition-duration: 800ms;"
-        />
+        ></div>
         {#if prompt_info.type == "Input"}
             <div
                 class="flex flex-row mt-32 h-20 pl-4 w-[50%] min-w-[28rem] rounded-xl bg-gray-500 bg-opacity-20 backdrop-blur-lg transition-opacity"
