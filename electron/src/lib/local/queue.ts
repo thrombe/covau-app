@@ -316,6 +316,13 @@ export class QueueManager implements Searcher {
                 },
             },
             {
+                title: "repeat song",
+                icon: icons.repeat,
+                onclick: async () => {
+                    stores.queue_ops.repeat_song();
+                },
+            },
+            {
                 title: "open details",
                 icon: icons.open_new_tab,
                 onclick: async () => {

@@ -253,6 +253,7 @@ pub enum FeCommand {
     Prev,
     Pause,
     Play,
+    Repeat,
     ToggleMute,
     TogglePlay,
     BlacklistArtists,

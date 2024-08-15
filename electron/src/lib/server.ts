@@ -332,6 +332,10 @@ class FeServer extends Server<FeRequest> {
                 stores.player.update(t => t);
                 return resolve.unit();
             } break;
+            case 'Repeat': {
+                await stores.queue_ops.repeat_song();
+                return resolve.unit();
+            } break;
             case 'ToggleMute': {
                 get(stores.player).toggle_mute();
                 stores.player.update(t => t);

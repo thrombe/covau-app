@@ -825,6 +825,17 @@ export const queue_ops = {
         await get(queue).remove_artists_from_blacklist(item);
         queue.update(q => q);
     },
+
+    async repeat_song() {
+        let q = get(queue);
+        if (q.state == "Detour") {
+            toast("item is already set to repeat once", "error");
+        } else {
+            q.detour();
+            queue.update(q => q);
+            toast("current song will repeat after it finishes");
+        }
+    },
 };
 
 

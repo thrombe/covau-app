@@ -215,6 +215,7 @@ async fn main() -> Result<()> {
                 cli::FeCommand::Prev => FeRequest::Prev,
                 cli::FeCommand::Pause => FeRequest::Pause,
                 cli::FeCommand::Play => FeRequest::Play,
+                cli::FeCommand::Repeat => FeRequest::Repeat,
                 cli::FeCommand::ToggleMute => FeRequest::ToggleMute,
                 cli::FeCommand::TogglePlay => FeRequest::TogglePlay,
                 cli::FeCommand::BlacklistArtists => FeRequest::BlacklistArtists,

@@ -299,6 +299,7 @@ pub enum FeRequest {
     Prev,
     Pause,
     Play,
+    Repeat,
     ToggleMute,
     TogglePlay,
     BlacklistArtists,
