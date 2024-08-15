@@ -838,6 +838,9 @@ export const st = {
                 if (!s.basic_info.id) {
                     throw new Error(s.playability_status?.status);
                 }
+                if (s.playability_status?.status == "LOGIN_REQUIRED") {
+                    throw new Error(s.playability_status?.status);
+                }
                 return {
                     id: s.basic_info.id,
                     title: s.basic_info.title ?? null,
