@@ -183,12 +183,20 @@ export class QueueManager implements Searcher {
             }
         }
     }
-    async play_next() {
+    protected async play_next_if_detour() {
         if (this.state == "Detour") {
-            if (this.playing_index == null) {
+            if (this.playing_index == null && this.items.length > 0) {
                 this.playing_index = 0;
             }
-            await this.play(this.playing_index);
+            if (this.playing_index != null) {
+                await this.play(this.playing_index);
+            }
+            return true;
+        }
+        return false;
+    }
+    async play_next() {
+        if (await this.play_next_if_detour()) {
             return;
         }
 
@@ -776,6 +784,10 @@ export class AutoplayQueueManager extends QueueManager {
     }
 
     async play_next(): Promise<void> {
+        if (await this.play_next_if_detour()) {
+            return;
+        }
+
         if (!await super.has_next()) {
             let item = await this.autoplay_consume();
             if (item) {
