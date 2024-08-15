@@ -320,7 +320,7 @@ export class QueueManager implements Searcher {
                 icon: icons.open_new_tab,
                 onclick: async () => {
                     let sync = get(stores.syncer);
-                    let item = db.db.wrapped(sync.queue);
+                    let item = db.db.wrapped(sync.queue.t);
                     await item.common_options().open_details.onclick();
                 },
             },
