@@ -2115,7 +2115,7 @@ export class DbListItem extends ListItem {
                         title: "load",
                         onclick: async () => {
                             let sync = get(stores.syncer);
-                            if (sync.queue.t.seen == bl.t.id) {
+                            if (sync.queue.t.t.seen == bl.t.id) {
                                 toast("song blacklist already loaded");
                             } else {
                                 stores.syncops.set.seen(utils.clone(bl.t));
@@ -2211,7 +2211,7 @@ export class DbListItem extends ListItem {
                         title: "load",
                         onclick: async () => {
                             let sync = get(stores.syncer);
-                            if (sync.queue.t.blacklist == bl.t.id) {
+                            if (sync.queue.t.t.blacklist == bl.t.id) {
                                 toast("blacklist already loaded");
                             } else {
                                 stores.syncops.set.blacklist(utils.clone(bl.t));
