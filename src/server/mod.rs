@@ -215,7 +215,7 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
 
     let mut types = String::new();
     types += "import type { DbMetadata } from '$types/db.ts';\n";
-    types += ";\n";
+    types += "\n";
     types += &specta::ts::export::<Message<()>>(config)?;
     types += ";\n";
     types += &specta::ts::export::<MessageResult<()>>(config)?;

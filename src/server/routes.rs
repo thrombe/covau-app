@@ -634,7 +634,7 @@ pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply
                 // - [can't seek html5 video or audio in chrome](https://stackoverflow.com/a/61229273)
                 let wres = warp::http::Response::builder()
                     .header("content-type", "audio/webm")
-                    .header("content-range", format!("bytes={}-{}", s, e))
+                    .header("content-range", format!("bytes {}-{}", s, e))
                     .header("content-length", format!("{}", e - s + 1))
                     .header("accept-ranges", "bytes");
                 wres.body(body).map_err(custom_reject)
@@ -658,6 +658,7 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
                 let path = config.to_path(src).map_err(custom_reject)?;
 
                 let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
+                let total = bytes.len();
 
                 let (s, e) = headers
                     .get("range")
@@ -678,16 +679,25 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
                 let mime = mime_guess::from_path(&path)
                     .first()
                     .map(|mime| mime.to_string())
+                    .map(|mime| {
+                        if mime == "audio/m4a" {
+                            "audio/aac".to_owned()
+                            // "audio/mp4".to_owned()
+                        } else {
+                            mime
+                        }
+                    })
                     .context("Could not figure out mime type of file")
                     .map_err(custom_reject)?;
 
                 // - [can't seek html5 video or audio in chrome](https://stackoverflow.com/a/61229273)
                 let wres = warp::http::Response::builder()
                     .header("content-type", mime)
-                    .header("content-range", format!("bytes={}-{}", s, e))
+                    .header("content-range", format!("bytes {}-{}/{}", s, e, total))
                     .header("content-length", format!("{}", e - s + 1))
-                    .header("accept-ranges", "bytes");
-                wres.body(body).map_err(custom_reject)
+                    .header("accept-ranges", "bytes")
+                    .header("cache-control", "max-age=0");
+                wres.status(206).body(body).map_err(custom_reject)
             },
         );
 
