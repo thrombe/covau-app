@@ -647,6 +647,15 @@ export class DbListItem extends ListItem {
                 try {
                     vid = await st.cached.video(song.key, dbops);
                 } catch (e: any) {
+                    if (e instanceof Error) {
+                        if (e.message.includes("video is unavailable")) {
+                            // pass
+                            console.warn(`Error while fetching MmSong source '${this.title()}' (crafting fake StSong): ${e.message}`);
+                        } else {
+                            throw e;
+                        }
+                    }
+
                     let thumb = st.url.song_thumbnail(song.key);
                     let s: server.AlmostDbItem<yt.Song> = {
                         typ: "StSong",
