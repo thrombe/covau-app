@@ -13,6 +13,7 @@ import type { SearcherConstructorMapper } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as server from "$lib/server.ts";
 import * as types from "$types/types.ts";
+import * as utils from "$lib/utils.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -447,7 +448,7 @@ export class StListItem extends ListItem {
 
     sections(): DetailSection[] {
         let sections = this.common_sections(this.data);
-        let maybe = sections.ops.maybe;
+        let maybe = utils.maybe;
 
         switch (this.data.type) {
             case "Song": {

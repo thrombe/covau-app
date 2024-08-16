@@ -202,12 +202,6 @@ export abstract class ListItem implements Keyed {
                 title: "Internal data",
                 content: JSON.stringify(json_data, null, 2),
             },
-            ops: {
-                maybe<T, P>(t: T | null, fn: (t: T) => P) {
-                    let non_null = [t].filter(n => n != null) as T[];
-                    return non_null.map(n => fn(n));
-                },
-            },
         };
         return sections;
     }

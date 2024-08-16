@@ -820,7 +820,7 @@ export class MbzListItem extends ListItem {
 
     sections(): DetailSection[] {
         let sections = this.common_sections(this.data);
-        let maybe = sections.ops.maybe;
+        let maybe = utils.maybe;
 
         switch (this.data.typ) {
             case "MbzRadioSong": {
@@ -1026,7 +1026,7 @@ export class MbzListItem extends ListItem {
             case "MbzArtist": {
                 let a = this.data.data;
                 return [
-                    mbz.artist_info_section(a, this),
+                    mbz.artist_info_section(a),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
@@ -1424,9 +1424,8 @@ export const mbz = {
             ]
         };
     },
-    artist_info_section(a: Artist, item: ListItem) {
-        let sections = item.common_sections(a);
-        let maybe = sections.ops.maybe;
+    artist_info_section(a: Artist) {
+        let maybe = utils.maybe;
         return {
             type: "Info",
             info: [

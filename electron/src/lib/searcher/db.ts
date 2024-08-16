@@ -233,8 +233,7 @@ export class DbListItem extends ListItem {
     }
 
     artist_ids(): types.covau.InfoSource[] {
-        let sections = this.common_sections(this.t.t);
-        let maybe = sections.ops.maybe;
+        let maybe = utils.maybe;
         let t = this.t.t;
         switch (t.typ) {
             case "MmSong":
@@ -2290,7 +2289,7 @@ export class DbListItem extends ListItem {
 
     sections(): DetailSection[] {
         let sections = this.common_sections(this.t.t);
-        let maybe = sections.ops.maybe;
+        let maybe = utils.maybe;
         let ops = this.ops();
         let common_options = this.common_options();
 
@@ -2641,7 +2640,7 @@ export class DbListItem extends ListItem {
             case "MbzArtist": {
                 let a = this.rc<typeof t.t>();
                 return [
-                    mbz.mbz.artist_info_section(utils.clone(a.t.t), this),
+                    mbz.mbz.artist_info_section(utils.clone(a.t.t)),
                     sections.options,
                     sections.json,
                 ] as DetailSection[];
