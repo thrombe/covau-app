@@ -1511,6 +1511,7 @@ export class DbListItem extends ListItem {
                                 ids,
                             }, ids.length);
                             let items = await s.next_page();
+                            toast("adding items to queue");
                             await stores.queue_ops.add_item(...items);
                         },
                     },

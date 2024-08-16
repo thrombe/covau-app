@@ -791,6 +791,11 @@ export const queue_ops = {
     async add_item(...items: ListItem[]) {
         await get(queue).add(...items);
         queue.update(q => q);
+        if (items.length > 1) {
+            toast("all items added to queue");
+        } else if (items.length == 1) {
+            toast("item added to queue");
+        }
     },
 
     async remove_item(item: ListItem) {
@@ -959,7 +964,6 @@ selected_menubar_option.subscribe(async (option) => {
                                 onclick: async () => {
                                     let items = await s.next_page();
                                     await queue_ops.add_item(...items);
-                                    toast("items added");
                                 },
                             });
                             return old;
