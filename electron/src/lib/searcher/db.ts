@@ -643,7 +643,32 @@ export class DbListItem extends ListItem {
             case "MmSong": {
                 let song = t.t;
 
-                let vid = await st.cached.video(song.key, dbops);
+                let vid: types.db.DbItem<yt.Song>;
+                try {
+                    vid = await st.cached.video(song.key, dbops);
+                } catch (e: any) {
+                    let thumb = st.url.song_thumbnail(song.key);
+                    let s: server.AlmostDbItem<yt.Song> = {
+                        typ: "StSong",
+                        t: {
+                            title: song.title,
+                            id: song.key,
+                            thumbnails: [
+                                ...utils.maybe(song.info?.thumbnail_url ?? null, t => ({ url: t, size: null })),
+                                ...utils.maybe(song.info?.thumbnail_url != thumb.url ? thumb : null, t => t),
+                            ],
+                            album: null,
+                            authors: [
+                                ...utils.maybe(
+                                    !!song.artist_name ? song.info?.channel_id ?? null : null,
+                                    id => ({ name: song.artist_name, channel_id: id }) as yt.Author,
+                                )
+                            ],
+                        },
+                    };
+                    let dbitem = await dbops.insert_or_get(s);
+                    vid = dbitem.content;
+                }
                 let id: covau.PlaySource = { type: "YtId", content: vid.t.id };
                 let path: covau.PlaySource[] = song.last_known_path ? [{ type: "File", content: song.last_known_path }] : []
                 let s: covau.Song = {
