@@ -5,6 +5,7 @@ use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
 use crate::server::routes::FrontendClient;
+use crate::covau_types::Thumbnail;
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct VideoId(pub String);
@@ -63,13 +64,6 @@ pub mod song_tube {
         Album(Album),
         Playlist(Playlist),
         Artist(Artist),
-    }
-
-    #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
-    pub struct Thumbnail {
-        pub url: String,
-        pub width: u32,
-        pub height: u32,
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -439,13 +433,13 @@ impl SongTubeFac {
 
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
+    types += "import type { Thumbnail } from '$types/covau.ts';\n";
+    types += "\n";
     types += &specta::ts::export::<song_tube::Typ>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::MusicListItem>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::BrowseQuery>(config)?;
-    types += ";\n";
-    types += &specta::ts::export::<song_tube::Thumbnail>(config)?;
     types += ";\n";
     types += &specta::ts::export::<song_tube::Album>(config)?;
     types += ";\n";

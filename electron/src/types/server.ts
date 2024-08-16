@@ -1,5 +1,5 @@
 import type { DbMetadata } from '$types/db.ts';
-;
+
 export type Message<T> = ({ type: "Request"; content: T } | { type: "OkOne"; content: T } | { type: "OkMany"; content: { data: T; done: boolean; index: number } } | { type: "Err"; content: ErrorMessage }) & { id: number | null };
 export type MessageResult<T> = { type: "Request"; content: T } | { type: "OkOne"; content: T } | { type: "OkMany"; content: { data: T; done: boolean; index: number } } | { type: "Err"; content: ErrorMessage };
 export type FeRequest = { type: "Like" } | { type: "Dislike" } | { type: "Next" } | { type: "Prev" } | { type: "Pause" } | { type: "Play" } | { type: "Repeat" } | { type: "ToggleMute" } | { type: "TogglePlay" } | { type: "BlacklistArtists" } | { type: "RemoveAndNext" } | { type: "SeekFwd" } | { type: "SeekBkwd" } | { type: "Notify"; content: string } | { type: "NotifyError"; content: string };

@@ -161,3 +161,8 @@ export function deep_freeze<T extends Object>(obj: T): DRo<T> {
 export function clone<T>(t: T): NoDRo<T> {
     return structuredClone(t) as NoDRo<T>;
 }
+
+export function maybe<T, P>(t: T | null, fn: (t: T) => P) {
+    let non_null = [t].filter(n => n != null) as T[];
+    return non_null.map(n => fn(n));
+}

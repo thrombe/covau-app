@@ -815,7 +815,7 @@ export const st = {
     },
 
     url: {
-        song_thumbnail(id: string) {
+        song_thumbnail(id: string): covau.Thumbnail {
             return { url: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`, size: null };
         },
 
@@ -892,9 +892,9 @@ export const st = {
 
             let t;
             if (node instanceof YTNodes.MusicThumbnail) {
-                t = node.contents.map(t => ({ url: t.url, width: t.width, height: t.height }));
+                t = node.contents.map(t => ({ url: t.url, size: { width: t.width, height: t.height } }));
             } else {
-                t = node.map(t => ({ url: t.url, width: t.width, height: t.height }));
+                t = node.map(t => ({ url: t.url, size: { width: t.width, height: t.height } }));
             }
 
             return [...t];

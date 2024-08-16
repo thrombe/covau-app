@@ -650,7 +650,7 @@ export class DbListItem extends ListItem {
                 let s: covau.Song = {
                     title: vid.t.title ?? vid.t.id,
                     artists: db.artists(vid.t.authors),
-                    thumbnails: [...db.thumbnails(vid.t.thumbnails), st.url.song_thumbnail(vid.t.id)],
+                    thumbnails: [...vid.t.thumbnails, st.url.song_thumbnail(vid.t.id)],
                     play_sources: [...path, id],
                     info_sources: [id],
                 };
@@ -669,7 +669,7 @@ export class DbListItem extends ListItem {
                 let s: covau.Song = {
                     title: vid.title ?? vid.id,
                     artists: db.artists(vid.authors),
-                    thumbnails: [...db.thumbnails(vid.thumbnails), st.url.song_thumbnail(vid.id)],
+                    thumbnails: [...vid.thumbnails, st.url.song_thumbnail(vid.id)],
                     play_sources: [id],
                     info_sources: [id],
                 };
