@@ -1,7 +1,6 @@
-
 use pyo3::{pyclass, pymethods};
 
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 
 use libmpv;
 
@@ -13,11 +12,15 @@ pub struct Player {
 //https://docs.rs/libmpv/2.0.1/libmpv/struct.Mpv.html
 
 #[pymethods]
-impl Player {  // new, position, duration, seek, play, stop, is_finished, is_paused, pause, unpause, toggle_pause, progress
+impl Player {
+    // new, position, duration, seek, play, stop, is_finished, is_paused, pause, unpause, toggle_pause, progress
 
     #[new]
     pub fn new() -> Result<Self> {
-        Ok(Player { mpv: libmpv::Mpv::new().ok().context("player could not be created")? })
+        Ok(Player {
+            mpv: libmpv::Mpv::new()
+                .ok()
+                .context("player could not be created")?,
+        })
     }
-
 }

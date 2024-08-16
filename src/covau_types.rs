@@ -17,7 +17,6 @@ use crate::{
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct LocalState {
     pub queue: Option<DbId>,
-
     // any more settings :/
 }
 

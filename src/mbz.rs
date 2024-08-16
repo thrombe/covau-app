@@ -147,13 +147,8 @@ pub mod listenbrainz {
     #[derive(Serialize, Deserialize, Clone, Debug)]
     #[serde(untagged)]
     pub enum QueryResult {
-        Ok {
-            payload: Payload,
-        },
-        Err {
-            code: u32,
-            error: String,
-        }
+        Ok { payload: Payload },
+        Err { code: u32, error: String },
     }
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -193,7 +188,7 @@ pub mod listenbrainz {
         pub title: String,
         pub track: Vec<RadioSong>,
     }
-    
+
     #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
     pub struct RadioSong {
         pub album: Option<String>,
@@ -212,7 +207,11 @@ pub mod listenbrainz {
         pub title: String,
     }
 
-    pub async fn explore(client: reqwest::Client, query: String, mode: Mode) -> anyhow::Result<QueryResult> {
+    pub async fn explore(
+        client: reqwest::Client,
+        query: String,
+        mode: Mode,
+    ) -> anyhow::Result<QueryResult> {
         let req = client.get(format!("{BASE_URL}?mode={}&prompt={}", mode.path(), &query));
         let res = client.execute(req.build()?).await?;
         // let res = res.text().await?;
@@ -230,8 +229,7 @@ mod trait_impls {
     use super::*;
     use musicbrainz_rs::{
         entity::{
-            alias, area, artist, artist_credit, recording, relations, release,
-            release_group,
+            alias, area, artist, artist_credit, recording, relations, release, release_group,
         },
         Browse, Fetch, Search,
     };
@@ -248,7 +246,13 @@ mod trait_impls {
     impl From<recording::Recording> for RecordingWithInfo {
         fn from(r: recording::Recording) -> Self {
             Self {
-                releases: r.releases.clone().into_iter().flatten().map(Into::into).collect(),
+                releases: r
+                    .releases
+                    .clone()
+                    .into_iter()
+                    .flatten()
+                    .map(Into::into)
+                    .collect(),
                 credit: r
                     .artist_credit
                     .clone()
@@ -411,11 +415,11 @@ mod trait_impls {
                 SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
             };
             let r = release_group::ReleaseGroup::browse()
-            .by_artist(&query)
-            .limit(page_size as _)
-            .offset(offset as _)
-            .execute()
-            .await?;
+                .by_artist(&query)
+                .limit(page_size as _)
+                .offset(offset as _)
+                .execute()
+                .await?;
 
             let offset = r.offset + r.entities.len() as i32;
             let items = r.entities.into_iter().map(Into::into).collect();
@@ -439,11 +443,11 @@ mod trait_impls {
                 SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
             };
             let r = release::Release::browse()
-            .by_artist(&query)
-            .limit(page_size as _)
-            .offset(offset as _)
-            .execute()
-            .await?;
+                .by_artist(&query)
+                .limit(page_size as _)
+                .offset(offset as _)
+                .execute()
+                .await?;
 
             let offset = r.offset + r.entities.len() as i32;
             let items = r.entities.into_iter().map(Into::into).collect();
@@ -467,11 +471,11 @@ mod trait_impls {
                 SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
             };
             let r = recording::Recording::browse()
-            .by_artist(&query)
-            .limit(page_size as _)
-            .offset(offset as _)
-            .execute()
-            .await?;
+                .by_artist(&query)
+                .limit(page_size as _)
+                .offset(offset as _)
+                .execute()
+                .await?;
 
             let offset = r.offset + r.entities.len() as i32;
             let items = r.entities.into_iter().map(Into::into).collect();
@@ -495,11 +499,11 @@ mod trait_impls {
                 SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
             };
             let r = release::Release::browse()
-            .by_release_group(&query)
-            .limit(page_size as _)
-            .offset(offset as _)
-            .execute()
-            .await?;
+                .by_release_group(&query)
+                .limit(page_size as _)
+                .offset(offset as _)
+                .execute()
+                .await?;
 
             let offset = r.offset + r.entities.len() as i32;
             let items = r.entities.into_iter().map(Into::into).collect();
@@ -523,11 +527,11 @@ mod trait_impls {
                 SearchQuery::Continuation(c) => (c.query, c.page_size, c.offset),
             };
             let r = recording::Recording::browse()
-            .by_release(&query)
-            .limit(page_size as _)
-            .offset(offset as _)
-            .execute()
-            .await?;
+                .by_release(&query)
+                .limit(page_size as _)
+                .offset(offset as _)
+                .execute()
+                .await?;
 
             let offset = r.offset + r.entities.len() as i32;
             let items = r.entities.into_iter().map(Into::into).collect();
@@ -692,11 +696,13 @@ mod trait_impls {
     #[async_trait::async_trait]
     impl IdSearch for ReleaseWithInfo {
         async fn get(id: &str) -> anyhow::Result<Self> {
-            let r = release::Release::fetch().id(id)
+            let r = release::Release::fetch()
+                .id(id)
                 .with_artists()
                 .with_release_groups()
                 // .with_recordings()
-                .execute().await?;
+                .execute()
+                .await?;
             let res = r.into();
             Ok(res)
         }
@@ -719,7 +725,12 @@ mod trait_impls {
     #[async_trait::async_trait]
     impl IdSearch for RecordingWithInfo {
         async fn get(id: &str) -> anyhow::Result<Self> {
-            let r = recording::Recording::fetch().id(id).with_artists().with_releases().execute().await?;
+            let r = recording::Recording::fetch()
+                .id(id)
+                .with_artists()
+                .with_releases()
+                .execute()
+                .await?;
             let res = r.into();
             Ok(res)
         }

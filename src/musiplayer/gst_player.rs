@@ -1,10 +1,7 @@
-
 // https://gstreamer.pages.freedesktop.org/gstreamer-rs/stable/latest/docs/gstreamer_player/struct.Player.html
 
-
-use gstreamer_player::{self, prelude::Cast};
 use gstreamer;
-
+use gstreamer_player::{self, prelude::Cast};
 
 use crate::musiplayer::MusiPlayer;
 use anyhow::Result;
@@ -27,7 +24,7 @@ pub struct Player {
     position: u64,
     duration: u64,
     // stopped: bool,
-    
+
     // currently this is only used to so that progress() reports 0 when no song is being played (when it is called just after initialising Player)
     started: bool,
 }
@@ -46,7 +43,6 @@ impl Player {
 }
 
 impl Player {
-
     pub fn new() -> Self {
         Self {
             player: Self::new_player(),
@@ -83,7 +79,7 @@ impl Player {
 
     // t in seconds
     pub fn seek(&mut self, t: f64) {
-        let t = (t*1000.0) as i64;
+        let t = (t * 1000.0) as i64;
 
         let pos = gstreamer::ClockTime::from_mseconds({
             let cached_pos = self.position;
@@ -96,14 +92,14 @@ impl Player {
                 u64::max(cached_pos, pos)
             }
         });
-        let mut seekpos = {if t.is_positive() {
-            pos + gstreamer::ClockTime::from_mseconds(t as u64)
-        } else {
-            pos.checked_sub(
-                gstreamer::ClockTime::from_mseconds(t.abs() as u64))
-                .unwrap_or(gstreamer::ClockTime::from_seconds(0)
-            ) // if -ve, set to 0
-        }};
+        let mut seekpos = {
+            if t.is_positive() {
+                pos + gstreamer::ClockTime::from_mseconds(t as u64)
+            } else {
+                pos.checked_sub(gstreamer::ClockTime::from_mseconds(t.abs() as u64))
+                    .unwrap_or(gstreamer::ClockTime::from_seconds(0)) // if -ve, set to 0
+            }
+        };
 
         if seekpos.mseconds() > self.duration && self.duration != 0 {
             seekpos = gstreamer::ClockTime::from_mseconds(self.duration - 60);
@@ -138,7 +134,9 @@ impl Player {
         // it does not have a .is_finished() method (or atleast i could'nt find it)
 
         let duration = self.duration();
-        if self.paused || duration == 0 {return false}
+        if self.paused || duration == 0 {
+            return false;
+        }
 
         // i64 was needed as in release mode there are no overflow checks and u64-lil_bigger_u64 cant be smaller than 50
         (duration as i64) - (self.position() as i64) < 50
@@ -154,7 +152,9 @@ impl Player {
     }
 
     pub fn unpause(&mut self) {
-        if self.is_finished() {return}
+        if self.is_finished() {
+            return;
+        }
         self.player.play();
         self.paused = false;
     }
@@ -177,7 +177,7 @@ impl Player {
         } else {
             self.started = true;
         }
-        (self.position() as f64)/(self.duration() as f64)
+        (self.position() as f64) / (self.duration() as f64)
     }
 
     pub fn get_volume(&self) -> f64 {
@@ -189,13 +189,12 @@ impl Player {
     }
 }
 
-
 impl MusiPlayer for Player {
     fn new() -> Result<Self> {
         Ok(Self::new())
     }
     fn duration(&mut self) -> Result<f64> {
-        Ok(Self::duration(self) as f64/1000.0)
+        Ok(Self::duration(self) as f64 / 1000.0)
     }
     fn is_finished(&mut self) -> Result<bool> {
         Ok(Self::is_finished(self))
@@ -204,7 +203,7 @@ impl MusiPlayer for Player {
         Ok(Self::play(self, url))
     }
     fn position(&mut self) -> Result<f64> {
-        Ok(Self::position(self) as f64/1000.0)
+        Ok(Self::position(self) as f64 / 1000.0)
     }
     fn progress(&mut self) -> Result<f64> {
         Ok(Self::progress(self))

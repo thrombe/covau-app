@@ -1,24 +1,22 @@
-
 // https://pyo3.rs/latest/
 // https://docs.rs/pyo3/latest/pyo3/
 
 use anyhow::Result;
 
-
 #[cfg(feature = "player-gst")]
 pub mod gst_player;
 #[cfg(feature = "player-gst")]
-use gst_player::{Player as InternalPlayer};
+use gst_player::Player as InternalPlayer;
 
 #[cfg(feature = "player-mpv")]
 pub mod mpv_player;
 #[cfg(feature = "player-mpv")]
-use mpv_player::{Player as InternalPlayer};
+use mpv_player::Player as InternalPlayer;
 
 #[cfg(feature = "player-libmpv")]
 mod libmpv_player;
 #[cfg(feature = "player-libmpv")]
-use libmpv_player::{Player as InternalPlayer};
+use libmpv_player::Player as InternalPlayer;
 
 #[derive(Debug)]
 pub struct Player {
@@ -28,7 +26,9 @@ pub struct Player {
 // TODO: this should be an async abstraction that actually makes sure things happen
 impl Player {
     pub fn new() -> Result<Self> {
-        Ok(Self {internal_player: MusiPlayer::new()?})
+        Ok(Self {
+            internal_player: MusiPlayer::new()?,
+        })
     }
     pub fn play(&mut self, url: String) -> Result<()> {
         MusiPlayer::play(&mut self.internal_player, url)
@@ -87,7 +87,8 @@ impl Player {
 }
 
 pub trait MusiPlayer
-where Self:  Sized + 'static + Send + Sync
+where
+    Self: Sized + 'static + Send + Sync,
 {
     fn new() -> Result<Self>;
     fn play(&mut self, url: String) -> Result<()>;
@@ -124,4 +125,3 @@ where Self:  Sized + 'static + Send + Sync
     fn unmute(&mut self) -> Result<()>;
     fn is_muted(&mut self) -> Result<bool>;
 }
-

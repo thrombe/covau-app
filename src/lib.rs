@@ -3,12 +3,12 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use serde::{Deserialize, Serialize};
 use log::Level;
+use log::{debug, info};
+use serde::{Deserialize, Serialize};
 use tsify_next::JsValueSerdeExt;
-use log::{info, debug};
 use wasm_bindgen::UnwrapThrowExt;
-use wasm_bindgen::{JsError, JsValue, prelude::wasm_bindgen};
+use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 use crate::bad_error::BadError;
 
@@ -28,12 +28,11 @@ pub fn main_js() -> Result<(), JsValue> {
 }
 
 pub mod utils {
-    use wasm_bindgen::{JsError, prelude::wasm_bindgen};
     use base64::Engine;
+    use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
     use crate::bad_error::BadError;
 
-    
     #[wasm_bindgen]
     pub fn base64_encode(data: Vec<u8>) -> String {
         base64::prelude::BASE64_STANDARD.encode(data)
@@ -83,7 +82,8 @@ trait JsIfy {
     fn to_js(&self) -> Result<JsValue, JsError>;
 }
 impl<T> JsIfy for T
-where T: Serialize
+where
+    T: Serialize,
 {
     fn to_js(&self) -> Result<JsValue, JsError> {
         JsValue::from_serde(self).bad_err()
@@ -134,7 +134,8 @@ pub mod bad_error {
     //     }
     // }
     impl<T, E> BadError<T> for Result<T, E>
-    where E: std::fmt::Display
+    where
+        E: std::fmt::Display,
     {
         fn bad_err(self) -> Result<T, JsError> {
             match self {

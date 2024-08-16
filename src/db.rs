@@ -424,7 +424,12 @@ pub mod db {
             }
 
             fn haystack(&self) -> impl IntoIterator<Item = String> {
-                let mut h = self.artists.iter().map(|a| &a.name).map(String::from).collect::<Vec<_>>();
+                let mut h = self
+                    .artists
+                    .iter()
+                    .map(|a| &a.name)
+                    .map(String::from)
+                    .collect::<Vec<_>>();
                 h.push(self.title.clone());
                 h
             }
@@ -788,8 +793,8 @@ pub mod db {
 
     mod musimanager {
         use super::{AutoDbAble, Link, Linked, Typ};
-        use crate::musimanager::*;
         use crate::covau_types::SourcePath;
+        use crate::musimanager::*;
 
         // impl Linked<Album<VideoId>> for Song<Option<SongInfo>> {}
         impl Linked<Artist<VideoId, AlbumId>> for Song<Option<SongInfo>, SourcePath> {}
@@ -1163,9 +1168,7 @@ pub mod db {
         }
 
         pub async fn init_state(&self) -> anyhow::Result<()> {
-            let state = crate::covau_types::LocalState {
-                queue: None,
-            };
+            let state = crate::covau_types::LocalState { queue: None };
 
             let id = state.insert(&self.db).await?;
             assert_eq!(id, 1, "id must be 1");
@@ -1183,7 +1186,8 @@ pub mod db {
             let data = std::fs::read_to_string(path)?;
             let txn = self.db.begin().await?;
 
-            let tracker = serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean(config)?;
+            let tracker =
+                serde_json::from_str::<crate::musimanager::Tracker>(&data)?.clean(config)?;
             for s in tracker.songs.iter() {
                 s.insert(&txn).await?;
             }

@@ -1,7 +1,5 @@
-
-
-use derivative::Derivative;
 use anyhow::Result;
+use derivative::Derivative;
 
 // https://docs.rs/mpv/0.2.3/mpv/enum.Event.html
 // https://mpv.io/manual/master/#properties
@@ -13,7 +11,7 @@ use crate::musiplayer::MusiPlayer;
 #[derivative(Debug)]
 pub struct Player {
     // mpv never seems to not return stuff when it should. unlike gst_player
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     mpv: mpv::MpvHandler,
     finished: bool,
     started: bool,
@@ -27,10 +25,8 @@ unsafe impl Send for Player {}
 unsafe impl Sync for Player {}
 
 impl Player {
-
     pub fn new() -> Result<Player> {
-        let mut mpv = mpv::MpvHandlerBuilder::new()?
-            .build()?;
+        let mut mpv = mpv::MpvHandlerBuilder::new()?.build()?;
         // mpv.set_option("ytdl", "yes").expect(
         //     "Couldn't enable ytdl in libmpv",
         // );
@@ -50,7 +46,6 @@ impl Player {
 
     // from the comments, it seemed that clearing the events is important. so i added this in every method.
     fn clear_event_loop(&mut self) -> Result<()> {
-
         if self.waiting_for_response {
             // assuming that it never not returns stuff till its done playing
             // blocking till the player is ready
@@ -63,7 +58,7 @@ impl Player {
                         self.waiting_for_response = false;
                         self.started = true;
                         self.dur = Some(self.duration_option()?);
-                
+
                         if self.is_paused().unwrap_or(false) {
                             self.unpause()?;
                         }
@@ -104,7 +99,7 @@ impl Player {
         self.clear_event_loop()?;
         Ok(self.mpv.set_property("pause", true)?)
     }
-    
+
     pub fn unpause(&mut self) -> Result<()> {
         self.clear_event_loop()?;
         Ok(self.mpv.set_property("pause", false)?)
@@ -114,7 +109,7 @@ impl Player {
         self.clear_event_loop()?;
         Ok(self.mpv.get_property::<bool>("pause")?)
     }
-    
+
     pub fn toggle_pause(&mut self) -> Result<()> {
         self.clear_event_loop()?;
         if self.is_paused()? {
@@ -134,7 +129,7 @@ impl Player {
     }
 
     fn percent_pos(&self) -> f64 {
-        self.mpv.get_property::<f64>("percent-pos").unwrap_or(0.0)*0.01
+        self.mpv.get_property::<f64>("percent-pos").unwrap_or(0.0) * 0.01
     }
 
     fn reset_vars(&mut self) {
@@ -146,7 +141,7 @@ impl Player {
 
     pub fn stop(&mut self) -> Result<()> {
         self.clear_event_loop()?;
-        
+
         self.reset_vars();
         self.mpv.command(&["stop"])?;
         Ok(())
@@ -162,7 +157,9 @@ impl Player {
     }
 
     pub fn seek(&mut self, mut t: f64) -> Result<()> {
-        if !self.started {return Ok(())}
+        if !self.started {
+            return Ok(());
+        }
         if self.is_finished()? {
             if t > 0.0 {
                 return Ok(());
@@ -209,8 +206,10 @@ impl Player {
 
     pub fn is_finished(&mut self) -> Result<bool> {
         self.clear_event_loop()?;
-        
-        if !self.started {return Ok(false);}
+
+        if !self.started {
+            return Ok(false);
+        }
         if self.dur.is_some() && self.duration_option().is_err() {
             self.finished = true;
             Ok(true)
@@ -227,7 +226,8 @@ impl Player {
 
     pub fn set_volume(&mut self, t: f64) -> Result<()> {
         self.clear_event_loop()?;
-        self.mpv.set_property("volume", t.min(1.0).max(0.0) * 100.0)?;
+        self.mpv
+            .set_property("volume", t.min(1.0).max(0.0) * 100.0)?;
         Ok(())
     }
 
