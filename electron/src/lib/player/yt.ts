@@ -91,6 +91,7 @@ export class YtPlayer {
                     this._is_playing = false;
                     this.synced_data = "Unstarted";
                 } else {
+                    this.resolve_play_wait();
                     toast("could not play song", "error");
                 }
             } break;
@@ -106,6 +107,7 @@ export class YtPlayer {
                     await this.send_message({ type: "Unpaused" });
                 }
 
+                this.resolve_play_wait();
                 this._is_playing = true;
                 this.synced_data = "Playing";
 
@@ -170,26 +172,48 @@ export class YtPlayer {
     }
 
     unpause() {
-        this.play(null);
+        let _ = this.play(null);
     }
 
     async play_item(item: ListItem) {
         let id = await item.yt_id();
         if (id) {
-            this.play(id);
+            await this.play(id);
         } else {
             throw new Error("Yt player can't play this item");
         }
     }
 
-    play(id: string | null = null) {
+    resolve_play_wait = () => {};
+    protected async load_video(id: string) {
+        let timeout = 0;
+        let resolve = (_: boolean) => {};
+        let promise = new Promise<boolean>(res => {
+            this.resolve_play_wait = () => {
+                clearTimeout(timeout);
+                res(true);
+            };
+            resolve = res;
+        });
+        this.player.loadVideoById(id);
+
+        // @ts-ignore
+        timeout = setTimeout(() => {
+            resolve(false);
+        }, 20_000);
+        
+        if (!await promise) {
+            throw new Error(`playing '${id}' timed out`);
+        }
+    }
+    async play(id: string | null = null) {
         switch (this.synced_data) {
             case 'Playing':
             case 'Finished':
             case 'Unstarted':
             case 'Initialised': {
                 if (id) {
-                    this.player.loadVideoById(id);
+                    await this.load_video(id);
                 } else {
                     // nothing ? :/
                 }
@@ -199,7 +223,7 @@ export class YtPlayer {
             } break;
             case 'Paused': {
                 if (id) {
-                    this.player.loadVideoById(id);
+                    await this.load_video(id);
                 } else {
                     if (this.player.getPlayerState() != YT.PlayerState.PLAYING) {
                         this.player.playVideo();
@@ -226,17 +250,17 @@ export class YtPlayer {
     }
 
     toggle_pause() {
-        console.log(this.synced_data)
+        console.log(this.synced_data);
         if (this.synced_data === 'Playing') {
             if (this.player.getPlayerState() == YT.PlayerState.UNSTARTED) {
-                this.play();
+                let _ = this.play();
             } else {
                 this.pause();
             }
         } else if (this.synced_data === 'Paused') {
-            this.play();
+            let _ = this.play();
         } else {
-            this.play();
+            let _ = this.play();
         }
     }
 
