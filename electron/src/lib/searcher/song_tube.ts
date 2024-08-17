@@ -623,6 +623,7 @@ export const st = {
             let resp = await tube.download(id, {
                 quality: "best",
                 type: "audio",
+                format: 'opus',
                 client: "YTMUSIC_ANDROID",
             });
             let reader = resp.getReader();
@@ -660,6 +661,7 @@ export const st = {
                 let resp = await tube.download(query.id, {
                     quality: "best",
                     type: "audio",
+                    format: 'opus',
                     client: "YTMUSIC_ANDROID",
                     range: {
                         start: start,
