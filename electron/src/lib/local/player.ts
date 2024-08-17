@@ -1,10 +1,10 @@
 import { toast } from "$lib/toast/toast.ts";
 import { exhausted } from "$lib/utils.ts";
 import type { PlayerMessage, PlayerCommand } from "$types/server.ts";
-import type { MessageHandler } from "$lib/stores.ts";
+import type { MessageHandler, Player } from "$lib/stores.ts";
 import type { ListItem } from "$lib/searcher/item.ts";
 
-export class Musiplayer {
+export class Musiplayer implements Player {
     ws: WebSocket;
     playing: string = '';
     paused: boolean = false;
@@ -136,6 +136,10 @@ export class Musiplayer {
 
     is_playing() {
         return !this.paused && !this.finished && this.playing !== "";
+    }
+
+    get_progress(): number {
+        return this.progress;
     }
 
     on_message(callback: MessageHandler) {

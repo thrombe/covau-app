@@ -278,6 +278,7 @@ export interface Player {
     toggle_pause(): void;
     toggle_mute(): void;
     is_playing(): boolean;
+    get_progress(): number;
 }
 export let dummy_player: Player = {
     play_item() { },
@@ -291,6 +292,7 @@ export let dummy_player: Player = {
     toggle_pause() { },
     toggle_mute() { },
     is_playing() { return false; },
+    get_progress() { return 0; },
 };
 
 export let playing_item: Writable<ListItem> = writable(new CustomListItem(
@@ -302,25 +304,35 @@ export let playing_item: Writable<ListItem> = writable(new CustomListItem(
 export let player: Writable<Player> = writable(dummy_player);
 export type PlayerType = "YtPlayer" | "YtVideoPlayer" | "AudioPlayer" | "MusiPlayer" | "None";
 export let player_type: Writable<PlayerType> = writable("None");
-export let set_player = async (p: Player) => {
+export let set_player = async (p: Player, progress: number, is_playing: boolean) => {
     await get(player).destroy();
     player.set(p);
+
+    let item = get(playing_item);
+    await p.play_item(item);
+    await p.seek_to_perc(progress);
+    if (!is_playing) {
+        p.pause();
+    }
 };
 export let set_player_type = async (t: PlayerType) => {
+    let pl = get(player);
+    let is_playing = pl.is_playing();
+    let progress = pl.get_progress();
     switch (t) {
         case "MusiPlayer": {
-            await get(player).destroy();
+            await pl.destroy();
             player.set(dummy_player);
             player_type.set("MusiPlayer");
 
             let musiplayer = await import("$lib/local/player.ts");
-            let pl = await musiplayer.Musiplayer.new();
+            let p = await musiplayer.Musiplayer.new();
 
             await tick();
-            await set_player(pl);
+            await set_player(p, progress, is_playing);
         } break;
         case "YtPlayer": {
-            await get(player).destroy();
+            await pl.destroy();
             player.set(dummy_player);
             player_type.set("YtPlayer");
 
@@ -330,10 +342,10 @@ export let set_player_type = async (t: PlayerType) => {
             await tick();
             // NOTE: assuming that a div with 'video' id exsits
             let p = await yt.YtPlayer.new("video");
-            await set_player(p);
+            await set_player(p, progress, is_playing);
         } break;
         case "YtVideoPlayer": {
-            await get(player).destroy();
+            await pl.destroy();
             player.set(dummy_player);
             player_type.set("YtVideoPlayer");
 
@@ -343,10 +355,10 @@ export let set_player_type = async (t: PlayerType) => {
             await tick();
             // NOTE: assuming that a div with 'video' id exsits
             let p = await yt.YtPlayer.new("video");
-            await set_player(p);
+            await set_player(p, progress, is_playing);
         } break;
         case "AudioPlayer": {
-            await get(player).destroy();
+            await pl.destroy();
             player.set(dummy_player);
             player_type.set("AudioPlayer");
 
@@ -355,10 +367,10 @@ export let set_player_type = async (t: PlayerType) => {
             await tick();
             // NOTE: assuming that a div with 'audio' id exsits
             let p = await audio.Audioplayer.new("audio");
-            await set_player(p);
+            await set_player(p, progress, is_playing);
         } break;
         case "None": {
-            await get(player).destroy();
+            await pl.destroy();
             player.set(dummy_player);
         } break;
         default:

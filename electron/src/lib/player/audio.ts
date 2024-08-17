@@ -81,7 +81,7 @@ export class Audioplayer implements Player {
         return disable;
     }
 
-    protected get_progress() {
+    get_progress() {
         // triggers when duration is NaN
         if (this.audio.duration !== this.audio.duration) {
             return 0;

@@ -1,13 +1,13 @@
 
 import { exhausted } from '$lib/utils.ts';
 import * as types from "$types/types.ts";
-import type { MessageHandler } from '$lib/stores.ts';
+import type { MessageHandler, Player } from '$lib/stores.ts';
 import type { ListItem } from '$lib/searcher/item.ts';
 import { toast } from '$lib/toast/toast.ts';
 
 type PlayerSyncedData = 'Initialised' | 'Finished' | 'Playing' | 'Paused' | "Unstarted";
 
-export class YtPlayer {
+export class YtPlayer implements Player {
     player_initialised: Promise<void>;
     player: YT.Player;
 
@@ -189,6 +189,7 @@ export class YtPlayer {
         let timeout = 0;
         let resolve = (_: boolean) => {};
         let promise = new Promise<boolean>(res => {
+            this.resolve_play_wait();
             this.resolve_play_wait = () => {
                 clearTimeout(timeout);
                 res(true);
@@ -266,6 +267,10 @@ export class YtPlayer {
 
     is_playing() {
         return this.synced_data === 'Playing' && this.player.getPlayerState() !== YT.PlayerState.UNSTARTED;
+    }
+
+    get_progress(): number {
+        return this.get_player_pos();
     }
 
     get_volume() {
