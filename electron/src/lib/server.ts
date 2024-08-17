@@ -261,7 +261,20 @@ class YtiServer extends Server<yt.YtiRequest> {
                 return resolve.one(uri);
             } break;
             case 'GetSongBytes': {
-                await st.st.fetch.song_bytes_chunked(req.content.id, async bytes => {
+                let uri = await st.st.fetch.try_uri(req.content.id);
+                await st.st.fetch.song_bytes_chunked({
+                    id: req.content.id,
+                    start: 0,
+                    end: uri.content_length-1,
+                    chunk_size: 1000_000,
+                }, async bytes => {
+                    let base64 = buffer_to_base64(bytes);
+                    resolve.many(base64);
+                });
+                return resolve.many_done("");
+            } break;
+            case 'GetSongBytesChunked': {
+                await st.st.fetch.song_bytes_chunked(req.content, async bytes => {
                     let base64 = buffer_to_base64(bytes);
                     resolve.many(base64);
                 });

@@ -189,6 +189,12 @@ pub enum YtiRequest {
     GetSongBytes {
         id: String,
     },
+    GetSongBytesChunked {
+        id: String,
+        start: u32,
+        end: u32,
+        chunk_size: u32,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
@@ -366,9 +372,16 @@ impl SongTubeFac {
     }
 
     pub async fn get_song_bytes(&self, id: String) -> anyhow::Result<Vec<u8>> {
-        let bytes = self
-            .get_song_bytes_chunked(id)
-            .await?
+        let bytes_stream = self
+            .fe
+            .get_many::<String>(YtiRequest::GetSongBytes { id: id.clone() })
+            .await?;
+        let stream = bytes_stream.map(|bytes| {
+            let b64 = bytes?;
+            let bytes = base64::prelude::BASE64_STANDARD.decode(&b64)?;
+            Ok(bytes)
+        });
+        let bytes = stream
             .collect::<Vec<_>>()
             .await
             .into_iter()
@@ -383,10 +396,13 @@ impl SongTubeFac {
     pub async fn get_song_bytes_chunked(
         &self,
         id: String,
+        start: u32,
+        end: u32,
+        chunk_size: u32,
     ) -> anyhow::Result<impl futures::Stream<Item = anyhow::Result<Vec<u8>>>> {
         let bytes_stream = self
             .fe
-            .get_many::<String>(YtiRequest::GetSongBytes { id: id.clone() })
+            .get_many::<String>(YtiRequest::GetSongBytesChunked { id: id.clone(), start, end, chunk_size })
             .await?;
 
         let stream = bytes_stream.map(|bytes| {

@@ -641,33 +641,29 @@ export const st = {
             }
         },
 
-        async song_bytes_chunked(id: string, callback: (bytes: Uint8Array) => Promise<void>) {
+        async song_bytes_chunked(
+            query: Extract<yt.YtiRequest, { type: "GetSongBytesChunked" }>["content"],
+            callback: (bytes: Uint8Array) => Promise<void>,
+        ) {
             // HTTP 400 for buf size 500_000 :/
-            let size = 1000_000;
+            let size = query.chunk_size;
 
             let tube = get(stores.tube);
-            let info = await tube.getBasicInfo(id);
-            let format = info.chooseFormat({
-                type: "audio",
-                quality: "best",
-                client: "YTMUSIC_ANDROID",
-            });
-            console.log(format);
 
-            let start = 0;
+            let start = query.start;
+            let end = query.end;
             while (true) {
-                if (format.content_length! < start) {
+                if (end < start) {
                     break;
                 }
-                // OOF: info.download does less requests but fails (403)
-                // let resp = await info.download({
-                let resp = await tube.download(id, {
+                // console.log(start, end);
+                let resp = await tube.download(query.id, {
                     quality: "best",
                     type: "audio",
                     client: "YTMUSIC_ANDROID",
                     range: {
                         start: start,
-                        end: Math.min(start + size - 1, format.content_length! - 1),
+                        end: Math.min(start + size - 1, end),
                     },
                 });
                 start += size;

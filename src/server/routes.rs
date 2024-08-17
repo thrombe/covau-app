@@ -72,13 +72,6 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        self.request_sender
-            .send(Message {
-                id: Some(id),
-                data: MessageResult::Request(req),
-            })
-            .await?;
-
         let mut map = self.ok_one.lock().await;
         let (tx, rx) = oneshot::channel::<MessageResult<String>>();
         map.insert(id, tx)
@@ -86,6 +79,13 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             .then(|| Some(()))
             .expect("request with this id already exists");
         drop(map);
+
+        self.request_sender
+            .send(Message {
+                id: Some(id),
+                data: MessageResult::Request(req),
+            })
+            .await?;
 
         let resp = rx.await?;
         match resp {
@@ -113,13 +113,6 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             .id_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        self.request_sender
-            .send(Message {
-                id: Some(id),
-                data: MessageResult::Request(req),
-            })
-            .await?;
-
         let mut map = self.ok_many.lock().await;
         let (tx, rx) = mpsc::channel::<MessageResult<String>>(20);
         map.insert(id, tx)
@@ -127,6 +120,13 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
             .then(|| Some(()))
             .expect("request with this id already exists");
         drop(map);
+
+        self.request_sender
+            .send(Message {
+                id: Some(id),
+                data: MessageResult::Request(req),
+            })
+            .await?;
 
         let resp = ReceiverStream::new(rx).map(|m| match m {
             MessageResult::OkOne(resp) => Err(anyhow::anyhow!(format!(
@@ -191,7 +191,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                     tx.send(MessageResult::OkMany { data, done, index })
                                         .await
                                         .ok()
-                                        .context("could not send over channel")?;
+                                        .context("could not send over channel (1)")?;
                                     if !done {
                                         map.insert(id, tx);
                                     }
@@ -201,7 +201,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                     let tx = map.remove(&id).context("sender already taken")?;
                                     tx.send(MessageResult::OkOne(msg))
                                         .ok()
-                                        .context("could not send over channel")?;
+                                        .context("could not send over channel (2)")?;
                                 }
                                 MessageResult::Err(err) => {
                                     let mut onemap = fe.ok_one.lock().await;
@@ -209,14 +209,14 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                     if let Some(tx) = onemap.remove(&id) {
                                         tx.send(MessageResult::Err(err))
                                             .ok()
-                                            .context("could not send over channel")?;
+                                            .context("could not send over channel (3)")?;
                                     } else {
                                         let tx =
                                             manymap.remove(&id).context("sender already taken")?;
                                         tx.send(MessageResult::Err(err))
                                             .await
                                             .ok()
-                                            .context("could not send over channel")?;
+                                            .context("could not send over channel (4)")?;
                                     }
                                 }
                                 MessageResult::Request(msg) => {
@@ -232,7 +232,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                             stack_trace: mesg,
                                         }))
                                         .ok()
-                                        .context("could not send over channel")?;
+                                        .context("could not send over channel (5)")?;
                                     } else {
                                         let tx =
                                             manymap.remove(&id).context("sender already taken")?;
@@ -246,7 +246,7 @@ impl<R: Send + Sync + Serialize + 'static> FrontendClient<R> {
                                         }))
                                         .await
                                         .ok()
-                                        .context("could not send over channel")?;
+                                        .context("could not send over channel (6)")?;
                                     }
                                 }
                             },
@@ -607,10 +607,7 @@ pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply
         .and(warp::any().map(move || st.clone()))
         .and_then(
             |query: YtStreamQuery, headers: warp::http::HeaderMap, st: SongTubeFac| async move {
-                let stream = st
-                    .get_song_bytes_chunked(query.id)
-                    .await
-                    .map_err(custom_reject)?;
+                let chunk = 1000_000;
 
                 let (s, e) = headers
                     .get("range")
@@ -628,16 +625,63 @@ pub fn stream_yt(path: &'static str, st: SongTubeFac) -> BoxedFilter<(impl Reply
                     .map_err(custom_reject)?
                     .map(|(s, e)| (s, e.unwrap_or(query.size as usize - 1)))
                     .unwrap_or((0, query.size as usize - 1));
+                let len = e + 1 - s;
 
-                let body = warp::hyper::Body::wrap_stream(stream.take(e + 1).skip(s));
+                // dbg!(s, e, &headers);
+
+                let fullchunks = len / chunk;
+                let chunkpoints = (0..fullchunks)
+                    .map(move |i| i * chunk)
+                    .map(move |i| i + s)
+                    .chain(std::iter::once(e + 1));
+                let chunkpoints = std::iter::once(s).chain(chunkpoints);
+                let iter = chunkpoints
+                    .clone()
+                    .zip(chunkpoints.clone().skip(1))
+                    .filter(|(s, e)| *e > *s)
+                    .map(|(s, e)| (s as u32, e as u32 - 1));
+                // dbg!(iter.clone().collect::<Vec<_>>());
+                let iter = iter.map(move |(s, e)| (s, e, st.clone(), query.id.clone()));
+                let bytes = futures::stream::iter(iter).then(|(s, e, st, id)| async move {
+                    // dbg!(&id, s, e);
+                    let bytes = st
+                        .get_song_bytes_chunked(id, s, e, e + 1 - s)
+                        .await?
+                        .collect::<Vec<_>>()
+                        .await
+                        .into_iter()
+                        .collect::<anyhow::Result<Vec<_>>>()?
+                        .into_iter()
+                        .map(|b| b.into_iter())
+                        .flatten()
+                        .collect::<Vec<_>>();
+                    // dbg!(bytes.len());
+                    Ok::<_, anyhow::Error>(bytes)
+                });
+
+                let body = warp::hyper::Body::wrap_stream(bytes);
+                // let bytes = bytes
+                //     .collect::<Vec<_>>()
+                //     .await
+                //     .into_iter()
+                //     .collect::<anyhow::Result<Vec<_>>>()
+                //     .map_err(custom_reject)?
+                //     .into_iter()
+                //     .map(|b| b.into_iter())
+                //     .flatten()
+                //     .collect::<Vec<_>>();
+                // let len = bytes.len();
+                // dbg!(len);
+                // let body = warp::hyper::Body::from(bytes);
 
                 // - [can't seek html5 video or audio in chrome](https://stackoverflow.com/a/61229273)
                 let wres = warp::http::Response::builder()
-                    .header("content-type", "audio/webm")
-                    .header("content-range", format!("bytes {}-{}", s, e))
-                    .header("content-length", format!("{}", e - s + 1))
-                    .header("accept-ranges", "bytes");
-                wres.body(body).map_err(custom_reject)
+                    .header("content-type", "video/webm")
+                    .header("content-range", format!("bytes {}-{}/{}", s, e, query.size))
+                    .header("content-length", format!("{}", e + 1 - s))
+                    .header("accept-ranges", "bytes")
+                    .header("cache-control", "max-age=0");
+                wres.status(206).body(body).map_err(custom_reject)
             },
         );
 
@@ -657,6 +701,7 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
              config: Arc<DerivedConfig>| async move {
                 let path = config.to_path(src).map_err(custom_reject)?;
 
+                // TODO: cursor + read as much bytes as needed
                 let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
                 let total = bytes.len();
 
@@ -694,7 +739,7 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
                 let wres = warp::http::Response::builder()
                     .header("content-type", mime)
                     .header("content-range", format!("bytes {}-{}/{}", s, e, total))
-                    .header("content-length", format!("{}", e - s + 1))
+                    .header("content-length", format!("{}", e + 1 - s))
                     .header("accept-ranges", "bytes")
                     .header("cache-control", "max-age=0");
                 wres.status(206).body(body).map_err(custom_reject)
