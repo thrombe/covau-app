@@ -2597,7 +2597,7 @@ export class DbListItem extends ListItem {
                             },
                             {
                                 heading: "Key",
-                                content: song.t.id,
+                                content: song.t.t.id,
                             },
                             ...maybe(song.t.t.album?.name ?? null, n => ({
                                 heading: "Album",
