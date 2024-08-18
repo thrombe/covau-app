@@ -34,10 +34,18 @@ let store = new RefStore();
 // refrence store
 class RcItem<T extends types.db.DbItem<unknown>> {
     _t: utils.DRo<T>;
+    unlisten: () => void;
     count: number;
     constructor(t: T) {
         this._t = utils.deep_freeze(t);
         this.count = 0;
+
+        this.unlisten = server.db.set_update_listener(t.id, async (t: types.db.DbItem<T>) => {
+            if (t.id > this._t.id) {
+                // @ts-ignore
+                this.t = t;
+            }
+        });
     }
 
     get t(): utils.DRo<T> {
@@ -60,6 +68,7 @@ class RcItem<T extends types.db.DbItem<unknown>> {
             return false;
         }
 
+        this.unlisten();
         if (!store.store.delete(this.t.id)) {
             throw new Error(`item with id ${this.t.id} is not in store`);
         }
