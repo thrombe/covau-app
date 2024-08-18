@@ -161,7 +161,7 @@ async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 100)]
 async fn main() -> Result<()> {
     let cli = cli::Cli::parse();
     let config = cli.config()?.derived()?;
