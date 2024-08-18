@@ -45,6 +45,12 @@ class RcItem<T extends types.db.DbItem<unknown>> {
     }
 
     set t(t: T) {
+        if (this._t.id != t.id) {
+            throw new Error(`attempt to assign ${t.id} in Rc for ${this._t.id}`);
+        }
+        if (this._t.metadata.update_counter >= t.metadata.update_counter) {
+            throw new Error("new update_counter must be greater than old update_counter for the DbItem");
+        }
         this._t = utils.deep_freeze(t);
     }
 
@@ -93,9 +99,6 @@ export class Rc<T extends types.db.DbItem<unknown>> {
         let item = store.store.get(this.id) ?? null;
         if (item == null) {
             throw new Error(`item with id ${this.id} is not in store`);
-        }
-        if (item.t.metadata.update_counter >= t.metadata.update_counter) {
-            throw new Error("new update_counter must be greater than old update_counter for the DbItem");
         }
         item.t = t;
     }
