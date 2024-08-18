@@ -66,11 +66,11 @@ export class DbListItem extends ListItem {
     }
 
     dbrc<T extends MusicListItem["t"]>() {
-        return this._t as rc.DbRc<T>;
+        return this._t as rc.DbRc<utils.NoDRo<T>>;
     }
 
     rc<T extends types.db.DbItem<unknown>>() {
-        return this._t as rc.Rc<T>;
+        return this._t as rc.Rc<utils.NoDRo<T>>;
     }
 
     get t(): rc.Rc<MusicListItem> {
