@@ -86,6 +86,15 @@ export function rem() {
     return rem;
 }
 
+// - [Don't resolve type aliases](https://github.com/microsoft/TypeScript/issues/31940#issuecomment-2015140339)
+export type Alias<T> = Pick<T, keyof T>;
+
+// - [Don't resolve type aliases](https://github.com/microsoft/TypeScript/issues/31940#issuecomment-839659248)
+// export type Alias<T> = T & {_?: never};
+// export type ResolveAlias<T> = T & unknown;
+
+// export interface Alias<T> {};
+
 // - [object deep freeze typescript](https://stackoverflow.com/a/59338545)
 export type DRo<T> =
     T extends (infer R)[]
@@ -95,9 +104,10 @@ export type DRo<T> =
     ? T
     
     : T extends object
-    ? { readonly [P in keyof T]: DRo<T[P]>; }
+    ? DRoObj<T>
     
     : T;
+type DRoObj<T> = { readonly [P in keyof T]: DRo<T[P]>; };
 
 export type NoDRo<T> =
     T extends (infer R)[]
@@ -107,9 +117,10 @@ export type NoDRo<T> =
     ? T
     
     : T extends Object
-    ? { -readonly [P in keyof T]: NoDRo<T[P]>; }
+    ? NoDRoObj<T>
     
     : T;
+type NoDRoObj<T> = { -readonly [P in keyof T]: NoDRo<T[P]>; };
 
 export function deep_freeze<T extends Object>(obj: T): DRo<T> {
     Object.keys(obj).forEach((prop: string) => {
