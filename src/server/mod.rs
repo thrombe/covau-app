@@ -90,7 +90,10 @@ pub struct Message<T> {
 }
 
 pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(time::Duration::from_secs(5 * 60))
+        .build()
+        .expect("could not initialize reqwest Client");
     let db_path = config.db_path.join("music.db");
     let db_exists = db_path.exists();
     let db = Db::new(format!("sqlite:{}?mode=rwc", db_path.to_string_lossy()))
