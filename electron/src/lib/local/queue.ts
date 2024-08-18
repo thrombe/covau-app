@@ -250,6 +250,25 @@ export class QueueManager implements Searcher {
         }
     }
 
+    // must not call the db
+    async sync_play(item: ListItem) {
+        let curr = get(stores.playing_item);
+        if (item.get_key() == curr.get_key()) {
+            return;
+        }
+        let p = get(stores.player);
+        let play = p.is_playing() || p.is_finished();
+
+        await p.play_item(item);
+        stores.playing_item.set(item);
+
+        if (!play) {
+            p.pause();
+        }
+
+        this.state = "Playing";
+    }
+
     async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
         if (!item.is_playable()) {
             return false;

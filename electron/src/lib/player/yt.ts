@@ -269,6 +269,10 @@ export class YtPlayer implements Player {
         return this.synced_data === 'Playing' && this.player.getPlayerState() !== YT.PlayerState.UNSTARTED;
     }
 
+    is_finished() {
+        return this.synced_data == "Finished";
+    }
+
     get_progress(): number {
         return this.get_player_pos();
     }

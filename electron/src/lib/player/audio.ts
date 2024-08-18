@@ -37,6 +37,7 @@ export class Audioplayer implements Player {
             this.send_message({ type: "Duration", content: this.get_duration() });
         });
         this.audio.addEventListener("ended", () => {
+            this.finished = true;
             this.send_message({ type: "Finished" });
         });
         this.audio.addEventListener("volumechange", () => {
@@ -175,6 +176,10 @@ export class Audioplayer implements Player {
 
     is_playing() {
         return !this.audio.paused;
+    }
+
+    is_finished() {
+        return this.finished;
     }
 
     async play_item(item: ListItem) {

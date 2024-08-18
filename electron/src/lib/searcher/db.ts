@@ -1610,7 +1610,7 @@ export class DbListItem extends ListItem {
                             pl.pause();
                             stores.player.update(t => t);
 
-                            await stores.syncops.set.queue(utils.clone(queue.t));
+                            await stores.syncops.set.queue(queue);
                         },
                     },
                     save_as_playlist: {
@@ -1711,8 +1711,9 @@ export class DbListItem extends ListItem {
                             let queue = await server.db.txn(async db => {
                                 return await db.insert({ typ: "Queue", t: q });
                             });
+                            let dbrc = rc.rc.store.rc(queue);
 
-                            await stores.syncops.set.queue(queue);
+                            await stores.syncops.set.queue(dbrc);
                             await stores.queue_ops.play_next();
 
                             toast(`playing ${playlist.t.t.title}`);

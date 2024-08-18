@@ -278,6 +278,7 @@ export interface Player {
     toggle_pause(): void;
     toggle_mute(): void;
     is_playing(): boolean;
+    is_finished(): boolean;
     get_progress(): number;
 }
 export let dummy_player: Player = {
@@ -292,6 +293,7 @@ export let dummy_player: Player = {
     toggle_pause() { },
     toggle_mute() { },
     is_playing() { return false; },
+    is_finished() { return false; },
     get_progress() { return 0; },
 };
 
@@ -309,6 +311,9 @@ export let set_player = async (p: Player, progress: number, is_playing: boolean)
     player.set(p);
 
     let item = get(playing_item);
+    if (item.typ() == "Nothing") {
+        return;
+    }
     await p.play_item(item);
     await p.seek_to_perc(progress);
     if (!is_playing) {
@@ -476,8 +481,8 @@ export const syncops = {
                         q.items = db.db.wrapped_items(items);
                         q.playing_index = item.t.queue.current_index;
                         if (q.playing_index != null) {
-                            q.state = "Playing";
-                            playing_item.set(q.items[q.playing_index]);
+                            let item = q.items[q.playing_index];
+                            await q.sync_play(item);
                         }
                         queue.update(t => t);
                     }
@@ -602,16 +607,18 @@ export const syncops = {
     //     },
     // },
     set: {
-        async queue(q_: types.db.DbItem<types.covau.Queue>) {
+        async queue(q_: rc.DbRc<types.covau.Queue>) {
             let server = await import("$lib/server.ts");
             let sync = get(syncer);
+            let p = get(player);
             let q = get(queue);
             q.reset();
 
             await sync.state.txn(async state => {
-                state.t.queue = q_.id;
+                state.t.queue = q_.t.id;
                 return state;
             });
+            sync.queue = q_;
             sync.seed = null;
             sync.blacklist = null;
             sync.seen = null;
@@ -623,8 +630,10 @@ export const syncops = {
                 q.items = db.db.wrapped_items(items);
                 q.playing_index = sync.queue.t.t.queue.current_index;
                 if (q.playing_index != null) {
-                    q.state = "Playing";
-                    playing_item.set(q.items[q.playing_index]);
+                    let item = q.items[q.playing_index];
+                    if (item.get_key() != get(playing_item).get_key()) {
+                        q.play_queue_item(item);
+                    }
                 }
 
                 if (sync.queue.t.t.blacklist != null) {

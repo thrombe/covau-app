@@ -138,6 +138,10 @@ export class Musiplayer implements Player {
         return !this.paused && !this.finished && this.playing !== "";
     }
 
+    is_finished() {
+        return this.finished;
+    }
+
     get_progress(): number {
         return this.progress;
     }

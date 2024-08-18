@@ -73,7 +73,7 @@ class RcItem<T extends types.db.DbItem<unknown>> {
             throw new Error(`item with id ${this.t.id} is not in store`);
         }
 
-        // console.log("delete", this.t.id, this.t);
+        // console.log("delete", this.t.id, this.t, store.store.size, store);
         return true;
     }
 
