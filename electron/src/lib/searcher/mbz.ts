@@ -1,7 +1,7 @@
 import { DebounceWrapper, MapWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import * as MBZ from "$types/mbz.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions, type MegaId } from "./item.ts";
 import * as st from "$lib/searcher/song_tube.ts";
 import { get } from "svelte/store";
 import * as stores from "$lib/stores.ts";
@@ -71,6 +71,10 @@ export class MbzListItem extends ListItem {
         return false;
     }
 
+    async remove(): Promise<number | null> {
+        return null;
+    }
+
     drag_url(): string | null {
         switch (this.data.typ) {
             case "MbzReleaseWithInfo": {
@@ -106,6 +110,23 @@ export class MbzListItem extends ListItem {
             } break;
             default:
                 throw exhausted(this.data)
+        }
+    }
+
+    mega_id(): MegaId {
+        switch (this.data.typ) {
+            case "MbzReleaseWithInfo":
+            case "MbzReleaseGroupWithInfo":
+            case "MbzRelease":
+            case "MbzReleaseGroup":
+            case "MbzRecordingWithInfo":
+            case "MbzRecording":
+            case "MbzArtist":
+                return { uniq: this.get_key(), dbid: null, yt_id: null, mbz_id: this.data.data.id };
+            case "MbzRadioSong":
+                return { uniq: this.get_key(), dbid: null, yt_id: null, mbz_id: null };
+            default:
+                throw exhausted(this.data);
         }
     }
 
@@ -252,6 +273,8 @@ export class MbzListItem extends ListItem {
     async dislike(): Promise<boolean> {
         return false;
     }
+
+    modify_options(): void { }
 
     impl_options(ctx: RenderContext): ItemOptions {
         let common_options = this.common_options();

@@ -3,13 +3,13 @@ import * as yt from "$types/yt.ts";
 import * as covau from "$types/covau.ts";
 import * as DB from "$types/db.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem, type ItemOptions } from "./item.ts";
+import { type Option, ListItem, type RenderContext, type DetailSection, CustomListItem, type ItemOptions, type MegaId } from "./item.ts";
 import { toast } from "$lib/toast/toast.ts";
 import * as stores from "$lib/stores.ts";
 import { st } from "./song_tube.ts";
 import * as server from "$lib/server.ts";
 import type { AutoplayTyp, AutoplayQueryInfo } from "$lib/local/queue.ts";
-import { type SearcherConstructorMapper, AsyncStaticSearcher } from "./searcher.ts";
+import { type SearcherConstructorMapper, AsyncStaticSearcher, type Searcher } from "./searcher.ts";
 import * as icons from "$lib/icons.ts";
 import * as types from "$types/types.ts";
 import { get, writable } from "svelte/store";
@@ -60,9 +60,13 @@ export class DbListItem extends ListItem {
     // for mbz recording
     yt_song: types.yt.Song | null = null;
 
-    constructor(data: MusicListItem) {
+    // for actions on the searcher
+    searcher: Searcher | null;
+
+    constructor(data: MusicListItem, searcher: Searcher | null) {
         super();
         this._t = rc.rc.store.rc(data) as typeof this._t;
+        this.searcher = searcher;
     }
 
     dbrc<T extends MusicListItem["t"]>() {
@@ -193,6 +197,38 @@ export class DbListItem extends ListItem {
             case "MbzArtist":
             case "LocalState":
                 return null;
+            default:
+                throw exhausted(t);
+        }
+    }
+
+    mega_id(): MegaId {
+        let t = this.t.t;
+        switch (t.typ) {
+            case "MmSong":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: t.t.key, mbz_id: null };
+            case "MmAlbum":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: t.t.browse_id, mbz_id: null };
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: null, mbz_id: null };
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: t.t.id, mbz_id: null };
+            case "Song":
+            case "Playlist":
+            case "Queue":
+            case "Updater":
+            case "LocalState":
+            case "ArtistBlacklist":
+            case "SongBlacklist":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: null, mbz_id: null };
+            case "MbzArtist":
+            case "MbzRecording":
+                return { dbid: t.id, uniq: this.get_key(), yt_id: null, mbz_id: t.t.id };
             default:
                 throw exhausted(t);
         }
@@ -830,6 +866,155 @@ export class DbListItem extends ListItem {
         }
     }
 
+    async remove(item: ListItem): Promise<number | null> {
+        let t = this.t.t;
+        switch (t.typ) {
+            case "Playlist":
+            case "Queue": {
+                let list = utils.clone(t);
+                let id = item.mega_id();
+                let index: number;
+                if (list.typ == "Playlist") {
+                    index = list.t.songs.findIndex(s => s == id.dbid);
+                    list.t.songs = list.t.songs.filter(s => s != id.dbid);
+                } else {
+                    index = list.t.queue.queue.songs.findIndex(s => s == id.dbid);
+                    if (index == -1 || list.t.queue.current_index == null) {
+                        // pass
+                    } else if (index > list.t.queue.current_index) {
+                        // pass
+                    } else if (index < list.t.queue.current_index) {
+                        list.t.queue.current_index -= 1;
+                    } else {
+                        if (index == 0) {
+                            if (index == list.t.queue.queue.songs.length - 1) {
+                                list.t.queue.current_index = null;
+                            } else {
+                                // pass
+                            }
+                        } else if (index == list.t.queue.queue.songs.length - 1) {
+                            list.t.queue.current_index -= 1;
+                        } else {
+                            // pass
+                        }
+                    }
+                    list.t.queue.queue.songs = list.t.queue.queue.songs.filter(s => s != id.dbid);
+                }
+                let k = await server.db.txn(async db => {
+                    return await db.update<unknown>(list);
+                });
+                this.t = k;
+
+                return index == -1 ? null : index;
+            } break;
+            case "ArtistBlacklist":
+            case "SongBlacklist": {
+                let list = utils.clone(t);
+                let id = item.mega_id();
+                let index: number;
+                if (list.typ == "SongBlacklist") {
+                    index = list.t.songs.findIndex(s => s.content == id.yt_id || s.content == id.mbz_id);
+                    list.t.songs = list.t.songs.filter(s => s.content != id.yt_id && s.content != id.mbz_id);
+                } else {
+                    index = list.t.artists.findIndex(s => s.content == id.yt_id || s.content == id.mbz_id);
+                    list.t.artists = list.t.artists.filter(s => s.content != id.yt_id && s.content != id.mbz_id);
+                }
+                this.t = await server.db.txn(async db => {
+                    return await db.update<unknown>(list);
+                });
+
+                return index == -1 ? null : index;
+            } break;
+            case "MmSong":
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "LocalState":
+            case "Song":
+            case "Updater":
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "MbzRecording":
+            case "MbzArtist":
+                return null;
+            default:
+                throw exhausted(t);
+        }
+    }
+
+    modify_options(item: ListItem): void {
+        let ops = this.common_options();
+        let t = this.t;
+        switch (t.t.typ) {
+            case "Playlist":
+            case "Queue": {
+                let p = this.rc<typeof t.t>();
+                item.custom_options.push((ctx: RenderContext, old: ItemOptions) => {
+                    switch (ctx) {
+                        case "Browser":
+                            return {
+                                ...old,
+                                menu: [
+                                    ops.remove_item(item),
+                                    ...old.menu,
+                                ],
+                            } as ItemOptions;
+                        case "Queue":
+                        case "Playbar":
+                        case "DetailSection":
+                        case "Prompt":
+                            return old;
+                        default:
+                            throw exhausted(ctx);
+                    }
+                });
+            } break;
+            case "ArtistBlacklist":
+            case "SongBlacklist": {
+                let bl = this.rc<typeof t.t>();
+                item.custom_options.push((ctx: RenderContext, old: ItemOptions) => {
+                    switch (ctx) {
+                        case "Browser":
+                            return {
+                                ...old,
+                                menu: [
+                                    ops.remove_item(item),
+                                    ...old.menu,
+                                ],
+                            } as ItemOptions;
+                        case "Queue":
+                        case "Playbar":
+                        case "DetailSection":
+                        case "Prompt":
+                            return old;
+                        default:
+                            throw exhausted(ctx);
+                    }
+                });
+            } break;
+            case "MmSong":
+            case "MmAlbum":
+            case "MmArtist":
+            case "MmPlaylist":
+            case "MmQueue":
+            case "StSong":
+            case "StAlbum":
+            case "StPlaylist":
+            case "StArtist":
+            case "Song":
+            case "Updater":
+            case "LocalState":
+            case "MbzArtist":
+            case "MbzRecording":
+                return;
+            default:
+                throw exhausted(t.t);
+        }
+    }
+
     async like(): Promise<boolean> {
         await this.ops().options.like.onclick();
         return true;
@@ -841,6 +1026,7 @@ export class DbListItem extends ListItem {
     }
 
     protected ops() {
+        let self = this;
         return {
             options: {
                 like: {
@@ -906,6 +1092,15 @@ export class DbListItem extends ListItem {
                                 });
                         }));
                 });
+            },
+            option_mapper() {
+                let mapper = mixins.MapWrapper(async (item: ListItem) => {
+                    if (item.custom_options.length < 1) {
+                        self.modify_options(item);
+                    }
+                    return item;
+                });
+                return mapper;
             },
         };
     }
@@ -1564,7 +1759,7 @@ export class DbListItem extends ListItem {
                                 query_type: "ids",
                                 type: "Song",
                                 ids: songs,
-                            }, 30, null, this);
+                            }, 30, ops.option_mapper(), this);
                             stores.new_tab(s, queue.t.t.queue.queue.title);
                         },
                     },
@@ -1688,7 +1883,7 @@ export class DbListItem extends ListItem {
                                 query_type: "ids",
                                 type: "Song",
                                 ids: utils.clone(playlist.t.t.songs),
-                            }, 30, null, this);
+                            }, 30, ops.option_mapper(), this);
                             stores.new_tab(s, playlist.t.t.title);
                         },
                     },
@@ -2142,7 +2337,7 @@ export class DbListItem extends ListItem {
                                 query_type: "refids",
                                 type: "Song",
                                 ids: bl.t.t.songs.map(s => s.content),
-                            }, 10);
+                            }, 10, ops.option_mapper());
                             stores.new_tab(s, bl.t.t.title ?? "song blacklist");
                         },
                     },
@@ -2231,10 +2426,14 @@ export class DbListItem extends ListItem {
                                 let artists = await Promise.all(bl.t.t.artists.map(async id => {
                                     if (id.type == "YtId") {
                                         let a = await st.cached.artist(id.content);
-                                        return db.wrapped(a);
+                                        let item = db.wrapped(a);
+                                        this.modify_options(item);
+                                        return item;
                                     } else {
                                         let a = await mbz.mbz.cached.artist(id.content);
-                                        return db.wrapped(a);
+                                        let item = db.wrapped(a);
+                                        this.modify_options(item);
+                                        return item;
                                     }
                                 }));
                                 return artists;
@@ -2668,7 +2867,7 @@ export class DbListItem extends ListItem {
                             query_type: "refids",
                             type: "Song",
                             ids: bl.t.t.songs.map(s => s.content),
-                        }, 10)),
+                        }, 10, ops.option_mapper())),
                     },
                     sections.json,
                 ] as DetailSection[];
@@ -2707,7 +2906,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: utils.clone(playlist.t.t.songs),
-                        }, 10)),
+                        }, 10, ops.option_mapper())),
                     },
                     sections.json,
                 ] as DetailSection[];
@@ -2738,7 +2937,7 @@ export class DbListItem extends ListItem {
                             query_type: "ids",
                             type: "Song",
                             ids: utils.clone(queue.t.t.queue.queue.songs),
-                        }, 10)),
+                        }, 10, ops.option_mapper())),
                     },
                     ...maybe(queue.t.t.seen, seen => ({
                         type: "Searcher",
@@ -3124,22 +3323,25 @@ function ClassTypeWrapper<S extends mixins.Constructor<{
         // @ts-ignore
         async next_page(): Promise<DbListItem[]> {
             let res = await super.next_page();
+
+            // @ts-ignore
+            let self: Searcher = this;
             return res.map(m => {
                 // delete get_key function so that structuredClone works on this :|
                 let t = m as MusicListItem & { get_key: unknown };
                 delete t.get_key;
                 return t;
-            }).map(m => new DbListItem(m));
+            }).map(m => new DbListItem(m, self));
         }
     } as mixins.Constructor<IClassTypeWrapper> & S; // S has to be after the interface so that it overrides
 }
 
 export const db = {
     wrapped_items<T>(items: types.db.DbItem<T>[]): DbListItem[] {
-        return items.map(e => new DbListItem(e as MusicListItem))
+        return items.map(e => new DbListItem(e as MusicListItem, null))
     },
     wrapped<T>(item: types.db.DbItem<T>): DbListItem {
-        return new DbListItem(item as MusicListItem);
+        return new DbListItem(item as MusicListItem, null);
     },
     thumbnails<T extends { url: string, width: number, height: number }>(thumbs: T[]) {
         return thumbs.map(t => ({

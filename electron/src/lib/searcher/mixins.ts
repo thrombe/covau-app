@@ -136,6 +136,7 @@ export function SlowSearch<T, Q, S extends Constructor<{
 
 export interface IDropWrapper {
     handle_drop(item: ListItem, target: number, is_outsider: boolean): Promise<boolean>;
+    remove(item: ListItem): Promise<number | null>;
 }
 export function DropWrapper<S extends Constructor<{
     items: ListItem[];
@@ -173,8 +174,22 @@ export function DropWrapper<S extends Constructor<{
             }
         }
 
+        async remove(item: ListItem): Promise<number | null> {
+            if (d == null) {
+                return null;
+            }
+
+            let index = await d.remove(item);
+            if (index == null) {
+                return null;
+            }
+
+            this.items.splice(index, 1);
+            return index;
+        }
+
         async handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean> {
-            if (!d) {
+            if (d == null) {
                 return false;
             }
 

@@ -55,6 +55,12 @@ export type DetailSection = ({
 });
 export type Typ = types.db.Typ | MbzItem["typ"] | types.yt.Typ | "Custom" | "Nothing";
 
+export type MegaId = {
+    uniq: unknown,
+    dbid: number | null,
+    yt_id: string | null,
+    mbz_id: string | null,
+};
 
 export abstract class ListItem implements Keyed {
     custom_options: ((ctx: RenderContext, old: ItemOptions) => ItemOptions)[] = [];
@@ -181,6 +187,24 @@ export abstract class ListItem implements Keyed {
                 };
                 return [op];
             },
+            remove_item: (item: ListItem) => ({
+                icon: icons.remove,
+                title: "remove item",
+                onclick: async () => {
+                    let db = await import("$lib/searcher/db.ts");
+                    let stores = await stores_ts;
+
+                    if (item instanceof db.DbListItem && item.searcher != null) {
+                        let res = await item.searcher.remove(item);
+                        if (res != null) {
+                            stores.update_current_tab();
+                            toast(`item removed`);
+                            return;
+                        }
+                    }
+                    toast("could not remove item", "error")
+                },
+            }),
             empty_ops: {
                 icon_top: null,
                 top_right: null,
@@ -262,9 +286,12 @@ export abstract class ListItem implements Keyed {
 
     // container methods
     abstract handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean>;
+    abstract remove(item: ListItem): Promise<number | null>;
+    abstract modify_options(item: ListItem): void;
 
     // common methods
     abstract get_key(): unknown; // literally anything unique
+    abstract mega_id(): MegaId;
     abstract typ(): Typ;
     abstract title(): string;
     abstract thumbnail(): string | null;
@@ -331,8 +358,23 @@ export class CustomListItem extends ListItem {
         return false;
     }
 
+    async remove() {
+        return null;
+    }
+
+    modify_options(): void { }
+
     get_key() {
         return this._key;
+    }
+
+    mega_id(): MegaId {
+        return {
+            uniq: this._key,
+            yt_id: null,
+            mbz_id: null,
+            dbid: null,
+        };
     }
 
     typ(): Typ {

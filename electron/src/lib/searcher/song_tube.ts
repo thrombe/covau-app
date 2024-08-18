@@ -1,7 +1,7 @@
 import Innertube, { MusicShelfContinuation, YTMusic, YT, YTNodes, Misc } from "youtubei.js/web";
 import { DebounceWrapper, SavedSearch, UniqueSearch, Unpaged, type Constructor, DropWrapper } from "./mixins.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
-import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions } from "./item.ts";
+import { ListItem, type DetailSection, type Option, type RenderContext, type ItemOptions, type MegaId } from "./item.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from "svelte/store";
 import { toast } from "$lib/toast/toast.ts";
@@ -59,6 +59,10 @@ export class StListItem extends ListItem {
         return false;
     }
 
+    async remove(): Promise<number | null> {
+        return null;
+    }
+
     drag_url() {
         switch (this.data.type) {
             case "Song": {
@@ -78,6 +82,10 @@ export class StListItem extends ListItem {
             default:
                 throw exhausted(this.data)
         }
+    }
+
+    mega_id(): MegaId {
+        return { uniq: this.get_key(), dbid: null, yt_id: this.data.content.id, mbz_id: null };
     }
 
     song_ids(): types.covau.InfoSource[] {
@@ -277,6 +285,8 @@ export class StListItem extends ListItem {
                 throw exhausted(this.data);
         }
     }
+
+    modify_options(): void { }
 
     impl_options(ctx: RenderContext): ItemOptions {
         let common_options = this.common_options();
