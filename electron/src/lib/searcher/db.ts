@@ -688,6 +688,7 @@ export class DbListItem extends ListItem {
                             // pass
                             console.warn(`Error while fetching MmSong source '${this.title()}' (crafting fake StSong): ${e.message}`);
                         } else {
+                            // TODO: check if any more errors can be handled here.
                             throw e;
                         }
                     }

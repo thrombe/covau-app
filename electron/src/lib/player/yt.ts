@@ -85,6 +85,26 @@ export class YtPlayer implements Player {
         if ("hideVideoInfo" in pl) {
             pl.hideVideoInfo();
         }
+        // if ("getAvailableQualityLevels" in pl) {
+        //     let lvl = pl.getAvailableQualityLevels();
+        //     console.log(lvl);
+        // }
+        // if ("getVideoData" in pl) {
+        //     let lvl = pl.getVideoData();
+        //     console.log(lvl);
+        // }
+        // if ("getVideoLoadedFraction" in pl) {
+        //     let lvl = pl.getVideoLoadedFraction();
+        //     console.log(lvl);
+        // }
+        // if ("getVideoUrl" in pl) {
+        //     let lvl = pl.getVideoUrl();
+        //     console.log(lvl);
+        // }
+        // if ("playerInfo" in pl) {
+        //     let lvl = pl.playerInfo;
+        //     console.log(lvl, lvl.availableQualityLevels);
+        // }
         switch (eve.data) {
             case YT.PlayerState.UNSTARTED: {
                 if (this.synced_data !== "Unstarted") {

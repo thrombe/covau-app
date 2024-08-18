@@ -105,6 +105,11 @@
         if (e.dataTransfer?.getData('text/plain')) {
             let maybe_url = e.dataTransfer.getData('text/plain');
 
+            console.log(e, maybe_url);
+            console.log(e.dataTransfer.getData("text/plain"));
+            console.log(e.dataTransfer.getData("text/uri-list"));
+            console.log(e.dataTransfer.getData("text/x-moz-url"));
+
             let song = await st.st.cached.video_from_id_or_url(maybe_url);
             if (song) {
                 let item = db.db.wrapped(song);
