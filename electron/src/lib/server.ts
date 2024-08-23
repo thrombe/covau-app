@@ -8,6 +8,7 @@ import * as types from "$types/types.ts";
 import * as stores from "$lib/stores.ts";
 import { get } from 'svelte/store';
 import { err_msg, buffer_to_base64 } from './utils.ts';
+import type { ValType } from './searcher/db.ts';
 
 export const utils = {
     base_url: `http://localhost:${import.meta.env.SERVER_PORT}/`,
@@ -636,8 +637,8 @@ export const db = {
         }
     },
 
-    async search<T>(typ: types.db.Typ, query: types.db.SearchQuery) {
-        let res: types.db.SearchMatches<T> = await dbclient.execute({
+    async search<T extends types.db.Typ>(typ: T, query: types.db.SearchQuery) {
+        let res: types.db.SearchMatches<ValType<typeof typ>> = await dbclient.execute({
             type: "Search",
             content: {
                 typ,
@@ -647,8 +648,8 @@ export const db = {
         return res;
     },
 
-    async get_by_refid<T>(typ: types.db.Typ, refid: string) {
-        let res: types.db.DbItem<T> | null = await dbclient.execute({
+    async get_by_refid<T extends types.db.Typ>(typ: T, refid: string) {
+        let res: types.db.DbItem<ValType<typeof typ>> | null = await dbclient.execute({
             type: "GetByRefid",
             content: {
                 typ,
@@ -658,8 +659,8 @@ export const db = {
         return res;
     },
 
-    async get_many_by_refid<T>(typ: types.db.Typ, refids: string[]) {
-        let res: types.db.DbItem<T>[] = await dbclient.execute({
+    async get_many_by_refid<T extends types.db.Typ>(typ: T, refids: string[]) {
+        let res: types.db.DbItem<ValType<typeof typ>>[] = await dbclient.execute({
             type: "GetManyByRefid",
             content: {
                 typ,
@@ -669,8 +670,8 @@ export const db = {
         return res;
     },
 
-    async get_by_id<T>(typ: types.db.Typ, id: number) {
-        let res: types.db.DbItem<T> | null = await dbclient.execute({
+    async get_by_id<T extends types.db.Typ>(typ: T, id: number) {
+        let res: types.db.DbItem<ValType<typeof typ>> | null = await dbclient.execute({
             type: "GetById",
             content: {
                 typ,
@@ -680,8 +681,8 @@ export const db = {
         return res;
     },
 
-    async get_many_by_id<T>(typ: types.db.Typ, ids: number[]) {
-        let res: types.db.DbItem<T>[] = await dbclient.execute({
+    async get_many_by_id<T extends types.db.Typ>(typ: T, ids: number[]) {
+        let res: types.db.DbItem<ValType<typeof typ>>[] = await dbclient.execute({
             type: "GetManyById",
             content: {
                 typ,

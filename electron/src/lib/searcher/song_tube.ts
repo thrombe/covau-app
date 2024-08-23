@@ -752,7 +752,7 @@ export const st = {
 
     cached: {
         async video(id: string, dbops: DbOps | null = null) {
-            let v = await server.db.get_by_refid<yt.Song>("StSong", id);
+            let v = await server.db.get_by_refid("StSong", id);
             if (v == null) {
                 let item = await st.fetch.video(id);
                 if (dbops == null) {
@@ -769,7 +769,7 @@ export const st = {
             }
         },
         async artist(id: string, dbops: DbOps | null = null) {
-            let v = await server.db.get_by_refid<yt.Artist>("StArtist", id);
+            let v = await server.db.get_by_refid("StArtist", id);
             if (v == null) {
                 let item = await st.fetch.artist(id);
                 if (dbops == null) {

@@ -54,6 +54,11 @@ export type BrowseQuery =
     { query_type: 'dynamic-refids', query: { refid: string, typ: Typ }[] } |
     { query_type: 'ids', type: Typ | null, ids: number[] };
 
+export type ValType<T extends Typ> =
+    MusicListItem extends infer P ?
+        P extends { typ: T, t: infer E } ? E : never
+    : never;
+
 export class DbListItem extends ListItem {
     _t: rc.Rc<MusicListItem>;
 

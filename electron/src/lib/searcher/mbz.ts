@@ -1242,7 +1242,7 @@ export const mbz = {
 
     cached: {
         async artist(id: string, dbops: server.DbOps | null = null) {
-            let a = await server.db.get_by_refid<Artist>("MbzArtist", id);
+            let a = await server.db.get_by_refid("MbzArtist", id);
             if (a == null) {
                 let item = await mbz.id_fetch<Artist>(id, "MbzArtist");
                 if (dbops == null) {
@@ -1309,7 +1309,7 @@ export const mbz = {
                 type: "YtId",
                 content: yt_song.id,
             })
-            thumbnails = db.thumbnails(yt_song.thumbnails);
+            thumbnails = yt_song.thumbnails;
         }
 
         let t: types.covau.Song = {

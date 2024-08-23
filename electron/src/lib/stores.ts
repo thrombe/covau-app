@@ -400,7 +400,7 @@ export const syncops = {
         let queue_ts = await import("$lib/local/queue.ts");
         let q = new queue_ts.LocalSyncQueue();
 
-        let state = await server.db.get_by_id<types.covau.LocalState>("LocalState", 1);
+        let state = await server.db.get_by_id("LocalState", 1);
         if (state == null) {
             throw new Error("Database does not have state object");
         }
@@ -414,7 +414,7 @@ export const syncops = {
         };
 
         if (sync.state.t.t.queue != null) {
-            let dbq = (await server.db.get_by_id<types.covau.Queue>("Queue", sync.state.t.t.queue))!;
+            let dbq = (await server.db.get_by_id("Queue", sync.state.t.t.queue))!;
             sync.queue = rc.rc.store.rc(dbq);
             let items = await server.db.get_many_by_id("Song", dbq.t.queue.queue.songs);
             q.items = db.db.wrapped_items(items);
@@ -425,19 +425,19 @@ export const syncops = {
             }
 
             if (sync.queue.t.t.blacklist != null) {
-                let bl = (await server.db.get_by_id<types.covau.ArtistBlacklist>("ArtistBlacklist", sync.queue.t.t.blacklist))!;
+                let bl = (await server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
                 sync.blacklist = rc.rc.store.rc(bl);
                 q.blacklist_artist_ids = [...bl.t.artists];
                 q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
             }
             if (sync.queue.t.t.seen != null) {
-                let bl = (await server.db.get_by_id<types.covau.SongBlacklist>("SongBlacklist", sync.queue.t.t.seen))!;
+                let bl = (await server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
                 sync.seen = rc.rc.store.rc(bl);
                 q.blacklist_ids = [...bl.t.songs];
                 q.bl_ids = new Set(bl.t.songs.map(id => id.content));
             }
             if (sync.queue.t.t.seed != null) {
-                let s = (await server.db.get_by_id<types.covau.Song>("Song", sync.queue.t.t.seed))!;
+                let s = (await server.db.get_by_id("Song", sync.queue.t.t.seed))!;
                 let w = db.db.wrapped(s);
                 sync.seed = rc.rc.store.rc(s);
                 q.set_seed(w);
@@ -637,21 +637,21 @@ export const syncops = {
                 }
 
                 if (sync.queue.t.t.blacklist != null) {
-                    let bl = (await server.db.get_by_id<types.covau.ArtistBlacklist>("ArtistBlacklist", sync.queue.t.t.blacklist))!;
+                    let bl = (await server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
                     sync.blacklist = rc.rc.store.rc(bl);
                     await syncops.listeners.reset.blacklist();
                     q.blacklist_artist_ids = [...bl.t.artists];
                     q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
                 }
                 if (sync.queue.t.t.seen != null) {
-                    let bl = (await server.db.get_by_id<types.covau.SongBlacklist>("SongBlacklist", sync.queue.t.t.seen))!;
+                    let bl = (await server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
                     sync.seen = rc.rc.store.rc(bl);
                     await syncops.listeners.reset.seen();
                     q.blacklist_ids = [...bl.t.songs];
                     q.bl_ids = new Set(bl.t.songs.map(id => id.content));
                 }
                 if (sync.queue.t.t.seed != null) {
-                    let s = (await server.db.get_by_id<types.covau.Song>("Song", sync.queue.t.t.seed))!;
+                    let s = (await server.db.get_by_id("Song", sync.queue.t.t.seed))!;
                     let w = db.db.wrapped(s);
                     sync.seed = rc.rc.store.rc(s);
                     q.set_seed(w);
