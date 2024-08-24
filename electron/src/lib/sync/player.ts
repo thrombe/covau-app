@@ -9,6 +9,118 @@ import {
 import * as firestore from "firebase/firestore";
 import { Mutex } from 'async-mutex';
 import { exhausted } from '$lib/utils.ts';
+import type { MessageHandler, Player, Queue } from '$lib/stores';
+import type { ListItem } from '$lib/searcher/item';
+import * as types from "$types/types.ts";
+import { toast } from '$lib/toast/toast';
+
+export class SyncPlayer implements Player {
+    pq: SyncPlayerQueue;
+
+    interval: number = 0;
+    constructor(pq: SyncPlayerQueue) {
+        this.pq = pq;
+        this.interval = setInterval(async () => {
+            this.send_message({ type: "ProgressPerc", content: await this.pq.get_player_pos() });
+        }, 300) as unknown as number;
+    }
+
+    private async send_message(msg: types.server.PlayerMessage) {
+        for (let handler of this.handlers) {
+            await handler(msg);
+        }
+    }
+
+    play_item(item: ListItem): void | Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    async pause() {
+        await this.pq.pause();
+    }
+
+    handlers: MessageHandler[] = [];
+    on_message(handler: MessageHandler): void {
+        for (let h of this.handlers) {
+            if (h == handler) {
+                return;
+            }
+        }
+        this.handlers.push(handler);
+    }
+
+    async destroy(): Promise<void> {
+        clearInterval(this.interval);
+        await this.pq.destroy();
+    }
+
+    set_volume(v: number): void {
+        this.pq.set_volume(v);
+    }
+
+    async seek_to_perc(t: number): Promise<void> {
+        await this.pq.seek_perc(t);
+    }
+
+    async toggle_pause() {
+        await this.pq.toggle_pause();
+    }
+
+    toggle_mute(): void {
+        this.pq.toggle_mute();
+    }
+
+    is_playing(): boolean {
+        return this.pq.is_playing();
+    }
+}
+
+export class SyncQueue implements Queue {
+    pq: SyncPlayerQueue;
+
+    constructor(pq: SyncPlayerQueue) {
+        this.pq = pq;
+    }
+
+    detour(): void {
+        throw new Error('Method not implemented.');
+    }
+
+    async play_item(item: ListItem): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+
+    async add(...items: ListItem[]): Promise<void> {
+        let ids: string[] = [];
+        for (let item of items) {
+            let id = await item.yt_id();
+            if (id) {
+                ids.push(id);
+            } else {
+                toast(`could not add ${item.title()} to queue`, "error");
+                return;
+            }
+        }
+        for (let id of ids) {
+            await this.pq.queue(id);
+        }
+    }
+
+    async play_queue_item(item: ListItem): Promise<void> {
+        let id = await item.yt_id();
+        if (id) {
+            throw new Error('Method not implemented.');
+        } else {
+            toast(`could not play ${item.title()}`, "error");
+            return;
+        }
+    }
+
+    async remove_queue_item(item: ListItem): Promise<void> {
+        // T_T
+        throw new Error('Method not implemented.');
+    }
+}
 
 type PlayerSyncedData = {
     state: 'Initialised';
