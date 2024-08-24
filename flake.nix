@@ -455,11 +455,14 @@
 
             # manually generate bindings
             unstable.wasm-bindgen-cli
+
+            zig
+            zls
           ]
           ++ (custom-commands pkgs);
 
-      stdenv = pkgs.clangStdenv;
-      # stdenv = pkgs.gccStdenv;
+      # stdenv = pkgs.clangStdenv;
+      stdenv = pkgs.gccStdenv;
     in {
       packages = {
         qweb = qweb;
