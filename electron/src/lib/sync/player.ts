@@ -1,4 +1,7 @@
 
+import { firebase_config } from '../../firebase_config';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import {
     addDoc, collection, deleteDoc, doc, DocumentReference, DocumentSnapshot, Firestore,
     getDoc, onSnapshot, serverTimestamp, setDoc, type Unsubscribe
@@ -31,7 +34,7 @@ type PlayerSyncedData = {
     paused_started_at: number;
 };
 
-export class SyncPlayer {
+export class SyncPlayerQueue {
     db: Firestore;
 
     snapshot_unsub: Unsubscribe | null = null;
@@ -90,9 +93,9 @@ export class SyncPlayer {
                     if (eve.data == YT.PlayerState.PLAYING) {
                         // this might also happen because of buffering cuz | maybe cuz of ads
                         if (prev_player_state == YT.PlayerState.UNSTARTED) {
-                            await this.sync_yt_player();
+                            this.sync_yt_player();
                         } else if (prev_player_state == YT.PlayerState.BUFFERING) {
-                            await this.sync_yt_player();
+                            this.sync_yt_player();
                         }
 
                         prev_player_state = eve.data;
@@ -107,7 +110,7 @@ export class SyncPlayer {
                         // NOTE: pause events are received when changing videos. which becomes a pain
                         //  so either don't let the user pause vid directly or let this pause be just for this
                         //  specific client
-                        await this.sync_yt_player();
+                        this.sync_yt_player();
                         prev_player_state = eve.data;
                     } else if (eve.data == YT.PlayerState.UNSTARTED) {
                         prev_player_state = eve.data;
@@ -122,7 +125,6 @@ export class SyncPlayer {
     // TODO: more consistent format for duration | position
     async get_player_pos() {
         await this.seek_promise;
-        await this.player_initialised;
 
         let curr_time = this.player.getCurrentTime();
         let duration = this.player.getDuration();
@@ -144,9 +146,12 @@ export class SyncPlayer {
         }
     }
 
-    static async new(db: Firestore, group: string, video_element_id: string) {
+    static async new(video_element_id: string, group: string) {
+        let app = initializeApp(firebase_config);
+        let db = getFirestore(app);
+
         let data_ref = doc(db, 'groups', group);
-        let player = new SyncPlayer(db, video_element_id, data_ref);
+        let player = new SyncPlayerQueue(db, video_element_id, data_ref);
 
         player.dispatch_time_error_routine();
 
@@ -179,7 +184,7 @@ export class SyncPlayer {
                 });
             }
 
-            await this.sync_yt_player();
+            this.sync_yt_player();
             this.on_update();
         };
         this.snapshot_unsub = onSnapshot(
@@ -189,9 +194,7 @@ export class SyncPlayer {
         );
     }
 
-    private async sync_yt_player() {
-        await this.player_initialised;
-
+    private sync_yt_player() {
         switch (this.synced_data.state) {
             case 'Initialised':
                 this.player.stopVideo();
@@ -285,11 +288,11 @@ export class SyncPlayer {
                     break;
                 case 'Finished':
                     // TODO: maybe restart the vid??
-                    await this.sync_yt_player();
+                    this.sync_yt_player();
                     break;
                 case 'Playing':
                     // nothing to be done here
-                    await this.sync_yt_player();
+                    this.sync_yt_player();
                     break;
                 case 'Paused':
                     let paused_for = this.server_now() - this.synced_data.paused_started_at;
@@ -526,7 +529,7 @@ export class SyncPlayer {
     async toggle_pause() {
         if (this.synced_data.state === 'Playing') {
             if (this.player.getPlayerState() == YT.PlayerState.UNSTARTED) {
-                await this.sync_yt_player();
+                this.sync_yt_player();
             } else {
                 await this.pause();
             }
@@ -587,14 +590,12 @@ export class SyncPlayer {
         }
     }
 
-    async get_volume() {
-        await this.player_initialised;
+    get_volume() {
         let vol = this.player.getVolume() / 100;
         return vol;
     }
 
-    async set_volume(t: number) {
-        await this.player_initialised;
+    set_volume(t: number) {
         if (t > 1) {
             t = 1;
         } else if (t < 0) {
@@ -603,26 +604,23 @@ export class SyncPlayer {
         this.player.setVolume(100*t);
     }
 
-    async toggle_mute() {
-        if (await this.is_muted()) {
-            await this.unmute();
+    toggle_mute() {
+        if (this.is_muted()) {
+            this.unmute();
         } else {
-            await this.mute();
+            this.mute();
         }
     }
 
-    async is_muted() {
-        await this.player_initialised;
+    is_muted() {
         return this.player.isMuted();
     }
 
-    async mute() {
-        await this.player_initialised;
+    mute() {
         this.player.mute();
     }
 
-    async unmute() {
-        await this.player_initialised;
+    unmute() {
         this.player.unMute();
     }
 
@@ -638,7 +636,7 @@ export class SyncPlayer {
                 // MAYBE: is it better to revert every update or
                 console.error(e);
 
-                await this.restore_last_state();
+                this.restore_last_state();
             };
         }
 
@@ -650,16 +648,16 @@ export class SyncPlayer {
         this.last_state = {...data};
         this.last_state.queue = [...data.queue];
     }
-    private async restore_last_state() {
+    private restore_last_state() {
         this.synced_data = {...this.last_state};
         this.synced_data.queue = [...this.last_state.queue];
 
-        await this.sync_yt_player();
+        this.sync_yt_player();
     }
 
     async recalculate_time_error() {
         this.local_time_error = await get_local_time_error(this.db);
-        await this.sync_yt_player();
+        this.sync_yt_player();
     }
 
     dispatch_time_error_routine() {
@@ -685,7 +683,7 @@ export class SyncPlayer {
 
             if (min_yet === null || min_yet > del) {
                 this.local_time_error = error;
-                await this.sync_yt_player();
+                this.sync_yt_player();
                 min_yet = del;
             }
 
@@ -721,4 +719,5 @@ async function get_local_time_error(db: Firestore) {
     let time_offset = now - server_now;
     return time_offset;
 }
+
 
