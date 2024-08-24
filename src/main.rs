@@ -156,6 +156,98 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "webview")]
+fn webview_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
+    #[cfg(build_mode = "DEV")]
+    let port = config.dev_vite_port;
+    #[cfg(build_mode = "PROD")]
+    let port = config.server_port;
+
+    let mut url = format!("http://localhost:{}/", port);
+
+    url += "#/local";
+    // url += "#/vibe/test";
+    // url += "#/play";
+
+    web_view::builder()
+        .title("covau")
+        .content(web_view::Content::Url(url))
+        .debug(true)
+        .invoke_handler(|_wv, _arg| Ok(()))
+        .user_data(())
+        .run()?;
+
+    // let (tx, mut rx) = tokio::sync::oneshot::channel();
+    // let (close_tx, mut close_rx) = tokio::sync::oneshot::channel();
+    // let mut server_fut = std::pin::pin!(server_start(config));
+    // // let mut app_fut = tokio::task::spawn_blocking(move || {
+    // // });
+    // let j = std::thread::spawn(move || {
+    //     let mut app = web_view::builder()
+    //         .title("covau")
+    //         .content(web_view::Content::Url(url))
+    //         .debug(true)
+    //         .invoke_handler(|_wv, _arg| Ok(()))
+    //         .user_data(())
+    //         .build()?;
+
+    //         let res = loop {
+    //             match close_rx.try_recv() {
+    //                 Ok(()) => {
+    //                     break Ok(());
+    //                 },
+    //                 Err(tokio::sync::oneshot::error::TryRecvError::Empty) => (),
+    //                 Err(tokio::sync::oneshot::error::TryRecvError::Closed) => break Err(anyhow::anyhow!("channel closed")),
+    //             }
+    //             match app.step() {
+    //                 Some(Ok(_)) => (),
+    //                 Some(Err(e)) => break Err(anyhow::anyhow!("some webbview error")),
+    //                 None => {
+    //                     tx.send(Ok(()));
+    //                     return Ok(());
+    //                 },
+    //             }
+    //         };
+    //         // app.exit();
+    //         tx.send(res);
+    //         Ok::<_, anyhow::Error>(())
+    // });
+
+    // tokio::select! {
+    //     server = &mut server_fut => {
+    //         app.exit();
+    //         server?;
+    //         return Ok(());
+    //     }
+    //     window = &mut rx => {
+    //         // app.close();
+    //         window??;
+    //     }
+    // }
+
+    // let res = server_fut.await;
+    // res?;
+
+    // rx.await??;
+
+    // j.join();
+    Ok(())
+}
+
+#[cfg(feature = "webview")]
+fn webview_test() {
+    web_view::builder()
+        // .title("Minimal webview example")
+        .content(web_view::Content::Html("https://en.m.wikipedia.org/wiki/Main_Page"))
+        // .size(800, 600)
+        // .resizable(true)
+        // .debug(true)
+        .user_data(())
+        .invoke_handler(|_webview, _arg| Ok(()))
+        .run()
+        .unwrap();
+}
+
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
     server::start("127.0.0.1".parse()?, config.server_port, config).await;
     Ok(())
@@ -279,6 +371,12 @@ async fn main() -> Result<()> {
             // parse_test().await?;
             // db::db_test().await?;
             // mbz::api_test().await?;
+
+            // #[cfg(feature = "webview")]
+            // webview_app(config)?;
+
+            #[cfg(feature = "webview")]
+            webview_test();
         }
     }
 

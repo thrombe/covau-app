@@ -501,6 +501,7 @@
             # manually generate bindings
             unstable.wasm-bindgen-cli
 
+            webkitgtk
             zig
             zls
           ]
