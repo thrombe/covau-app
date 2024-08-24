@@ -216,7 +216,7 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     use crate::server::{db::*, player::*, routes::*};
 
     let mut types = String::new();
-    types += "import type { DbMetadata } from '$types/db.ts';\n";
+    types += "import type { DbMetadata, DbItem, Typ, SearchQuery } from '$types/db.ts';\n";
     types += "\n";
     types += &specta::ts::export::<Message<()>>(config)?;
     types += ";\n";

@@ -1,4 +1,4 @@
-import type { DbMetadata } from '$types/db.ts';
+import type { DbMetadata, DbItem, Typ, SearchQuery } from '$types/db.ts';
 
 export type Message<T> = ({ type: "Request"; content: T } | { type: "OkOne"; content: T } | { type: "OkMany"; content: { data: T; done: boolean; index: number } } | { type: "Err"; content: ErrorMessage }) & { id: number | null };
 export type MessageResult<T> = { type: "Request"; content: T } | { type: "OkOne"; content: T } | { type: "OkMany"; content: { data: T; done: boolean; index: number } } | { type: "Err"; content: ErrorMessage };

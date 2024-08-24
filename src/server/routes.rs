@@ -781,6 +781,12 @@ pub fn save_song_route(
     route.boxed()
 }
 
+// TODO: support
+//   - local file
+//   - mbz id
+//   - cache
+//   - resize
+//   - chop backgrounds
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct ImageQuery {
     src: String,
