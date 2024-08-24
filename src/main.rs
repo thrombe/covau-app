@@ -248,6 +248,53 @@ fn webview_test() {
         .unwrap();
 }
 
+#[cfg(feature = "web-wry")]
+fn wry_test() -> wry::Result<()> {
+  use tao::{
+    event::{Event, StartCause, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+    platform::unix::WindowExtUnix,
+  };
+  use wry::WebViewBuilder;
+  use wry::WebViewBuilderExtUnix;
+
+  let event_loop = EventLoop::new();
+  let window = WindowBuilder::new()
+    .with_title("Hello World")
+    .build(&event_loop)
+    .unwrap();
+
+    #[cfg(not(target_os = "linux"))]
+    let builder = WebViewBuilder::new(&window);
+    #[cfg(target_os = "linux")]
+    let builder = {
+        use tao::platform::unix::WindowExtUnix;
+        use wry::WebViewBuilderExtUnix;
+        let vbox = window.default_vbox().unwrap();
+        WebViewBuilder::new_gtk(vbox)
+    };
+
+  let _webview = builder
+      // .with_html("hello")
+    // .with_url("https://tauri.app")
+    .with_url("http://localhost:6175/#/local")
+    .build()?;
+
+  event_loop.run(move |event, _, control_flow| {
+    *control_flow = ControlFlow::Wait;
+
+    match event {
+      Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
+      Event::WindowEvent {
+        event: WindowEvent::CloseRequested,
+        ..
+      } => *control_flow = ControlFlow::Exit,
+      _ => (),
+    }
+  });
+}
+
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
     server::start("127.0.0.1".parse()?, config.server_port, config).await;
     Ok(())
@@ -375,8 +422,8 @@ async fn main() -> Result<()> {
             // #[cfg(feature = "webview")]
             // webview_app(config)?;
 
-            #[cfg(feature = "webview")]
-            webview_test();
+            #[cfg(feature = "web-wry")]
+            wry_test()?;
         }
     }
 
