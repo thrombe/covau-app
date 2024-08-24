@@ -38,7 +38,7 @@ impl App {
     pub async fn open_window(&self, url: String, port: u16) -> anyhow::Result<()> {
         self.win.set_file_handler(unsafe_handle);
         unsafe {
-            let _ = webui::bindgen::webui_set_port(self.win.id, port);
+            let _ = webui::bindgen::webui_set_port(self.win.id, port.into());
         }
         webui::set_timeout(3);
         self.win.bind("", |e| {

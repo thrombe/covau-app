@@ -134,8 +134,8 @@ async fn webui_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
     // url += "#/vibe/test";
     // url += "#/play";
 
-    let mut server_fut = std::pin::pin!(server_start(config));
     let mut app_fut = std::pin::pin!(app.open_window(url, config.webui_port));
+    let mut server_fut = std::pin::pin!(server_start(config));
 
     tokio::select! {
         server = &mut server_fut => {
