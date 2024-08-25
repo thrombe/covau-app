@@ -41,7 +41,7 @@
       # - [Cross compilation — nix.dev documentation](https://nix.dev/tutorials/cross-compilation.html)
       # - [Cross Compile Rust for Windows - Help - NixOS Discourse](https://discourse.nixos.org/t/cross-compile-rust-for-windows/9582/7)
       # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingw32;
-      # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingwW64;
+      windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingwW64;
       # windows-pkgs = import inputs.nixpkgs {
       #   localSystem = "x86_64-linux";
       #   crossSystem.config = "x86_64-w64-mingw32";
@@ -50,7 +50,6 @@
       #   localSystem = "x86_64-linux";
       #   crossSystem.config = "x86_64-w64-mingwW64";
       # };
-      windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingwW64;
 
       # - [fatal error: EventToken.h: No such file or directory](https://github.com/webview/webview/issues/1036)
       # - [MinGW-w64 requirements](https://github.com/webview/webview?tab=readme-ov-file#mingw-w64-requirements)
@@ -91,7 +90,7 @@
           rmdir mingw64
         '';
       };
-      rust-bin = inputs.rust-overlay.lib.mkRustBin { } windows-pkgs.buildPackages;
+      rust-bin = inputs.rust-overlay.lib.mkRustBin {} windows-pkgs.buildPackages;
       windows-webui = windows-pkgs.stdenv.mkDerivation {
         name = "webui";
         src = windows-pkgs.fetchzip {
@@ -125,7 +124,6 @@
           # mv libmpv-2.dll ./lib/.
           mv libmpv.dll.a ./lib/.
           mv mpv-1.dll ./lib/.
-          
         '';
       };
       windows-shell = windows-pkgs.mkShell {
@@ -143,7 +141,7 @@
           windows-pkgs.openssl
           windows-pkgs.windows.mingw_w64_pthreads
           windows-pkgs.windows.pthreads
-          windows-webui
+          # windows-webui
           windows-mpv
           winlibs
           mcfgthread
@@ -229,7 +227,7 @@
         cargoLock = {
           lockFile = ./Cargo.lock;
           outputHashes = {
-           "webui-rs-0.1.0" = "sha256-iyrS3cRFgawMN9JYVkaOn/FBXHLAUphq7XrEnLZFPjQ=";
+            "webui-rs-0.1.0" = "sha256-iyrS3cRFgawMN9JYVkaOn/FBXHLAUphq7XrEnLZFPjQ=";
           };
         };
         src = pkgs.lib.cleanSource ./.;
@@ -263,6 +261,10 @@
           openssl
           webui
           qweb
+
+          webkitgtk
+          webkitgtk_4_1
+          libsoup
 
           gst_all_1.gstreamer
           # gst_all_1.gst-plugins-base
@@ -338,37 +340,6 @@
           qt6.wrapQtAppsHook
         ];
       };
-      qt-shell = pkgs.mkShell.override {
-        inherit stdenv;
-      } {
-        nativeBuildInputs = (env-packages pkgs) ++ [fhs];
-        inputsFrom = [
-          covau-app
-          qweb
-        ];
-
-        buildInputs = with pkgs; [
-          qtcreator
-          qweb
-
-          # this is for the shellhook portion
-          qt6.wrapQtAppsHook
-          makeWrapper
-          bashInteractive
-        ];
-
-        # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
-        # set the environment variables that Qt apps expect
-        shellHook = ''
-          # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
-          export QTWEBENGINE_REMOTE_DEBUGGING=6178
-          export DEV_SHELL="QT"
-
-          bashdir=$(mktemp -d)
-          makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
-          exec "$bashdir/bash"
-        '';
-      };
 
       fhs = pkgs.buildFHSEnv {
         name = "fhs-shell";
@@ -380,24 +351,42 @@
           # source .env
         '';
       };
-      custom-commands = pkgs: [
-        (pkgs.writeShellScriptBin "build-wasm" ''
+      windows-commands = pkgs: [
+        (pkgs.writeShellScriptBin "build-zweb-windows" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          cd $PROJECT_ROOT/zweb
 
-          cargo build --lib --target wasm32-unknown-unknown --features wasmdeps
-          rm -r ./electron/src/wasm
-          wasm-bindgen --web --out-dir ./electron/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
+          nix develop .#windows -c zig build -Dtarget=x86_64-windows
         '')
-        (pkgs.writeShellScriptBin "build-wasm-pack" ''
+      ];
+      build-commands = pkgs: [
+        (pkgs.writeShellScriptBin "build-prod" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          export BUILD_MODE="PROD"
 
-          wasm-pack build --dev --target web --features wasmdeps
+          export UI_BACKEND="QWEB"
+          export SERVER_PORT=6176
+
+          # TODO: qweb is still needs to be in PATH :(
+          cd $PROJECT_ROOT/qweb
+          mkdir -p ./build
+          cd ./build
+          cmake -CMAKE_BUILD_TYPE=Release ..
+          make
+
+          cd $PROJECT_ROOT
+          wasm-pack build --release --target web --features wasmdeps
           rm -r ./electron/src/wasm
           mv ./pkg ./electron/src/wasm
-        '')
 
+          cd $PROJECT_ROOT/electron
+          bun run build
+
+          cd $PROJECT_ROOT
+          cargo build --release --bin covau-app --features bindeps
+        '')
+      ];
+      dev-commands = pkgs: [
         (pkgs.writeShellScriptBin "web-dev" ''
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
@@ -428,30 +417,8 @@
 
           cargo check --bin covau-app --features bindeps
         '')
-        (pkgs.writeShellScriptBin "build-prod" ''
-          #!/usr/bin/env bash
-          export BUILD_MODE="PROD"
-
-          export UI_BACKEND="QWEB"
-          export SERVER_PORT=6176
-
-          cd $PROJECT_ROOT/qweb
-          mkdir -p ./build
-          cd ./build
-          cmake -CMAKE_BUILD_TYPE=Release ..
-          make
-
-          cd $PROJECT_ROOT
-          wasm-pack build --release --target web --features wasmdeps
-          rm -r ./electron/src/wasm
-          mv ./pkg ./electron/src/wasm
-
-          cd $PROJECT_ROOT/electron
-          bun run build
-
-          cd $PROJECT_ROOT
-          cargo build --release --bin covau-app --features bindeps
-        '')
+      ];
+      qweb-commands = pkgs: [
         (pkgs.writeShellScriptBin "build-qweb" ''
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
@@ -473,6 +440,38 @@
           PATH=$PROJECT_ROOT/qweb/build:$PATH run qweb
         '')
       ];
+      wasm-commands = pkgs: [
+        (pkgs.writeShellScriptBin "build-wasm" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          cargo build --lib --target wasm32-unknown-unknown --features wasmdeps
+          rm -r ./electron/src/wasm
+          wasm-bindgen --web --out-dir ./electron/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
+        '')
+        (pkgs.writeShellScriptBin "build-wasm-pack" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT
+
+          wasm-pack build --dev --target web --features wasmdeps
+          rm -r ./electron/src/wasm
+          mv ./pkg ./electron/src/wasm
+        '')
+      ];
+      custom-commands = pkgs:
+        (windows-commands pkgs)
+        ++ (dev-commands pkgs)
+        ++ (qweb-commands pkgs)
+        ++ (wasm-commands pkgs)
+        ++ (build-commands pkgs)
+        ++ [
+          (pkgs.writeShellScriptBin "build-zweb" ''
+            #!/usr/bin/env bash
+            cd $PROJECT_ROOT/zweb
+
+            zig build
+          '')
+        ];
 
       env-packages = pkgs:
         with pkgs;
@@ -501,7 +500,6 @@
             # manually generate bindings
             unstable.wasm-bindgen-cli
 
-            webkitgtk
             zig
             zls
           ]
@@ -518,7 +516,6 @@
 
       devShells = {
         windows = windows-shell;
-        qt = qt-shell;
 
         default =
           pkgs.mkShell.override {
