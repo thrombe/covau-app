@@ -128,14 +128,14 @@ export default defineConfig((env) => {
         },
         plugins: [
             svelte(),
-            {
-                name: 'electron-vite',
-                configureServer(server) {
-                    server.httpServer.on('listening', () => {
-                        bundle(server).catch(server.config.logger.error)
-                    })
-                }
-            }
+            // {
+            //     name: 'electron-vite',
+            //     configureServer(server) {
+            //         server.httpServer.on('listening', () => {
+            //             bundle(server).catch(server.config.logger.error)
+            //         })
+            //     }
+            // }
         ]
     };
     return config;
