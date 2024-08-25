@@ -553,6 +553,13 @@
 
               export QT_SCALE_FACTOR_ROUNDING_POLICY=RoundPreferFloor
               export QT_WAYLAND_DISABLE_WINDOWDECORATION=0
+
+              # - [Workaround for blank window with WebKit/DMA-BUF/NVIDIA/X11 by SteffenL · Pull Request #1060 · webview/webview · GitHub](https://github.com/webview/webview/pull/1060)
+              # export WEBKIT_DISABLE_COMPOSITING_MODE=1
+              export WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+              # makes the scale "normal"
+              export GDK_BACKEND=x11
             '';
           };
       };
