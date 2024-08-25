@@ -257,16 +257,17 @@
           mv ./${pname} $out/bin/.
         '';
 
-        buildInputs = with pkgs; [
+        buildInputs = (with pkgs; [
           openssl
-          webui
-          qweb
 
+          # webui webview
           webkitgtk
+
+          # wry
           webkitgtk_4_1
           libsoup
 
-          gst_all_1.gstreamer
+          # gst_all_1.gstreamer
           # gst_all_1.gst-plugins-base
           # gst_all_1.gst-plugins-good
           # gst_all_1.gst-plugins-bad
@@ -277,6 +278,9 @@
           # gst_all_1.gst-vaapi
 
           mpv
+        ]) ++ [
+          webui
+          qweb
         ];
 
         nativeBuildInputs = with pkgs; [
@@ -474,7 +478,7 @@
         ];
 
       env-packages = pkgs:
-        with pkgs;
+        (with pkgs;
           [
             unstable.rust-analyzer
             unstable.rustfmt
