@@ -221,7 +221,7 @@
           unstable.bun
         ];
       };
-      covau-app = pkgs.unstable.rustPlatform.buildRustPackage rec {
+      covau = pkgs.unstable.rustPlatform.buildRustPackage rec {
         pname = manifest.name;
         version = manifest.version;
         cargoLock = {
@@ -387,7 +387,7 @@
           bun run build
 
           cd $PROJECT_ROOT
-          cargo build --release --bin covau-app --features bindeps
+          cargo build --release --bin covau --features bindeps
         '')
       ];
       dev-commands = pkgs: [
@@ -413,13 +413,13 @@
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          cargo run --bin covau-app --features bindeps -- $@
+          cargo run --bin covau --features bindeps -- $@
         '')
         (pkgs.writeShellScriptBin "check" ''
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          cargo check --bin covau-app --features bindeps
+          cargo check --bin covau --features bindeps
         '')
       ];
       qweb-commands = pkgs: [
@@ -514,8 +514,8 @@
     in {
       packages = {
         qweb = qweb;
-        default = covau-app;
-        inherit covau-app;
+        default = covau;
+        inherit covau;
       };
 
       devShells = {
@@ -527,7 +527,7 @@
           } {
             nativeBuildInputs = (env-packages pkgs) ++ [fhs];
             inputsFrom = [
-              covau-app
+              covau
               qweb
             ];
             shellHook = ''

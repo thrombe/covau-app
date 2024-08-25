@@ -1,10 +1,10 @@
 {
-  "name": "covau-app",
+  "name": "covau",
   "private": true,
   "version": "0.0.0",
   "author": "thrombe",
   "license": "MIT",
-  "description": "covau-app",
+  "description": "Come vibe amongst us!",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,5 +1,5 @@
 [package]
-name = "covau-app"
+name = "covau"
 version = "0.1.0"
 edition = "2021"
 
@@ -106,7 +106,7 @@ bindeps = [
 ]
 
 [[bin]]
-name = "covau-app"
+name = "covau"
 required-features = ["bindeps"]
 
 [build-dependencies]
