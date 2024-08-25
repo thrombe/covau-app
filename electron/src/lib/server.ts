@@ -620,6 +620,7 @@ class DbClient extends Client<types.server.DbRequest> {
 }
 
 export const db = {
+    // MAYBE: valtype. id -> DbItem<>
     set_update_listener<T>(id: number, callback: DbUpdateCallback<T>) {
         return dbclient.set_update_listener(id, callback);
     },

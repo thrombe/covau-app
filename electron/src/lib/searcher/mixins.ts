@@ -31,6 +31,7 @@ export function RearrangeWrapper<T>(
     items: T[],
     mapper: (t: T, index: number) => ListItem,
     on_update: (items: T[]) => Promise<void>,
+    // on_insert: (item: ListItem) => Promise<T | null> = async () => { return null; },
 ) {
     let self = {
         items: items.map(mapper),
@@ -66,6 +67,17 @@ export function RearrangeWrapper<T>(
             }
             return null;
         },
+        // async insert(index: number, item: ListItem) {
+        //     if (this.get_item_index(item) != null) {
+        //         throw new Error(`item "${item.title()}" already in list`);
+        //     }
+        //     let insert_item = await on_insert(item);
+        //     if (insert_item != null) {
+        //         items.splice(index, 0, );
+        //         await on_update(items);
+        //         stores.update_current_tab();
+        //     }
+        // },
         async move_item(item: ListItem, to: number) {
             let index = this.get_item_index(item);
             if (index != null) {
