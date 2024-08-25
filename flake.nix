@@ -167,7 +167,7 @@
         src = ./.;
 
         buildPhase = ''
-          cd electron
+          cd ui
           bun i -y --frozen-lockfile --production --dry-run
         '';
         installPhase = ''
@@ -187,11 +187,11 @@
         pname = "yarn-modules";
         version = "0.0";
         yarnLock = yarn-lock + /yarn.lock;
-        # yarnLock = ./electron + /yarn.lock;
-        packageJSON = ./electron/package.json;
+        # yarnLock = ./ui + /yarn.lock;
+        packageJSON = ./ui/package.json;
       };
-      electron-dist = pkgs.stdenv.mkDerivation {
-        name = "electron-dist";
+      ui-dist = pkgs.stdenv.mkDerivation {
+        name = "ui-dist";
 
         src = ./.;
 
@@ -207,14 +207,14 @@
           export WEBUI_PORT=6174
           export DEV_VITE_PORT=6175
 
-          cd electron
+          cd ui
           ln -s ${yarn-modules}/node_modules ./node_modules
           bun run build
           cd ..
         '';
         installPhase = ''
           mkdir $out
-          mv ./electron/dist $out/.
+          mv ./ui/dist $out/.
         '';
 
         nativeBuildInputs = with pkgs; [
@@ -244,7 +244,7 @@
           export WEBUI_PORT=6174
           export DEV_VITE_PORT=6175
 
-          cd electron
+          cd ui
           ln -s ${yarn-modules}/node_modules ./node_modules
 
           bun run build
@@ -380,10 +380,10 @@
 
           cd $PROJECT_ROOT
           wasm-pack build --release --target web --features wasmdeps
-          rm -r ./electron/src/wasm
-          mv ./pkg ./electron/src/wasm
+          rm -r ./ui/src/wasm
+          mv ./pkg ./ui/src/wasm
 
-          cd $PROJECT_ROOT/electron
+          cd $PROJECT_ROOT/ui
           bun run build
 
           cd $PROJECT_ROOT
@@ -395,7 +395,7 @@
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
-          cd electron
+          cd ui
           bun run dev
         '')
         (pkgs.writeShellScriptBin "wasm-dev" ''
@@ -450,16 +450,16 @@
           cd $PROJECT_ROOT
 
           cargo build --lib --target wasm32-unknown-unknown --features wasmdeps
-          rm -r ./electron/src/wasm
-          wasm-bindgen --web --out-dir ./electron/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
+          rm -r ./ui/src/wasm
+          wasm-bindgen --web --out-dir ./ui/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
         '')
         (pkgs.writeShellScriptBin "build-wasm-pack" ''
           #!/usr/bin/env bash
           cd $PROJECT_ROOT
 
           wasm-pack build --dev --target web --features wasmdeps
-          rm -r ./electron/src/wasm
-          mv ./pkg ./electron/src/wasm
+          rm -r ./ui/src/wasm
+          mv ./pkg ./ui/src/wasm
         '')
       ];
       custom-commands = pkgs:

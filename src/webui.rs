@@ -19,7 +19,7 @@ unsafe extern "C" fn unsafe_handle(
 fn handle(name: &str) -> String {
     dbg!(name);
     // let data = reqwest::blocking::get(String::from("http://localhost:5173") + name).unwrap().text().unwrap();
-    let data = std::fs::read_to_string(String::from("./electron/dist") + name).unwrap();
+    let data = std::fs::read_to_string(String::from("./ui/dist") + name).unwrap();
     dbg!(&data);
     data
 }
