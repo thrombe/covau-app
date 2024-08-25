@@ -30,7 +30,12 @@ export class QueueManager implements Searcher {
     reset() {
         this.items = [];
         this.playing_index = null;
-        this.state = "Unstarted";
+        let is_playing = get(player).is_playing();
+        if (is_playing) {
+            this.detour();
+        } else {
+            this.state = "Unstarted";
+        }
         this.has_next_page = true;
     }
 
@@ -167,10 +172,9 @@ export class QueueManager implements Searcher {
     }
     async play_prev() {
         if (this.state == "Detour") {
-            if (this.playing_index == null) {
-                this.playing_index = 0;
+            if (this.playing_index != null) {
+                await this.play(this.playing_index);
             }
-            await this.play(this.playing_index);
             return;
         }
 
