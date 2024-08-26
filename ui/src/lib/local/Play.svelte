@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { new_innertube_instance } from "$lib/searcher/tube";
-    import { SongTube, YT, YTNodes } from "$lib/searcher/song_tube";
-    import { Musiplayer } from "$lib/local/player";
+    import { new_innertube_instance } from "$lib/searcher/tube.ts";
+    import { SongTube, YT, YTNodes } from "$lib/searcher/song_tube.ts";
+    import { Musiplayer } from "$lib/local/player.ts";
     import type { SearchQuery, SearchMatches } from "$types/db.ts";
     import type { AlbumId, Artist, Song, SongId, SongInfo } from "$types/musimanager.ts";
     import  * as Db from "$lib/searcher/db.ts";

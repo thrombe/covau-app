@@ -1,4 +1,4 @@
-import type { NewSearcher, Searcher } from "$lib/searcher/searcher";
+import type { NewSearcher, Searcher } from "$lib/searcher/searcher.ts";
 import { writable, type Readable, type Writable, derived } from "svelte/store";
 import { ListItem, type Option } from "$lib/searcher/item.ts";
 

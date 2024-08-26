@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ListItem, RenderContext } from "$lib/searcher/item";
+    import type { ListItem, RenderContext } from "$lib/searcher/item.ts";
     import ThreeDotMenu from "./ThreeDotMenu.svelte";
     import * as icons from "$lib/icons.ts";
     import * as utils from "$lib/utils.ts";

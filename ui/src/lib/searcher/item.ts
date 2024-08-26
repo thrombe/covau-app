@@ -2,13 +2,13 @@ import type { DbOps } from "$lib/server.ts";
 import type { AutoplayQueryInfo, AutoplayTyp } from "$lib/local/queue.ts";
 import { exhausted, type Keyed } from "$lib/utils.ts";
 import * as covau from "$types/covau.ts";
-import type { DbItem } from "$types/db";
+import type { DbItem } from "$types/db.ts";
 import * as icons from "$lib/icons.ts";
-import type { Searcher } from "./searcher";
+import type { Searcher } from "./searcher.ts";
 import { get, type Writable } from "svelte/store";
 import * as types from "$types/types.ts";
 import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
-import { toast } from "$lib/toast/toast";
+import { toast } from "$lib/toast/toast.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 

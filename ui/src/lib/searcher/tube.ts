@@ -1,4 +1,4 @@
-import type { ProxyRequest } from "$types/server";
+import type { ProxyRequest } from "$types/server.ts";
 import Innertube, { UniversalCache } from "youtubei.js/web";
 
 export async function new_innertube_instance() {
