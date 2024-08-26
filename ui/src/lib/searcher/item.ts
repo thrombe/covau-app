@@ -194,7 +194,7 @@ export abstract class ListItem implements Keyed {
                     let db = await import("$lib/searcher/db.ts");
                     let stores = await stores_ts;
 
-                    if (item instanceof db.DbListItem && item.searcher != null) {
+                    if (item.searcher != null) {
                         let res = await item.searcher.remove(item);
                         if (res != null) {
                             stores.update_current_tab();
@@ -283,6 +283,8 @@ export abstract class ListItem implements Keyed {
     // dbitem methods
     abstract like(): Promise<boolean>; 
     abstract dislike(): Promise<boolean>; 
+    // for actions on the searcher
+    searcher: Searcher | null = null;
 
     // container methods
     abstract handle_drop(item: ListItem, target: number | null, is_outsider: boolean): Promise<boolean>;

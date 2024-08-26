@@ -65,9 +65,6 @@ export class DbListItem extends ListItem {
     // for mbz recording
     yt_song: types.yt.Song | null = null;
 
-    // for actions on the searcher
-    searcher: Searcher | null;
-
     constructor(data: MusicListItem, searcher: Searcher | null) {
         super();
         this._t = rc.rc.store.rc(data) as typeof this._t;
@@ -2443,8 +2440,8 @@ export class DbListItem extends ListItem {
                                     }
                                 }));
                                 return artists;
-                            });
                             stores.new_tab(s, bl.t.t.title ?? "song blacklist");
+                            }, this);
                         },
                     },
                     load: {
