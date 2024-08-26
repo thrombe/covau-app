@@ -14,6 +14,7 @@ import * as icons from "$lib/icons.ts";
 import * as server from "$lib/server.ts";
 import * as types from "$types/types.ts";
 import * as utils from "$lib/utils.ts";
+import { imports } from "$lib/cyclic.ts";
 
 export { YT, YTNodes, YTMusic };
 export type Search = YTMusic.Search;
@@ -257,14 +258,13 @@ export class StListItem extends ListItem {
         function not_null<T>(a: (T | null)[]): T[] {
             return a.filter(t => !!t) as T[];
         }
-        let db = await import("$lib/searcher/db.ts");
         switch (this.data.type) {
             case "Song": {
                 let song = this.data.content;
                 let id: covau.PlaySource = { type: "YtId", content: song.id };
                 let t: covau.Song = {
                     title: song.title ?? song.id,
-                    artists: db.db.artists(song.authors),
+                    artists: imports.searcher.db.db.artists(song.authors),
                     thumbnails: [...song.thumbnails, st.url.song_thumbnail(song.id)],
                     play_sources: [id],
                     info_sources: [id],

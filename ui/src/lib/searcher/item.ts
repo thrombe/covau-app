@@ -9,6 +9,7 @@ import { get, type Writable } from "svelte/store";
 import * as types from "$types/types.ts";
 import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
 import { toast } from "$lib/toast/toast.ts";
+import { imports } from "$lib/cyclic.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 
@@ -73,26 +74,22 @@ export abstract class ListItem implements Keyed {
         return ops;
     }
     common_options() {
-        let stores_ts = import("$lib/stores.ts");
         let common_options = {
             queue_play: {
                 icon: icons.play,
                 title: "play",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.play_item(this);
+                    await imports.stores.queue_ops.play_item(this);
                 },
             },
             set_as_seed: {
                 icon: icons.repeat,
                 title: "set as autoplay seed",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    let queues = await import("$lib/local/queue.ts");
-                    let q = get(stores.queue);
-                    if (q instanceof queues.AutoplayQueueManager) {
+                    let q = get(imports.stores.queue);
+                    if (q instanceof imports.local.queue.AutoplayQueueManager) {
                         await q.init_with_seed(this);
-                        stores.queue.update(t => t);
+                        imports.stores.queue.update(t => t);
                         toast(`'${this.title()}' set as autoplay seed`);
                     } else {
                         toast("autoplay is disabled", "error");
@@ -103,8 +100,7 @@ export abstract class ListItem implements Keyed {
                 icon: icons.remove,
                 title: "remove item",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.remove_item(this);
+                    await imports.stores.queue_ops.remove_item(this);
                 },
             },
             // queue_remove: {
@@ -119,43 +115,38 @@ export abstract class ListItem implements Keyed {
                 icon: icons.play,
                 title: "play",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.detour(this);
+                    await imports.stores.queue_ops.detour(this);
                 },
             },
             queue_add: {
                 icon: icons.add,
                 title: "add to queue",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.add_item(this);
+                    await imports.stores.queue_ops.add_item(this);
                 },
             },
             open_details: {
                 icon: icons.open_new_tab,
                 title: "details",
                 onclick: async () => {
-                    let stores = await stores_ts;
                     let title = `${this.title()} details`
-                    stores.new_detail_tab(this, title);
+                    imports.stores.new_detail_tab(this, title);
                 },
             },
             refresh_details: {
                 icon: icons.repeat,
                 title: "refresh details",
                 onclick: async () => {
-                    let stores = await stores_ts;
                     let title = `${this.title()} details`
-                    stores.pop_tab();
-                    stores.new_detail_tab(this, title);
+                    imports.stores.pop_tab();
+                    imports.stores.new_detail_tab(this, title);
                 },
             },
             blacklist_artist: {
                 icon: icons.remove,
                 title: "blacklist artist(s)",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.blacklist_artists(this);
+                    await imports.stores.queue_ops.blacklist_artists(this);
                     toast("artist(s) added to blacklist");
                 },
             },
@@ -163,8 +154,7 @@ export abstract class ListItem implements Keyed {
                 icon: icons.remove,
                 title: "unblacklist artist(s)",
                 onclick: async () => {
-                    let stores = await stores_ts;
-                    await stores.queue_ops.unblacklist_artists(this);
+                    await imports.stores.queue_ops.unblacklist_artists(this);
                     toast("artist(s) removed from blacklist");
                 },
             },
@@ -176,13 +166,11 @@ export abstract class ListItem implements Keyed {
                     icon: icons.open_new_tab,
                     title: "open album",
                     onclick: async () => {
-                        let st = await import("$lib/searcher/song_tube.ts");
-                        let stores = await stores_ts;
-                        let s = st.SongTube.new({
+                        let s = imports.searcher.song_tube.SongTube.new({
                             type: "Album",
                             content: a.id,
                         });
-                        stores.new_tab(s, "Album " + a.name, this.thumbnail());
+                        imports.stores.new_tab(s, "Album " + a.name, this.thumbnail());
                     },
                 };
                 return [op];
@@ -191,13 +179,10 @@ export abstract class ListItem implements Keyed {
                 icon: icons.remove,
                 title: "remove item",
                 onclick: async () => {
-                    let db = await import("$lib/searcher/db.ts");
-                    let stores = await stores_ts;
-
                     if (item.searcher != null) {
                         let res = await item.searcher.remove(item);
                         if (res != null) {
-                            stores.update_current_tab();
+                            imports.stores.update_current_tab();
                             toast(`item removed`);
                             return;
                         }
@@ -281,8 +266,8 @@ export abstract class ListItem implements Keyed {
     abstract autoplay_query(typ: AutoplayTyp): Promise<AutoplayQueryInfo | null>;
 
     // dbitem methods
-    abstract like(): Promise<boolean>; 
-    abstract dislike(): Promise<boolean>; 
+    abstract like(): Promise<boolean>;
+    abstract dislike(): Promise<boolean>;
     // for actions on the searcher
     searcher: Searcher | null = null;
 

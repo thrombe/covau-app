@@ -3,6 +3,7 @@ import type { ListItem, Option } from "./item.ts";
 import type { Searcher } from "./searcher.ts";
 import * as stores from "$lib/stores.ts";
 import { Mutex } from 'async-mutex';
+import { imports } from "$lib/cyclic.ts";
 
 export type Constructor<T> = new (...args: any[]) => T;
 
@@ -226,8 +227,7 @@ export function DropWrapper<S extends Constructor<{
                 this.move_item(item, target);
             }
 
-            let stores = await import("$lib/stores.ts");
-            stores.update_current_tab();
+            imports.stores.update_current_tab();
 
             return true;
         }

@@ -7,12 +7,15 @@
     import * as types from "$types/types.ts";
     import { onDestroy } from 'svelte';
     import * as wasm from "$wasm/covau_app_wasm";
+    import * as cyclic from "$lib/cyclic.ts";
 
     let promise = (async () => {
         let itube = await new_innertube_instance();
         stores.tube.set(itube);
 
         let _info = await wasm.default();
+
+        await cyclic.init();
 
         await server.serve();
         await stores.syncops.load();

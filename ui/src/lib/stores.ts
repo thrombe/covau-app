@@ -15,6 +15,7 @@ import { tick } from "svelte";
 import * as utils from "$lib/utils.ts";
 import { prompter } from "./prompt/prompt.ts";
 import * as rc from "$lib/rc.ts";
+import { imports } from "$lib/cyclic.ts";
 
 export type DetailTab = {
     type: "detail",
@@ -330,8 +331,7 @@ export let set_player_type = async (t: PlayerType) => {
             player.set(dummy_player);
             player_type.set("MusiPlayer");
 
-            let musiplayer = await import("$lib/local/player.ts");
-            let p = await musiplayer.Musiplayer.new();
+            let p = await imports.local.player.Musiplayer.new();
 
             await tick();
             await set_player(p, progress, is_playing);
@@ -341,12 +341,11 @@ export let set_player_type = async (t: PlayerType) => {
             player.set(dummy_player);
             player_type.set("YtPlayer");
 
-            let yt = await import("$lib/player/yt.ts");
-            let _stat = await yt.init_api();
+            let _stat = await imports.player.yt.init_api();
 
             await tick();
             // NOTE: assuming that a div with 'video' id exsits
-            let p = await yt.YtPlayer.new("video");
+            let p = await imports.player.yt.YtPlayer.new("video");
             await set_player(p, progress, is_playing);
         } break;
         case "YtVideoPlayer": {
@@ -354,12 +353,11 @@ export let set_player_type = async (t: PlayerType) => {
             player.set(dummy_player);
             player_type.set("YtVideoPlayer");
 
-            let yt = await import("$lib/player/yt.ts");
-            let _stat = await yt.init_api();
+            let _stat = await imports.player.yt.init_api();
 
             await tick();
             // NOTE: assuming that a div with 'video' id exsits
-            let p = await yt.YtPlayer.new("video");
+            let p = await imports.player.yt.YtPlayer.new("video");
             await set_player(p, progress, is_playing);
         } break;
         case "AudioPlayer": {
@@ -367,11 +365,9 @@ export let set_player_type = async (t: PlayerType) => {
             player.set(dummy_player);
             player_type.set("AudioPlayer");
 
-            let audio = await import("$lib/player/audio.ts");
-
             await tick();
             // NOTE: assuming that a div with 'audio' id exsits
-            let p = await audio.Audioplayer.new("audio");
+            let p = await imports.player.audio.Audioplayer.new("audio");
             await set_player(p, progress, is_playing);
         } break;
         case "None": {
@@ -396,11 +392,9 @@ export let syncer: Writable<Syncer> = writable();
 export const syncops = {
     // load everything from db into _
     async load() {
-        let server = await import("$lib/server.ts");
-        let queue_ts = await import("$lib/local/queue.ts");
-        let q = new queue_ts.LocalSyncQueue();
+        let q = new imports.local.queue.LocalSyncQueue();
 
-        let state = await server.db.get_by_id("LocalState", 1);
+        let state = await imports.server.db.get_by_id("LocalState", 1);
         if (state == null) {
             throw new Error("Database does not have state object");
         }
@@ -414,9 +408,9 @@ export const syncops = {
         };
 
         if (sync.state.t.t.queue != null) {
-            let dbq = (await server.db.get_by_id("Queue", sync.state.t.t.queue))!;
+            let dbq = (await imports.server.db.get_by_id("Queue", sync.state.t.t.queue))!;
             sync.queue = rc.rc.store.rc(dbq);
-            let items = await server.db.get_many_by_id("Song", dbq.t.queue.queue.songs);
+            let items = await imports.server.db.get_many_by_id("Song", dbq.t.queue.queue.songs);
             q.items = db.db.wrapped_items(items);
             q.playing_index = dbq.t.queue.current_index;
             if (q.playing_index != null) {
@@ -425,19 +419,19 @@ export const syncops = {
             }
 
             if (sync.queue.t.t.blacklist != null) {
-                let bl = (await server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
+                let bl = (await imports.server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
                 sync.blacklist = rc.rc.store.rc(bl);
                 q.blacklist_artist_ids = [...bl.t.artists];
                 q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
             }
             if (sync.queue.t.t.seen != null) {
-                let bl = (await server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
+                let bl = (await imports.server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
                 sync.seen = rc.rc.store.rc(bl);
                 q.blacklist_ids = [...bl.t.songs];
                 q.bl_ids = new Set(bl.t.songs.map(id => id.content));
             }
             if (sync.queue.t.t.seed != null) {
-                let s = (await server.db.get_by_id("Song", sync.queue.t.t.seed))!;
+                let s = (await imports.server.db.get_by_id("Song", sync.queue.t.t.seed))!;
                 let w = db.db.wrapped(s);
                 sync.seed = rc.rc.store.rc(s);
                 q.set_seed(w);
@@ -464,12 +458,11 @@ export const syncops = {
         },
         reset: {
             async queue() {
-                let server = await import("$lib/server.ts");
                 let sync = get(syncer);
                 let q = get(queue);
 
                 syncops.listeners.disable.queue();
-                syncops.listeners.disable.queue = server.db.set_update_listener<types.covau.Queue>(
+                syncops.listeners.disable.queue = imports.server.db.set_update_listener<types.covau.Queue>(
                     sync.queue.id,
                     async (item) => {
                         if (sync.queue.t.metadata.update_counter >= item.metadata.update_counter) {
@@ -477,7 +470,7 @@ export const syncops = {
                         }
 
                         // sync.queue = rc.rc.store.rc(item);
-                        let items = await server.db.get_many_by_id("Song", item.t.queue.queue.songs);
+                        let items = await imports.server.db.get_many_by_id("Song", item.t.queue.queue.songs);
                         q.items = db.db.wrapped_items(items);
                         q.playing_index = item.t.queue.current_index;
                         if (q.playing_index != null) {
@@ -489,7 +482,6 @@ export const syncops = {
                 );
             },
             async blacklist() {
-                let server = await import("$lib/server.ts");
                 let sync = get(syncer);
                 let q = get(queue);
 
@@ -498,7 +490,7 @@ export const syncops = {
                     syncops.listeners.disable.blacklist = () => { };
                     return;
                 }
-                syncops.listeners.disable.blacklist = server.db.set_update_listener<types.covau.ArtistBlacklist>(
+                syncops.listeners.disable.blacklist = imports.server.db.set_update_listener<types.covau.ArtistBlacklist>(
                     sync.blacklist.id,
                     async (bl) => {
                         if ((sync.blacklist?.t.metadata?.update_counter ?? 0) >= bl.metadata.update_counter) {
@@ -513,7 +505,6 @@ export const syncops = {
                 );
             },
             async seen() {
-                let server = await import("$lib/server.ts");
                 let sync = get(syncer);
                 let q = get(queue);
 
@@ -522,7 +513,7 @@ export const syncops = {
                     syncops.listeners.disable.seen = () => { };
                     return;
                 }
-                syncops.listeners.disable.seen = server.db.set_update_listener<types.covau.SongBlacklist>(
+                syncops.listeners.disable.seen = imports.server.db.set_update_listener<types.covau.SongBlacklist>(
                     sync.seen.id,
                     async (bl) => {
                         if ((sync.seen?.t.metadata?.update_counter ?? 0) >= bl.metadata.update_counter) {
@@ -608,9 +599,7 @@ export const syncops = {
     // },
     set: {
         async queue(q_: rc.DbRc<types.covau.Queue>) {
-            let server = await import("$lib/server.ts");
             let sync = get(syncer);
-            let p = get(player);
             let q = get(queue);
             q.reset();
 
@@ -626,7 +615,7 @@ export const syncops = {
             await syncops.listeners.reset.queue();
 
             if (sync.state.t.t.queue != null) {
-                let items = await server.db.get_many_by_id("Song", utils.clone(sync.queue.t.t.queue.queue.songs));
+                let items = await imports.server.db.get_many_by_id("Song", utils.clone(sync.queue.t.t.queue.queue.songs));
                 q.items = db.db.wrapped_items(items);
                 q.playing_index = sync.queue.t.t.queue.current_index;
                 if (q.playing_index != null) {
@@ -637,21 +626,21 @@ export const syncops = {
                 }
 
                 if (sync.queue.t.t.blacklist != null) {
-                    let bl = (await server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
+                    let bl = (await imports.server.db.get_by_id("ArtistBlacklist", sync.queue.t.t.blacklist))!;
                     sync.blacklist = rc.rc.store.rc(bl);
                     await syncops.listeners.reset.blacklist();
                     q.blacklist_artist_ids = [...bl.t.artists];
                     q.bl_artist_ids = new Set(bl.t.artists.map(id => id.content));
                 }
                 if (sync.queue.t.t.seen != null) {
-                    let bl = (await server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
+                    let bl = (await imports.server.db.get_by_id("SongBlacklist", sync.queue.t.t.seen))!;
                     sync.seen = rc.rc.store.rc(bl);
                     await syncops.listeners.reset.seen();
                     q.blacklist_ids = [...bl.t.songs];
                     q.bl_ids = new Set(bl.t.songs.map(id => id.content));
                 }
                 if (sync.queue.t.t.seed != null) {
-                    let s = (await server.db.get_by_id("Song", sync.queue.t.t.seed))!;
+                    let s = (await imports.server.db.get_by_id("Song", sync.queue.t.t.seed))!;
                     let w = db.db.wrapped(s);
                     sync.seed = rc.rc.store.rc(s);
                     q.set_seed(w);
@@ -705,11 +694,10 @@ export const syncops = {
                 name = title;
             }
 
-            let server = await import("$lib/server.ts");
             let q = get(queue);
             let sync = get(syncer);
 
-            await server.db.txn(async db => {
+            await imports.server.db.txn(async db => {
                 let dbq = await db.insert<types.covau.Queue>({
                     typ: "Queue",
                     t: {
@@ -741,11 +729,10 @@ export const syncops = {
             queue.update(t => t);
         },
         async blacklist() {
-            let server = await import("$lib/server.ts");
             let q = get(queue);
             let sync = get(syncer);
 
-            let bl = await server.db.txn(async db => {
+            let bl = await imports.server.db.txn(async db => {
                 let bl = await db.insert<types.covau.ArtistBlacklist>({
                     typ: "ArtistBlacklist",
                     t: {
@@ -768,11 +755,10 @@ export const syncops = {
             queue.update(t => t);
         },
         async seen() {
-            let server = await import("$lib/server.ts");
             let q = get(queue);
             let sync = get(syncer);
 
-            let bl = await server.db.txn(async db => {
+            let bl = await imports.server.db.txn(async db => {
                 let bl = await db.insert<types.covau.SongBlacklist>({
                     typ: "SongBlacklist",
                     t: {
@@ -1021,7 +1007,6 @@ selected_menubar_option.subscribe(async (option) => {
         case "related-music": {
             let item = get(playing_item);
             let query: AutoplayQueryInfo | null = null;
-            let queue_ts = await import("$lib/local/queue.ts");
 
             switch (option.source) {
                 case "Yt": {
@@ -1038,7 +1023,7 @@ selected_menubar_option.subscribe(async (option) => {
             }
 
             if (query) {
-                s = await queue_ts.autoplay_searcher(query);
+                s = await imports.local.queue.autoplay_searcher(query);
             } else {
                 toast("could not find related for " + item.title(), "error");
             }
@@ -1052,7 +1037,6 @@ selected_menubar_option.subscribe(async (option) => {
             );
         } break;
         case "home-feed": {
-            let st = await import("$lib/searcher/song_tube.ts");
             let s = st.SongTube.new({
                 type: "HomeFeed",
             });
