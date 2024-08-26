@@ -2440,8 +2440,8 @@ export class DbListItem extends ListItem {
                                     }
                                 }));
                                 return artists;
-                            stores.new_tab(s, bl.t.t.title ?? "song blacklist");
                             }, this);
+                            stores.new_tab(s, bl.t.t.title ?? "artist blacklist");
                         },
                     },
                     load: {
@@ -2453,7 +2453,7 @@ export class DbListItem extends ListItem {
                                 toast("blacklist already loaded");
                             } else {
                                 stores.syncops.set.blacklist(utils.clone(bl.t));
-                                toast("song blacklist set");
+                                toast("artist blacklist set");
                             }
                         },
                     },
@@ -2957,13 +2957,13 @@ export class DbListItem extends ListItem {
                     })),
                     ...maybe(queue.t.t.blacklist, blacklist => ({
                         type: "Searcher",
-                        title: "Blacklist",
+                        title: "Artist Blacklist",
                         options: [],
                         height: 1,
                         searcher: writable(AsyncStaticSearcher(async () => {
                             let bl = await server.db.get_by_id("ArtistBlacklist", blacklist);
                             if (bl == null) {
-                                throw new Error("blacklist does not exist");
+                                throw new Error("artist blacklist does not exist");
                             }
                             let item = db.wrapped(bl);
                             return [item];

@@ -324,11 +324,11 @@ export class QueueManager implements Searcher {
                 },
             },
             {
-                title: "new blacklist",
+                title: "new artist blacklist",
                 icon: icons.repeat,
                 onclick: async () => {
                     await stores.syncops.new.blacklist();
-                    toast("new blacklist set");
+                    toast("new artist blacklist set");
                 },
             },
             {
