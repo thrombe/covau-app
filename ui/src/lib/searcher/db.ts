@@ -56,7 +56,7 @@ export type BrowseQuery =
 
 export type ValType<T extends Typ> =
     MusicListItem extends infer P ?
-        P extends { typ: T, t: infer E } ? E : never
+    P extends { typ: T, t: infer E } ? E : never
     : never;
 
 export class DbListItem extends ListItem {
@@ -2725,12 +2725,12 @@ export class DbListItem extends ListItem {
                         height: Math.min(3, playsource.items.length),
                         searcher: writable(playsource),
                     },
-                    {
+                    ...utils.maybe(song.t.t.artists.length > 0 ? song.t.t.artists : null, artists => ({
                         type: "Searcher",
                         title: "Artists",
-                        height: Math.min(5, song.t.t.artists.length),
+                        height: Math.min(5, artists.length),
                         searcher: writable(AsyncStaticSearcher(async () => {
-                            let artists = await Promise.all(song.t.t.artists.map(async (t, i) => {
+                            let info = await Promise.all(artists.map(async (t, i) => {
                                 if (t.source?.type == "YtId") {
                                     let a = await st.cached.artist(t.source.content);
                                     return db.wrapped(a);
@@ -2741,10 +2741,9 @@ export class DbListItem extends ListItem {
                                     return new CustomListItem(t.name + i.toString(), t.name, "Custom");
                                 }
                             }));
-                            return artists;
-                        })
-                        ),
-                    },
+                            return info;
+                        })),
+                    })),
                     {
                         type: "Rearrange",
                         title: "Thumbnails",

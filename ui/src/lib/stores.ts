@@ -923,7 +923,7 @@ selected_menubar_option.subscribe(async (option) => {
                         type: "Search",
                         content: {
                             query: q,
-                            search: type, // trick it
+                            search: type,
                         },
                     });
                     s = new_searcher(get(query_input));
