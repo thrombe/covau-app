@@ -31,7 +31,6 @@ export type BrowseTab = {
     searcher: Writable<Searcher>;
     updater: Writable<number>,
     new_searcher: NewSearcher | null;
-    thumbnail: string | null; // TODO: don't need this to override thumbnail. do that using some kinda mixin
     query: Writable<string>;
     options: Readable<Option[]>;
 };
@@ -197,7 +196,6 @@ export const new_detail_tab = (
 export const new_tab = (
     s: Searcher,
     title: string,
-    thumb: string | null = null,
     query: string | null = null,
     new_searcher: NewSearcher | null = null,
     append: boolean = true,
@@ -220,7 +218,6 @@ export const new_tab = (
             searcher: searcher,
             updater: writable(1),
             new_searcher: new_searcher,
-            thumbnail: thumb,
             query: q,
             key: new_key(),
             options: ops,
@@ -892,7 +889,6 @@ selected_menubar_option.subscribe(async (option) => {
             new_tab(
                 s,
                 "Results",
-                null,
                 get(query_input),
                 new_searcher,
                 false,
@@ -994,7 +990,6 @@ selected_menubar_option.subscribe(async (option) => {
             new_tab(
                 s,
                 "Results",
-                null,
                 get(query_input),
                 new_searcher,
                 false,
@@ -1032,7 +1027,6 @@ selected_menubar_option.subscribe(async (option) => {
                 "Related",
                 null,
                 null,
-                null,
                 false,
             );
         } break;
@@ -1043,7 +1037,6 @@ selected_menubar_option.subscribe(async (option) => {
             new_tab(
                 s,
                 "Home",
-                null,
                 null,
                 null,
                 false,

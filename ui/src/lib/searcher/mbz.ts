@@ -1542,7 +1542,7 @@ export const mbz = {
                 }
 
                 let searcher = new_searcher(query);
-                stores.new_tab(searcher, query, null, query, new_searcher);
+                stores.new_tab(searcher, query, query, new_searcher);
                 stores.query_input.set(query);
                 if (switch_tab) {
                     stores.curr_tab_index.set(get(stores.tabs).length - 1);

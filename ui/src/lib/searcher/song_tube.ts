@@ -940,7 +940,8 @@ export const st = {
                         type: "Album",
                         content: a.id,
                     });
-                    stores.new_tab(s, "Album " + a.title, a.thumbnails.at(0)?.url ?? null);
+                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items form st don't return thumbnail detail)
+                    stores.new_tab(s, "Album " + a.title);
                 },
             },
             add_all_to_queue: {
@@ -965,7 +966,8 @@ export const st = {
                         type: "Playlist",
                         content: p.id,
                     });
-                    stores.new_tab(s, "Playlist " + p.title, p.thumbnails.at(0)?.url ?? null);
+                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items form st don't return thumbnail detail)
+                    stores.new_tab(s, "Playlist " + p.title);
                 },
             },
         }),
@@ -998,7 +1000,7 @@ export const st = {
                                 type: "ArtistSongs",
                                 content: a.id,
                             });
-                            stores.new_tab(s, "Artist " + a.name + " songs", a.thumbnails.at(0)?.url ?? null);
+                            stores.new_tab(s, "Artist " + a.name + " songs");
                         },
                     }];
                 } else {
@@ -1015,7 +1017,7 @@ export const st = {
                                 type: "ArtistReleases",
                                 content: a.id,
                             });
-                            stores.new_tab(s, "Artist " + a.name + " releases", a.thumbnails.at(0)?.url ?? null);
+                            stores.new_tab(s, "Artist " + a.name + " releases");
                         },
                     }];
                 } else {
