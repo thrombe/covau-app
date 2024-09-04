@@ -4,8 +4,8 @@ use base64::Engine;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
-use crate::server::routes::FrontendClient;
 use crate::covau_types::Thumbnail;
+use crate::server::routes::FrontendClient;
 
 #[derive(Serialize, Deserialize, Clone, Debug, specta::Type)]
 pub struct VideoId(pub String);
@@ -402,7 +402,12 @@ impl SongTubeFac {
     ) -> anyhow::Result<impl futures::Stream<Item = anyhow::Result<Vec<u8>>>> {
         let bytes_stream = self
             .fe
-            .get_many::<String>(YtiRequest::GetSongBytesChunked { id: id.clone(), start, end, chunk_size })
+            .get_many::<String>(YtiRequest::GetSongBytesChunked {
+                id: id.clone(),
+                start,
+                end,
+                chunk_size,
+            })
             .await?;
 
         let stream = bytes_stream.map(|bytes| {

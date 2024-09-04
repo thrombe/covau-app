@@ -238,7 +238,9 @@ fn webview_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 fn webview_test() {
     web_view::builder()
         // .title("Minimal webview example")
-        .content(web_view::Content::Html("https://en.m.wikipedia.org/wiki/Main_Page"))
+        .content(web_view::Content::Html(
+            "https://en.m.wikipedia.org/wiki/Main_Page",
+        ))
         // .size(800, 600)
         // .resizable(true)
         // .debug(true)
@@ -250,20 +252,20 @@ fn webview_test() {
 
 #[cfg(feature = "web-wry")]
 fn wry_test() -> wry::Result<()> {
-  use tao::{
-    event::{Event, StartCause, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-    platform::unix::WindowExtUnix,
-  };
-  use wry::WebViewBuilder;
-  use wry::WebViewBuilderExtUnix;
+    use tao::{
+        event::{Event, StartCause, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
+        platform::unix::WindowExtUnix,
+        window::WindowBuilder,
+    };
+    use wry::WebViewBuilder;
+    use wry::WebViewBuilderExtUnix;
 
-  let event_loop = EventLoop::new();
-  let window = WindowBuilder::new()
-    .with_title("Hello World")
-    .build(&event_loop)
-    .unwrap();
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new()
+        .with_title("Hello World")
+        .build(&event_loop)
+        .unwrap();
 
     #[cfg(not(target_os = "linux"))]
     let builder = WebViewBuilder::new(&window);
@@ -275,24 +277,24 @@ fn wry_test() -> wry::Result<()> {
         WebViewBuilder::new_gtk(vbox)
     };
 
-  let _webview = builder
-      // .with_html("hello")
-    // .with_url("https://tauri.app")
-    .with_url("http://localhost:6175/#/local")
-    .build()?;
+    let _webview = builder
+        // .with_html("hello")
+        // .with_url("https://tauri.app")
+        .with_url("http://localhost:6175/#/local")
+        .build()?;
 
-  event_loop.run(move |event, _, control_flow| {
-    *control_flow = ControlFlow::Wait;
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
 
-    match event {
-      Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
-      Event::WindowEvent {
-        event: WindowEvent::CloseRequested,
-        ..
-      } => *control_flow = ControlFlow::Exit,
-      _ => (),
-    }
-  });
+        match event {
+            Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            _ => (),
+        }
+    });
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
