@@ -286,6 +286,9 @@
         nativeBuildInputs = with pkgs; [
           unstable.bun
 
+          # - [`bun run script.js` fails when script has node shebang](https://github.com/oven-sh/bun/issues/4850)
+          nodejs
+
           pkg-config
 
           sqlite
