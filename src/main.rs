@@ -311,7 +311,7 @@ async fn main() -> Result<()> {
     // init_logger(&config.log_path)?;
 
     match cli.command.clone().unwrap_or(cli::Command::Default {
-        #[cfg(ui_backend = "WEBUI")]
+        #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
         run_in_background: config.run_in_background,
     }) {
         cli::Command::Server => {
