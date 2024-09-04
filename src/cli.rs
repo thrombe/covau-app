@@ -289,7 +289,8 @@ pub enum Command {
     Default {
         #[cfg(any(
             all(ui_backend = "WEBUI", feature = "webui"),
-            all(ui_backend = "QWEB", feature = "qweb")
+            all(ui_backend = "QWEB", feature = "qweb-bin"),
+            all(ui_backend = "QWEB", feature = "qweb-dylib"),
         ))]
         #[arg(long, short, default_value_t = false)]
         run_in_background: bool,
@@ -347,7 +348,8 @@ impl Cli {
             }
             #[cfg(any(
                 all(ui_backend = "WEBUI", feature = "webui"),
-                all(ui_backend = "QWEB", feature = "qweb")
+                all(ui_backend = "QWEB", feature = "qweb-bin"),
+                all(ui_backend = "QWEB", feature = "qweb-dylib"),
             ))]
             Command::Default { run_in_background } => {
                 config.run_in_background = *run_in_background;
