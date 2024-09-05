@@ -515,7 +515,7 @@
 
             zig
             zls
-          ]
+          ])
           ++ (custom-commands pkgs);
 
       # stdenv = pkgs.clangStdenv;
