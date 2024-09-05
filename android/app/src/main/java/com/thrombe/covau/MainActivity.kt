@@ -16,7 +16,13 @@ import com.thrombe.covau.ui.theme.CovauTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Covau.start()
+
+        val thread = Thread {
+            println("${Thread.currentThread().name} has run.")
+            Covau.start()
+        }
+        thread.start()
+
         enableEdgeToEdge()
         setContent {
             CovauTheme {
