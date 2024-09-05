@@ -44,7 +44,7 @@ pub fn serve() {
 pub fn dump_types() -> Result<()> {
     let tsconfig =
         specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);
-    let types_dir = PathBuf::from("./ui/src/types");
+    let types_dir = PathBuf::from(format!("{}/ui/src/types", core::env!("PROJECT_ROOT")));
     let _ = std::fs::create_dir(&types_dir);
     std::fs::write(
         types_dir.join("musimanager.ts"),
