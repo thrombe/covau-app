@@ -11,8 +11,8 @@ use crate::{
         db::DbRequest,
         mbz::mbz_routes,
         routes::{
-            image_route, save_song_route, source_path_route, stream_file, stream_yt,
-            webui_js_route, AppState, Asset, FeRequest, FrontendClient, ProxyRequest,
+            image_route, save_song_route, source_path_route, stream_file, stream_yt, AppState,
+            Asset, FeRequest, FrontendClient, ProxyRequest,
         },
     },
     yt::YtiRequest,
@@ -132,7 +132,6 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> 
         .or(DbRequest::routes(db.clone(), "db"))
         .or(ProxyRequest::cors_proxy_route(client.clone()))
         .or(mbz_routes(client.clone()))
-        .or(webui_js_route(client.clone(), config.clone()))
         .or(source_path_route("to_path", config.clone()))
         .or(save_song_route("save_song", ytf.clone()))
         .or(image_route("image", client.clone(), config.clone()))
@@ -143,9 +142,8 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> 
     // #[cfg(build_mode = "DEV")]
     // let all = all.or(routes::redirect_route(client.clone(), config.clone()));
 
-    #[cfg(feature="native-player")]
-    let all = all
-        .or(server::player::player_route());
+    #[cfg(feature = "native-player")]
+    let all = all.or(server::player::player_route());
 
     let all = all.or(Asset::embedded_asset_route(config.clone()));
     let all = all.recover(|rej: warp::reject::Rejection| async move {

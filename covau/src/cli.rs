@@ -33,9 +33,6 @@ pub struct Config {
 
     pub run_in_background: bool,
     pub server_port: Option<u16>,
-
-    #[cfg(feature = "webui")]
-    pub webui_port: Option<u16>,
 }
 impl Config {
     pub fn derived(self) -> anyhow::Result<DerivedConfig> {
@@ -144,10 +141,6 @@ impl Config {
             server_port: self
                 .server_port
                 .unwrap_or(core::env!("SERVER_PORT").parse().unwrap()),
-            #[cfg(feature = "webui")]
-            webui_port: self
-                .webui_port
-                .unwrap_or(core::env!("WEBUI_PORT").parse().unwrap()),
             #[cfg(build_mode = "DEV")]
             dev_vite_port: std::env::var("DEV_VITE_PORT")?
                 .parse()
@@ -172,8 +165,6 @@ pub struct DerivedConfig {
     pub run_in_background: bool,
     pub server_port: u16,
 
-    #[cfg(feature = "webui")]
-    pub webui_port: u16,
     #[cfg(build_mode = "DEV")]
     pub dev_vite_port: u16,
 }
@@ -276,11 +267,6 @@ pub enum Command {
         command: FeCommand,
     },
     Server,
-    #[cfg(feature = "webui")]
-    Webui {
-        #[arg(long, short, default_value_t = false)]
-        run_in_background: bool,
-    },
     #[cfg(feature = "tao-wry")]
     TaoWry {
         #[arg(long, short, default_value_t = false)]
@@ -293,7 +279,6 @@ pub enum Command {
     },
     Default {
         #[cfg(any(
-            all(ui_backend = "WEBUI", feature = "webui"),
             all(ui_backend = "TAO-WRY", feature = "tao-wry"),
             all(ui_backend = "QWEB", feature = "qweb-bin"),
             all(ui_backend = "QWEB", feature = "qweb-dylib"),
@@ -341,10 +326,6 @@ impl Cli {
             .unwrap_or(Config::default());
 
         let _ = self.command.as_ref().map(|c| match c {
-            #[cfg(feature = "webui")]
-            Command::Webui { run_in_background } => {
-                config.run_in_background = *run_in_background;
-            }
             #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
             Command::Qweb { run_in_background } => {
                 config.run_in_background = *run_in_background;
@@ -353,7 +334,6 @@ impl Cli {
                 config.run_in_background = true;
             }
             #[cfg(any(
-                all(ui_backend = "WEBUI", feature = "webui"),
                 all(ui_backend = "TAO-WRY", feature = "tao-wry"),
                 all(ui_backend = "QWEB", feature = "qweb-bin"),
                 all(ui_backend = "QWEB", feature = "qweb-dylib"),

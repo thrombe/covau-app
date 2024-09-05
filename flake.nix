@@ -11,11 +11,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    webui-git = {
-      url = "github:webui-dev/webui/2.5.0-beta.1";
-      flake = false;
-    };
-
     libmpv-windows = {
       url = "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-20211128-git-f08db00.7z/download";
       flake = false;
@@ -134,25 +129,6 @@
         '';
       };
       rust-bin = inputs.rust-overlay.lib.mkRustBin {} windows-pkgs.buildPackages;
-      windows-webui = windows-pkgs.stdenv.mkDerivation {
-        name = "webui";
-        src = windows-pkgs.fetchzip {
-          url = "https://github.com/webui-dev/webui/releases/download/2.4.2/webui-windows-gcc-x64.zip";
-          sha256 = "sha256-8QmPas4q0Yce78Srx837bjUYo+DQ6ZAsiy4jL0G5Ldk=";
-        };
-
-        phases = ["installPhase"];
-        installPhase = ''
-          mkdir -p $out/lib
-          mkdir -p $out/include
-          # cp $src/debug/libwebui-2-static.a
-          # cp $src/debug/webui-2.dll
-          cp $src/include/webui.h $out/include/.
-          cp $src/include/webui.hpp $out/include/.
-          cp $src/libwebui-2-static.a $out/lib/.
-          cp $src/webui-2.dll $out/lib/.
-        '';
-      };
       windows-mpv = windows-pkgs.stdenv.mkDerivation {
         name = "libmpv";
         src = inputs.libmpv-windows;
@@ -188,7 +164,6 @@
           windows-pkgs.openssl
           # windows-pkgs.windows.mingw_w64_pthreads
           windows-pkgs.windows.pthreads
-          # windows-webui
           windows-mpv
           # winlibs
           # mcfgthread
@@ -246,14 +221,12 @@
 
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
-          # export UI_BACKEND="WEBUI"
           # export UI_BACKEND="TAO-WRY"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PROD"
 
           export SERVER_PORT=6173
-          export WEBUI_PORT=6174
           export DEV_VITE_PORT=6175
 
           cd ui
@@ -275,22 +248,17 @@
         version = manifest.version;
         cargoLock = {
           lockFile = ./Cargo.lock;
-          outputHashes = {
-            "webui-rs-0.1.0" = "sha256-iyrS3cRFgawMN9JYVkaOn/FBXHLAUphq7XrEnLZFPjQ=";
-          };
         };
         src = pkgs.lib.cleanSource ./.;
 
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
-          # export UI_BACKEND="WEBUI"
           # export UI_BACKEND="TAO-WRY"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PROD"
 
           export SERVER_PORT=6173
-          export WEBUI_PORT=6174
           export DEV_VITE_PORT=6175
 
           cd ui
@@ -309,7 +277,7 @@
         buildInputs = (with pkgs; [
           openssl
 
-          # webui webview
+          # zweb
           webkitgtk
 
           # wry
@@ -328,7 +296,6 @@
 
           mpv
         ]) ++ [
-          webui
           qweb
         ];
 
@@ -341,26 +308,6 @@
         ];
 
         inherit meta;
-      };
-      webui = pkgs.gccStdenv.mkDerivation {
-        name = "webui";
-        src = inputs.webui-git;
-
-        buildPhase = ''
-          make release
-        '';
-        installPhase = ''
-          mkdir -p $out/lib
-          mv ./dist/* $out/lib/.
-        '';
-
-        buildInputs = with pkgs; [
-          openssl
-        ];
-
-        nativeBuildInputs = with pkgs; [
-          pkg-config
-        ];
       };
       qweb = pkgs.clangStdenv.mkDerivation {
         name = "covau-qweb";
@@ -602,7 +549,6 @@
               export CLANGD_FLAGS="--compile-commands-dir=$(pwd)/plugin --query-driver=$(which $CXX)"
 
               # export UI_BACKEND="ELECTRON"
-              # export UI_BACKEND="WEBUI"
               # export UI_BACKEND="TAO-WRY"
               # export UI_BACKEND="QWEB"
               export UI_BACKEND="NONE"
@@ -610,7 +556,6 @@
               # export BUILD_MODE="PROD"
 
               export SERVER_PORT=6173
-              export WEBUI_PORT=6174
               export DEV_VITE_PORT=6175
 
               export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER="lld"

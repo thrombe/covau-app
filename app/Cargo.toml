@@ -16,8 +16,6 @@ qweb-dylib = [ "libcovau/qweb-dylib" ]
 qweb-bin = [ "libcovau/qweb-bin" ]
 
 # webkit chokes when wasm is imported
-webui = [ "libcovau/webui" ]
-webview = [ "libcovau/webview" ]
 tao-wry = [ "libcovau/tao-wry" ]
 
 default = [ "qweb-bin" ]

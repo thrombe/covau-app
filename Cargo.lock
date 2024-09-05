@@ -2102,7 +2102,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webui-rs",
  "wry",
 ]
 
@@ -5028,14 +5027,6 @@ dependencies = [
  "pkg-config",
  "soup3-sys",
  "system-deps 6.2.2",
-]
-
-[[package]]
-name = "webui-rs"
-version = "0.1.0"
-source = "git+https://github.com/webui-dev/rust-webui/?branch=main#fbc4aa917658dac3abd2b60ab0887f9264b733c4"
-dependencies = [
- "lazy_static",
 ]
 
 [[package]]

@@ -8,7 +8,9 @@ pub use anyhow;
 pub use serde;
 pub use serde_json;
 pub use reqwest;
+#[cfg(feature = "tao-wry")]
 pub use tao;
+#[cfg(feature = "tao-wry")]
 pub use wry;
 
 use crate::{cli, covau_types, db, mbz, musimanager, server, yt};

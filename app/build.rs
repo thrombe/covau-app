@@ -1,5 +1,5 @@
 fn main() {
-    println!("cargo::rustc-check-cfg=cfg(ui_backend, values(\"NONE\", \"ELECTRON\", \"WEBUI\", \"QWEB\", \"TAO-WRY\"))");
+    println!("cargo::rustc-check-cfg=cfg(ui_backend, values(\"NONE\", \"ELECTRON\", \"QWEB\", \"TAO-WRY\"))");
     println!("cargo::rustc-check-cfg=cfg(build_mode, values(\"DEV\", \"PROD\"))");
 
     println!("cargo:rerun-if-env-changed=UI_BACKEND");
