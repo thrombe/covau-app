@@ -1,5 +1,5 @@
 import { toast } from "./toast/toast.ts";
-import * as wasm from "$wasm/covau_app_wasm";
+import * as wasm from "$wasm/covau_wasm";
 
 export type Keyed = { get_key(): unknown };
 

@@ -665,6 +665,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "covau_wasm"
+version = "0.1.0"
+dependencies = [
+ "covau",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"

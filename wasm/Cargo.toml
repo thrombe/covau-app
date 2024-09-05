@@ -1,0 +1,11 @@
+[package]
+name = "covau_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+covau = { path = "../", features = [ "wasmdeps" ] }
+
+[lib]
+name = "covau_wasm"
+crate-type = ["cdylib"]

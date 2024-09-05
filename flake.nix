@@ -414,10 +414,10 @@
           cd $PROJECT_ROOT/zweb
           nix develop .#windows -c zig build -Dtarget=x86_64-windows --release=fast
 
-          cd $PROJECT_ROOT
-          wasm-pack build --release --target web --features wasmdeps
-          rm -r ./ui/src/wasm
-          mv ./pkg ./ui/src/wasm
+          cd $PROJECT_ROOT/wasm
+          wasm-pack build --release --target web
+          rm -r ../ui/src/wasm
+          mv ./pkg ../ui/src/wasm
 
           cd $PROJECT_ROOT/ui
           bun run build
@@ -441,10 +441,10 @@
           cmake -CMAKE_BUILD_TYPE=Release ..
           make
 
-          cd $PROJECT_ROOT
-          wasm-pack build --release --target web --features wasmdeps
-          rm -r ./ui/src/wasm
-          mv ./pkg ./ui/src/wasm
+          cd $PROJECT_ROOT/wasm
+          wasm-pack build --release --target web
+          rm -r ../ui/src/wasm
+          mv ./pkg ../ui/src/wasm
 
           cd $PROJECT_ROOT/ui
           bun run build
@@ -510,19 +510,19 @@
       wasm-commands = pkgs: [
         (pkgs.writeShellScriptBin "build-wasm" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          cd $PROJECT_ROOT/wasm
 
-          cargo build --lib --target wasm32-unknown-unknown --features wasmdeps
-          rm -r ./ui/src/wasm
-          wasm-bindgen --web --out-dir ./ui/src/wasm ./target/wasm32-unknown-unknown/debug/covau_app_wasm.wasm
+          cargo build --lib --target wasm32-unknown-unknown
+          rm -r ../ui/src/wasm
+          wasm-bindgen --web --out-dir ../ui/src/wasm ../target/wasm32-unknown-unknown/debug/covau_wasm.wasm
         '')
         (pkgs.writeShellScriptBin "build-wasm-pack" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          cd $PROJECT_ROOT/wasm
 
-          wasm-pack build --dev --target web --features wasmdeps
-          rm -r ./ui/src/wasm
-          mv ./pkg ./ui/src/wasm
+          wasm-pack build --dev --target web
+          rm -r ../ui/src/wasm
+          mv ./pkg ../ui/src/wasm
         '')
       ];
       custom-commands = pkgs:

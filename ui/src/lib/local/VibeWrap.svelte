@@ -6,7 +6,7 @@
     import * as server from "$lib/server.ts";
     import * as types from "$types/types.ts";
     import { onDestroy } from 'svelte';
-    import * as wasm from "$wasm/covau_app_wasm";
+    import * as wasm from "$wasm/covau_wasm";
     import * as cyclic from "$lib/cyclic.ts";
 
     let promise = (async () => {
