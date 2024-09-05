@@ -93,11 +93,5 @@ appdeps = [
   "shellexpand",
 ]
 
-bindeps = [
-  "appdeps",
-
-  "native-player",
-]
-
 [lib]
 name = "libcovau"

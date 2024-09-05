@@ -436,15 +436,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
-name = "cmake"
-version = "0.1.51"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb1e43aa7fd152b1f968787f7dbcdeb306d1867ff373c69955211876c053f91a"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,46 +474,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
-name = "covau"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "bytes",
- "clap",
- "cmake",
- "derivative",
- "dirs",
- "fern",
- "futures",
- "intrusive-collections",
- "log",
- "mime_guess",
- "musicbrainz_rs",
- "reqwest",
- "rust-embed",
- "sea-orm",
- "serde",
- "serde_json",
- "shellexpand",
- "specta",
- "sublime_fuzzy",
- "tokio",
- "tokio-stream",
- "toml",
- "ulid",
- "uuid",
- "warp",
-]
-
-[[package]]
 name = "covaulib"
 version = "0.1.0"
 dependencies = [
  "android_logger",
- "covau",
  "jni",
+ "libcovau",
  "log",
 ]
 
@@ -1270,6 +1227,38 @@ name = "libc"
 version = "0.2.158"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8adc4bb1803a324070e64a98ae98f38934d91957a99cfb3a43dcbc01bc56439"
+
+[[package]]
+name = "libcovau"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "clap",
+ "derivative",
+ "dirs",
+ "fern",
+ "futures",
+ "intrusive-collections",
+ "log",
+ "mime_guess",
+ "musicbrainz_rs",
+ "reqwest",
+ "rust-embed",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "specta",
+ "sublime_fuzzy",
+ "tokio",
+ "tokio-stream",
+ "ulid",
+ "uuid",
+ "warp",
+]
 
 [[package]]
 name = "libm"
@@ -2317,15 +2306,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_spanned"
-version = "0.6.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb5b1b31579f3811bf615c144393417496f152e12ac8b7663bf664f4a815306d"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2969,25 +2949,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.8.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ed1f98e3fdc28d6d910e6737ae6ab1a93bf1985935a1193e68f93eeb68d24e"
-dependencies = [
- "serde",
- "serde_spanned",
- "toml_datetime",
- "toml_edit",
-]
-
-[[package]]
 name = "toml_datetime"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "toml_edit"
@@ -2996,8 +2961,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "583c44c02ad26b0c3f3066fe629275e50627026c51ac2e595cca4c230ce1ce1d"
 dependencies = [
  "indexmap",
- "serde",
- "serde_spanned",
  "toml_datetime",
  "winnow",
 ]
