@@ -7,6 +7,7 @@ use crate::{
     covau_types,
     db::Db,
     server::{
+        self,
         db::DbRequest,
         mbz::mbz_routes,
         routes::{

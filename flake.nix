@@ -63,13 +63,20 @@
             rustup
           ]);
 
+        shellHook = ''
+          export ANDROID_NDK_TOOLCHAIN_DIR="$HOME/.android/Sdk/ndk"
+          export ANDROID_NDK_HOME="$HOME/.android/Sdk/ndk/27.0.12077973"
+
+          export BUILD_MODE="PROD"
+          export UI_BACKEND="NONE"
+          export SERVER_PORT=6176
+        '';
+
         env = {
           JAVA_HOME = "${pkgs.jdk.home}";
 
           # - [Android Emulator not working](https://github.com/NixOS/nixpkgs/issues/267176#issuecomment-2074366571)
           QT_QPA_PLATFORM = "xcb";
-
-          ANDROID_NDK_TOOLCHAIN_DIR = "$HOME/.android/Sdk/ndk";
 
           DEV_SHELL = "ANDROID";
         };

@@ -222,9 +222,9 @@ pub mod listenbrainz {
     }
 }
 
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 pub use trait_impls::*;
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 mod trait_impls {
     use super::*;
     use musicbrainz_rs::{
@@ -737,7 +737,7 @@ mod trait_impls {
     }
 }
 
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<String> {
     let mut types = String::new();
     types += &specta::ts::export::<Recording>(config)?;
@@ -776,7 +776,7 @@ pub fn dump_types(config: &specta::ts::ExportConfiguration) -> anyhow::Result<St
     Ok(types)
 }
 
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 pub async fn api_test() -> anyhow::Result<()> {
     // use musicbrainz_rs::{
     //     entity::{

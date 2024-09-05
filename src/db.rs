@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[cfg_attr(
-    feature = "bindeps",
+    feature = "appdeps",
     derive(sea_orm::EnumIter, sea_orm::DeriveActiveEnum),
     sea_orm(rs_type = "i32", db_type = "Integer")
 )]
@@ -12,44 +12,44 @@ use serde::{Deserialize, Serialize};
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub enum Typ {
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 1))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 1))]
     MmSong,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 2))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 2))]
     MmAlbum,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 3))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 3))]
     MmArtist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 4))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 4))]
     MmPlaylist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 5))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 5))]
     MmQueue,
 
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 18))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 18))]
     LocalState,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 6))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 6))]
     Song,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 7))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 7))]
     Playlist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 8))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 8))]
     Queue,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 9))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 9))]
     ArtistBlacklist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 10))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 10))]
     SongBlacklist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 11))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 11))]
     Updater,
 
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 12))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 12))]
     StSong,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 13))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 13))]
     StAlbum,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 14))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 14))]
     StPlaylist,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 15))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 15))]
     StArtist,
 
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 16))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 16))]
     MbzRecording,
-    #[cfg_attr(feature = "bindeps", sea_orm(num_value = 17))]
+    #[cfg_attr(feature = "appdeps", sea_orm(num_value = 17))]
     MbzArtist,
 }
 
@@ -163,9 +163,9 @@ pub enum SearchQuery {
     Continuation(SearchContinuation),
 }
 
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 pub use db::*;
-#[cfg(feature = "bindeps")]
+#[cfg(feature = "appdeps")]
 pub mod db {
     use std::collections::HashSet;
     use std::sync::atomic::AtomicU32;

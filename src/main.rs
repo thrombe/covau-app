@@ -2,7 +2,7 @@
 #![allow(non_snake_case)]
 #![recursion_limit = "256"]
 
-use std::{path::PathBuf, process::Stdio, sync::Arc};
+use std::{process::Stdio, sync::Arc};
 
 use anyhow::Result;
 use clap::Parser;
@@ -12,10 +12,14 @@ pub mod covau_types;
 pub mod db;
 pub mod mbz;
 pub mod musimanager;
-#[cfg(all(feature = "bindeps", feature="native-player"))]
-mod musiplayer;
 pub mod server;
 pub mod yt;
+
+#[cfg(feature="native-player")]
+pub mod musiplayer;
+
+pub mod native;
+pub use native::*;
 
 #[cfg(feature = "webui")]
 pub mod webui;
@@ -338,11 +342,6 @@ mod tao_wry {
     }
 }
 
-async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::start("127.0.0.1".parse()?, config.server_port, config).await?;
-    Ok(())
-}
-
 #[tokio::main(flavor = "multi_thread", worker_threads = 100)]
 async fn main() -> Result<()> {
     let cli = cli::Cli::parse();
@@ -479,65 +478,3 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn dump_types() -> Result<()> {
-    let tsconfig =
-        specta::ts::ExportConfiguration::default().bigint(specta::ts::BigIntExportBehavior::String);
-    let types_dir = PathBuf::from("./ui/src/types");
-    let _ = std::fs::create_dir(&types_dir);
-    std::fs::write(
-        types_dir.join("musimanager.ts"),
-        musimanager::dump_types(&tsconfig)?,
-    )?;
-    std::fs::write(
-        types_dir.join("covau.ts"),
-        covau_types::dump_types(&tsconfig)?,
-    )?;
-    std::fs::write(types_dir.join("server.ts"), server::dump_types(&tsconfig)?)?;
-    std::fs::write(types_dir.join("db.ts"), db::dump_types(&tsconfig)?)?;
-    std::fs::write(types_dir.join("mbz.ts"), mbz::dump_types(&tsconfig)?)?;
-    std::fs::write(types_dir.join("yt.ts"), yt::dump_types(&tsconfig)?)?;
-
-    Ok(())
-}
-
-pub fn init_logger(log_dir: impl Into<PathBuf>) -> Result<()> {
-    let mut base_config = fern::Dispatch::new();
-
-    base_config = match 3 {
-        0 => {
-            // Let's say we depend on something which whose "info" level messages are too
-            // verbose to include in end-user output. If we don't need them,
-            // let's not include them.
-            base_config
-                .level(log::LevelFilter::Info)
-                .level_for("overly-verbose-target", log::LevelFilter::Warn)
-        }
-        1 => base_config
-            .level(log::LevelFilter::Debug)
-            .level_for("overly-verbose-target", log::LevelFilter::Info),
-        2 => base_config.level(log::LevelFilter::Debug),
-        _3_or_more => base_config.level(log::LevelFilter::Trace),
-    };
-
-    let log_file = log_dir.into().join("log.log");
-    let _ = std::fs::remove_file(&log_file);
-    let file_config = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{}] [{}:{}] [{}] {}",
-                record.level(),
-                record.file().unwrap_or("no file"),
-                record.line().unwrap_or(0),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs_f64(),
-                message,
-            ))
-        })
-        .chain(fern::log_file(&log_file)?);
-
-    base_config.chain(file_config).apply()?;
-
-    Ok(())
-}

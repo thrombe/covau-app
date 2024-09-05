@@ -7,4 +7,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+covau = { path = "../../", features = [ "appdeps", "native-tls-vendored" ] }
 jni = "0.21.1"
+android_logger = "0.14.1"
+log = "0.4.22"
+
+# empty workspace config keeps this out of the outer workspace
+# android build thing breaks with this package in outer workspace
+[workspace]

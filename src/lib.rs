@@ -1,7 +1,33 @@
+#![allow(dead_code)]
+#![allow(non_snake_case)]
+#![recursion_limit = "256"]
 
 use std::path::PathBuf;
 
 use anyhow::Result;
+
+#[cfg(feature="appdeps")]
+pub mod cli;
+#[cfg(feature="appdeps")]
+pub mod covau_types;
+#[cfg(feature="appdeps")]
+pub mod db;
+#[cfg(feature="appdeps")]
+pub mod mbz;
+#[cfg(feature="appdeps")]
+pub mod musimanager;
+#[cfg(feature="appdeps")]
+pub mod server;
+#[cfg(feature="appdeps")]
+pub mod yt;
+
+#[cfg(all(feature = "appdeps", feature="native-player"))]
+pub mod musiplayer;
+
+#[cfg(feature="appdeps")]
+mod native;
+#[cfg(feature="appdeps")]
+pub use native::*;
 
 #[cfg(feature="wasmdeps")]
 mod wasm;
