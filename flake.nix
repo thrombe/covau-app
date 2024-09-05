@@ -131,25 +131,31 @@
           rust-bin.stable.latest.minimal
           windows-pkgs.buildPackages.pkg-config
           windows-pkgs.openssl
-          winlibs
-          mcfgthread
+          # winlibs
+          # mcfgthread
         ];
 
         depsBuildBuild = [];
+
+        # OOF: kinda works :/
+        # first build with no pthreads
+        # then enable pthreads and build again :clown
         buildInputs = [
-          windows-pkgs.buildPackages.pkg-config
+          # windows-pkgs.buildPackages.pkg-config
           windows-pkgs.openssl
-          windows-pkgs.windows.mingw_w64_pthreads
+          # windows-pkgs.windows.mingw_w64_pthreads
           windows-pkgs.windows.pthreads
           # windows-webui
           windows-mpv
-          winlibs
-          mcfgthread
+          # winlibs
+          # mcfgthread
         ];
 
         env = {
           CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
           DEV_SHELL = "WIN";
+
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${windows-pkgs.stdenv.cc.targetPrefix}cc";
         };
       };
 
@@ -361,6 +367,27 @@
           cd $PROJECT_ROOT/zweb
 
           nix develop .#windows -c zig build -Dtarget=x86_64-windows
+        '')
+        (pkgs.writeShellScriptBin "build-covau-windows" ''
+          #!/usr/bin/env bash
+          export BUILD_MODE="PROD"
+
+          export UI_BACKEND="NONE"
+          export SERVER_PORT=6176
+
+          cd $PROJECT_ROOT/zweb
+          nix develop .#windows -c zig build -Dtarget=x86_64-windows --release=fast
+
+          cd $PROJECT_ROOT
+          wasm-pack build --release --target web --features wasmdeps
+          rm -r ./ui/src/wasm
+          mv ./pkg ./ui/src/wasm
+
+          cd $PROJECT_ROOT/ui
+          bun run build
+
+          cd $PROJECT_ROOT
+          nix develop .#windows -c cargo build --bin covau --features bindeps --release
         '')
       ];
       build-commands = pkgs: [

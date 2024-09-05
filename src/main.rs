@@ -251,50 +251,94 @@ fn webview_test() {
 }
 
 #[cfg(feature = "web-wry")]
-fn wry_test() -> wry::Result<()> {
-    use tao::{
-        event::{Event, StartCause, WindowEvent},
-        event_loop::{ControlFlow, EventLoop},
-        platform::unix::WindowExtUnix,
-        window::WindowBuilder,
-    };
-    use wry::WebViewBuilder;
-    use wry::WebViewBuilderExtUnix;
+mod web_wry {
+    use std::sync::Arc;
 
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_title("Hello World")
-        .build(&event_loop)
-        .unwrap();
+    use tao::event_loop::EventLoopBuilder;
 
-    #[cfg(not(target_os = "linux"))]
-    let builder = WebViewBuilder::new(&window);
-    #[cfg(target_os = "linux")]
-    let builder = {
-        use tao::platform::unix::WindowExtUnix;
-        use wry::WebViewBuilderExtUnix;
-        let vbox = window.default_vbox().unwrap();
-        WebViewBuilder::new_gtk(vbox)
-    };
+    use crate::{cli, server_start};
 
-    let _webview = builder
-        // .with_html("hello")
-        // .with_url("https://tauri.app")
-        .with_url("http://localhost:6175/#/local")
-        .build()?;
+    fn wry_open(url: String) -> wry::Result<()> {
+        use tao::{
+            event::{Event, StartCause, WindowEvent},
+            event_loop::{ControlFlow, EventLoop},
+            window::WindowBuilder,
+        };
+        use wry::WebViewBuilder;
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        #[cfg(target_os = "windows")]
+        use tao::platform::windows::EventLoopBuilderExtWindows;
+        #[cfg(target_os = "linux")]
+        use tao::platform::unix::EventLoopBuilderExtUnix;
 
-        match event {
-            Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            _ => (),
+        let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
+        let window = WindowBuilder::new()
+            .with_title("Covau")
+            .build(&event_loop)
+            .unwrap();
+
+        #[cfg(target_os = "windows")]
+        let builder = {
+            WebViewBuilder::new(&window)
+        };
+        #[cfg(target_os = "linux")]
+        let builder = {
+            use tao::platform::unix::WindowExtUnix;
+            use wry::WebViewBuilderExtUnix;
+            let vbox = window.default_vbox().unwrap();
+            WebViewBuilder::new_gtk(vbox)
+        };
+
+        let _webview = builder.with_url(url).build()?;
+
+        event_loop.run(move |event, _, control_flow| {
+            *control_flow = ControlFlow::Wait;
+
+            match event {
+                Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => *control_flow = ControlFlow::Exit,
+                _ => (),
+            }
+        });
+    }
+
+    pub async fn app(config: Arc<cli::DerivedConfig>) -> anyhow::Result<()> {
+        #[cfg(build_mode = "DEV")]
+        let port = config.dev_vite_port;
+        #[cfg(build_mode = "PROD")]
+        let port = config.server_port;
+
+        let mut url = format!("http://localhost:{}/", port);
+
+        url += "#/local";
+        // url += "#/vibe/test";
+        // url += "#/play";
+
+        let mut app_fut = std::pin::pin!(tokio::task::spawn_blocking(move || {
+            wry_open(url)?;
+            Ok::<_, anyhow::Error>(())
+        }));
+        let mut server_fut = std::pin::pin!(server_start(config.clone()));
+
+        tokio::select! {
+            server = &mut server_fut => {
+                server?;
+                return Ok(());
+            }
+            window = &mut app_fut => {
+                let _ = window?;
+            }
         }
-    });
+
+        if config.run_in_background {
+            server_fut.await?;
+        }
+
+        Ok(())
+    }
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
@@ -425,7 +469,7 @@ async fn main() -> Result<()> {
             // webview_app(config)?;
 
             #[cfg(feature = "web-wry")]
-            wry_test()?;
+            web_wry::app(config).await?;
         }
     }
 
