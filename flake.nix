@@ -208,7 +208,7 @@
         license = licenses.mit;
         # platforms = platforms.linux;
       };
-      manifest = (pkgs.lib.importTOML ./Cargo.toml).package;
+      manifest = (pkgs.lib.importTOML ./app/Cargo.toml).package;
 
       yarn-lock = pkgs.stdenv.mkDerivation {
         name = "yarn.lock";
@@ -429,8 +429,8 @@
           cd $PROJECT_ROOT/ui
           bun run build
 
-          cd $PROJECT_ROOT
-          nix develop .#windows -c cargo build --bin covau --features bindeps --release
+          cd $PROJECT_ROOT/app
+          nix develop .#windows -c cargo build --release --no-default-features --features tao-wry
         '')
       ];
       build-commands = pkgs: [
@@ -456,16 +456,15 @@
           cd $PROJECT_ROOT/ui
           bun run build
 
-          cd $PROJECT_ROOT
-          cargo build --release --bin covau --features bindeps
+          cd $PROJECT_ROOT/app
+          cargo build --release
         '')
       ];
       dev-commands = pkgs: [
         (pkgs.writeShellScriptBin "web-dev" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          cd $PROJECT_ROOT/ui
 
-          cd ui
           bun run dev
         '')
         (pkgs.writeShellScriptBin "wasm-dev" ''
@@ -474,29 +473,22 @@
 
           build-wasm
 
-          inotifywait -q -m -e close_write --format %e -r ./src |
+          inotifywait -q -m -e close_write --format %e -r ./covau/src -r ./wasm/src |
           while read events; do
             build-wasm
           done
         '')
         (pkgs.writeShellScriptBin "run" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
+          cd $PROJECT_ROOT/app
 
-          cargo run --bin covau --features bindeps -- $@
-        '')
-        (pkgs.writeShellScriptBin "check" ''
-          #!/usr/bin/env bash
-          cd $PROJECT_ROOT
-
-          cargo check --bin covau --features bindeps
+          cargo run -- $@
         '')
       ];
       qweb-commands = pkgs: [
         (pkgs.writeShellScriptBin "build-qweb" ''
           #!/usr/bin/env bash
-          cd $PROJECT_ROOT
-          cd qweb
+          cd $PROJECT_ROOT/qweb
           mkdir -p ./build
 
           cd ./build
@@ -519,7 +511,7 @@
           #!/usr/bin/env bash
           cd $PROJECT_ROOT/wasm
 
-          cargo build --lib --target wasm32-unknown-unknown
+          cargo build --target wasm32-unknown-unknown
           rm -r ../ui/src/wasm
           wasm-bindgen --web --out-dir ../ui/src/wasm ../target/wasm32-unknown-unknown/debug/covau_wasm.wasm
         '')

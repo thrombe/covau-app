@@ -7,5 +7,4 @@
 /test.db-shm
 /test.db-wal
 /ui/src/wasm
-/debug_data
 

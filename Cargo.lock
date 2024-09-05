@@ -620,55 +620,15 @@ dependencies = [
 name = "covau"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "bytes",
- "clap",
  "cmake",
- "console_error_panic_hook",
- "console_log",
- "derivative",
- "dirs",
- "fern",
- "futures",
- "gstreamer",
- "gstreamer-player",
- "intrusive-collections",
- "js-sys",
- "libmpv",
- "log 0.4.22",
- "mime_guess",
- "mpv",
- "musicbrainz_rs",
- "reqwest",
- "rust-embed",
- "sea-orm",
- "serde",
- "serde_json",
- "shellexpand",
- "specta",
- "sublime_fuzzy",
- "tao",
- "tokio",
- "tokio-stream",
- "toml 0.8.14",
- "tsify-next",
- "ulid",
- "uuid",
- "warp",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "webui-rs",
- "wry",
+ "libcovau",
 ]
 
 [[package]]
 name = "covau_wasm"
 version = "0.1.0"
 dependencies = [
- "covau",
+ "libcovau",
 ]
 
 [[package]]
@@ -2098,6 +2058,53 @@ name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
+
+[[package]]
+name = "libcovau"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "clap",
+ "console_error_panic_hook",
+ "console_log",
+ "derivative",
+ "dirs",
+ "fern",
+ "futures",
+ "gstreamer",
+ "gstreamer-player",
+ "intrusive-collections",
+ "js-sys",
+ "libmpv",
+ "log 0.4.22",
+ "mime_guess",
+ "mpv",
+ "musicbrainz_rs",
+ "reqwest",
+ "rust-embed",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "specta",
+ "sublime_fuzzy",
+ "tao",
+ "tokio",
+ "tokio-stream",
+ "toml 0.8.14",
+ "tsify-next",
+ "ulid",
+ "uuid",
+ "warp",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "webui-rs",
+ "wry",
+]
 
 [[package]]
 name = "libm"

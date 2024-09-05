@@ -329,7 +329,7 @@ impl FeRequest {
 }
 
 #[derive(rust_embed::Embed)]
-#[folder = "ui/dist/"]
+#[folder = "../ui/dist/"]
 pub struct Asset;
 
 impl Asset {

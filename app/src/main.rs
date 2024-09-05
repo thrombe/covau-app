@@ -1,25 +1,11 @@
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![recursion_limit = "256"]
+use std::sync::Arc;
 
-use std::{process::Stdio, sync::Arc};
+use libcovau::{
+    anyhow, anyhow::Result, clap::Parser, cli, reqwest, serde_json, server_start, tokio,
+};
 
-use anyhow::Result;
-use clap::Parser;
-
-pub mod cli;
-pub mod covau_types;
-pub mod db;
-pub mod mbz;
-pub mod musimanager;
-pub mod server;
-pub mod yt;
-
-#[cfg(feature="native-player")]
-pub mod musiplayer;
-
-pub mod native;
-pub use native::*;
+#[cfg(build_mode = "DEV")]
+use libcovau::dump_types;
 
 #[cfg(feature = "webui")]
 pub mod webui;
@@ -97,8 +83,8 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
         let mut child = tokio::process::Command::new("qweb");
         let mut child2 = child
             .arg(url)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
             .spawn()?;
 
         let mut server_fut = std::pin::pin!(server_start(config.clone()));
@@ -257,9 +243,13 @@ fn webview_test() {
 mod tao_wry {
     use std::sync::Arc;
 
+    use libcovau::{tao, wry};
+
     use tao::event_loop::EventLoopBuilder;
 
     use crate::{cli, server_start};
+
+    use super::*;
 
     fn wry_open(url: String) -> wry::Result<()> {
         use tao::{
@@ -351,7 +341,7 @@ async fn main() -> Result<()> {
     // init_logger(&config.log_path)?;
 
     match cli.command.clone().unwrap_or(cli::Command::Default {
-        #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB"))]
+        #[cfg(any(ui_backend = "WEBUI", ui_backend = "QWEB", ui_backend = "TAO-WRY"))]
         run_in_background: config.run_in_background,
     }) {
         cli::Command::Server => {
@@ -395,8 +385,8 @@ async fn main() -> Result<()> {
             server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {
-            use crate::server::routes::FeRequest;
-            use crate::server::ErrorMessage;
+            use libcovau::server::routes::FeRequest;
+            use libcovau::server::ErrorMessage;
 
             let fereq = match command {
                 cli::FeCommand::Like => FeRequest::Like,
@@ -477,4 +467,3 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
-

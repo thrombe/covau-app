@@ -18,7 +18,7 @@ pub mod android {
     ) -> jstring {
         android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Trace));
 
-        covau::serve();
+        libcovau::serve();
 
         // Then we have to create a new Java string to return. Again, more info
         // in the `strings` module.

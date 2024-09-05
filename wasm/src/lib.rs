@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use covau::{
+use libcovau::{
     log::Level,
     log::{debug, info},
     serde::{Deserialize, Serialize},
@@ -11,7 +11,6 @@ use covau::{
     wasm_bindgen::{prelude::wasm_bindgen as bindgen, JsError, JsValue},
     *,
 };
-
 
 use crate::bad_error::BadError;
 

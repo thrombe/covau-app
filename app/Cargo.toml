@@ -1,0 +1,27 @@
+[package]
+name = "covau"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libcovau = { path = "../covau", features = [ "bindeps" ] }
+
+[build-dependencies]
+cmake = "0.1.50"
+
+[features]
+qweb-dylib = [ "libcovau/qweb-dylib" ]
+qweb-bin = [ "libcovau/qweb-bin" ]
+
+# webkit chokes when wasm is imported
+webui = [ "libcovau/webui" ]
+webview = [ "libcovau/webview" ]
+tao-wry = [ "libcovau/tao-wry" ]
+
+default = [ "qweb-bin" ]
+
+[[bin]]
+name = "covau"
+

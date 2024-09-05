@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-covau = { path = "../../", features = [ "appdeps", "native-tls-vendored" ] }
+libcovau = { path = "../../covau", features = [ "appdeps", "native-tls-vendored" ] }
 jni = "0.21.1"
 android_logger = "0.14.1"
 log = "0.4.22"
