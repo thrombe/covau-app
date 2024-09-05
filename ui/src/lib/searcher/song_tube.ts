@@ -940,7 +940,7 @@ export const st = {
                         type: "Album",
                         content: a.id,
                     });
-                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items form st don't return thumbnail detail)
+                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items from st do not return thumbnail detail)
                     stores.new_tab(s, "Album " + a.title);
                 },
             },
@@ -966,7 +966,7 @@ export const st = {
                         type: "Playlist",
                         content: p.id,
                     });
-                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items form st don't return thumbnail detail)
+                    // TODO: a.thumbnails.at(0)?.url ?? null maybe inject this thumbnail (album items from st do not return thumbnail detail)
                     stores.new_tab(s, "Playlist " + p.title);
                 },
             },

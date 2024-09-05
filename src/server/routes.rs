@@ -701,7 +701,7 @@ pub fn stream_file(path: &'static str, config: Arc<DerivedConfig>) -> BoxedFilte
              config: Arc<DerivedConfig>| async move {
                 let path = config.to_path(src).map_err(custom_reject)?;
 
-                // TODO: cursor + read as much bytes as needed
+                // TODO: cursor + read as many bytes as needed
                 let bytes = tokio::fs::read(&path).await.map_err(custom_reject)?;
                 let total = bytes.len();
 

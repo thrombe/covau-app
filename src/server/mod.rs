@@ -125,7 +125,6 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> 
 
     use message_server::MessageServerRequest;
 
-    // TODO: expose db transactions somehow T_T
     let all = FrontendClient::client_ws_route(yti.clone(), "yti")
         .or(FrontendClient::client_ws_route(fe.clone(), "fec"))
         .or(FeRequest::cli_command_route(fe.clone(), "cli"))

@@ -352,7 +352,6 @@ export abstract class Paged<T> {
     abstract get_key(t: (T & Keyed)): unknown;
 
     async next_page() {
-        // TODO: if this function is called multiple times really quickly, this has_next_page check fails as previous calls are still awaiting for io
         if (!this.has_next_page) {
             return new Array<(T & Keyed)>();
         }
@@ -383,7 +382,6 @@ export abstract class Offset<T> {
     abstract get_key(t: (T & Keyed)): unknown;
 
     async next_page() {
-        // TODO: if this function is called multiple times really quickly, this has_next_page check fails as previous calls are still awaiting for io
         if (!this.has_next_page) {
             return new Array<(T & Keyed)>();
         }
