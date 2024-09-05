@@ -27,17 +27,53 @@
       flakePackage = flake: package: flake.packages."${system}"."${package}";
       flakeDefaultPackage = flake: flakePackage flake "default";
 
-      pkgs = import inputs.nixpkgs {
+      pkgs = import inputs.nixpkgs rec {
         inherit system;
+        config = {
+          allowUnfree = true;
+          android_sdk.accept_license = true;
+        };
         overlays = [
           (final: prev: {
             unstable = import inputs.nixpkgs-unstable {
-              inherit system;
+              inherit system config;
             };
           })
         ];
       };
 
+      android-shell = pkgs.mkShell {
+        packages =
+          [
+            pkgs.jdk
+            (pkgs.gradle.override {
+              java = pkgs.jdk;
+              javaToolchains = [pkgs.jdk];
+            })
+          ]
+          ++ (with pkgs; [
+            android-studio
+            glibc
+            gradle
+            jdk
+
+            jetbrains.idea-community
+
+            unstable.jdt-language-server
+            rustup
+          ]);
+
+        env = {
+          JAVA_HOME = "${pkgs.jdk.home}";
+
+          # - [Android Emulator not working](https://github.com/NixOS/nixpkgs/issues/267176#issuecomment-2074366571)
+          QT_QPA_PLATFORM = "xcb";
+
+          ANDROID_NDK_TOOLCHAIN_DIR = "$HOME/.android/Sdk/ndk";
+
+          DEV_SHELL = "ANDROID";
+        };
+      };
       # - [Cross compilation — nix.dev documentation](https://nix.dev/tutorials/cross-compilation.html)
       # - [Cross Compile Rust for Windows - Help - NixOS Discourse](https://discourse.nixos.org/t/cross-compile-rust-for-windows/9582/7)
       # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingw32;
@@ -547,6 +583,7 @@
 
       devShells = {
         windows = windows-shell;
+        android = android-shell;
 
         default =
           pkgs.mkShell.override {
