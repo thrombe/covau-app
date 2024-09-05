@@ -9,7 +9,6 @@ use crate::{
     server::{
         db::DbRequest,
         mbz::mbz_routes,
-        player::player_route,
         routes::{
             image_route, save_song_route, source_path_route, stream_file, stream_yt,
             webui_js_route, AppState, Asset, FeRequest, FrontendClient, ProxyRequest,
@@ -130,7 +129,6 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> 
         .or(FeRequest::cli_command_route(fe.clone(), "cli"))
         .or(AppState::app_state_handler_route(state.clone(), "app"))
         .or(DbRequest::routes(db.clone(), "db"))
-        .or(player_route())
         .or(ProxyRequest::cors_proxy_route(client.clone()))
         .or(mbz_routes(client.clone()))
         .or(webui_js_route(client.clone(), config.clone()))
@@ -140,8 +138,14 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> 
         .or(stream_yt("yt", ytf.clone()))
         .or(stream_file("file", config.clone()))
         .or(options_route.boxed());
+
     // #[cfg(build_mode = "DEV")]
     // let all = all.or(routes::redirect_route(client.clone(), config.clone()));
+
+    #[cfg(feature="native-player")]
+    let all = all
+        .or(server::player::player_route());
+
     let all = all.or(Asset::embedded_asset_route(config.clone()));
     let all = all.recover(|rej: warp::reject::Rejection| async move {
         let msg = if let Some(CustomReject(err)) = rej.find() {

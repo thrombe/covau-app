@@ -12,6 +12,7 @@ pub mod covau_types;
 pub mod db;
 pub mod mbz;
 pub mod musimanager;
+#[cfg(all(feature = "bindeps", feature="native-player"))]
 mod musiplayer;
 pub mod server;
 pub mod yt;

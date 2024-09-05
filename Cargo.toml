@@ -55,6 +55,9 @@ console_log = { version = "1.0.0", optional = true }
 # gloo-utils = { version = "0.2.0", optional = true }
 tsify-next = {version = "0.5.3", optional = true }
 
+[build-dependencies]
+cmake = "0.1.50"
+
 [features]
 # default = ["player-gst"]
 # default = ["player-mpv"]
@@ -62,6 +65,8 @@ tsify-next = {version = "0.5.3", optional = true }
 player-mpv = ["mpv"]
 player-gst = ["gstreamer-player", "gstreamer"]
 player-libmpv = ["libmpv"] # didn't impliment this one yet
+
+native-player = [ "player-mpv" ]
 
 qweb-dylib = []
 qweb-bin = []
@@ -85,7 +90,6 @@ wasmdeps = [
 ]
 
 bindeps = [
-  "player-mpv",
   "bytes",
   "base64",
   "musicbrainz_rs",
@@ -101,6 +105,9 @@ bindeps = [
   "clap",
   "toml",
   "shellexpand",
+
+  "native-player",
+
   # "qweb-dylib",
   # "qweb-bin",
   # "webui",
@@ -110,9 +117,6 @@ bindeps = [
 [[bin]]
 name = "covau"
 required-features = ["bindeps"]
-
-[build-dependencies]
-cmake = "0.1.50"
 
 [lib]
 name = "covau_app_wasm"
