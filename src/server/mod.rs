@@ -88,7 +88,7 @@ pub struct Message<T> {
     pub data: MessageResult<T>,
 }
 
-pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) {
+pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) -> anyhow::Result<()> {
     let client = reqwest::Client::builder()
         .timeout(time::Duration::from_secs(5 * 60))
         .build()
@@ -181,16 +181,20 @@ pub async fn start(ip_addr: Ipv4Addr, port: u16, config: Arc<DerivedConfig>) {
 
     println!("Starting server at {}:{}", ip_addr, port);
 
+    let (_, fut) = warp::serve(all).try_bind_ephemeral((ip_addr, port))?;
+
     if config.run_in_background {
-        warp::serve(all).run((ip_addr, port)).await;
+        fut.await;
     } else {
         tokio::select! {
-            _ = warp::serve(all).run((ip_addr, port)) => { },
+            _ = fut => { },
             _ = state.wait() => { },
         }
     }
 
     j.abort();
+
+    Ok(())
 }
 
 async fn _updater_system(

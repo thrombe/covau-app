@@ -89,24 +89,22 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 
     #[cfg(feature = "qweb-bin")]
     {
-        let mut app_fut = std::pin::pin!(tokio::task::spawn(async {
-            let mut child = tokio::process::Command::new("qweb");
-            let child2 = child
-                .arg(url)
-                .stdout(Stdio::inherit())
-                .stderr(Stdio::inherit())
-                .spawn()?;
-            let _s = child2.wait_with_output().await?;
-            Ok::<_, anyhow::Error>(())
-        }));
+        let mut child = tokio::process::Command::new("qweb");
+        let mut child2 = child
+            .arg(url)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()?;
+
         let mut server_fut = std::pin::pin!(server_start(config.clone()));
 
         tokio::select! {
             server = &mut server_fut => {
+                child2.kill().await?;
                 server?;
                 return Ok(());
             }
-            window = &mut app_fut => {
+            window = child2.wait() => {
                 let _ = window?;
             }
         }
@@ -340,7 +338,7 @@ mod tao_wry {
 }
 
 async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::start("127.0.0.1".parse()?, config.server_port, config).await;
+    server::start("127.0.0.1".parse()?, config.server_port, config).await?;
     Ok(())
 }
 
