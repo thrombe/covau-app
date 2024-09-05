@@ -30,8 +30,13 @@ fn main() {
         "linux" => {
             println!("cargo:rustc-cfg=feature=\"qweb-bin\"");
         }
-        _ => {
-            panic!("unsupported target os");
+        "android" => {}
+        "unknown" => {
+            // wasm :/
+        }
+        t => {
+            dbg!(t);
+            panic!("unsupported os");
         }
     }
 
