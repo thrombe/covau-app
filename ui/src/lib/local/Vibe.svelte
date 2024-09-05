@@ -211,7 +211,7 @@
                             let:on_menu_click
                         >
                             <button
-                                class="flex flex-row gap-2 h-full rounded-xl p-2 pr-3 font-bold bg-gray-200 bg-opacity-10"
+                                class="flex flex-row gap-2 h-full rounded-xl p-2 pr-3 font-bold bg-gray-200 bg-opacity-10 select-none"
                                 on:pointerup={on_menu_click}
                                 class:hidden={options.options.length == 0}
                             >
