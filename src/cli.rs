@@ -281,6 +281,11 @@ pub enum Command {
         #[arg(long, short, default_value_t = false)]
         run_in_background: bool,
     },
+    #[cfg(feature = "tao-wry")]
+    TaoWry {
+        #[arg(long, short, default_value_t = false)]
+        run_in_background: bool,
+    },
     #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
     Qweb {
         #[arg(long, short, default_value_t = false)]
@@ -289,6 +294,7 @@ pub enum Command {
     Default {
         #[cfg(any(
             all(ui_backend = "WEBUI", feature = "webui"),
+            all(ui_backend = "TAO-WRY", feature = "tao-wry"),
             all(ui_backend = "QWEB", feature = "qweb-bin"),
             all(ui_backend = "QWEB", feature = "qweb-dylib"),
         ))]
@@ -348,6 +354,7 @@ impl Cli {
             }
             #[cfg(any(
                 all(ui_backend = "WEBUI", feature = "webui"),
+                all(ui_backend = "TAO-WRY", feature = "tao-wry"),
                 all(ui_backend = "QWEB", feature = "qweb-bin"),
                 all(ui_backend = "QWEB", feature = "qweb-dylib"),
             ))]

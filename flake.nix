@@ -204,7 +204,7 @@
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
           # export UI_BACKEND="WEBUI"
-          # export UI_BACKEND="TAURI"
+          # export UI_BACKEND="TAO-WRY"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PROD"
@@ -241,7 +241,7 @@
         buildPhase = ''
           # export UI_BACKEND="ELECTRON"
           # export UI_BACKEND="WEBUI"
-          # export UI_BACKEND="TAURI"
+          # export UI_BACKEND="TAO-WRY"
           export UI_BACKEND="QWEB"
           # export UI_BACKEND="NONE"
           export BUILD_MODE="PROD"
@@ -372,7 +372,7 @@
           #!/usr/bin/env bash
           export BUILD_MODE="PROD"
 
-          export UI_BACKEND="NONE"
+          export UI_BACKEND="TAO-WRY"
           export SERVER_PORT=6176
 
           cd $PROJECT_ROOT/zweb
@@ -567,7 +567,7 @@
 
               # export UI_BACKEND="ELECTRON"
               # export UI_BACKEND="WEBUI"
-              # export UI_BACKEND="TAURI"
+              # export UI_BACKEND="TAO-WRY"
               # export UI_BACKEND="QWEB"
               export UI_BACKEND="NONE"
               export BUILD_MODE="DEV"

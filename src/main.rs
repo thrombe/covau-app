@@ -116,7 +116,7 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
         }
     }
 
-    Ok(())
+    Ok::<_, anyhow::Error>(())
 }
 
 #[cfg(feature = "webui")]
@@ -250,8 +250,8 @@ fn webview_test() {
         .unwrap();
 }
 
-#[cfg(feature = "web-wry")]
-mod web_wry {
+#[cfg(feature = "tao-wry")]
+mod tao_wry {
     use std::sync::Arc;
 
     use tao::event_loop::EventLoopBuilder;
@@ -261,15 +261,15 @@ mod web_wry {
     fn wry_open(url: String) -> wry::Result<()> {
         use tao::{
             event::{Event, StartCause, WindowEvent},
-            event_loop::{ControlFlow, EventLoop},
+            event_loop::ControlFlow,
             window::WindowBuilder,
         };
         use wry::WebViewBuilder;
 
-        #[cfg(target_os = "windows")]
-        use tao::platform::windows::EventLoopBuilderExtWindows;
         #[cfg(target_os = "linux")]
         use tao::platform::unix::EventLoopBuilderExtUnix;
+        #[cfg(target_os = "windows")]
+        use tao::platform::windows::EventLoopBuilderExtWindows;
 
         let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
         let window = WindowBuilder::new()
@@ -278,9 +278,7 @@ mod web_wry {
             .unwrap();
 
         #[cfg(target_os = "windows")]
-        let builder = {
-            WebViewBuilder::new(&window)
-        };
+        let builder = WebViewBuilder::new(&window);
         #[cfg(target_os = "linux")]
         let builder = {
             use tao::platform::unix::WindowExtUnix;
@@ -378,10 +376,19 @@ async fn main() -> Result<()> {
 
             webui_app(config).await?;
         }
+        #[cfg(feature = "tao-wry")]
+        cli::Command::TaoWry { .. } => {
+            #[cfg(build_mode = "DEV")]
+            dump_types()?;
+
+            tao_wry::app(config).await?;
+        }
         cli::Command::Default { .. } => {
             #[cfg(build_mode = "DEV")]
             dump_types()?;
 
+            #[cfg(ui_backend = "TAO-WRY")]
+            tao_wry::app(config).await?;
             #[cfg(ui_backend = "QWEB")]
             qweb_app(config).await?;
             #[cfg(ui_backend = "WEBUI")]
@@ -467,9 +474,6 @@ async fn main() -> Result<()> {
 
             // #[cfg(feature = "webview")]
             // webview_app(config)?;
-
-            #[cfg(feature = "web-wry")]
-            web_wry::app(config).await?;
         }
     }
 

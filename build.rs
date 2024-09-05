@@ -1,5 +1,5 @@
 fn main() {
-    println!("cargo::rustc-check-cfg=cfg(ui_backend, values(\"NONE\", \"ELECTRON\", \"WEBUI\", \"QWEB\", \"TAURI\"))");
+    println!("cargo::rustc-check-cfg=cfg(ui_backend, values(\"NONE\", \"ELECTRON\", \"WEBUI\", \"QWEB\", \"TAO-WRY\"))");
     println!("cargo::rustc-check-cfg=cfg(build_mode, values(\"DEV\", \"PROD\"))");
 
     println!("cargo:rerun-if-env-changed=UI_BACKEND");
@@ -19,6 +19,19 @@ fn main() {
         }
         Err(_) => {
             panic!("BUILD_MODE env not set");
+        }
+    }
+
+    let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    match os.as_ref() {
+        "windows" => {
+            println!("cargo:rustc-cfg=feature=\"tao-wry\"");
+        }
+        "linux" => {
+            println!("cargo:rustc-cfg=feature=\"qweb-bin\"");
+        }
+        _ => {
+            panic!("unsupported target os");
         }
     }
 
