@@ -16,6 +16,7 @@ import com.thrombe.covau.ui.theme.CovauTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Covau.start()
         enableEdgeToEdge()
         setContent {
             CovauTheme {

@@ -1,4 +1,5 @@
 plugins {
+    id("org.mozilla.rust-android-gradle.rust-android")
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
 }
@@ -47,6 +48,8 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    ndkVersion = "27.0.12077973"
+    buildToolsVersion = "34.0.0"
 }
 
 dependencies {
@@ -66,4 +69,37 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+cargo {
+    module = "../covaulib"
+    libname = "covaulib"
+    targets = listOf("arm64", "x86_64")
+    targetIncludes = arrayOf("libcovaulib.so")
+}
+
+//tasks.preBuild.configure {
+//    dependsOn.add(tasks.withType(com.nishtahir.CargoBuildTask::class.java))
+//}
+//afterEvaluate {
+//    // The `cargoBuild` task isn't available until after evaluation.
+//    android.applicationVariants.all { variant ->
+//        def productFlavor = ""
+//        variant.productFlavors.each {
+//            productFlavor += "${it.name.capitalize()}"
+//        }
+//        def buildType = "${variant.buildType.name.capitalize()}"
+//        tasks["generate${productFlavor}${buildType}Assets"].dependsOn(tasks["cargoBuild"])
+//    }
+//}
+
+project.afterEvaluate {
+    tasks.withType(com.nishtahir.CargoBuildTask::class).forEach { buildTask ->
+        tasks.withType(com.android.build.gradle.tasks.MergeSourceSetFolders::class).configureEach {
+            this.inputs.dir(
+                layout.buildDirectory.dir("rustJniLibs" + File.separatorChar + buildTask.toolchain!!.folder)
+            )
+            this.dependsOn(buildTask)
+        }
+    }
 }
