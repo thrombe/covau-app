@@ -2,21 +2,18 @@ use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 
-pub use tokio;
-pub use clap;
 pub use anyhow;
+pub use clap;
+pub use dirs;
+pub use reqwest;
 pub use serde;
 pub use serde_json;
-pub use reqwest;
-#[cfg(feature = "tao-wry")]
-pub use tao;
-#[cfg(feature = "tao-wry")]
-pub use wry;
+pub use tokio;
 
-use crate::{cli, covau_types, db, mbz, musimanager, server, yt};
+use crate::{config, covau_types, db, mbz, musimanager, server, yt};
 
-pub async fn server_start(config: Arc<cli::DerivedConfig>) -> Result<()> {
-    server::start("127.0.0.1".parse()?, config.server_port, config).await?;
+pub async fn server_start(conf: Arc<config::DerivedConfig>) -> Result<()> {
+    server::start("127.0.0.1".parse()?, conf.server_port, conf).await?;
     Ok(())
 }
 
@@ -32,7 +29,7 @@ pub fn serve() {
     log::error!("starting tokio");
     rt.block_on(tokio::spawn(async move {
         log::error!("spawned tokio");
-        let config = cli::Config::default().derived()?;
+        let config = config::Config::default().derived()?;
         let config = std::sync::Arc::new(config);
 
         log::error!("starting server");

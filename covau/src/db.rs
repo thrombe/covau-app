@@ -1179,7 +1179,7 @@ pub mod db {
         pub async fn init_musimanager_data(
             &self,
             musimanager_db_path: impl AsRef<std::path::Path>,
-            config: Arc<crate::cli::DerivedConfig>,
+            config: Arc<crate::config::DerivedConfig>,
         ) -> anyhow::Result<()> {
             let path = musimanager_db_path.as_ref();
 

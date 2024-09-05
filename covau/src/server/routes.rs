@@ -15,7 +15,7 @@ use warp::{ws, Filter};
 
 use crate::yt::SongTubeFac;
 use crate::{
-    cli::DerivedConfig,
+    config::DerivedConfig,
     covau_types::{SourcePath, SourcePathType},
     server::{custom_reject, ErrorMessage, Message, MessageResult},
 };

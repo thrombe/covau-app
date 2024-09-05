@@ -12,7 +12,7 @@ use warp::ws::Ws;
 use warp::Filter;
 use warp::Reply;
 
-#[cfg(feature="native-player")]
+#[cfg(feature = "native-player")]
 use crate::musiplayer::Player;
 
 #[derive(Clone, Debug, Serialize, Deserialize, specta::Type)]
@@ -44,7 +44,7 @@ pub enum PlayerMessage {
     Error(String),
 }
 
-#[cfg(feature="native-player")]
+#[cfg(feature = "native-player")]
 async fn player_command_handler(
     msg: ws::Message,
     player: &Arc<Mutex<Player>>,
@@ -134,7 +134,7 @@ async fn player_command_handler(
     Ok(())
 }
 
-#[cfg(feature="native-player")]
+#[cfg(feature = "native-player")]
 pub fn player_route() -> BoxedFilter<(impl Reply,)> {
     let player = Arc::new(Mutex::new(Player::new().expect("could not start player")));
 

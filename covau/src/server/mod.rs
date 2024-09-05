@@ -3,7 +3,7 @@ use std::{net::Ipv4Addr, sync::Arc, time};
 use warp::Filter;
 
 use crate::{
-    cli::DerivedConfig,
+    config::DerivedConfig,
     covau_types,
     db::Db,
     server::{

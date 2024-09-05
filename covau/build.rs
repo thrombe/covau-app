@@ -1,16 +1,5 @@
 fn main() {
-    println!("cargo::rustc-check-cfg=cfg(ui_backend, values(\"NONE\", \"ELECTRON\", \"QWEB\", \"TAO-WRY\"))");
     println!("cargo::rustc-check-cfg=cfg(build_mode, values(\"DEV\", \"PROD\"))");
-
-    println!("cargo:rerun-if-env-changed=UI_BACKEND");
-    match std::env::var("UI_BACKEND") {
-        Ok(s) => {
-            println!("cargo:rustc-cfg=ui_backend=\"{}\"", s);
-        }
-        Err(_) => {
-            panic!("UI_BACKEND env not set");
-        }
-    }
 
     println!("cargo:rerun-if-env-changed=BUILD_MODE");
     match std::env::var("BUILD_MODE") {

@@ -26,7 +26,10 @@ impl<S, A> Default for Tracker<S, A> {
 }
 
 impl Tracker {
-    pub fn clean(&self, config: Arc<crate::cli::DerivedConfig>) -> anyhow::Result<EntityTracker> {
+    pub fn clean(
+        &self,
+        config: Arc<crate::config::DerivedConfig>,
+    ) -> anyhow::Result<EntityTracker> {
         let mut et = EntityTracker::default();
 
         fn unique(a: &[String], b: &[String]) -> Vec<String> {

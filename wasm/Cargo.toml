@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 libcovau = { path = "../covau", features = [ "wasmdeps" ] }
+serde = "1.0.202"
 
 [lib]
 name = "covau_wasm"

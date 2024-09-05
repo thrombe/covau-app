@@ -286,14 +286,14 @@ impl InnerSongTube {
 pub struct SongTubeFac {
     pub fe: FrontendClient<YtiRequest>,
     pub client: reqwest::Client,
-    pub config: Arc<crate::cli::DerivedConfig>,
+    pub config: Arc<crate::config::DerivedConfig>,
 }
 
 impl SongTubeFac {
     pub fn new(
         fe: FrontendClient<YtiRequest>,
         client: reqwest::Client,
-        config: Arc<crate::cli::DerivedConfig>,
+        config: Arc<crate::config::DerivedConfig>,
     ) -> Self {
         Self { fe, client, config }
     }

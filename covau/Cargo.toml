@@ -25,8 +25,6 @@ musicbrainz_rs = { version = "0.5.0", optional = true }
 tokio = { version = "1.37.0", features = ["full"], optional = true }
 tokio-stream = { version = "0.1.15", optional = true }
 warp = { version = "0.3.7", optional = true }
-tao = { version = "0.30.0", optional = true }
-wry = { version = "0.42.0", optional = true, features = ["devtools"] }
 intrusive-collections = { version ="0.9.6", optional = true }
 sea-orm = { version = "0.12.15", features = ["sqlx-sqlite", "runtime-tokio", "macros", "runtime-tokio-native-tls"], optional = true }
 sublime_fuzzy = { version = "0.7.0", optional = true }
@@ -37,7 +35,6 @@ rust-embed = { version = "8.4.0", features = [
 mime_guess = { version = "2.0.4", optional = true }
 dirs = { version = "5.0.1", optional = true }
 clap = { version = "4.5.8", features = ["derive"], optional = true }
-toml = { version = "0.8.14", optional = true }
 shellexpand = { version = "3.1.0", optional = true }
 
 gstreamer = {version = "0.17", optional = true}
@@ -66,12 +63,6 @@ native-player = [ "player-mpv" ]
 
 native-tls-vendored = [ "reqwest/native-tls-vendored" ]
 
-qweb-dylib = []
-qweb-bin = []
-
-# webkit chokes when wasm is imported
-tao-wry = [ "wry", "tao" ]
-
 wasmdeps = [
   "wasm-bindgen",
   "wasm-bindgen-futures",
@@ -99,7 +90,6 @@ appdeps = [
   "mime_guess",
   "dirs",
   "clap",
-  "toml",
   "shellexpand",
 ]
 
@@ -107,10 +97,6 @@ bindeps = [
   "appdeps",
 
   "native-player",
-
-  # "qweb-dylib",
-  # "qweb-bin",
-  # "tao-wry",
 ]
 
 [lib]

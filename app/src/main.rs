@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use libcovau::{
-    anyhow, anyhow::Result, clap::Parser, cli, reqwest, serde_json, server_start, tokio,
+    anyhow, anyhow::Result, clap::Parser, config, reqwest, serde_json, server_start, tokio,
 };
 
 #[cfg(build_mode = "DEV")]
 use libcovau::dump_types;
+
+mod cli;
 
 #[cfg(feature = "qweb-dylib")]
 mod qweb {
@@ -31,7 +33,7 @@ mod qweb {
 }
 
 #[cfg(any(feature = "qweb-dylib", feature = "qweb-bin"))]
-async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
+async fn qweb_app(config: Arc<config::DerivedConfig>) -> Result<()> {
     #[cfg(build_mode = "DEV")]
     let port = config.dev_vite_port;
     #[cfg(build_mode = "PROD")]
@@ -109,8 +111,6 @@ async fn qweb_app(config: Arc<cli::DerivedConfig>) -> Result<()> {
 mod tao_wry {
     use std::sync::Arc;
 
-    use libcovau::{tao, wry};
-
     use tao::event_loop::EventLoopBuilder;
 
     use crate::{cli, server_start};
@@ -162,11 +162,11 @@ mod tao_wry {
         });
     }
 
-    pub async fn app(config: Arc<cli::DerivedConfig>) -> anyhow::Result<()> {
+    pub async fn app(conf: Arc<config::DerivedConfig>) -> anyhow::Result<()> {
         #[cfg(build_mode = "DEV")]
-        let port = config.dev_vite_port;
+        let port = conf.dev_vite_port;
         #[cfg(build_mode = "PROD")]
-        let port = config.server_port;
+        let port = conf.server_port;
 
         let mut url = format!("http://localhost:{}/", port);
 
@@ -178,7 +178,7 @@ mod tao_wry {
             wry_open(url)?;
             Ok::<_, anyhow::Error>(())
         }));
-        let mut server_fut = std::pin::pin!(server_start(config.clone()));
+        let mut server_fut = std::pin::pin!(server_start(conf.clone()));
 
         tokio::select! {
             server = &mut server_fut => {
@@ -190,7 +190,7 @@ mod tao_wry {
             }
         }
 
-        if config.run_in_background {
+        if conf.run_in_background {
             server_fut.await?;
         }
 

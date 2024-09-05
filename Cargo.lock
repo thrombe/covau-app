@@ -622,6 +622,10 @@ version = "0.1.0"
 dependencies = [
  "cmake",
  "libcovau",
+ "serde",
+ "tao",
+ "toml 0.8.14",
+ "wry",
 ]
 
 [[package]]
@@ -629,6 +633,7 @@ name = "covau_wasm"
 version = "0.1.0"
 dependencies = [
  "libcovau",
+ "serde",
 ]
 
 [[package]]
@@ -2091,10 +2096,8 @@ dependencies = [
  "shellexpand",
  "specta",
  "sublime_fuzzy",
- "tao",
  "tokio",
  "tokio-stream",
- "toml 0.8.14",
  "tsify-next",
  "ulid",
  "uuid",
@@ -2102,7 +2105,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "wry",
 ]
 
 [[package]]

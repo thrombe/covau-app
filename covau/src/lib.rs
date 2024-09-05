@@ -6,34 +6,34 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-#[cfg(feature="appdeps")]
-pub mod cli;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
+pub mod config;
+#[cfg(feature = "appdeps")]
 pub mod covau_types;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub mod db;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub mod mbz;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub mod musimanager;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub mod server;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub mod yt;
 
-#[cfg(all(feature = "appdeps", feature="native-player"))]
+#[cfg(all(feature = "appdeps", feature = "native-player"))]
 pub mod musiplayer;
 
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 mod native;
-#[cfg(feature="appdeps")]
+#[cfg(feature = "appdeps")]
 pub use native::*;
 
-#[cfg(feature="wasmdeps")]
+#[cfg(feature = "wasmdeps")]
+#[allow(unused_imports)]
 mod wasm;
-#[cfg(feature="wasmdeps")]
+#[cfg(feature = "wasmdeps")]
 pub use wasm::*;
-
 
 pub fn init_logger(log_dir: impl Into<PathBuf>) -> Result<()> {
     let mut base_config = fern::Dispatch::new();

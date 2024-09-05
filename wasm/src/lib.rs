@@ -25,8 +25,8 @@ pub fn main_js() -> Result<(), JsValue> {
 }
 
 pub mod utils {
-    use super::*;
     use super::base64::Engine;
+    use super::*;
 
     use crate::bad_error::BadError;
 
