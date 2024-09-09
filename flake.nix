@@ -240,7 +240,7 @@
         '';
 
         nativeBuildInputs = with pkgs; [
-          unstable.bun
+          bun
         ];
       };
       covau = pkgs.unstable.rustPlatform.buildRustPackage rec {
@@ -498,6 +498,8 @@
 
             unstable.electron_29
             # unstable.yarn
+
+            nodejs
 
             nodePackages_latest.svelte-language-server
             nodePackages_latest.typescript-language-server
