@@ -2,10 +2,11 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
+use serde::{Deserialize, Serialize};
+
 use libcovau::{
     log::Level,
     log::{debug, info},
-    serde::{Deserialize, Serialize},
     tsify_next::JsValueSerdeExt,
     wasm_bindgen::UnwrapThrowExt,
     wasm_bindgen::{prelude::wasm_bindgen as bindgen, JsError, JsValue},

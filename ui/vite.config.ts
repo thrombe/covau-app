@@ -1,7 +1,7 @@
 import { type AddressInfo } from 'net'
 import { resolve } from 'path'
 import { spawn, type ChildProcess } from 'child_process'
-import type { ViteDevServer } from 'vite'
+import type { UserConfig, ViteDevServer } from 'vite'
 import { defineConfig, build } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import * as path from 'path';
@@ -107,7 +107,7 @@ async function bundle(server: ViteDevServer) {
     }
 }
 
-export default defineConfig((env) => {
+export default defineConfig((env: UserConfig) => {
     let define = {
         "import.meta.env.SERVER_PORT": process.env.SERVER_PORT,
     };
