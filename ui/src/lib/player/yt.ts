@@ -116,20 +116,21 @@ export class YtPlayer implements Player {
                 }
             } break;
             case YT.PlayerState.ENDED: {
-                await this.send_message({ type: "Finished" });
                 this._is_playing = true;
                 this.synced_data = "Finished";
+
+                await this.send_message({ type: "Finished" });
             } break;
             case YT.PlayerState.PLAYING: {
+                this.resolve_play_wait();
+                this._is_playing = true;
+                this.synced_data = "Playing";
+
                 if (this._is_playing) {
                     await this.send_message({ type: "Playing", content: "" });
                 } else {
                     await this.send_message({ type: "Unpaused" });
                 }
-
-                this.resolve_play_wait();
-                this._is_playing = true;
-                this.synced_data = "Playing";
 
                 let dur = this.get_duration();
                 if (dur) {
@@ -139,6 +140,7 @@ export class YtPlayer implements Player {
             case YT.PlayerState.PAUSED: {
                 this._is_playing = false;
                 this.synced_data = "Paused";
+
                 await this.send_message({ type: "Paused" });
             } break;
             case YT.PlayerState.BUFFERING:
