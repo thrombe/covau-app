@@ -75,4 +75,15 @@
   <script defer type="module" src="src/main.ts"></script>
 </body>
 
+<!--
+    - [can't load url](https://github.com/facebook/react-native/issues/5211)
+    android webview body height in % does not work for some reason. so we set it in px explicitly.
+    i hope this does not ruin it for other systems.
+-->
+<script>
+    console.error(window.innerHeight)
+    var el = document.getElementsByTagName('body')[0];
+    el.style.height = `${window.innerHeight}px`;
+</script>
+
 </html>
