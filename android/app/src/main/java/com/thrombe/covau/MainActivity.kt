@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
 
         val thread = Thread {
             println("${Thread.currentThread().name} has run.")
-            Covau.start()
+            Covau.start(this.applicationInfo.dataDir)
         }
         thread.start()
 

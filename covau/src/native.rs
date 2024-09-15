@@ -18,7 +18,7 @@ pub async fn server_start(conf: Arc<config::DerivedConfig>) -> Result<()> {
 }
 
 #[cfg(target_os = "android")]
-pub fn serve() {
+pub fn serve(data_dir: String) {
     let rt = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(100)
         .enable_all()
@@ -29,10 +29,11 @@ pub fn serve() {
     log::error!("starting tokio");
     rt.block_on(tokio::spawn(async move {
         log::error!("spawned tokio");
-        let config = config::Config::default().derived()?;
+        // TODO: config file stuff
+        let config = config::Config::default().derived(data_dir)?;
         let config = std::sync::Arc::new(config);
 
-        log::error!("starting server");
+        log::error!("starting server {}", config.server_port);
         server_start(config).await?;
 
         Ok::<(), anyhow::Error>(())

@@ -35,6 +35,7 @@ pub struct Config {
     pub server_port: Option<u16>,
 }
 impl Config {
+    #[cfg(not(target_os = "android"))]
     pub fn derived(self) -> anyhow::Result<DerivedConfig> {
         let home_dir = dirs::home_dir().context("can't find home directory")?;
         let data_path = dirs::data_dir().context("can't find data dir")?;
@@ -128,6 +129,48 @@ impl Config {
             })
             .transpose()?
             .unwrap_or(data_path.join("music"));
+        let _ = std::fs::create_dir(&music_path);
+
+        let config = DerivedConfig {
+            run_in_background: self.run_in_background,
+            db_path,
+            log_path,
+            music_path,
+            musimanager,
+            data_path,
+            cache_path,
+            server_port: self
+                .server_port
+                .unwrap_or(core::env!("SERVER_PORT").parse().unwrap()),
+            #[cfg(build_mode = "DEV")]
+            dev_vite_port: std::env::var("DEV_VITE_PORT")?
+                .parse()
+                .context("could not parse dev port")?,
+            config: self,
+        };
+        Ok(config)
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn derived(self, data_dir: String) -> anyhow::Result<DerivedConfig> {
+        // TODO: use config file data
+        let data_dir = PathBuf::from(data_dir);
+
+        let data_path = data_dir.join("data");
+        let _ = std::fs::create_dir(&data_path);
+
+        let cache_path = data_dir.join("cache");
+        let _ = std::fs::create_dir(&cache_path);
+
+        let db_path = data_path.join("db");
+        let _ = std::fs::create_dir(&db_path);
+
+        let log_path = data_path.join("logs");
+        let _ = std::fs::create_dir(&log_path);
+
+        let musimanager = None;
+
+        let music_path = data_path.join("music");
         let _ = std::fs::create_dir(&music_path);
 
         let config = DerivedConfig {

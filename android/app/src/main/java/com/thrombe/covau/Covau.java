@@ -1,7 +1,7 @@
 package com.thrombe.covau;
 
 public class Covau {
-    private static native String serve();
+    private static native String serve(String dataDir);
 
     static {
         // This actually loads the shared object that we'll be creating.
@@ -10,9 +10,9 @@ public class Covau {
         System.loadLibrary("covaulib");
     }
 
-    public static void start() {
+    public static void start(String dataDir) {
         System.out.println("starting server from java");
-        String str = Covau.serve();
+        String str = Covau.serve(dataDir);
         System.out.println(str);
     }
 
