@@ -17,6 +17,86 @@ pub async fn server_start(conf: Arc<config::DerivedConfig>) -> Result<()> {
     Ok(())
 }
 
+pub async fn run_command(server_port: u16, debug: bool, command: config::FeCommand) -> anyhow::Result<()> {
+    use server::routes::FeRequest;
+    use server::ErrorMessage;
+
+    let fereq = match command {
+        config::FeCommand::Like => FeRequest::Like,
+        config::FeCommand::Dislike => FeRequest::Dislike,
+        config::FeCommand::Next => FeRequest::Next,
+        config::FeCommand::Prev => FeRequest::Prev,
+        config::FeCommand::Pause => FeRequest::Pause,
+        config::FeCommand::Play => FeRequest::Play,
+        config::FeCommand::Repeat => FeRequest::Repeat,
+        config::FeCommand::ToggleMute => FeRequest::ToggleMute,
+        config::FeCommand::TogglePlay => FeRequest::TogglePlay,
+        config::FeCommand::BlacklistArtists => FeRequest::BlacklistArtists,
+        config::FeCommand::RemoveAndNext => FeRequest::RemoveAndNext,
+        config::FeCommand::SeekFwd => FeRequest::SeekFwd,
+        config::FeCommand::SeekBkwd => FeRequest::SeekBkwd,
+        config::FeCommand::Message { message, error } => {
+            if error {
+                FeRequest::NotifyError(message)
+            } else {
+                FeRequest::Notify(message)
+            }
+        }
+    };
+
+    let client = reqwest::Client::new();
+    let port = server_port;
+    let req = client
+        .post(format!("http://localhost:{}/cli", port))
+        .body(serde_json::to_string(&fereq)?)
+        .timeout(std::time::Duration::from_secs(5))
+        .build()?;
+
+    let debug = debug;
+    match client.execute(req).await {
+        Ok(resp) => {
+            // server responded with something
+
+            let res = resp.error_for_status_ref();
+            match res {
+                Ok(_resp) => {
+                    println!("Ok");
+                }
+                Err(_) => match resp.json::<ErrorMessage>().await {
+                    Ok(errmsg) => {
+                        if debug {
+                            return Err(anyhow::anyhow!(format!("{:?}", errmsg)));
+                        } else {
+                            return Err(anyhow::anyhow!(format!("{}", errmsg)));
+                        }
+                    }
+                    Err(e) => {
+                        if debug {
+                            eprintln!("{:?}", e);
+                            return Err(e.into());
+                        } else {
+                            return Err(e.into());
+                        }
+                    }
+                },
+            }
+        }
+        Err(e) => {
+            // timeout error and stuff
+            return Err(e.into());
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "android")]
+pub fn command(cmd: config::FeCommand) -> anyhow::Result<()> {
+    tokio::runtime::Runtime::new()?.block_on(async move {
+        run_command(core::env!("SERVER_PORT").parse().unwrap(), true, cmd).await
+    })
+}
+
 #[cfg(target_os = "android")]
 pub fn serve(data_dir: String) {
     let rt = tokio::runtime::Builder::new_multi_thread()

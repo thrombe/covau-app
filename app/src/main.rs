@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use libcovau::{
-    anyhow, anyhow::Result, clap::Parser, config, reqwest, serde_json, server_start, tokio,
+    anyhow, anyhow::Result, clap::Parser, config, server_start, tokio,
 };
 
 #[cfg(build_mode = "DEV")]
@@ -242,73 +242,7 @@ async fn main() -> Result<()> {
             server_start(config).await?;
         }
         cli::Command::FeCommand { command } => {
-            use libcovau::server::routes::FeRequest;
-            use libcovau::server::ErrorMessage;
-
-            let fereq = match command {
-                cli::FeCommand::Like => FeRequest::Like,
-                cli::FeCommand::Dislike => FeRequest::Dislike,
-                cli::FeCommand::Next => FeRequest::Next,
-                cli::FeCommand::Prev => FeRequest::Prev,
-                cli::FeCommand::Pause => FeRequest::Pause,
-                cli::FeCommand::Play => FeRequest::Play,
-                cli::FeCommand::Repeat => FeRequest::Repeat,
-                cli::FeCommand::ToggleMute => FeRequest::ToggleMute,
-                cli::FeCommand::TogglePlay => FeRequest::TogglePlay,
-                cli::FeCommand::BlacklistArtists => FeRequest::BlacklistArtists,
-                cli::FeCommand::RemoveAndNext => FeRequest::RemoveAndNext,
-                cli::FeCommand::SeekFwd => FeRequest::SeekFwd,
-                cli::FeCommand::SeekBkwd => FeRequest::SeekBkwd,
-                cli::FeCommand::Message { message, error } => {
-                    if error {
-                        FeRequest::NotifyError(message)
-                    } else {
-                        FeRequest::Notify(message)
-                    }
-                }
-            };
-
-            let client = reqwest::Client::new();
-            let port = config.server_port;
-            let req = client
-                .post(format!("http://localhost:{}/cli", port))
-                .body(serde_json::to_string(&fereq)?)
-                .timeout(std::time::Duration::from_secs(5))
-                .build()?;
-
-            match client.execute(req).await {
-                Ok(resp) => {
-                    // server responded with something
-
-                    let res = resp.error_for_status_ref();
-                    match res {
-                        Ok(_resp) => {
-                            println!("Ok");
-                        }
-                        Err(_) => match resp.json::<ErrorMessage>().await {
-                            Ok(errmsg) => {
-                                if cli.debug {
-                                    return Err(anyhow::anyhow!(format!("{:?}", errmsg)));
-                                } else {
-                                    return Err(anyhow::anyhow!(format!("{}", errmsg)));
-                                }
-                            }
-                            Err(e) => {
-                                if cli.debug {
-                                    eprintln!("{:?}", e);
-                                    return Err(e.into());
-                                } else {
-                                    return Err(e.into());
-                                }
-                            }
-                        },
-                    }
-                }
-                Err(e) => {
-                    // timeout error and stuff
-                    return Err(e.into());
-                }
-            }
+            libcovau::run_command(config.server_port, cli.debug, command).await?;
         }
         cli::Command::Test => {
             // dbg!(ulid::Ulid::new().to_string());
