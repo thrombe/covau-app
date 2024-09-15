@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use libcovau::{
-    anyhow, anyhow::Result, clap::Parser, config, server_start, tokio,
-};
+use libcovau::{anyhow, anyhow::Result, clap::Parser, config, server_start, tokio};
 
 #[cfg(build_mode = "DEV")]
 use libcovau::dump_types;

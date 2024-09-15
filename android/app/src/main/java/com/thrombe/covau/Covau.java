@@ -2,6 +2,7 @@ package com.thrombe.covau;
 
 public class Covau {
     private static native String serve(String dataDir);
+    private static native String toggle_play();
 
     static {
         // This actually loads the shared object that we'll be creating.
@@ -15,5 +16,4 @@ public class Covau {
         String str = Covau.serve(dataDir);
         System.out.println(str);
     }
-
 }

@@ -481,6 +481,7 @@ dependencies = [
  "jni",
  "libcovau",
  "log",
+ "paste",
 ]
 
 [[package]]

@@ -1,13 +1,37 @@
+#![allow(non_snake_case)]
+
 use log::{info, error};
 use log::LevelFilter;
 
-#[allow(non_snake_case)]
+use libcovau::anyhow::Result;
+use libcovau::config::FeCommand;
+
+fn toggle_play() -> Result<()> {
+    libcovau::command(FeCommand::TogglePlay)
+}
+
+// - [define different function names with a macro](https://stackoverflow.com/questions/70128978/how-to-define-different-function-names-with-a-macro)
+// - [paste - Rust](https://docs.rs/paste/latest/paste/index.html)
+macro_rules! command {
+    ($name:ident) => {
+        ::paste::paste! {
+            #[no_mangle]
+            pub unsafe extern "C" fn [<Java_com_thrombe_covau_Covau_ $name>]<'local>(
+                _env: jni::JNIEnv<'local>,
+                _class: jni::objects::JClass<'local>,
+            ) {
+                $name().unwrap();
+            }
+        }
+    };
+}
+
 pub mod android {
-    extern crate jni;
-    use self::jni::objects::{JClass, JString};
-    use self::jni::sys::jstring;
-    use self::jni::JNIEnv;
+    use jni::objects::{JClass, JString};
+    use jni::sys::jstring;
+    use jni::JNIEnv;
     use super::*;
+
     #[no_mangle]
     pub unsafe extern "C" fn Java_com_thrombe_covau_Covau_serve<'local>(
         mut env: JNIEnv<'local>,
@@ -31,4 +55,6 @@ pub mod android {
         // Finally, extract the raw pointer to return.
         output.into_raw()
     }
+
+    command!(toggle_play);
 }
