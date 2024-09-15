@@ -1,8 +1,8 @@
 package com.thrombe.covau
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -24,6 +24,8 @@ class MainActivity : ComponentActivity() {
             Covau.start(this.applicationInfo.dataDir)
         }.start()
 
+        startService(Intent(this, PlayerService::class.java))
+
         // TODO: do this edge to edge thing. i.e, render behind the status bar and the navigation bar.
         // somehow need to reserve space for both in html
         // enableEdgeToEdge()
@@ -34,6 +36,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+//        stopService(Intent(this, PlayerService::class.java))
     }
 }
 
@@ -52,7 +59,7 @@ fun WebViewScreen() {
                 webViewClient = WebViewClient() // Handle loading URLs
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(message: String, lineNumber: Int, sourceID: String) {
-                        Log.d("WebViewConsole", "$message -- From line $lineNumber of $sourceID")
+                        // Log.d("WebViewConsole", "$message -- From line $lineNumber of $sourceID")
                     }
                 }
 
