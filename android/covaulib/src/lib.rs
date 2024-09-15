@@ -6,7 +6,7 @@ use log::LevelFilter;
 use libcovau::anyhow::Result;
 use libcovau::config::FeCommand;
 
-fn toggle_play() -> Result<()> {
+fn togglePlay() -> Result<()> {
     libcovau::command(FeCommand::TogglePlay)
 }
 
@@ -41,7 +41,12 @@ pub mod android {
         _class: JClass<'local>,
         data_dir: JString,
     ) -> jstring {
-        android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Trace));
+        android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Warn));
+
+        std::panic::set_hook(Box::new(move |msg| {
+            log::error!("Panic occurred: {}", msg);
+            // env.throw_new("java/lang/RuntimeException", msg).expect("Failed to throw exception");
+        }));
 
         let data_dir = env.get_string(&data_dir).expect("could not get data dir string").to_owned();
         libcovau::serve(data_dir.into());
@@ -56,5 +61,5 @@ pub mod android {
         output.into_raw()
     }
 
-    command!(toggle_play);
+    command!(togglePlay);
 }
