@@ -49,7 +49,12 @@ pub mod android {
         }));
 
         let data_dir = env.get_string(&data_dir).expect("could not get data dir string").to_owned();
-        libcovau::serve(data_dir.into());
+        match libcovau::serve(data_dir.into()) {
+            Ok(()) => (),
+            Err(e) => {
+                log::error!("{:?}", e);
+            }
+        }
 
         // Then we have to create a new Java string to return. Again, more info
         // in the `strings` module.

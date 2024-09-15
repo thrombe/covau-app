@@ -20,10 +20,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val thread = Thread {
+        Thread {
             Covau.start(this.applicationInfo.dataDir)
-        }
-        thread.start()
+        }.start()
 
         // TODO: do this edge to edge thing. i.e, render behind the status bar and the navigation bar.
         // somehow need to reserve space for both in html

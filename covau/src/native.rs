@@ -98,7 +98,7 @@ pub fn command(cmd: config::FeCommand) -> anyhow::Result<()> {
 }
 
 #[cfg(target_os = "android")]
-pub fn serve(data_dir: String) {
+pub fn serve(data_dir: String) -> anyhow::Result<()> {
     let rt = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(100)
         .enable_all()
@@ -106,7 +106,6 @@ pub fn serve(data_dir: String) {
         .unwrap();
     let _guard = rt.enter();
 
-    log::error!("starting tokio");
     rt.block_on(tokio::spawn(async move {
         log::error!("spawned tokio");
         // TODO: config file stuff
@@ -117,9 +116,9 @@ pub fn serve(data_dir: String) {
         server_start(config).await?;
 
         Ok::<(), anyhow::Error>(())
-    }))
-    .unwrap()
-    .unwrap();
+    }))??;
+
+    Ok(())
 }
 
 pub fn dump_types() -> Result<()> {
