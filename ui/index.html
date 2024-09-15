@@ -81,9 +81,12 @@
     i hope this does not ruin it for other systems.
 -->
 <script>
-    console.error(window.innerHeight)
-    var el = document.getElementsByTagName('body')[0];
-    el.style.height = `${window.innerHeight}px`;
+    function resize() {
+        document.body.style.height = `${window.innerHeight}px`;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
 </script>
 
 </html>
