@@ -29,12 +29,25 @@ export type BrowseQuery = yt.BrowseQuery;
 export type MusicListItem = yt.MusicListItem;
 export type RObject = MusicListItem & Keyed;
 
+export type ValType<T extends MusicListItem["type"]> =
+    MusicListItem extends infer P ?
+    P extends { type: T, content: infer E } ? E : never
+    : never;
+
 export class StListItem extends ListItem {
     data: MusicListItem & Keyed;
 
     constructor(data: MusicListItem & Keyed) {
         super();
         this.data = data;
+    }
+
+    data_as<T extends MusicListItem["type"]>(typ: T): ValType<T> | null {
+        if (this.data.type != typ) {
+            return null;
+        }
+        // @ts-ignore
+        return this.data.content;
     }
 
     get_key(): unknown {

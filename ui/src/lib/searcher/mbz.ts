@@ -1072,9 +1072,14 @@ export class MbzListItem extends ListItem {
                 return song?.yt_id() ?? null;
             } break;
             case "MbzRadioSong": {
-                let query = this.data.data.title + " by " + this.data.data.creator;
-                let song = await ops.search_and_get(query, "song");
-                return await song?.yt_id() ?? null;
+                if (this.yt_song) {
+                    return this.yt_song.id;
+                } else {
+                    let query = this.data.data.title + " by " + this.data.data.creator;
+                    let song = await ops.search_and_get(query, "song");
+                    this.yt_song = song?.data_as("Song") ?? null;
+                    return await song?.yt_id() ?? null;
+                }
             } break;
             case "MbzReleaseWithInfo":
             case "MbzRelease":
@@ -1152,11 +1157,16 @@ export class MbzListItem extends ListItem {
         }
     }
 
-    async saved_covau_song(db: server.DbOps) {
+    async saved_covau_song(dbops: server.DbOps) {
         let ops = mbz.ops(this);
         switch (this.data.typ) {
             case "MbzRadioSong": {
-                return null;
+                if (this.yt_song == null) {
+                    return null;
+                }
+                console.log(this.yt_song)
+                let song = st.st.parse.wrap_item(this.yt_song, "Song");
+                return await song.saved_covau_song(dbops);
             } break;
             case "MbzRecording": {
                 let _ = await ops.upgrade_to_recording_with_info(this.data.data);
@@ -1164,7 +1174,7 @@ export class MbzListItem extends ListItem {
             case "MbzRecordingWithInfo": {
                 let rec = this.data.data as RecordingWithInfo;
                 let s = mbz.recording_almostdbitem(rec, this.yt_song);
-                let res = await db.insert_or_get(s);
+                let res = await dbops.insert_or_get(s);
                 return res.content;
             } break;
             case "MbzReleaseWithInfo":
@@ -1552,7 +1562,7 @@ export const mbz = {
 
                 let songs = await searcher.next_page();
                 let song = songs.at(0) ?? null;
-                return song;
+                return song as st.StListItem | null;
             },
             async get_query(recording: RecordingWithInfo) {
                 let query: string | null = null;
