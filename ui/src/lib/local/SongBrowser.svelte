@@ -101,9 +101,8 @@
             </ThreeDotMenu>
         </search-bar>
 
-        <browse-tab-bar
-            class="flex flex-row overflow-x-auto gap-1 px-1 justify-center"
-        >
+        <browse-tab-bar class="flex flex-row overflow-x-auto px-1 gap-1 w-full">
+            <div class="block flex-grow"></div>
             {#each tabs as tab, i}
                 <div
                     class={`flex flex-row border-b-2 px-1 items-center content-center
@@ -113,11 +112,7 @@
                                     : "border-gray-600"
                             }`}
                 >
-                    <Tooltip
-                        tooltip={tab.name}
-                        let:on_enter
-                        let:on_leave
-                    >
+                    <Tooltip tooltip={tab.name} let:on_enter let:on_leave>
                         <button
                             class="text-gray-400 flex-none text-ellipsis whitespace-nowrap overflow-hidden"
                             style="max-width: 12rem;"
@@ -151,6 +146,7 @@
                     </div>
                 </div>
             {/each}
+            <div class="block flex-grow"></div>
         </browse-tab-bar>
     </bar-area>
 
