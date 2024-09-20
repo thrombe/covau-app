@@ -615,10 +615,14 @@ export class AutoplayQueueManager extends QueueManager {
     }
 
     async add_artists_to_blacklist(item: ListItem) {
+        if (!this.blacklist_artist_ids) {
+            return false;
+        }
         let ids = item.artist_ids();
         for (let id of ids) {
             await this.add_artist_to_blacklist(id);
         }
+        return true;
     }
 
     async remove_artists_from_blacklist(item: ListItem) {
@@ -630,12 +634,13 @@ export class AutoplayQueueManager extends QueueManager {
 
     protected async add_artist_to_blacklist(id: types.covau.InfoSource) {
         if (!this.blacklist_artist_ids) {
-            return;
+            return false;
         }
         if (!this.bl_artist_ids.has(id.content)) {
             this.blacklist_artist_ids.push(id);
             this.bl_artist_ids.add(id.content);
         }
+        return true;
     }
 
     protected async remove_artist_from_blacklist(id: types.covau.InfoSource) {
@@ -847,14 +852,15 @@ export class LocalSyncQueue extends AutoplayQueueManager {
             return seen;
         });
     }
-    async add_artists_to_blacklist(item: ListItem): Promise<void> {
+    async add_artists_to_blacklist(item: ListItem): Promise<boolean> {
+        if (!this.blacklist_artist_ids) {
+            return false;
+        }
+
         for (let id of item.artist_ids()) {
             await super.add_artist_to_blacklist(id);
         }
 
-        if (!this.blacklist_artist_ids) {
-            return;
-        }
         let ids = this.blacklist_artist_ids;
 
         let sync = get(stores.syncer)
@@ -862,6 +868,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
             bl.t.artists = [...ids];
             return bl;
         });
+        return true;
     }
     async remove_artists_from_blacklist(item: ListItem): Promise<void> {
         for (let id of item.artist_ids()) {
@@ -880,11 +887,12 @@ export class LocalSyncQueue extends AutoplayQueueManager {
         });
     }
     async add_artist_to_blacklist(id: types.covau.InfoSource) {
+        if (!this.blacklist_artist_ids) {
+            return false;
+        }
+
         await super.add_artist_to_blacklist(id);
 
-        if (!this.blacklist_artist_ids) {
-            return;
-        }
         let ids = this.blacklist_artist_ids;
 
         let sync = get(stores.syncer)
@@ -892,6 +900,7 @@ export class LocalSyncQueue extends AutoplayQueueManager {
             bl.t.artists = [...ids];
             return bl;
         });
+        return true;
     }
     async remove_artist_from_blacklist(id: types.covau.InfoSource) {
         await super.remove_artist_from_blacklist(id);

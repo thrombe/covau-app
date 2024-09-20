@@ -146,8 +146,12 @@ export abstract class ListItem implements Keyed {
                 icon: icons.remove,
                 title: "blacklist artist(s)",
                 onclick: async () => {
-                    await imports.stores.queue_ops.blacklist_artists(this);
-                    toast("artist(s) added to blacklist");
+                    let r = await imports.stores.queue_ops.blacklist_artists(this);
+                    if (r) {
+                        toast("artist(s) added to blacklist");
+                    } else {
+                        toast("blacklist not enabled", "error");
+                    }
                 },
             },
             unblacklist_artist: {

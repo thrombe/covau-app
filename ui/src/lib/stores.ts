@@ -826,8 +826,12 @@ export const queue_ops = {
     },
 
     async blacklist_artists(item: ListItem) {
-        await get(queue).add_artists_to_blacklist(item);
+        let r = await get(queue).add_artists_to_blacklist(item);
+        if (!r) {
+            return false;
+        }
         queue.update(q => q);
+        return true;
     },
 
     async unblacklist_artists(item: ListItem) {
