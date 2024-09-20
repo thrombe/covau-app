@@ -1074,7 +1074,7 @@ export class MbzListItem extends ListItem {
             case "MbzRadioSong": {
                 let query = this.data.data.title + " by " + this.data.data.creator;
                 let song = await ops.search_and_get(query, "song");
-                return song?.audio_uri() ?? null;
+                return await song?.yt_id() ?? null;
             } break;
             case "MbzReleaseWithInfo":
             case "MbzRelease":

@@ -192,7 +192,7 @@ export class Audioplayer implements Player {
         }
 
         let id = await item.yt_id();
-        if (id) {
+        if (id != null) {
             let info = await st.st.fetch.uri(id);
             if (info != null) {
                 let src: types.server.YtStreamQuery = {
