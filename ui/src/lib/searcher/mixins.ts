@@ -96,6 +96,8 @@ export function RearrangeWrapper<T>(
                 if (target == null) {
                     target = this.items.length;
                 }
+                // TODO: inserting not supported yet
+                return false;
             } else {
                 if (target == null) {
                     target = this.items.length - 1;

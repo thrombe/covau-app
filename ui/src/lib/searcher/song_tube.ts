@@ -343,6 +343,8 @@ export class StListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 options.copy_url,
                                 ...common_options.open_album(s.album),
                                 common_options.blacklist_artist,

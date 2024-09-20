@@ -333,6 +333,8 @@ export class MbzListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 options.search_song,
                                 options.search_video,
                                 common_options.set_as_seed,
@@ -432,6 +434,8 @@ export class MbzListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 options.search_song,
                                 options.search_video,
                                 options.mbz_url,
@@ -496,6 +500,8 @@ export class MbzListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 options.search_song,
                                 options.search_video,
                                 options.mbz_url,

@@ -1167,6 +1167,8 @@ export class DbListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1238,6 +1240,8 @@ export class DbListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1314,6 +1318,8 @@ export class DbListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,
@@ -1441,6 +1447,8 @@ export class DbListItem extends ListItem {
                             menu: [
                                 common_options.detour,
                                 common_options.queue_add,
+                                common_options.search_add_to_queue,
+                                common_options.search_add_to_playlist,
                                 ops.options.like,
                                 ops.options.dislike,
                                 ops.options.unlike,

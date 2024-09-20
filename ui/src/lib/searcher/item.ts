@@ -10,6 +10,7 @@ import * as types from "$types/types.ts";
 import type { MusicListItem as MbzItem } from "$lib/searcher/mbz.ts";
 import { toast } from "$lib/toast/toast.ts";
 import { imports } from "$lib/cyclic.ts";
+import { prompter } from "$lib/prompt/prompt.ts";
 
 export type RenderContext = "Queue" | "Browser" | "Playbar" | "DetailSection" | "Prompt";
 
@@ -123,6 +124,60 @@ export abstract class ListItem implements Keyed {
                 title: "add to queue",
                 onclick: async () => {
                     await imports.stores.queue_ops.add_item(this);
+                },
+            },
+            search_add_to_queue: {
+                icon: icons.add,
+                title: "search queue and add to it",
+                onclick: async () => {
+                    let new_searcher = (q: string) => imports.searcher.db.Db.new({
+                        type: "Queue",
+                        query_type: "search",
+                        query: q,
+                    }, 50);
+                    let q = "";
+                    let s = new_searcher(q);
+                    let item = await prompter.searcher_prompt(
+                        s,
+                        false,
+                        "Queue name",
+                        q,
+                        new_searcher,
+                    );
+                    if (item == null) {
+                        return;
+                    }
+                    let res = await item.handle_drop(this, null, true);
+                    if (res) {
+                        toast(`item added to '${item.title()}'`);
+                    }
+                },
+            },
+            search_add_to_playlist: {
+                icon: icons.add,
+                title: "search playlist and add to it",
+                onclick: async () => {
+                    let new_searcher = (q: string) => imports.searcher.db.Db.new({
+                        type: "Playlist",
+                        query_type: "search",
+                        query: q,
+                    }, 50);
+                    let q = "";
+                    let s = new_searcher(q);
+                    let item = await prompter.searcher_prompt(
+                        s,
+                        false,
+                        "Playlist name",
+                        q,
+                        new_searcher,
+                    );
+                    if (item == null) {
+                        return;
+                    }
+                    let res = await item.handle_drop(this, null, true);
+                    if (res) {
+                        toast(`item added to '${item.title()}'`);
+                    }
                 },
             },
             open_details: {
