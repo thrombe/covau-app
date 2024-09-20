@@ -431,6 +431,12 @@
 
           cargo run -- $@
         '')
+        (pkgs.writeShellScriptBin "android-dev" ''
+          #!/usr/bin/env bash
+          cd $PROJECT_ROOT/android
+
+          nix develop .#android -c android-studio .
+        '')
       ];
       qweb-commands = pkgs: [
         (pkgs.writeShellScriptBin "build-qweb" ''
