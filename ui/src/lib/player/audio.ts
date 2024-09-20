@@ -206,7 +206,7 @@ export class Audioplayer implements Player {
             }
         }
 
-        throw new Error("Audioplayer can't play this item");
+        throw new Error(`Audioplayer can't play '${item.title()}'`);
     }
 
     toggle_pause() {

@@ -256,6 +256,10 @@ export class QueueManager implements Searcher {
 
     // must not call the db
     async sync_play(item: ListItem) {
+        if (this.state == "Detour") {
+            return;
+        }
+
         let curr = get(stores.playing_item);
         if (item.get_key() == curr.get_key()) {
             return;
