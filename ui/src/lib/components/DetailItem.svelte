@@ -21,7 +21,7 @@
     });
     onDestroy(unsub);
 
-    let hide_border = true;
+    let hide_border = false;
     const on_err = async () => {
         hide_border = true;
         img_src = $item.default_thumbnail();

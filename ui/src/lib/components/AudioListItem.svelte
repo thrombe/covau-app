@@ -16,7 +16,7 @@
         item?.thumbnail() ?? alt_thumbnail ?? item?.default_thumbnail() ?? "";
     $: options = item?.options(ctx) ?? [];
 
-    let hide_border = true;
+    let hide_border = false;
 
     $: if (img_src || true) {
         if (img_src == "") {
