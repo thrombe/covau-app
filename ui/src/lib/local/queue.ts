@@ -234,9 +234,11 @@ export class QueueManager implements Searcher {
         let item = this.items.at(index);
         if (item) {
             this.state = "Playing";
-            await this.play_item(item);
+            let res = await this.play_item(item);
+            return res;
         } else {
             toast(`no item at index ${index}`, "error");
+            return false;
         }
     }
     async play_item(item: ListItem) {
@@ -245,12 +247,14 @@ export class QueueManager implements Searcher {
             await p.play_item(item);
             playing_item.set(item);
             player.update(p => p);
+            return true;
         } catch (e: any) {
             if (e instanceof Error) {
                 toast(e.message, "error");
             } else {
                 toast(e, "error");
             }
+            return false;
         }
     }
 
@@ -787,22 +791,23 @@ export class AutoplayQueueManager extends QueueManager {
         }
     }
 
-    async play_item(item: ListItem): Promise<void> {
-        await super.play_item(item);
+    async play_item(item: ListItem)  {
+        let res = await super.play_item(item);
 
         if (this.autoplay_state.state === "Init") {
-            return;
+            return res;
         }
 
         if (this.autoplay_state.state === "Disabled") {
-            return;
+            return res;
         }
 
         if (this.autoplay_state.state === "DisabledWithSeed") {
-            return;
+            return res;
         }
 
         await this.init_with_seed(item);
+        return res;
     }
 
     async has_next(): Promise<boolean> {
@@ -962,9 +967,12 @@ export class LocalSyncQueue extends AutoplayQueueManager {
         await super.remove_at(index);
         await this.update_queue();
     }
-    async play(index: number): Promise<void> {
-        await super.play(index);
-        await this.update_queue();
+    async play(index: number) {
+        let res = await super.play(index);
+        if (res) {
+            await this.update_queue();
+        }
+        return res;
     }
     async init_with_seed(item: ListItem): Promise<boolean> {
         await server.db.txn(async dbops => {
