@@ -76,6 +76,41 @@
           DEV_SHELL = "ANDROID";
         };
       };
+      qt-shell =
+        pkgs.mkShell.override {
+          inherit stdenv;
+        } {
+          nativeBuildInputs = (env-packages pkgs) ++ [fhs];
+          inputsFrom = [
+            covau
+            qweb
+          ];
+
+          buildInputs = (with pkgs; [
+            unstable.qtcreator
+
+            # this is for the shellhook portion
+            unstable.qt6.wrapQtAppsHook
+            makeWrapper
+            bashInteractive
+          ]) ++ [
+            qweb
+          ];
+
+          # - [(Qt)Quick C++ Project Setup with Nix](https://galowicz.de/2023/01/16/cpp-qt-qml-nix-setup/)
+          # set the environment variables that Qt apps expect
+          shellHook = ''
+            # - [Qt WebEngine Debugging and Profiling | Qt WebEngine 6.7.2](https://doc.qt.io/qt-6/qtwebengine-debugging.html#qt-webengine-developer-tools)
+            export QTWEBENGINE_REMOTE_DEBUGGING=6178
+            export DEV_SHELL="QT"
+            export QT_QPA_PLATFORM="wayland"
+
+            bashdir=$(mktemp -d)
+            makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
+            exec "$bashdir/bash"
+          '';
+        };
+
       # - [Cross compilation — nix.dev documentation](https://nix.dev/tutorials/cross-compilation.html)
       # - [Cross Compile Rust for Windows - Help - NixOS Discourse](https://discourse.nixos.org/t/cross-compile-rust-for-windows/9582/7)
       # windows-pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux.pkgsCross.mingw32;
@@ -326,8 +361,9 @@
         '';
 
         buildInputs = with pkgs; [
-          qt6.qtbase
-          qt6.full
+          unstable.qt6.qtbase
+          unstable.qt6.full
+          unstable.qt6.qtwayland
           # kdePackages.qtwebview
           # kdePackages.qtwebengine
           # kdePackages.qtdeclarative
@@ -337,7 +373,7 @@
         nativeBuildInputs = with pkgs; [
           pkg-config
           cmake
-          qt6.wrapQtAppsHook
+          unstable.qt6.wrapQtAppsHook
         ];
       };
 
@@ -502,7 +538,7 @@
             unstable.gdb
             pkg-config
 
-            unstable.electron_29
+            unstable.electron
             # unstable.yarn
 
             nodejs
@@ -538,6 +574,7 @@
       devShells = {
         windows = windows-shell;
         android = android-shell;
+        qt = qt-shell;
 
         default =
           pkgs.mkShell.override {
