@@ -1,4 +1,4 @@
-# Covau!. Come Vibe Amongst Us
+# Covau! Come Vibe Amongst Us
 Welcome to Covau! Covau is a music app that lets you keep your playlists on your own device. Instead of relying on the cloud, you can store your lists locally and stream music from various sources. If a song disappears, just switch to a new source!
 
 # [Covau webapp](https://github.com/thrombe/covau)
@@ -41,7 +41,7 @@ Covau uses web technologies for its user interface, built with Svelte and TypeSc
 - [Covau webapp](https://github.com/thrombe/covau) compatibility
 
 # Naming
-In the spirit of Microsoft naming everything "Copilot," I’ve decided to call both the web app and the desktop/Android apps "Covau," even though they serve different purposes. 
+In the spirit of Microsoft naming everything "Copilot", I’ve decided to call both the web app and the Desktop/Android apps "Covau", even though they serve different purposes. 
 
 
 Thanks for checking out Covau! Feel free to dive in and enjoy your music your way!
